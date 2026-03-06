@@ -25,6 +25,7 @@ export const taskSchema = z.object({
   text: z.string(),
   completed: z.boolean(),
   isWeekly: z.boolean().default(false),
+  deadline: z.string().optional(),
 });
 
 export const habitSchema = z.object({
