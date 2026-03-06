@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback, useMemo } from "react";
 import type { EventItem } from "@shared/schema";
 import { formatISODate, getWeekDays, getDayShortName } from "@/lib/date-utils";
 import { motion } from "framer-motion";
@@ -25,6 +25,61 @@ function formatHour(h: number): string {
   if (h < 12) return `${h} ص`;
   if (h === 12) return "12 م";
   return `${h - 12} م`;
+}
+
+const EVENT_PILL_MIN_WIDTH = 130;
+const DAY_LABEL_WIDTH = 52;
+const DAY_HEIGHT = 44;
+const MIN_HOUR_WIDTH = 80;
+
+function computeHourWidth(containerWidth: number, totalHours: number, eventsByDay: EventItem[][], minHour: number): number {
+  const availableWidth = containerWidth - DAY_LABEL_WIDTH;
+  const naturalWidth = Math.max(MIN_HOUR_WIDTH, availableWidth / totalHours);
+
+  let neededWidth = naturalWidth;
+  for (const dayEvts of eventsByDay) {
+    if (dayEvts.length < 2) continue;
+    const sorted = [...dayEvts].sort((a, b) => parseTime(a.time) - parseTime(b.time));
+    for (let i = 0; i < sorted.length - 1; i++) {
+      const gap = parseTime(sorted[i + 1].time) - parseTime(sorted[i].time);
+      if (gap === 0) {
+        neededWidth = Math.max(neededWidth, availableWidth);
+        continue;
+      }
+      const pixelsPerMinute = neededWidth / 60;
+      const gapPixels = gap * pixelsPerMinute;
+      if (gapPixels < EVENT_PILL_MIN_WIDTH + 8) {
+        const required = ((EVENT_PILL_MIN_WIDTH + 8) / gap) * 60;
+        neededWidth = Math.max(neededWidth, required);
+      }
+    }
+  }
+
+  return Math.max(neededWidth, MIN_HOUR_WIDTH);
+}
+
+function stackEvents(dayEvts: EventItem[], hourWidth: number, minHour: number, totalHours: number): { event: EventItem; left: number; row: number }[] {
+  const totalWidth = totalHours * hourWidth;
+  const positioned: { event: EventItem; left: number; right: number; row: number }[] = [];
+
+  const sorted = [...dayEvts].sort((a, b) => parseTime(a.time) - parseTime(b.time));
+
+  for (const evt of sorted) {
+    const minutes = parseTime(evt.time);
+    const left = ((minutes - minHour * 60) / (totalHours * 60)) * totalWidth;
+    const right = left + EVENT_PILL_MIN_WIDTH;
+
+    let row = 0;
+    for (const placed of positioned) {
+      if (placed.row === row && left < placed.right + 4) {
+        row = placed.row + 1;
+      }
+    }
+
+    positioned.push({ event: evt, left, right, row });
+  }
+
+  return positioned.map(p => ({ event: p.event, left: p.left, row: p.row }));
 }
 
 function EventCommentDialog({ isOpen, onClose, event, onSave }: {
@@ -122,29 +177,59 @@ function EventCommentDialog({ isOpen, onClose, event, onSave }: {
 export function GanttTimeline({ events, selectedDate, onScrollToEvents }: GanttTimelineProps) {
   const weekDays = getWeekDays(selectedDate);
   const weekISOs = weekDays.map(d => formatISODate(d));
-  const weekEvents = events.filter(e => weekISOs.includes(e.date)).sort((a, b) => {
-    const dateComp = a.date.localeCompare(b.date);
-    return dateComp !== 0 ? dateComp : a.time.localeCompare(b.time);
-  });
+  const weekEvents = useMemo(() =>
+    events.filter(e => weekISOs.includes(e.date)).sort((a, b) => {
+      const dateComp = a.date.localeCompare(b.date);
+      return dateComp !== 0 ? dateComp : a.time.localeCompare(b.time);
+    }),
+    [events, weekISOs.join(",")]
+  );
 
   const updateEvent = useUpdateEvent();
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setContainerWidth(entry.contentRect.width);
+      }
+    });
+    observer.observe(containerRef.current);
+    setContainerWidth(containerRef.current.clientWidth);
+    return () => observer.disconnect();
+  }, []);
 
   if (weekEvents.length === 0) return null;
 
   const allMinutes = weekEvents.map(e => parseTime(e.time));
   const minHour = Math.max(0, Math.floor(Math.min(...allMinutes) / 60) - 1);
   const maxHour = Math.min(24, Math.ceil(Math.max(...allMinutes) / 60) + 1);
-  const totalHours = maxHour - minHour;
-  const hourWidth = 80;
-  const dayHeight = 44;
+  const totalHours = Math.max(1, maxHour - minHour);
 
   const eventsByDay = weekISOs.map(iso => weekEvents.filter(e => e.date === iso));
+  const hourWidth = containerWidth > 0
+    ? computeHourWidth(containerWidth, totalHours, eventsByDay, minHour)
+    : MIN_HOUR_WIDTH;
+
+  const timelineWidth = totalHours * hourWidth;
+  const fullWidth = timelineWidth + DAY_LABEL_WIDTH;
+  const isScrollable = fullWidth > containerWidth;
+
+  const maxRows = Math.max(1, ...eventsByDay.map(dayEvts => {
+    if (dayEvts.length === 0) return 1;
+    const stacked = stackEvents(dayEvts, hourWidth, minHour, totalHours);
+    return Math.max(...stacked.map(s => s.row)) + 1;
+  }));
+  const rowHeight = 32;
+  const dayHeight = Math.max(DAY_HEIGHT, maxRows * (rowHeight + 4) + 8);
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden" data-testid="gantt-timeline">
+    <div ref={containerRef} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden w-full" data-testid="gantt-timeline">
       <div className="flex items-center justify-between px-4 md:px-5 pt-4 md:pt-5 pb-3">
         <div className="flex items-center gap-2">
           <div className="w-9 h-9 rounded-full bg-amber-50 dark:bg-amber-500/15 flex items-center justify-center">
@@ -181,9 +266,21 @@ export function GanttTimeline({ events, selectedDate, onScrollToEvents }: GanttT
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.25 }}
           >
-            <div ref={scrollRef} className="overflow-x-auto hide-scrollbar pb-4 px-4 md:px-5" dir="ltr">
-              <div style={{ minWidth: totalHours * hourWidth + 60 }}>
-                <div className="flex" style={{ marginRight: 60 }}>
+            {isScrollable && (
+              <div className="px-4 md:px-5 pb-2">
+                <div className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-400 dark:text-slate-500">
+                  <span>← اسحب للتمرير →</span>
+                </div>
+              </div>
+            )}
+
+            <div
+              ref={scrollRef}
+              className={`overflow-x-auto pb-4 px-4 md:px-5 ${isScrollable ? 'scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700 scrollbar-track-transparent' : ''}`}
+              dir="ltr"
+            >
+              <div style={{ width: Math.max(fullWidth, containerWidth - 32) }}>
+                <div className="flex" style={{ marginLeft: DAY_LABEL_WIDTH }}>
                   {Array.from({ length: totalHours }, (_, i) => {
                     const hour = minHour + i;
                     const isNowHour = new Date().getHours() === hour && weekISOs.includes(formatISODate(new Date()));
@@ -202,7 +299,7 @@ export function GanttTimeline({ events, selectedDate, onScrollToEvents }: GanttT
                     <div
                       key={i}
                       className="absolute top-0 bottom-0 w-px bg-slate-100 dark:bg-slate-800"
-                      style={{ left: 60 + i * hourWidth }}
+                      style={{ left: DAY_LABEL_WIDTH + i * hourWidth }}
                     />
                   ))}
 
@@ -211,12 +308,12 @@ export function GanttTimeline({ events, selectedDate, onScrollToEvents }: GanttT
                     const nowISO = formatISODate(now);
                     if (weekISOs.includes(nowISO)) {
                       const nowMinutes = now.getHours() * 60 + now.getMinutes();
-                      const nowPos = ((nowMinutes - minHour * 60) / (totalHours * 60)) * (totalHours * hourWidth);
-                      if (nowPos >= 0 && nowPos <= totalHours * hourWidth) {
+                      const nowPos = ((nowMinutes - minHour * 60) / (totalHours * 60)) * timelineWidth;
+                      if (nowPos >= 0 && nowPos <= timelineWidth) {
                         return (
                           <div
                             className="absolute top-0 bottom-0 w-0.5 bg-red-400 z-10"
-                            style={{ left: 60 + nowPos }}
+                            style={{ left: DAY_LABEL_WIDTH + nowPos }}
                           >
                             <div className="w-2 h-2 rounded-full bg-red-400 -translate-x-[3px] -translate-y-1" />
                           </div>
@@ -230,32 +327,32 @@ export function GanttTimeline({ events, selectedDate, onScrollToEvents }: GanttT
                     const dayEvts = eventsByDay[dayIdx];
                     const dayLabel = getDayShortName(weekDays[dayIdx]);
                     const isToday = iso === formatISODate(new Date());
+                    const stacked = stackEvents(dayEvts, hourWidth, minHour, totalHours);
 
                     return (
-                      <div key={iso} className="flex items-center" style={{ height: dayHeight }}>
-                        <div className="flex-shrink-0 w-[60px] pr-2 text-left">
+                      <div key={iso} className="flex items-start" style={{ height: dayHeight }}>
+                        <div className="flex-shrink-0 pr-2 text-left flex items-center" style={{ width: DAY_LABEL_WIDTH, height: dayHeight }}>
                           <span className={`text-[11px] font-bold ${isToday ? 'text-primary' : 'text-slate-400 dark:text-slate-500'}`}>
                             {dayLabel}
                           </span>
                         </div>
-                        <div className="flex-1 relative" style={{ height: dayHeight - 8 }}>
-                          {dayEvts.map((evt, evtIdx) => {
-                            const minutes = parseTime(evt.time);
-                            const leftPos = ((minutes - minHour * 60) / (totalHours * 60)) * (totalHours * hourWidth);
+                        <div className="flex-1 relative" style={{ height: dayHeight }}>
+                          {stacked.map(({ event: evt, left, row }, evtIdx) => {
                             const hasComment = !!evt.comment;
                             const now = new Date();
                             const evtDate = new Date(evt.date + "T" + evt.time);
                             const isPast = evtDate < now;
+                            const topOffset = 4 + row * (rowHeight + 4);
 
                             return (
                               <motion.div
                                 key={evt.id}
                                 initial={{ opacity: 0, scale: 0.8 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: evtIdx * 0.05 }}
+                                transition={{ delay: evtIdx * 0.03 }}
                                 onClick={() => setSelectedEvent(evt)}
-                                className={`absolute top-1/2 -translate-y-1/2 cursor-pointer group z-10 ${isPast ? 'opacity-60' : ''}`}
-                                style={{ left: leftPos }}
+                                className={`absolute cursor-pointer group z-10 ${isPast ? 'opacity-60' : ''}`}
+                                style={{ left, top: topOffset }}
                                 data-testid={`gantt-event-${evt.id}`}
                               >
                                 <div className={`
