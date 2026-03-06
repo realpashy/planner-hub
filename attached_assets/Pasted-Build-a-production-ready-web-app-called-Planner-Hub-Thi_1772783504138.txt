@@ -1,0 +1,387 @@
+Build a production-ready web app called "Planner Hub".
+
+This is a premium RTL planner web app for Arabic and Hebrew users.
+
+IMPORTANT RULES
+
+Do NOT build authentication.
+Do NOT build subscriptions.
+Do NOT build paywalls.
+
+The architecture must still allow those features later.
+
+For now the app runs fully offline using local persistence.
+
+Use a clean modern stack:
+
+React
+TypeScript
+Vite
+TailwindCSS
+Lucide icons
+localStorage persistence
+
+The code must be modular and scalable.
+
+--------------------------------------------------
+
+APP PURPOSE
+
+This is NOT an admin dashboard.
+
+This must feel like a premium lifestyle planner app.
+
+It should feel:
+
+• motivating
+• elegant
+• modern
+• calm but productive
+• mobile-first
+• emotionally rewarding
+
+--------------------------------------------------
+
+LANGUAGE
+
+Arabic and Hebrew only.
+
+Both are RTL.
+
+No English UI.
+
+Add language switcher.
+
+Persist language locally.
+
+Use fonts:
+
+Arabic: Tajawal
+Hebrew: Heebo
+
+Numbers must ALWAYS use Latin digits.
+
+Example:
+57
+2026
+44%
+
+NOT Arabic numerals.
+
+--------------------------------------------------
+
+DESIGN SYSTEM
+
+Primary color:
+#4F46E5
+
+Success:
+#22C55E
+
+Warning:
+#F59E0B
+
+Background:
+#F8FAFC
+
+Cards:
+#FFFFFF
+
+Text:
+#0F172A
+
+Borders:
+#E2E8F0
+
+UI rules:
+
+rounded corners
+soft shadows
+strong contrast
+clear visual hierarchy
+
+Checkboxes must be square with rounded corners.
+
+Widget icons should be small with light grey circular background.
+
+--------------------------------------------------
+
+APP STRUCTURE
+
+Homepage = Modules dashboard.
+
+Modules appear as cards in an app-store style layout.
+
+Modules:
+
+Weekly Planner
+Budget Tracker
+Habit Tracker
+Life Organizer
+Monthly Budget
+New Year Goals
+Task Tracker
+Travel Planner
+Meal Planner
+
+Only Weekly Planner is implemented.
+
+Others show "coming soon".
+
+--------------------------------------------------
+
+WEEKLY PLANNER
+
+This is the main module.
+
+Instead of stacking 7 full day cards vertically, implement a hybrid week layout.
+
+--------------------------------------------------
+
+WEEK VIEW LAYOUT
+
+TOP SECTION
+
+Week header:
+
+الأسبوع الأول من شهر مارس (1-7) 2026
+
+Under it show today's date:
+
+06/03/2026
+
+Add previous and next week arrows.
+
+--------------------------------------------------
+
+DAY STRIP
+
+Below header show horizontal day strip.
+
+Example:
+
+Sun Mon Tue Wed Thu Fri Sat
+
+Each day appears as a card.
+
+Current day must always be visible and centered on load.
+
+Day strip must be horizontally scrollable and draggable.
+
+Edges should fade slightly using gradient overlay to hint more content.
+
+--------------------------------------------------
+
+DAY CARD
+
+Below the day strip show ONE expanded day card.
+
+This contains:
+
+Main focus (as tag/chips)
+
+Events list
+(time + title)
+
+Tasks list
+(checkbox)
+
+Notes
+
+Completion percentage
+
+--------------------------------------------------
+
+FOCUS INPUT
+
+Main focus should work as tags.
+
+Example:
+
+User types "رياضة" + Enter
+
+A tag appears.
+
+Tags have border and delete button.
+
+Multiple tags allowed.
+
+--------------------------------------------------
+
+EVENTS
+
+Events include:
+
+time
+title
+icon
+
+Clock icon must always appear.
+
+Default time should auto-fill current time.
+
+Event text longer than limit should truncate with ...
+
+Click expands it.
+
+--------------------------------------------------
+
+TASKS
+
+Tasks use animated checkboxes.
+
+Completion animation.
+
+Strike-through when done.
+
+When all tasks done:
+
+Day card background becomes light green.
+
+Subtle celebration animation appears.
+
+--------------------------------------------------
+
+HABITS TRACKER
+
+Habits show:
+
+habit name
+7 day grid
+
+Day labels must display fully.
+
+Checkboxes must align perfectly under the correct day.
+
+If habit row completed:
+
+highlight row green with subtle animation.
+
+--------------------------------------------------
+
+WEEKLY TASKS
+
+Weekly tasks should automatically sync with daily tasks.
+
+If a task is checked in the day card it updates weekly tasks.
+
+Vice versa.
+
+--------------------------------------------------
+
+CALENDAR
+
+Replace double calendar with one smart calendar.
+
+Calendar shows:
+
+month
+today highlight
+selected week highlight
+
+Clicking date jumps to that week.
+
+Add dropdown showing:
+
+الأسبوع الأول من هذا الشهر
+الأسبوع الثاني من هذا الشهر
+etc.
+
+--------------------------------------------------
+
+MOBILE UX
+
+Mobile must be primary.
+
+Day strip horizontally scrollable.
+
+Selected day card fills screen.
+
+Avoid excessive vertical scrolling.
+
+Add floating quick add button.
+
+FAB opens quick add menu:
+
+Add task
+Add event
+Add habit
+Add note
+
+--------------------------------------------------
+
+DELETE CONFIRMATION
+
+Deleting an item must open confirmation popup.
+
+Mobile popup slides from bottom full width.
+
+Desktop popup centered.
+
+--------------------------------------------------
+
+ICON SUGGESTIONS
+
+Use rule-based emoji suggestions.
+
+Example:
+
+رياضة → 💪
+تسوق → 🛒
+اجتماع → 📅
+دراسة → 📚
+
+Icons auto-attach when matching keywords.
+
+User can remove them.
+
+--------------------------------------------------
+
+DATA STORAGE
+
+Use local storage.
+
+Data structure:
+
+settings
+weekly planner
+keyed by weekStart ISO.
+
+Ensure architecture allows later backend sync.
+
+--------------------------------------------------
+
+DEMO DATA
+
+On first run auto generate:
+
+habits
+weekly tasks
+events
+daily tasks
+notes
+
+So app never looks empty.
+
+--------------------------------------------------
+
+DELIVERABLES
+
+Build in phases.
+
+Phase 1
+
+App shell
+dashboard
+language system
+local persistence
+
+Phase 2
+
+Weekly Planner module.
+
+After build provide:
+
+file structure
+architecture explanation
+where future auth can be added
