@@ -31,12 +31,12 @@ export function DayStrip({ days, selectedDate, onSelect, tasks = [] }: DayStripP
 
   return (
     <div className="relative" data-testid="day-strip">
-      <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none rounded-l-2xl" />
-      <div className="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none rounded-r-2xl" />
+      <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-white dark:from-slate-900 to-transparent z-10 pointer-events-none" />
+      <div className="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-white dark:from-slate-900 to-transparent z-10 pointer-events-none" />
 
       <div
         ref={scrollRef}
-        className="flex overflow-x-auto hide-scrollbar gap-2 px-3 py-2 snap-x-mandatory"
+        className="flex overflow-x-auto hide-scrollbar gap-2 md:gap-3 py-2 snap-x-mandatory justify-center"
         dir="rtl"
       >
         {days.map((date) => {
@@ -54,29 +54,29 @@ export function DayStrip({ days, selectedDate, onSelect, tasks = [] }: DayStripP
               whileTap={{ scale: 0.95 }}
               className={`
                 flex-shrink-0 snap-center flex flex-col items-center justify-center
-                w-[4.25rem] h-[5rem] rounded-2xl transition-all duration-200 relative
+                w-[4.5rem] h-[5.5rem] md:w-[5.5rem] md:h-[6.5rem] rounded-2xl transition-all duration-200 relative
                 ${isSelected
                   ? 'bg-primary text-white shadow-lg shadow-primary/30'
                   : isToday
-                    ? 'bg-primary/8 text-primary border-2 border-primary/25'
-                    : 'bg-slate-50 text-slate-600 border border-slate-100/80 hover:border-primary/20 hover:bg-primary/5'}
+                    ? 'bg-primary/8 dark:bg-primary/15 text-primary border-2 border-primary/25'
+                    : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-100/80 dark:border-slate-700 hover:border-primary/20 hover:bg-primary/5'}
               `}
             >
-              <span className={`text-[11px] font-semibold mb-0.5 ${isSelected ? 'text-white/75' : isToday ? 'text-primary/70' : 'text-slate-400'}`}>
+              <span className={`text-xs md:text-sm font-semibold mb-0.5 ${isSelected ? 'text-white/75' : isToday ? 'text-primary/70' : 'text-slate-400 dark:text-slate-500'}`}>
                 {getDayShortName(date)}
               </span>
-              <span className={`text-xl font-bold leading-none ${isSelected ? 'text-white' : ''}`}>
+              <span className={`text-xl md:text-2xl font-bold leading-none ${isSelected ? 'text-white' : ''}`}>
                 {date.getDate()}
               </span>
 
               {total > 0 && (
-                <div className={`flex gap-0.5 mt-1.5`}>
+                <div className="flex gap-0.5 mt-1.5">
                   {allDone ? (
                     <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-green-300' : 'bg-green-500'}`} />
                   ) : (
                     <>
-                      <div className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white/60' : 'bg-slate-300'}`} />
-                      <div className={`w-1 h-1 rounded-full ${completed >= 1 ? (isSelected ? 'bg-white' : 'bg-primary') : (isSelected ? 'bg-white/30' : 'bg-slate-200')}`} />
+                      <div className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white/60' : 'bg-slate-300 dark:bg-slate-600'}`} />
+                      <div className={`w-1 h-1 rounded-full ${completed >= 1 ? (isSelected ? 'bg-white' : 'bg-primary') : (isSelected ? 'bg-white/30' : 'bg-slate-200 dark:bg-slate-700')}`} />
                     </>
                   )}
                 </div>

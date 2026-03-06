@@ -34,49 +34,49 @@ export function WeeklySummary({ tasks, habits, events, selectedDate }: WeeklySum
     {
       label: 'إنجاز الأسبوع',
       value: `${weekTaskPercent}%`,
-      icon: <TrendingUp className="w-4 h-4" />,
+      icon: <TrendingUp className="w-4 h-4 md:w-5 md:h-5" />,
       color: 'text-primary',
-      bg: 'bg-primary/8',
+      bg: 'bg-primary/8 dark:bg-primary/15',
     },
     {
       label: 'المهام',
       value: `${completedWeekTasks}/${totalWeekTasks}`,
-      icon: <CheckSquare className="w-4 h-4" />,
-      color: 'text-emerald-600',
-      bg: 'bg-emerald-50',
+      icon: <CheckSquare className="w-4 h-4 md:w-5 md:h-5" />,
+      color: 'text-emerald-600 dark:text-emerald-400',
+      bg: 'bg-emerald-50 dark:bg-emerald-500/15',
     },
     {
       label: 'العادات',
       value: `${habitPercent}%`,
-      icon: <Activity className="w-4 h-4" />,
-      color: 'text-violet-600',
-      bg: 'bg-violet-50',
+      icon: <Activity className="w-4 h-4 md:w-5 md:h-5" />,
+      color: 'text-violet-600 dark:text-violet-400',
+      bg: 'bg-violet-50 dark:bg-violet-500/15',
     },
     {
       label: 'أحداث اليوم',
       value: `${todayEvents}`,
-      icon: <Calendar className="w-4 h-4" />,
-      color: 'text-amber-600',
-      bg: 'bg-amber-50',
+      icon: <Calendar className="w-4 h-4 md:w-5 md:h-5" />,
+      color: 'text-amber-600 dark:text-amber-400',
+      bg: 'bg-amber-50 dark:bg-amber-500/15',
     },
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-2" data-testid="weekly-summary">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3" data-testid="weekly-summary">
       {cards.map((card, i) => (
         <motion.div
           key={card.label}
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: i * 0.05 }}
-          className="bg-white rounded-xl border border-slate-100 p-3 flex items-center gap-3"
+          className="bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 p-3 md:p-4 flex items-center gap-3"
         >
-          <div className={`w-9 h-9 rounded-lg ${card.bg} ${card.color} flex items-center justify-center flex-shrink-0`}>
+          <div className={`w-10 h-10 md:w-11 md:h-11 rounded-lg ${card.bg} ${card.color} flex items-center justify-center flex-shrink-0`}>
             {card.icon}
           </div>
           <div className="min-w-0">
-            <div className={`text-lg font-bold ${card.color} leading-none mb-0.5`}>{card.value}</div>
-            <div className="text-[11px] font-medium text-slate-400 truncate">{card.label}</div>
+            <div className={`text-lg md:text-xl font-bold ${card.color} leading-none mb-0.5`}>{card.value}</div>
+            <div className="text-[11px] md:text-xs font-medium text-slate-400 dark:text-slate-500 truncate">{card.label}</div>
           </div>
         </motion.div>
       ))}

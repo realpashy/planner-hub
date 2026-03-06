@@ -25,10 +25,10 @@ export function FocusTags({ tags, selectedDate }: { tags: DayTag[], selectedDate
   return (
     <div className="mb-1" data-testid="focus-tags-section">
       <div className="flex items-center gap-2 mb-3">
-        <div className="w-8 h-8 rounded-full bg-primary/8 flex items-center justify-center">
-          <Crosshair className="w-4 h-4 text-primary" />
+        <div className="w-9 h-9 rounded-full bg-primary/8 dark:bg-primary/15 flex items-center justify-center">
+          <Crosshair className="w-4.5 h-4.5 text-primary" />
         </div>
-        <h3 className="font-bold text-base text-slate-800">بؤرة التركيز</h3>
+        <h3 className="font-bold text-base md:text-lg text-slate-800 dark:text-slate-100">بؤرة التركيز</h3>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -40,7 +40,7 @@ export function FocusTags({ tags, selectedDate }: { tags: DayTag[], selectedDate
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.85 }}
               layout
-              className="group flex items-center gap-1.5 bg-primary/6 text-primary border border-primary/15 px-3.5 py-1.5 rounded-full text-sm font-semibold cursor-default"
+              className="group flex items-center gap-1.5 bg-primary/6 dark:bg-primary/15 text-primary border border-primary/15 dark:border-primary/25 px-3.5 py-1.5 rounded-full text-sm md:text-base font-semibold cursor-default"
               data-testid={`focus-tag-${tag.id}`}
             >
               {tag.text}
@@ -49,7 +49,7 @@ export function FocusTags({ tags, selectedDate }: { tags: DayTag[], selectedDate
                 className="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-0.5 hover:bg-primary/15 rounded-full -mr-0.5"
                 data-testid={`delete-tag-${tag.id}`}
               >
-                <X className="w-3 h-3" />
+                <X className="w-3.5 h-3.5" />
               </button>
             </motion.div>
           ))}
@@ -61,7 +61,7 @@ export function FocusTags({ tags, selectedDate }: { tags: DayTag[], selectedDate
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={dayTags.length === 0 ? "أضف هدفاً رئيسياً لليوم..." : "أضف المزيد..."}
-          className="flex-1 min-w-[140px] bg-transparent text-sm py-1.5 text-slate-700 placeholder:text-slate-300 focus:outline-none"
+          className="flex-1 min-w-[140px] bg-transparent text-sm md:text-base py-1.5 text-slate-700 dark:text-slate-200 placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:outline-none"
           data-testid="input-focus-tag"
         />
       </div>

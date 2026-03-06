@@ -38,12 +38,12 @@ function generateSeedData(): PlannerData {
       { id: uuidv4(), date: isoDays[1], text: 'يوم رياضي' },
     ],
     events: [
-      { id: uuidv4(), date: isoToday, time: '09:00', title: 'اجتماع فريق العمل', icon: '📅' },
-      { id: uuidv4(), date: isoToday, time: '14:30', title: 'تمرين رياضي في النادي', icon: '💪' },
-      { id: uuidv4(), date: isoToday, time: '18:00', title: 'تسوق للمنزل', icon: '🛒' },
-      { id: uuidv4(), date: isoDays[1], time: '10:00', title: 'دراسة البرمجة', icon: '📚' },
-      { id: uuidv4(), date: isoDays[2], time: '11:00', title: 'لقاء مع صديق', icon: '📅' },
-      { id: uuidv4(), date: isoDays[3], time: '16:00', title: 'عشاء عائلي', icon: '🍽️' },
+      { id: uuidv4(), date: isoToday, time: '09:00', title: 'اجتماع فريق العمل' },
+      { id: uuidv4(), date: isoToday, time: '14:30', title: 'تمرين رياضي في النادي' },
+      { id: uuidv4(), date: isoToday, time: '18:00', title: 'تسوق للمنزل' },
+      { id: uuidv4(), date: isoDays[1], time: '10:00', title: 'دراسة البرمجة' },
+      { id: uuidv4(), date: isoDays[2], time: '11:00', title: 'لقاء مع صديق' },
+      { id: uuidv4(), date: isoDays[3], time: '16:00', title: 'عشاء عائلي' },
     ],
     tasks: [
       { id: uuidv4(), date: isoToday, text: 'قراءة 20 صفحة من كتاب', completed: false, isWeekly: false },

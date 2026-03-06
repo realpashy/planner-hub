@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { isSameDay, getWeekDays, formatISODate } from "@/lib/date-utils";
+import { isSameDay, formatISODate } from "@/lib/date-utils";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import { startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths, getDay, isSameWeek } from "date-fns";
 
@@ -18,33 +18,33 @@ export function MonthCalendar({ selectedDate, onSelectDate }: { selectedDate: Da
   const paddingDays = Array.from({ length: firstDayOfWeek }).map((_, i) => i);
 
   return (
-    <div className="bg-white rounded-2xl p-4 shadow-xl border border-slate-100 w-72" data-testid="month-calendar">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-xl border border-slate-100 dark:border-slate-800 w-80" data-testid="month-calendar">
+      <div className="flex items-center justify-between mb-4" dir="ltr">
         <button
           onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-          className="p-1.5 hover:bg-slate-50 rounded-lg transition-colors"
+          className="p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors"
           data-testid="button-prev-month"
         >
-          <ChevronRight className="w-4 h-4 text-slate-500" />
+          <ChevronLeft className="w-5 h-5 text-slate-500 dark:text-slate-400" />
         </button>
-        <span className="font-bold text-sm text-slate-800">
+        <span className="font-bold text-sm text-slate-800 dark:text-slate-100">
           {AR_MONTHS[currentMonth.getMonth()]} {currentMonth.getFullYear()}
         </span>
         <button
           onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-          className="p-1.5 hover:bg-slate-50 rounded-lg transition-colors"
+          className="p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors"
           data-testid="button-next-month"
         >
-          <ChevronLeft className="w-4 h-4 text-slate-500" />
+          <ChevronRight className="w-5 h-5 text-slate-500 dark:text-slate-400" />
         </button>
       </div>
 
-      <div className="grid grid-cols-7 gap-0.5 mb-1 text-center text-[10px] font-bold text-slate-400">
+      <div className="grid grid-cols-7 gap-1 mb-1 text-center text-[11px] font-bold text-slate-400 dark:text-slate-500">
         {DAY_HEADERS.map((d, i) => <div key={i} className="py-1">{d}</div>)}
       </div>
 
-      <div className="grid grid-cols-7 gap-0.5 text-center">
-        {paddingDays.map(i => <div key={`pad-${i}`} className="h-7" />)}
+      <div className="grid grid-cols-7 gap-1 text-center">
+        {paddingDays.map(i => <div key={`pad-${i}`} className="h-8" />)}
         {daysInMonth.map(date => {
           const isSelected = isSameDay(date, selectedDate);
           const isToday = isSameDay(date, new Date());
@@ -55,14 +55,14 @@ export function MonthCalendar({ selectedDate, onSelectDate }: { selectedDate: Da
               key={date.toISOString()}
               onClick={() => onSelectDate(date)}
               className={`
-                h-7 w-7 mx-auto rounded-lg text-xs font-semibold transition-all flex items-center justify-center
+                h-8 w-8 mx-auto rounded-lg text-sm font-semibold transition-all flex items-center justify-center
                 ${isSelected
                   ? 'bg-primary text-white shadow-sm'
                   : isToday
                     ? 'bg-primary/10 text-primary font-bold'
                     : isSelectedWeek
-                      ? 'bg-primary/5 text-primary/80'
-                      : 'text-slate-600 hover:bg-slate-100'}
+                      ? 'bg-primary/5 text-primary/80 dark:bg-primary/10'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}
               `}
               data-testid={`calendar-day-${formatISODate(date)}`}
             >

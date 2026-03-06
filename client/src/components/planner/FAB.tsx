@@ -28,7 +28,7 @@ export function FAB({ onAction }: { onAction: (action: string) => void }) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/20 backdrop-blur-[2px] z-30"
+              className="fixed inset-0 bg-black/20 dark:bg-black/50 backdrop-blur-[2px] z-30"
               onClick={() => setIsOpen(false)}
             />
             <motion.div
@@ -48,7 +48,7 @@ export function FAB({ onAction }: { onAction: (action: string) => void }) {
                   className="flex items-center justify-end gap-2.5"
                   data-testid={`fab-action-${act.id}`}
                 >
-                  <span className="bg-white text-slate-800 text-xs font-bold px-3 py-1.5 rounded-lg shadow-md whitespace-nowrap">
+                  <span className="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-xs font-bold px-3 py-1.5 rounded-lg shadow-md whitespace-nowrap">
                     {act.label}
                   </span>
                   <div className={`w-11 h-11 rounded-full ${act.color} text-white flex items-center justify-center shadow-lg`}>
@@ -65,7 +65,7 @@ export function FAB({ onAction }: { onAction: (action: string) => void }) {
         onClick={() => setIsOpen(!isOpen)}
         animate={{ rotate: isOpen ? 45 : 0 }}
         transition={{ duration: 0.2 }}
-        className={`relative z-40 w-13 h-13 rounded-full flex items-center justify-center shadow-lg transition-colors duration-200 ${isOpen ? 'bg-slate-800' : 'bg-primary shadow-primary/30'}`}
+        className={`relative z-40 w-13 h-13 rounded-full flex items-center justify-center shadow-lg transition-colors duration-200 ${isOpen ? 'bg-slate-800 dark:bg-slate-600' : 'bg-primary shadow-primary/30'}`}
         style={{ width: '52px', height: '52px' }}
         data-testid="button-fab"
       >
