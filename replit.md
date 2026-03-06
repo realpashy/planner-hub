@@ -8,6 +8,16 @@ Premium RTL planner web app for Arabic and Hebrew users. Fully offline using loc
 - **Backend**: Express (minimal — health endpoint only, app is offline-first)
 - **Data**: localStorage persistence via `client/src/lib/storage.ts`
 - **Routing**: wouter (`/` = Dashboard, `/planner` = Weekly Planner)
+- **Per-user isolation**: Each browser gets its own localStorage data automatically
+
+## Onboarding System
+
+- First-time visitors see the Onboarding page (template picker)
+- 5 templates available: Sports/Fitness, Productivity/Work, Study/Learning, Mental Wellness, Blank
+- Templates generate realistic Arabic data for the current week
+- Onboarding state tracked via `planner_hub_onboarded` key in localStorage
+- Existing users (with data from before onboarding was added) are auto-marked as onboarded
+- Template data generated dynamically in `client/src/lib/templates.ts`
 
 ## Design System
 
@@ -23,13 +33,15 @@ Premium RTL planner web app for Arabic and Hebrew users. Fully offline using loc
 ## Key Files
 
 - `client/src/index.css` — Design system tokens (light + dark), animations, elevation utilities
-- `client/src/lib/storage.ts` — localStorage CRUD, seed data generation
+- `client/src/lib/storage.ts` — localStorage CRUD, onboarding check
+- `client/src/lib/templates.ts` — Template definitions and data generators
 - `client/src/lib/date-utils.ts` — Arabic/Hebrew date formatting (always Latin digits)
-- `client/src/hooks/use-planner.ts` — React Query mutations for all planner operations
+- `client/src/hooks/use-planner.ts` — React Query optimistic mutations for all planner operations
 - `client/src/pages/Dashboard.tsx` — Module cards (only Weekly Planner active)
 - `client/src/pages/WeeklyPlanner.tsx` — Main planner page
+- `client/src/pages/Onboarding.tsx` — Template picker for new users
 - `client/src/components/ThemeToggle.tsx` — Dark/light mode toggle button
-- `client/src/components/planner/` — DayStrip, FocusTags, EventList, TaskList, HabitTracker, MonthCalendar, WeeklySummary, FAB
+- `client/src/components/planner/` — DayStrip, FocusTags, EventList, TaskList, HabitTracker, MonthCalendar, WeeklySummary, WeeklyGraphs, FAB, ExpandableText
 - `shared/schema.ts` — Zod schemas and TypeScript types
 
 ## Modules
@@ -43,22 +55,18 @@ Premium RTL planner web app for Arabic and Hebrew users. Fully offline using loc
 - Weekly tasks are added to the week-start date with `isWeekly: true`
 - Weekly tasks view shows ALL tasks for the week (both daily and weekly)
 - Tasks are synced: checking a task in either daily or weekly view updates the same task object
+- Mutations use optimistic updates (setQueryData) to prevent scroll-to-top issues
 
 ## Feature Details
 
-- **Events**: Show with clock icon (no emojis on events)
-- **Habits**: Have emoji auto-assignment based on name keywords (💧 water, 💪 exercise, etc.)
-- **Separator**: Visible divider between events and tasks sections
+- **Events**: Show with clock icon (no emojis on events), sky-blue CircleDot for items
+- **Habits**: Have emoji auto-assignment based on name keywords
+- **Text overflow**: ExpandableText component truncates long text with "..." click-to-expand
+- **Checkboxes**: Use onPointerDown for instant mobile response, no scroll side effects
 - **Calendar**: Navigation arrows use `dir="ltr"` for standard left/right behavior
+- **Weekly Graphs**: Bar charts for daily task completion and habit tracking at bottom of planner
 - **Layout**: max-w-7xl on desktop for wider view, bigger text/elements on both desktop and mobile
-- **DayStrip**: Centered day buttons with responsive sizing
-
-## Future-Ready Architecture
-
-- Auth can be added via server middleware + user context
-- Backend sync can replace localStorage calls in `storage.ts`
-- Cross-module automation architecture: linked entities with `sourceModule`, `linkedEntityIds`, suggestion-based model
-- Data model supports `isWeekly` flag for task linking between daily/weekly views
+- **DayStrip**: Centered day buttons, scroll only triggers on day selection change
 
 ## Dependencies
 

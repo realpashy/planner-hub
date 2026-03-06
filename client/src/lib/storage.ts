@@ -1,6 +1,4 @@
-import { v4 as uuidv4 } from "uuid";
 import type { Settings, DayTag, EventItem, TaskItem, HabitItem, NoteItem } from "@shared/schema";
-import { formatISODate, getWeekDays } from "./date-utils";
 
 export interface PlannerData {
   settings: Settings;
@@ -12,6 +10,7 @@ export interface PlannerData {
 }
 
 const STORAGE_KEY = "planner_hub_data";
+const ONBOARDED_KEY = "planner_hub_onboarded";
 
 const DEFAULT_DATA: PlannerData = {
   settings: { language: 'ar', theme: 'light' },
@@ -22,59 +21,24 @@ const DEFAULT_DATA: PlannerData = {
   notes: []
 };
 
-function generateSeedData(): PlannerData {
-  const today = new Date();
-  const weekDays = getWeekDays(today);
-  const isoToday = formatISODate(today);
-  const isoDays = weekDays.map(d => formatISODate(d));
+export function isOnboarded(): boolean {
+  if (localStorage.getItem(ONBOARDED_KEY) === "true") return true;
+  if (localStorage.getItem(STORAGE_KEY)) {
+    setOnboarded();
+    return true;
+  }
+  return false;
+}
 
-  const weekStartISO = isoDays[0];
-
-  return {
-    settings: { language: 'ar', theme: 'light' },
-    tags: [
-      { id: uuidv4(), date: isoToday, text: 'تركيز عالي' },
-      { id: uuidv4(), date: isoToday, text: 'تطوير الذات' },
-      { id: uuidv4(), date: isoDays[1], text: 'يوم رياضي' },
-    ],
-    events: [
-      { id: uuidv4(), date: isoToday, time: '09:00', title: 'اجتماع فريق العمل' },
-      { id: uuidv4(), date: isoToday, time: '14:30', title: 'تمرين رياضي في النادي' },
-      { id: uuidv4(), date: isoToday, time: '18:00', title: 'تسوق للمنزل' },
-      { id: uuidv4(), date: isoDays[1], time: '10:00', title: 'دراسة البرمجة' },
-      { id: uuidv4(), date: isoDays[2], time: '11:00', title: 'لقاء مع صديق' },
-      { id: uuidv4(), date: isoDays[3], time: '16:00', title: 'عشاء عائلي' },
-    ],
-    tasks: [
-      { id: uuidv4(), date: isoToday, text: 'قراءة 20 صفحة من كتاب', completed: false, isWeekly: false },
-      { id: uuidv4(), date: isoToday, text: 'مراجعة ميزانية الشهر', completed: true, isWeekly: false },
-      { id: uuidv4(), date: isoToday, text: 'تنظيم المكتب', completed: false, isWeekly: false },
-      { id: uuidv4(), date: isoDays[1], text: 'إرسال التقرير للمدير', completed: false, isWeekly: false },
-      { id: uuidv4(), date: isoDays[2], text: 'شراء هدية عيد الميلاد', completed: true, isWeekly: false },
-      { id: uuidv4(), date: isoDays[3], text: 'ترتيب الملابس', completed: false, isWeekly: false },
-      { id: uuidv4(), date: weekStartISO, text: 'إرسال التقرير الأسبوعي', completed: false, isWeekly: true },
-      { id: uuidv4(), date: weekStartISO, text: 'تنظيف المنزل بالكامل', completed: false, isWeekly: true },
-      { id: uuidv4(), date: weekStartISO, text: 'التسجيل في دورة جديدة', completed: true, isWeekly: true },
-    ],
-    habits: [
-      { id: uuidv4(), name: 'شرب 2 لتر ماء', completedDates: [isoToday, isoDays[1]] },
-      { id: uuidv4(), name: 'التأمل 10 دقائق', completedDates: [isoToday] },
-      { id: uuidv4(), name: 'مشي 30 دقيقة', completedDates: [isoDays[0], isoDays[1], isoDays[2]] },
-    ],
-    notes: [
-      { id: uuidv4(), date: isoToday, content: 'اليوم كان مثمراً جداً. أنجزت معظم المهام المخطط لها وشعرت بالإنتاجية.' },
-      { id: uuidv4(), date: isoDays[1], content: 'يجب التركيز أكثر على المشاريع الجانبية هذا الأسبوع.' },
-    ]
-  };
+export function setOnboarded(): void {
+  localStorage.setItem(ONBOARDED_KEY, "true");
 }
 
 export function getPlannerData(): PlannerData {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      const seed = generateSeedData();
-      savePlannerData(seed);
-      return seed;
+      return DEFAULT_DATA;
     }
     return JSON.parse(raw);
   } catch (e) {
@@ -89,4 +53,5 @@ export function savePlannerData(data: PlannerData): void {
 
 export function clearPlannerData(): void {
   localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(ONBOARDED_KEY);
 }
