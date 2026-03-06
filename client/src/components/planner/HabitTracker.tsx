@@ -16,7 +16,7 @@ function getHabitEmoji(name: string): string | undefined {
   if (name.includes('صلا') || name.includes('دعاء')) return '🤲';
   if (name.includes('فاكه') || name.includes('خضار') || name.includes('أكل')) return '🥗';
   if (name.includes('دراس') || name.includes('تعلم') || name.includes('لغة')) return '📖';
-  if (name.includes('كتاب') || name.includes('تدوين')) return '✍️';
+  if (name.includes('تدوين')) return '✍️';
   return undefined;
 }
 
@@ -68,17 +68,7 @@ export function HabitTracker({ habits, weekStart }: { habits: HabitItem[], weekS
         </div>
       )}
 
-      <div className="space-y-1">
-        <div className="grid grid-cols-[1fr_repeat(7,minmax(0,1fr))_28px] gap-1 items-center mb-2">
-          <div className="text-[11px] font-bold text-slate-400 dark:text-slate-500 pr-1">العادة</div>
-          {weekDays.map(date => (
-            <div key={date.toISOString()} className="text-[10px] md:text-[11px] font-bold text-slate-400 dark:text-slate-500 text-center leading-tight">
-              {getDayShortName(date)}
-            </div>
-          ))}
-          <div></div>
-        </div>
-
+      <div className="space-y-3">
         {habits.map(habit => {
           const weekISODates = weekDays.map(d => formatISODate(d));
           const completedThisWeek = weekISODates.filter(iso => habit.completedDates.includes(iso)).length;
@@ -89,46 +79,55 @@ export function HabitTracker({ habits, weekStart }: { habits: HabitItem[], weekS
             <motion.div
               key={habit.id}
               layout
-              className={`group grid grid-cols-[1fr_repeat(7,minmax(0,1fr))_28px] gap-1 items-center py-1.5 px-1 rounded-xl transition-colors duration-300 ${isPerfect ? 'bg-violet-50/80 dark:bg-violet-500/10' : 'hover:bg-slate-50/50 dark:hover:bg-slate-800/50'}`}
+              className={`group rounded-xl p-3 transition-colors duration-300 ${isPerfect ? 'bg-violet-50/80 dark:bg-violet-500/10 border border-violet-100 dark:border-violet-500/20' : 'bg-slate-50/50 dark:bg-slate-800/30 border border-slate-100/60 dark:border-slate-800'}`}
               data-testid={`habit-row-${habit.id}`}
             >
-              <div className="flex items-center gap-1 min-w-0 pr-1">
-                {emoji && <span className="text-sm flex-shrink-0">{emoji}</span>}
-                {isPerfect && !emoji && <Sparkles className="w-3.5 h-3.5 text-violet-500 flex-shrink-0" />}
-                <span className={`text-sm font-semibold truncate ${isPerfect ? 'text-violet-700 dark:text-violet-300' : 'text-slate-700 dark:text-slate-200'}`}>{habit.name}</span>
+              <div className="flex items-center justify-between mb-2.5">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  {emoji && <span className="text-base flex-shrink-0">{emoji}</span>}
+                  {isPerfect && !emoji && <Sparkles className="w-4 h-4 text-violet-500 flex-shrink-0" />}
+                  <span className={`text-sm font-bold ${isPerfect ? 'text-violet-700 dark:text-violet-300' : 'text-slate-700 dark:text-slate-200'}`}>{habit.name}</span>
+                  <span className="text-[10px] font-semibold text-slate-300 dark:text-slate-600 mr-auto">{completedThisWeek}/7</span>
+                </div>
+                <button
+                  onClick={() => setDeleteId(habit.id)}
+                  className="w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100 text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all flex-shrink-0"
+                  data-testid={`button-delete-habit-${habit.id}`}
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
               </div>
-              {weekDays.map(date => {
-                const iso = formatISODate(date);
-                const isDone = habit.completedDates.includes(iso);
-                return (
-                  <div key={iso} className="flex justify-center">
-                    <button
-                      onClick={() => toggleHabit.mutate({ id: habit.id, dateISO: iso })}
-                      className={`
-                        w-6 h-6 md:w-7 md:h-7 rounded-md flex items-center justify-center transition-all duration-200
-                        ${isDone
-                          ? 'bg-violet-500 text-white shadow-sm'
-                          : 'bg-slate-100 dark:bg-slate-800 text-transparent hover:bg-slate-200 dark:hover:bg-slate-700'}
-                      `}
-                      data-testid={`habit-checkbox-${habit.id}-${iso}`}
-                    >
-                      <Check className="w-3 h-3 md:w-3.5 md:h-3.5" />
-                    </button>
-                  </div>
-                );
-              })}
-              <button
-                onClick={() => setDeleteId(habit.id)}
-                className="w-7 h-7 flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100 text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all"
-                data-testid={`button-delete-habit-${habit.id}`}
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
+              <div className="flex gap-1.5">
+                {weekDays.map(date => {
+                  const iso = formatISODate(date);
+                  const isDone = habit.completedDates.includes(iso);
+                  return (
+                    <div key={iso} className="flex-1 flex flex-col items-center gap-1">
+                      <span className="text-[9px] md:text-[10px] font-bold text-slate-400 dark:text-slate-500 leading-none">
+                        {getDayShortName(date)}
+                      </span>
+                      <button
+                        onClick={() => toggleHabit.mutate({ id: habit.id, dateISO: iso })}
+                        style={{ touchAction: 'manipulation' }}
+                        className={`
+                          w-full aspect-square max-w-[32px] rounded-lg flex items-center justify-center transition-all duration-200
+                          ${isDone
+                            ? 'bg-violet-500 text-white shadow-sm'
+                            : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-transparent hover:bg-slate-100 dark:hover:bg-slate-700'}
+                        `}
+                        data-testid={`habit-checkbox-${habit.id}-${iso}`}
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
             </motion.div>
           );
         })}
 
-        <div className="flex items-center gap-2 pt-2 mt-2 border-t border-slate-100/80 dark:border-slate-800">
+        <div className="flex items-center gap-2 pt-2 mt-1 border-t border-slate-100/80 dark:border-slate-800">
           <input
             type="text"
             value={newHabitName}

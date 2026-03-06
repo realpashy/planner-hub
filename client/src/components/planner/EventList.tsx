@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { EventItem } from "@shared/schema";
 import { formatISODate } from "@/lib/date-utils";
 import { useCreateEvent, useDeleteEvent } from "@/hooks/use-planner";
-import { Clock, Plus, Trash2 } from "lucide-react";
+import { Clock, Plus, Trash2, CircleDot } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ResponsiveConfirm } from "../ResponsiveConfirm";
 
@@ -69,8 +69,8 @@ export function EventList({ events, selectedDate }: { events: EventItem[], selec
               className="group flex items-center gap-3 bg-slate-50/80 dark:bg-slate-800/50 rounded-xl p-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
               data-testid={`event-item-${event.id}`}
             >
-              <div className="flex-shrink-0 w-9 h-9 rounded-full bg-amber-50 dark:bg-amber-500/15 flex items-center justify-center">
-                <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-sky-50 dark:bg-sky-500/15 flex items-center justify-center">
+                <CircleDot className="w-3.5 h-3.5 text-sky-500 dark:text-sky-400" />
               </div>
               <div className="flex-1 min-w-0">
                 <div

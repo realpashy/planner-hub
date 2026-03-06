@@ -17,8 +17,9 @@ function AnimatedCheckbox({ checked, onChange, taskId }: { checked: boolean, onC
   return (
     <button
       onClick={onChange}
+      style={{ touchAction: 'manipulation' }}
       className={`
-        flex-shrink-0 w-[24px] h-[24px] rounded-md border-2 flex items-center justify-center transition-all duration-200
+        flex-shrink-0 w-[28px] h-[28px] rounded-md border-2 flex items-center justify-center transition-all duration-200
         ${checked
           ? 'bg-emerald-500 border-emerald-500 shadow-sm shadow-emerald-500/25'
           : 'border-slate-300 dark:border-slate-600 hover:border-primary bg-white dark:bg-slate-900'}

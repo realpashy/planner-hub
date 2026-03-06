@@ -10,6 +10,7 @@ import { HabitTracker } from "@/components/planner/HabitTracker";
 import { MonthCalendar } from "@/components/planner/MonthCalendar";
 import { WeeklySummary } from "@/components/planner/WeeklySummary";
 import { FAB } from "@/components/planner/FAB";
+import { WeeklyGraphs } from "@/components/planner/WeeklyGraphs";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ChevronRight, ChevronLeft, ArrowRight, Calendar as CalendarIcon, FileText } from "lucide-react";
 import { motion } from "framer-motion";
@@ -154,6 +155,10 @@ export default function WeeklyPlanner() {
             <TaskList tasks={data.tasks} selectedDate={weekStart} isWeeklyMode={true} />
             <HabitTracker habits={data.habits} weekStart={weekStart} />
           </div>
+        </div>
+
+        <div className="mt-6">
+          <WeeklyGraphs tasks={data.tasks} habits={data.habits} events={data.events} selectedDate={selectedDate} />
         </div>
       </main>
 

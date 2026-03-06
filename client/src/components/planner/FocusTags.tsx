@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useCreateTag, useDeleteTag } from "@/hooks/use-planner";
 import { formatISODate } from "@/lib/date-utils";
 import type { DayTag } from "@shared/schema";
-import { X, Crosshair } from "lucide-react";
+import { X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function FocusTags({ tags, selectedDate }: { tags: DayTag[], selectedDate: Date }) {
@@ -25,10 +25,8 @@ export function FocusTags({ tags, selectedDate }: { tags: DayTag[], selectedDate
   return (
     <div className="mb-1" data-testid="focus-tags-section">
       <div className="flex items-center gap-2 mb-3">
-        <div className="w-9 h-9 rounded-full bg-primary/8 dark:bg-primary/15 flex items-center justify-center">
-          <Crosshair className="w-4.5 h-4.5 text-primary" />
-        </div>
-        <h3 className="font-bold text-base md:text-lg text-slate-800 dark:text-slate-100">بؤرة التركيز</h3>
+        <span className="text-lg">🔥</span>
+        <h3 className="font-bold text-base md:text-lg text-slate-800 dark:text-slate-100">على ماذا تريد التركيز اليوم؟</h3>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
