@@ -1,0 +1,77 @@
+Add these product and architecture refinements to the current Weekly Planner and future module architecture.
+
+1) HEADER BEHAVIOR
+Do not use a large sticky header.
+The current sticky header takes too much vertical space and hurts usability.
+
+Preferred behavior:
+- the main top header should scroll away normally
+- if a sticky effect is kept, it must become a much smaller compact header on scroll
+- compact sticky version should only preserve essential context, such as week title and maybe minimal navigation
+- avoid bulky sticky UI
+
+2) INTERCONNECTED DATA / AUTOMATIONS ARCHITECTURE
+Very important: this product must be architected as a connected planning system, not isolated widgets.
+
+Build the current Weekly Planner logic so related areas stay synchronized.
+
+Current required behavior:
+- if a task is checked in a daily area, any linked weekly task should update too
+- if a linked task is deleted from a daily area, related weekly representation should also update correctly
+- if edited in one related place, changes should reflect in the other linked place where appropriate
+
+Future-ready requirement:
+Design the data layer so future modules can share and suggest planner items through a common automation architecture.
+
+Examples for future modules:
+- financial planner: if there is an upcoming payment, suggest adding it to planner as task/event/reminder
+- travel planner: upcoming departure/check-in should suggest planner events/reminders
+- meal planner: grocery planning can suggest shopping tasks
+- goals/habits modules: related habits can be suggested into weekly planner
+
+3) AUTOMATION RULES
+Do not silently create clutter.
+Automations should primarily work as smart suggestions with user acceptance.
+
+Behavior model:
+- system detects a useful related item
+- system shows a suggestion card or prompt
+- user can accept or dismiss
+- if accepted, the new planner item is created and linked to its source
+- linked records stay synchronized afterward
+
+4) FUTURE-READY SHARED ENTITY MODEL
+Prepare the codebase for shared linked entities between modules.
+
+Use a future-ready structure concept such as:
+- id
+- type
+- title
+- sourceModule
+- sourceId
+- linkedEntityIds
+- status
+- metadata
+- suggestedByAutomation
+
+This does not need full backend implementation now, but the architecture should be ready so future modules do not become isolated silos.
+
+5) WEEKLY PLANNER LINKED DATA BEHAVIOR
+Refine the weekly planner so it already follows this principle:
+- weekly tasks and daily tasks can be linked
+- updates propagate properly
+- deletion behavior is predictable
+- the UI should clearly preserve consistency
+
+6) UX FOR AUTOMATIONS
+When future suggestions are shown, the UI should feel premium and calm:
+- suggestion card
+- accept / dismiss actions
+- subtle visual styling
+- no noisy alerts
+- no forced automation
+
+IMPORTANT
+Keep current implementation working.
+Do not over-engineer a full automation engine now.
+Instead, refactor the architecture so future cross-module automations and linked records can be added cleanly.

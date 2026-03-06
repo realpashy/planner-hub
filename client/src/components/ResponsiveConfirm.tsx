@@ -1,7 +1,5 @@
-import React from "react";
 import { Drawer } from "vaul";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogAction, DialogCancel } from "@/components/ui/dialog-custom";
 import { X, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -15,7 +13,6 @@ interface ResponsiveConfirmProps {
   cancelText?: string;
 }
 
-// Minimal custom dialog for desktop since we reject generic ones without polish
 export function ResponsiveConfirm({
   isOpen, onClose, onConfirm, title, description, confirmText = "حذف", cancelText = "إلغاء"
 }: ResponsiveConfirmProps) {
@@ -37,15 +34,17 @@ export function ResponsiveConfirm({
                 <Drawer.Description className="text-slate-500 mb-6">{description}</Drawer.Description>
               </div>
               <div className="flex gap-3 px-4">
-                <button 
+                <button
                   onClick={() => { onConfirm(); onClose(); }}
                   className="flex-1 bg-red-500 text-white font-semibold py-3.5 rounded-xl hover:bg-red-600 transition-colors"
+                  data-testid="button-confirm-delete"
                 >
                   {confirmText}
                 </button>
-                <button 
+                <button
                   onClick={onClose}
                   className="flex-1 bg-slate-100 text-slate-700 font-semibold py-3.5 rounded-xl hover:bg-slate-200 transition-colors"
+                  data-testid="button-cancel-delete"
                 >
                   {cancelText}
                 </button>
@@ -61,20 +60,20 @@ export function ResponsiveConfirm({
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             onClick={onClose}
           />
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl relative z-10"
           >
-            <button onClick={onClose} className="absolute top-4 left-4 text-slate-400 hover:bg-slate-100 p-2 rounded-full transition-colors">
+            <button onClick={onClose} className="absolute top-4 left-4 text-slate-400 hover:bg-slate-100 p-2 rounded-full transition-colors" data-testid="button-close-dialog">
               <X className="w-5 h-5" />
             </button>
             <div className="flex items-start gap-4">
@@ -82,18 +81,20 @@ export function ResponsiveConfirm({
                 <AlertTriangle className="w-6 h-6" />
               </div>
               <div className="pt-1">
-                <h3 className="text-xl font-bold text-slate-900 mb-2">{title}</h3>
+                <h3 className="text-xl font-bold text-slate-900 mb-2" data-testid="text-confirm-title">{title}</h3>
                 <p className="text-slate-500 mb-6">{description}</p>
                 <div className="flex justify-end gap-3">
-                  <button 
+                  <button
                     onClick={onClose}
                     className="px-5 py-2.5 rounded-xl font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
+                    data-testid="button-cancel-delete"
                   >
                     {cancelText}
                   </button>
-                  <button 
+                  <button
                     onClick={() => { onConfirm(); onClose(); }}
-                    className="px-5 py-2.5 rounded-xl font-semibold bg-red-500 text-white hover:bg-red-600 shadow-lg shadow-red-500/20 transition-all hover:-translate-y-0.5"
+                    className="px-5 py-2.5 rounded-xl font-semibold bg-red-500 text-white hover:bg-red-600 shadow-lg shadow-red-500/20 transition-all"
+                    data-testid="button-confirm-delete"
                   >
                     {confirmText}
                   </button>

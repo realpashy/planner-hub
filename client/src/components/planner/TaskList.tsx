@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
-import { TaskItem } from "@shared/schema";
-import { formatISODate } from "@/lib/date-utils";
+import { useState, useEffect, useCallback } from "react";
+import type { TaskItem } from "@shared/schema";
+import { formatISODate, getWeekDays } from "@/lib/date-utils";
 import { useUpdateTask, useCreateTask, useDeleteTask } from "@/hooks/use-planner";
-import { CheckSquare, Square, Plus, Trash2, ListTodo } from "lucide-react";
+import { Plus, Trash2, ListTodo, Check, Trophy } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import { ResponsiveConfirm } from "../ResponsiveConfirm";
@@ -13,10 +13,44 @@ interface TaskListProps {
   isWeeklyMode?: boolean;
 }
 
+function AnimatedCheckbox({ checked, onChange, taskId }: { checked: boolean, onChange: () => void, taskId: string }) {
+  return (
+    <button
+      onClick={onChange}
+      className={`
+        flex-shrink-0 w-[22px] h-[22px] rounded-md border-2 flex items-center justify-center transition-all duration-200
+        ${checked
+          ? 'bg-emerald-500 border-emerald-500 shadow-sm shadow-emerald-500/25'
+          : 'border-slate-300 hover:border-primary bg-white'}
+      `}
+      data-testid={`button-checkbox-${taskId}`}
+    >
+      {checked && (
+        <svg viewBox="0 0 12 12" className="w-3 h-3 animate-check-pop">
+          <path
+            d="M2 6L5 9L10 3"
+            fill="none"
+            stroke="white"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="animate-check-draw"
+          />
+        </svg>
+      )}
+    </button>
+  );
+}
+
 export function TaskList({ tasks, selectedDate, isWeeklyMode = false }: TaskListProps) {
   const dateISO = formatISODate(selectedDate);
-  const relevantTasks = tasks.filter(t => isWeeklyMode ? t.isWeekly : (t.date === dateISO && !t.isWeekly));
-  
+  const weekDays = getWeekDays(selectedDate);
+  const weekStartISO = formatISODate(weekDays[0]);
+
+  const relevantTasks = isWeeklyMode
+    ? tasks.filter(t => t.isWeekly)
+    : tasks.filter(t => t.date === dateISO && !t.isWeekly);
+
   const updateTask = useUpdateTask();
   const createTask = useCreateTask();
   const deleteTask = useDeleteTask();
@@ -29,59 +63,92 @@ export function TaskList({ tasks, selectedDate, isWeeklyMode = false }: TaskList
   const progress = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
   const allCompleted = totalCount > 0 && completedCount === totalCount;
 
-  // Track previous state to trigger confetti only once per completion
   const [prevAllCompleted, setPrevAllCompleted] = useState(allCompleted);
+
+  const triggerCelebration = useCallback(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) return;
+    confetti({
+      particleCount: 80,
+      spread: 60,
+      origin: { y: 0.7 },
+      colors: ['#22C55E', '#4F46E5', '#F59E0B'],
+      disableForReducedMotion: true,
+    });
+  }, []);
 
   useEffect(() => {
     if (allCompleted && !prevAllCompleted && totalCount > 0) {
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#22C55E', '#4F46E5', '#F59E0B']
-      });
+      triggerCelebration();
     }
     setPrevAllCompleted(allCompleted);
-  }, [allCompleted, prevAllCompleted, totalCount]);
+  }, [allCompleted, prevAllCompleted, totalCount, triggerCelebration]);
 
   const handleAdd = () => {
     if (newTaskText.trim()) {
       createTask.mutate({
-        date: dateISO,
+        date: isWeeklyMode ? weekStartISO : dateISO,
         text: newTaskText.trim(),
         completed: false,
-        isWeekly: isWeeklyMode
+        isWeekly: isWeeklyMode,
       });
       setNewTaskText("");
     }
   };
 
   return (
-    <div className={`mb-8 p-5 rounded-3xl transition-colors duration-500 ${allCompleted && !isWeeklyMode ? 'bg-success/5 border border-success/20' : 'bg-white border border-slate-100 card-shadow'}`}>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2 text-slate-700">
-          <ListTodo className={`w-5 h-5 ${isWeeklyMode ? 'text-primary' : 'text-success'}`} />
-          <h3 className="font-bold text-lg">{isWeeklyMode ? 'مهام الأسبوع' : 'مهام اليوم'}</h3>
+    <div
+      className={`
+        rounded-2xl transition-all duration-500
+        ${isWeeklyMode
+          ? 'bg-white border border-slate-100 shadow-sm p-4'
+          : allCompleted
+            ? 'animate-celebration-glow'
+            : ''
+        }
+      `}
+      data-testid={isWeeklyMode ? "weekly-tasks" : "daily-tasks"}
+    >
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isWeeklyMode ? 'bg-primary/8' : 'bg-emerald-50'}`}>
+            <ListTodo className={`w-4 h-4 ${isWeeklyMode ? 'text-primary' : 'text-emerald-600'}`} />
+          </div>
+          <h3 className="font-bold text-base text-slate-800">{isWeeklyMode ? 'مهام الأسبوع' : 'مهام اليوم'}</h3>
         </div>
         {totalCount > 0 && (
-          <span className={`text-sm font-bold px-2.5 py-1 rounded-full ${allCompleted ? 'bg-success text-white' : 'bg-slate-100 text-slate-500'}`}>
-            {progress}%
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-slate-400">{completedCount}/{totalCount}</span>
+            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${allCompleted ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-500'}`}>
+              {progress}%
+            </span>
+          </div>
         )}
       </div>
 
       {totalCount > 0 && (
-        <div className="w-full bg-slate-100 h-1.5 rounded-full mb-5 overflow-hidden">
-          <motion.div 
+        <div className="w-full bg-slate-100 h-1 rounded-full mb-3 overflow-hidden">
+          <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.5, ease: "easeOut" }}
-            className={`h-full rounded-full ${allCompleted ? 'bg-success' : 'bg-primary'}`} 
+            className={`h-full rounded-full transition-colors duration-300 ${allCompleted ? 'bg-emerald-500' : 'bg-primary'}`}
           />
         </div>
       )}
 
-      <div className="space-y-2">
+      {allCompleted && !isWeeklyMode && totalCount > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -5 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-2 bg-emerald-50 text-emerald-700 text-sm font-bold px-3 py-2 rounded-xl mb-3"
+        >
+          <Trophy className="w-4 h-4" />
+          <span>أحسنت! اكتمل اليوم</span>
+        </motion.div>
+      )}
+
+      <div className="space-y-0.5">
         <AnimatePresence>
           {relevantTasks.map(task => (
             <motion.div
@@ -89,41 +156,43 @@ export function TaskList({ tasks, selectedDate, isWeeklyMode = false }: TaskList
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="group flex items-start gap-3 py-2"
+              className="group flex items-center gap-3 py-2 px-1 rounded-lg hover:bg-slate-50/50 transition-colors"
+              data-testid={`task-item-${task.id}`}
             >
-              <button 
-                onClick={() => updateTask.mutate({ id: task.id, completed: !task.completed })}
-                className={`mt-0.5 flex-shrink-0 transition-colors ${task.completed ? 'text-success' : 'text-slate-300 hover:text-primary'}`}
-              >
-                {task.completed ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5" />}
-              </button>
-              <span className={`flex-1 text-base transition-all duration-300 ${task.completed ? 'text-slate-400 line-through' : 'text-slate-700 font-medium'}`}>
+              <AnimatedCheckbox
+                checked={task.completed}
+                onChange={() => updateTask.mutate({ id: task.id, completed: !task.completed })}
+                taskId={task.id}
+              />
+              <span className={`flex-1 text-sm transition-all duration-300 ${task.completed ? 'text-slate-400 line-through opacity-60' : 'text-slate-700 font-medium'}`}>
                 {task.text}
               </span>
-              <button 
+              <button
                 onClick={() => setDeleteId(task.id)}
-                className="opacity-0 group-hover:opacity-100 p-1.5 text-red-400 hover:bg-red-50 rounded-lg transition-all"
+                className="opacity-0 group-hover:opacity-100 focus:opacity-100 p-1 text-red-400 hover:bg-red-50 rounded-lg transition-all"
+                data-testid={`button-delete-task-${task.id}`}
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-3.5 h-3.5" />
               </button>
             </motion.div>
           ))}
         </AnimatePresence>
 
-        <div className="flex items-center gap-3 pt-3 mt-3 border-t border-slate-100/50">
-          <div className="p-1 text-slate-300"><Plus className="w-4 h-4" /></div>
-          <input 
+        <div className="flex items-center gap-3 pt-2 mt-1 border-t border-slate-100/80">
+          <div className="p-0.5 text-slate-300"><Plus className="w-4 h-4" /></div>
+          <input
             type="text"
             value={newTaskText}
             onChange={(e) => setNewTaskText(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-            placeholder={isWeeklyMode ? "أضف مهمة أسبوعية..." : "أضف مهمة جديدة..."}
-            className="flex-1 bg-transparent border-none focus:outline-none text-sm font-medium text-slate-700 placeholder:text-slate-400"
+            placeholder={isWeeklyMode ? "أضف مهمة أسبوعية..." : "أضف مهمة..."}
+            className="flex-1 bg-transparent border-none focus:outline-none text-sm text-slate-700 placeholder:text-slate-300"
+            data-testid={isWeeklyMode ? "input-weekly-task" : "input-daily-task"}
           />
         </div>
       </div>
 
-      <ResponsiveConfirm 
+      <ResponsiveConfirm
         isOpen={!!deleteId}
         onClose={() => setDeleteId(null)}
         onConfirm={() => deleteId && deleteTask.mutate(deleteId)}
