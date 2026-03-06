@@ -13,14 +13,17 @@ interface DayStripProps {
 export function DayStrip({ days, selectedDate, onSelect, tasks = [] }: DayStripProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const selectedKey = selectedDate.toISOString();
   useEffect(() => {
     if (scrollRef.current) {
-      const selectedEl = scrollRef.current.querySelector('[data-selected="true"]');
+      const selectedEl = scrollRef.current.querySelector('[data-selected="true"]') as HTMLElement;
       if (selectedEl) {
-        selectedEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        const container = scrollRef.current;
+        const scrollLeft = selectedEl.offsetLeft - container.offsetWidth / 2 + selectedEl.offsetWidth / 2;
+        container.scrollTo({ left: scrollLeft, behavior: 'smooth' });
       }
     }
-  }, [selectedDate, days]);
+  }, [selectedKey]);
 
   function getDayProgress(date: Date): { completed: number; total: number } {
     const iso = formatISODate(date);
