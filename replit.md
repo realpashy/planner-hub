@@ -70,6 +70,9 @@ Premium RTL planner web app for Arabic and Hebrew users. Fully offline using loc
 - **Layout**: max-w-7xl on desktop for wider view, bigger text/elements on both desktop and mobile
 - **DayStrip**: Centered day buttons, scroll only triggers on day selection change
 - **Task Deadlines**: Optional `deadline` (date) and `deadlineTime` (time) fields. Add task dialog has quick-date buttons (today/tomorrow/next week) + date picker + optional time toggle. Tasks show live countdown badges when deadlineTime is set (1s interval updates). Status badges: done (green), on-time (blue), late (red), upcoming (amber).
+- **Task Countdown Timer**: Optional `countdownEnd` (unix timestamp ms). User picks a duration (5min, 15min, 30min, 1h, 2h, 3h or custom hours:minutes). Starts counting down immediately on task creation. Shows violet animated badge with live countdown. Status: active (violet), expired (red), done (green).
+- **Timing Modes**: Add task dialog has two exclusive timing options: "موعد نهائي" (deadline with date+time) OR "عداد تنازلي" (countdown timer with duration). Only one can be active at a time.
+- **Date/Time Inputs**: Styled with colored backgrounds (primary for date, amber for time), white icons, and invisible native picker indicators that trigger on click.
 
 ## Dependencies
 

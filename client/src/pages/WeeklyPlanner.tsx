@@ -93,10 +93,6 @@ export default function WeeklyPlanner() {
           <WeeklySummary tasks={data.tasks} habits={data.habits} events={data.events} selectedDate={selectedDate} />
         </div>
 
-        <div className="mb-5 md:mb-6">
-          <GanttTimeline events={data.events} selectedDate={selectedDate} onScrollToEvents={scrollToEvents} />
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 md:gap-6">
           <div className="lg:col-span-8">
             <motion.div
@@ -168,7 +164,11 @@ export default function WeeklyPlanner() {
           </div>
         </div>
 
-        <div className="mt-6">
+        <div className="mt-5 md:mt-6">
+          <GanttTimeline events={data.events} selectedDate={selectedDate} onScrollToEvents={scrollToEvents} />
+        </div>
+
+        <div className="mt-5 md:mt-6">
           <WeeklyGraphs tasks={data.tasks} habits={data.habits} events={data.events} selectedDate={selectedDate} />
         </div>
       </main>

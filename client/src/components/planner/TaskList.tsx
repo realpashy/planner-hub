@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import type { TaskItem } from "@shared/schema";
 import { formatISODate, getWeekDays } from "@/lib/date-utils";
 import { useUpdateTask, useCreateTask, useDeleteTask } from "@/hooks/use-planner";
-import { Plus, Trash2, ListTodo, Check, Trophy, Clock, X, Timer, CalendarDays } from "lucide-react";
+import { Plus, Trash2, ListTodo, Check, Trophy, Clock, X, Timer, CalendarDays, Hourglass } from "lucide-react";
 import { ExpandableText } from "./ExpandableText";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
@@ -42,15 +42,26 @@ function AnimatedCheckbox({ checked, onChange, taskId }: { checked: boolean, onC
   );
 }
 
-function useCountdown(deadline?: string, deadlineTime?: string): string | null {
+function useCountdown(deadline?: string, deadlineTime?: string, countdownEnd?: number): string | null {
   const [now, setNow] = useState(Date.now());
   const hasTime = !!deadlineTime;
+  const hasCountdown = !!countdownEnd;
 
   useEffect(() => {
-    if (!deadline || !hasTime) return;
+    if ((!deadline || !hasTime) && !hasCountdown) return;
     const interval = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(interval);
-  }, [deadline, hasTime]);
+  }, [deadline, hasTime, hasCountdown]);
+
+  if (countdownEnd) {
+    const diff = countdownEnd - now;
+    if (diff <= 0) return null;
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    if (hours > 0) return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    return `${minutes}:${String(seconds).padStart(2, '0')}`;
+  }
 
   if (!deadline) return null;
 
@@ -108,6 +119,21 @@ function getDeadlineStatus(deadline: string, deadlineTime?: string, completed?: 
   return { label: `${daysLeft} يوم`, color: "text-blue-500 bg-blue-50 dark:bg-blue-500/15 border-blue-200 dark:border-blue-500/25", status: 'ontime' };
 }
 
+function getCountdownStatus(countdownEnd: number, completed?: boolean): { label: string; color: string; status: 'done' | 'active' | 'expired' } {
+  if (completed) {
+    return { label: "تم الإنجاز", color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-500/15 border-emerald-200 dark:border-emerald-500/25", status: 'done' };
+  }
+  const diff = countdownEnd - Date.now();
+  if (diff <= 0) {
+    return { label: "انتهى الوقت!", color: "text-red-500 bg-red-50 dark:bg-red-500/15 border-red-200 dark:border-red-500/25", status: 'expired' };
+  }
+  const minutes = Math.floor(diff / (1000 * 60));
+  if (minutes < 5) {
+    return { label: "وقت ضيق!", color: "text-red-500 bg-red-50 dark:bg-red-500/15 border-red-200 dark:border-red-500/25", status: 'active' };
+  }
+  return { label: "جارٍ", color: "text-violet-600 bg-violet-50 dark:bg-violet-500/15 border-violet-200 dark:border-violet-500/25", status: 'active' };
+}
+
 function QuickDateButton({ label, isSelected, onClick, testId }: { label: string; isSelected: boolean; onClick: () => void; testId: string }) {
   return (
     <button
@@ -125,10 +151,29 @@ function QuickDateButton({ label, isSelected, onClick, testId }: { label: string
   );
 }
 
+function DurationButton({ label, minutes, isSelected, onClick, testId }: { label: string; minutes: number; isSelected: boolean; onClick: () => void; testId: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+        isSelected
+          ? 'bg-violet-500 text-white shadow-sm'
+          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+      }`}
+      data-testid={testId}
+    >
+      {label}
+    </button>
+  );
+}
+
+type TimingMode = 'none' | 'deadline' | 'countdown';
+
 interface AddTaskDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (text: string, deadline?: string, deadlineTime?: string) => void;
+  onSubmit: (text: string, deadline?: string, deadlineTime?: string, countdownEnd?: number) => void;
   initialText: string;
   isWeeklyMode: boolean;
   defaultDate: string;
@@ -136,24 +181,30 @@ interface AddTaskDialogProps {
 
 function AddTaskContent({ onSubmit, onClose, initialText, isWeeklyMode, defaultDate }: Omit<AddTaskDialogProps, 'isOpen'>) {
   const [text, setText] = useState(initialText);
-  const [hasDeadline, setHasDeadline] = useState(false);
+  const [timingMode, setTimingMode] = useState<TimingMode>('none');
   const [deadlineDate, setDeadlineDate] = useState(defaultDate);
   const [hasTime, setHasTime] = useState(false);
   const [deadlineTime, setDeadlineTime] = useState(() => {
     const now = new Date();
     return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
   });
+  const [countdownMinutes, setCountdownMinutes] = useState(30);
+  const [customHours, setCustomHours] = useState(0);
+  const [customMins, setCustomMins] = useState(30);
 
   useEffect(() => { setText(initialText); }, [initialText]);
   useEffect(() => { setDeadlineDate(defaultDate); }, [defaultDate]);
 
   const handleSubmit = () => {
     if (!text.trim()) return;
-    onSubmit(
-      text.trim(),
-      hasDeadline ? deadlineDate : undefined,
-      hasDeadline && hasTime ? deadlineTime : undefined
-    );
+    if (timingMode === 'deadline') {
+      onSubmit(text.trim(), deadlineDate, hasTime ? deadlineTime : undefined, undefined);
+    } else if (timingMode === 'countdown') {
+      const endTime = Date.now() + countdownMinutes * 60 * 1000;
+      onSubmit(text.trim(), undefined, undefined, endTime);
+    } else {
+      onSubmit(text.trim(), undefined, undefined, undefined);
+    }
   };
 
   const today = formatISODate(new Date());
@@ -163,6 +214,15 @@ function AddTaskContent({ onSubmit, onClose, initialText, isWeeklyMode, defaultD
   const nextWeek = new Date();
   nextWeek.setDate(nextWeek.getDate() + 7);
   const nextWeekISO = formatISODate(nextWeek);
+
+  const presetDurations = [
+    { label: "5 دقائق", minutes: 5 },
+    { label: "15 دقيقة", minutes: 15 },
+    { label: "30 دقيقة", minutes: 30 },
+    { label: "1 ساعة", minutes: 60 },
+    { label: "2 ساعة", minutes: 120 },
+    { label: "3 ساعات", minutes: 180 },
+  ];
 
   return (
     <div className="space-y-4">
@@ -182,35 +242,64 @@ function AddTaskContent({ onSubmit, onClose, initialText, isWeeklyMode, defaultD
         />
       </div>
 
-      <div
-        onPointerDown={(e) => { e.preventDefault(); setHasDeadline(!hasDeadline); }}
-        className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer select-none transition-all duration-200 ${
-          hasDeadline
-            ? 'border-primary/30 bg-primary/5 dark:bg-primary/10'
-            : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-600'
-        }`}
-        style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
-        data-testid="toggle-deadline"
-      >
-        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-          hasDeadline ? 'bg-primary/15 text-primary' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
-        }`}>
-          <Timer className="w-4 h-4" />
+      <div className="space-y-2">
+        <div
+          onPointerDown={(e) => { e.preventDefault(); setTimingMode(timingMode === 'deadline' ? 'none' : 'deadline'); }}
+          className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer select-none transition-all duration-200 ${
+            timingMode === 'deadline'
+              ? 'border-primary/30 bg-primary/5 dark:bg-primary/10'
+              : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-600'
+          }`}
+          style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+          data-testid="toggle-deadline"
+        >
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+            timingMode === 'deadline' ? 'bg-primary/15 text-primary' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
+          }`}>
+            <Timer className="w-4 h-4" />
+          </div>
+          <div className="flex-1">
+            <span className={`text-sm font-bold ${timingMode === 'deadline' ? 'text-primary' : 'text-slate-600 dark:text-slate-300'}`}>
+              موعد نهائي
+            </span>
+            <p className="text-[11px] text-slate-400 dark:text-slate-500">تحديد تاريخ ووقت التسليم</p>
+          </div>
+          <div className={`w-10 h-6 rounded-full p-0.5 transition-colors duration-200 ${timingMode === 'deadline' ? 'bg-primary' : 'bg-slate-200 dark:bg-slate-700'}`}>
+            <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${timingMode === 'deadline' ? '-translate-x-4' : 'translate-x-0'}`} />
+          </div>
         </div>
-        <div className="flex-1">
-          <span className={`text-sm font-bold ${hasDeadline ? 'text-primary' : 'text-slate-600 dark:text-slate-300'}`}>
-            موعد نهائي
-          </span>
-          <p className="text-[11px] text-slate-400 dark:text-slate-500">تحديد وقت وتاريخ التسليم</p>
-        </div>
-        <div className={`w-10 h-6 rounded-full p-0.5 transition-colors duration-200 ${hasDeadline ? 'bg-primary' : 'bg-slate-200 dark:bg-slate-700'}`}>
-          <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${hasDeadline ? '-translate-x-4' : 'translate-x-0'}`} />
+
+        <div
+          onPointerDown={(e) => { e.preventDefault(); setTimingMode(timingMode === 'countdown' ? 'none' : 'countdown'); }}
+          className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer select-none transition-all duration-200 ${
+            timingMode === 'countdown'
+              ? 'border-violet-300/50 bg-violet-50/50 dark:bg-violet-500/10'
+              : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-600'
+          }`}
+          style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+          data-testid="toggle-countdown"
+        >
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+            timingMode === 'countdown' ? 'bg-violet-500/15 text-violet-600 dark:text-violet-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
+          }`}>
+            <Hourglass className="w-4 h-4" />
+          </div>
+          <div className="flex-1">
+            <span className={`text-sm font-bold ${timingMode === 'countdown' ? 'text-violet-700 dark:text-violet-300' : 'text-slate-600 dark:text-slate-300'}`}>
+              عداد تنازلي
+            </span>
+            <p className="text-[11px] text-slate-400 dark:text-slate-500">تحديد مدة زمنية (دقائق أو ساعات)</p>
+          </div>
+          <div className={`w-10 h-6 rounded-full p-0.5 transition-colors duration-200 ${timingMode === 'countdown' ? 'bg-violet-500' : 'bg-slate-200 dark:bg-slate-700'}`}>
+            <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${timingMode === 'countdown' ? '-translate-x-4' : 'translate-x-0'}`} />
+          </div>
         </div>
       </div>
 
-      <AnimatePresence>
-        {hasDeadline && (
+      <AnimatePresence mode="wait">
+        {timingMode === 'deadline' && (
           <motion.div
+            key="deadline"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
@@ -218,8 +307,8 @@ function AddTaskContent({ onSubmit, onClose, initialText, isWeeklyMode, defaultD
             className="space-y-3"
           >
             <div>
-              <label className="text-sm font-bold text-slate-600 dark:text-slate-300 mb-2 block">
-                <CalendarDays className="w-3.5 h-3.5 inline ml-1" />
+              <label className="text-sm font-bold text-slate-600 dark:text-slate-300 mb-2 flex items-center gap-1.5">
+                <CalendarDays className="w-4.5 h-4.5 text-primary" />
                 التاريخ
               </label>
               <div className="flex gap-2 mb-2">
@@ -227,14 +316,17 @@ function AddTaskContent({ onSubmit, onClose, initialText, isWeeklyMode, defaultD
                 <QuickDateButton label="غدا" isSelected={deadlineDate === tomorrowISO} onClick={() => setDeadlineDate(tomorrowISO)} testId="button-deadline-tomorrow" />
                 <QuickDateButton label="بعد أسبوع" isSelected={deadlineDate === nextWeekISO} onClick={() => setDeadlineDate(nextWeekISO)} testId="button-deadline-nextweek" />
               </div>
-              <input
-                type="date"
-                value={deadlineDate}
-                onChange={(e) => setDeadlineDate(e.target.value)}
-                min={today}
-                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm font-sans text-slate-700 dark:text-slate-200 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all"
-                data-testid="input-task-deadline-date"
-              />
+              <div className="relative">
+                <input
+                  type="date"
+                  value={deadlineDate}
+                  onChange={(e) => setDeadlineDate(e.target.value)}
+                  min={today}
+                  className="w-full bg-primary text-white font-bold border-0 rounded-xl px-4 py-3 text-sm font-sans focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                  data-testid="input-task-deadline-date"
+                />
+                <CalendarDays className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white pointer-events-none" />
+              </div>
             </div>
 
             <div
@@ -264,20 +356,104 @@ function AddTaskContent({ onSubmit, onClose, initialText, isWeeklyMode, defaultD
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.15 }}
                 >
-                  <label className="text-sm font-bold text-slate-600 dark:text-slate-300 mb-2 block">
-                    <Clock className="w-3.5 h-3.5 inline ml-1" />
+                  <label className="text-sm font-bold text-slate-600 dark:text-slate-300 mb-2 flex items-center gap-1.5">
+                    <Clock className="w-4.5 h-4.5 text-amber-500" />
                     الوقت
                   </label>
-                  <input
-                    type="time"
-                    value={deadlineTime}
-                    onChange={(e) => setDeadlineTime(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm font-sans text-slate-700 dark:text-slate-200 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all"
-                    data-testid="input-task-deadline-time"
-                  />
+                  <div className="relative">
+                    <input
+                      type="time"
+                      value={deadlineTime}
+                      onChange={(e) => setDeadlineTime(e.target.value)}
+                      className="w-full bg-amber-500 text-white font-bold border-0 rounded-xl px-4 py-3 text-sm font-sans focus:outline-none focus:ring-2 focus:ring-amber-500/30 transition-all cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                      data-testid="input-task-deadline-time"
+                    />
+                    <Clock className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white pointer-events-none" />
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
+          </motion.div>
+        )}
+
+        {timingMode === 'countdown' && (
+          <motion.div
+            key="countdown"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-3"
+          >
+            <div>
+              <label className="text-sm font-bold text-slate-600 dark:text-slate-300 mb-2 flex items-center gap-1.5">
+                <Hourglass className="w-4.5 h-4.5 text-violet-500" />
+                اختر المدة
+              </label>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {presetDurations.map(d => (
+                  <DurationButton
+                    key={d.minutes}
+                    label={d.label}
+                    minutes={d.minutes}
+                    isSelected={countdownMinutes === d.minutes}
+                    onClick={() => {
+                      setCountdownMinutes(d.minutes);
+                      setCustomHours(Math.floor(d.minutes / 60));
+                      setCustomMins(d.minutes % 60);
+                    }}
+                    testId={`button-duration-${d.minutes}`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-bold text-slate-600 dark:text-slate-300 mb-2 flex items-center gap-1.5">
+                <Timer className="w-4.5 h-4.5 text-violet-500" />
+                مدة مخصصة
+              </label>
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label className="text-[11px] font-bold text-slate-400 dark:text-slate-500 mb-1 block">ساعات</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="24"
+                    value={customHours}
+                    onChange={(e) => {
+                      const h = Math.max(0, Math.min(24, parseInt(e.target.value) || 0));
+                      setCustomHours(h);
+                      setCountdownMinutes(h * 60 + customMins);
+                    }}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-center text-lg font-bold font-sans text-slate-700 dark:text-slate-200 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/10 transition-all"
+                    data-testid="input-countdown-hours"
+                  />
+                </div>
+                <div className="flex items-end pb-3 text-xl font-bold text-slate-300 dark:text-slate-600">:</div>
+                <div className="flex-1">
+                  <label className="text-[11px] font-bold text-slate-400 dark:text-slate-500 mb-1 block">دقائق</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="59"
+                    value={customMins}
+                    onChange={(e) => {
+                      const m = Math.max(0, Math.min(59, parseInt(e.target.value) || 0));
+                      setCustomMins(m);
+                      setCountdownMinutes(customHours * 60 + m);
+                    }}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-center text-lg font-bold font-sans text-slate-700 dark:text-slate-200 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/10 transition-all"
+                    data-testid="input-countdown-minutes"
+                  />
+                </div>
+              </div>
+              {countdownMinutes > 0 && (
+                <p className="text-xs font-bold text-violet-500 mt-2 text-center">
+                  سيبدأ العد التنازلي: {customHours > 0 ? `${customHours} ساعة` : ''}{customHours > 0 && customMins > 0 ? ' و ' : ''}{customMins > 0 ? `${customMins} دقيقة` : ''}
+                </p>
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -285,7 +461,7 @@ function AddTaskContent({ onSubmit, onClose, initialText, isWeeklyMode, defaultD
       <div className="flex gap-3 pt-2">
         <button
           onClick={handleSubmit}
-          disabled={!text.trim()}
+          disabled={!text.trim() || (timingMode === 'countdown' && countdownMinutes === 0)}
           className="flex-1 bg-primary text-white font-bold py-3 rounded-xl hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-lg shadow-primary/20"
           data-testid="button-submit-task"
         >
@@ -348,10 +524,32 @@ function AddTaskDialog({ isOpen, onClose, onSubmit, initialText, isWeeklyMode, d
   );
 }
 
-function LiveCountdownBadge({ deadline, deadlineTime, completed }: { deadline: string; deadlineTime?: string; completed: boolean }) {
-  const countdown = useCountdown(deadline, deadlineTime);
-  const status = getDeadlineStatus(deadline, deadlineTime, completed);
+function LiveCountdownBadge({ deadline, deadlineTime, countdownEnd, completed }: { deadline?: string; deadlineTime?: string; countdownEnd?: number; completed: boolean }) {
+  const countdown = useCountdown(deadline, deadlineTime, countdownEnd);
 
+  if (countdownEnd) {
+    const status = getCountdownStatus(countdownEnd, completed);
+    return (
+      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+        <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded border ${status.color}`}>
+          {status.status === 'done' && <Check className="w-2.5 h-2.5" />}
+          {status.status === 'expired' && <Clock className="w-2.5 h-2.5" />}
+          {status.status === 'active' && <Hourglass className="w-2.5 h-2.5" />}
+          {status.label}
+        </span>
+        {countdown && !completed && (
+          <span className="inline-flex items-center gap-1 text-[10px] font-bold font-sans tabular-nums px-1.5 py-0.5 rounded bg-violet-50 dark:bg-violet-500/15 border border-violet-200 dark:border-violet-500/25 text-violet-600 dark:text-violet-300 animate-pulse">
+            <Hourglass className="w-2.5 h-2.5" />
+            {countdown}
+          </span>
+        )}
+      </div>
+    );
+  }
+
+  if (!deadline) return null;
+
+  const status = getDeadlineStatus(deadline, deadlineTime, completed);
   return (
     <div className="flex items-center gap-1.5 mt-1 flex-wrap">
       <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded border ${status.color}`}>
@@ -406,7 +604,7 @@ export function TaskList({ tasks, selectedDate, isWeeklyMode = false }: TaskList
     setPrevAllCompleted(allCompleted);
   }, [allCompleted, prevAllCompleted, totalCount, triggerCelebration]);
 
-  const handleDialogSubmit = (text: string, deadline?: string, deadlineTime?: string) => {
+  const handleDialogSubmit = (text: string, deadline?: string, deadlineTime?: string, countdownEnd?: number) => {
     createTask.mutate({
       date: isWeeklyMode ? weekStartISO : dateISO,
       text,
@@ -414,6 +612,7 @@ export function TaskList({ tasks, selectedDate, isWeeklyMode = false }: TaskList
       isWeekly: isWeeklyMode,
       deadline,
       deadlineTime,
+      countdownEnd,
     });
     setNewTaskText("");
     setShowAddDialog(false);
@@ -487,8 +686,8 @@ export function TaskList({ tasks, selectedDate, isWeeklyMode = false }: TaskList
                 <span className={`text-sm md:text-base transition-all duration-300 ${task.completed ? 'text-slate-400 dark:text-slate-500 line-through opacity-60' : 'text-slate-700 dark:text-slate-200 font-medium'}`}>
                   <ExpandableText text={task.text} maxLength={55} />
                 </span>
-                {task.deadline && (
-                  <LiveCountdownBadge deadline={task.deadline} deadlineTime={task.deadlineTime} completed={task.completed} />
+                {(task.deadline || task.countdownEnd) && (
+                  <LiveCountdownBadge deadline={task.deadline} deadlineTime={task.deadlineTime} countdownEnd={task.countdownEnd} completed={task.completed} />
                 )}
               </div>
               {isWeeklyMode && task.date && !task.isWeekly && (
