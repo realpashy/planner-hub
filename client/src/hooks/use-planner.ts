@@ -5,165 +5,116 @@ import type { TaskItem, EventItem, DayTag, HabitItem, NoteItem } from "@shared/s
 
 const QUERY_KEY = ["planner_data"];
 
-// Base hook to get all data
 export function usePlannerData() {
   return useQuery({
     queryKey: QUERY_KEY,
     queryFn: async () => {
-      // Small artificial delay to ensure smooth loading states visually
       await new Promise(res => setTimeout(res, 100)); 
       return getPlannerData();
     },
   });
 }
 
-// MUTATIONS
-export function useCreateTask() {
+function useOptimisticMutation<TArg>(
+  mutateFn: (data: PlannerData, arg: TArg) => void
+) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (task: Omit<TaskItem, "id">) => {
+    mutationFn: async (arg: TArg) => {
       const data = getPlannerData();
-      const newTask = { ...task, id: uuidv4() };
-      data.tasks.push(newTask);
+      mutateFn(data, arg);
       savePlannerData(data);
-      return newTask;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: QUERY_KEY })
+    onMutate: async (arg: TArg) => {
+      await qc.cancelQueries({ queryKey: QUERY_KEY });
+      const previous = qc.getQueryData<PlannerData>(QUERY_KEY);
+      if (previous) {
+        const optimistic = JSON.parse(JSON.stringify(previous)) as PlannerData;
+        mutateFn(optimistic, arg);
+        qc.setQueryData(QUERY_KEY, optimistic);
+      }
+      return { previous };
+    },
+    onError: (_err, _arg, context) => {
+      if (context?.previous) {
+        qc.setQueryData(QUERY_KEY, context.previous);
+      }
+    },
+  });
+}
+
+export function useCreateTask() {
+  return useOptimisticMutation<Omit<TaskItem, "id">>((data, task) => {
+    data.tasks.push({ ...task, id: uuidv4() });
   });
 }
 
 export function useUpdateTask() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<TaskItem> & { id: string }) => {
-      const data = getPlannerData();
-      data.tasks = data.tasks.map(t => t.id === id ? { ...t, ...updates } : t);
-      savePlannerData(data);
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: QUERY_KEY })
+  return useOptimisticMutation<Partial<TaskItem> & { id: string }>((data, { id, ...updates }) => {
+    data.tasks = data.tasks.map(t => t.id === id ? { ...t, ...updates } : t);
   });
 }
 
 export function useDeleteTask() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const data = getPlannerData();
-      data.tasks = data.tasks.filter(t => t.id !== id);
-      savePlannerData(data);
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: QUERY_KEY })
+  return useOptimisticMutation<string>((data, id) => {
+    data.tasks = data.tasks.filter(t => t.id !== id);
   });
 }
 
 export function useCreateEvent() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (event: Omit<EventItem, "id">) => {
-      const data = getPlannerData();
-      const newEvent = { ...event, id: uuidv4() };
-      data.events.push(newEvent);
-      savePlannerData(data);
-      return newEvent;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: QUERY_KEY })
+  return useOptimisticMutation<Omit<EventItem, "id">>((data, event) => {
+    data.events.push({ ...event, id: uuidv4() });
   });
 }
 
 export function useDeleteEvent() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const data = getPlannerData();
-      data.events = data.events.filter(e => e.id !== id);
-      savePlannerData(data);
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: QUERY_KEY })
+  return useOptimisticMutation<string>((data, id) => {
+    data.events = data.events.filter(e => e.id !== id);
   });
 }
 
 export function useCreateTag() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (tag: Omit<DayTag, "id">) => {
-      const data = getPlannerData();
-      const newTag = { ...tag, id: uuidv4() };
-      data.tags.push(newTag);
-      savePlannerData(data);
-      return newTag;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: QUERY_KEY })
+  return useOptimisticMutation<Omit<DayTag, "id">>((data, tag) => {
+    data.tags.push({ ...tag, id: uuidv4() });
   });
 }
 
 export function useDeleteTag() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const data = getPlannerData();
-      data.tags = data.tags.filter(t => t.id !== id);
-      savePlannerData(data);
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: QUERY_KEY })
+  return useOptimisticMutation<string>((data, id) => {
+    data.tags = data.tags.filter(t => t.id !== id);
   });
 }
 
 export function useToggleHabitDay() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, dateISO }: { id: string, dateISO: string }) => {
-      const data = getPlannerData();
-      const habit = data.habits.find(h => h.id === id);
-      if (habit) {
-        const idx = habit.completedDates.indexOf(dateISO);
-        if (idx >= 0) habit.completedDates.splice(idx, 1);
-        else habit.completedDates.push(dateISO);
-        savePlannerData(data);
-      }
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: QUERY_KEY })
+  return useOptimisticMutation<{ id: string, dateISO: string }>((data, { id, dateISO }) => {
+    const habit = data.habits.find(h => h.id === id);
+    if (habit) {
+      const idx = habit.completedDates.indexOf(dateISO);
+      if (idx >= 0) habit.completedDates.splice(idx, 1);
+      else habit.completedDates.push(dateISO);
+    }
   });
 }
 
 export function useCreateHabit() {
-    const qc = useQueryClient();
-    return useMutation({
-      mutationFn: async (name: string) => {
-        const data = getPlannerData();
-        const newHabit = { id: uuidv4(), name, completedDates: [] };
-        data.habits.push(newHabit);
-        savePlannerData(data);
-        return newHabit;
-      },
-      onSuccess: () => qc.invalidateQueries({ queryKey: QUERY_KEY })
-    });
+  return useOptimisticMutation<string>((data, name) => {
+    data.habits.push({ id: uuidv4(), name, completedDates: [] });
+  });
 }
 
 export function useDeleteHabit() {
-    const qc = useQueryClient();
-    return useMutation({
-      mutationFn: async (id: string) => {
-        const data = getPlannerData();
-        data.habits = data.habits.filter(h => h.id !== id);
-        savePlannerData(data);
-      },
-      onSuccess: () => qc.invalidateQueries({ queryKey: QUERY_KEY })
-    });
-  }
+  return useOptimisticMutation<string>((data, id) => {
+    data.habits = data.habits.filter(h => h.id !== id);
+  });
+}
 
 export function useSaveNote() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (note: Omit<NoteItem, "id">) => {
-      const data = getPlannerData();
-      const existingIdx = data.notes.findIndex(n => n.date === note.date);
-      if (existingIdx >= 0) {
-        data.notes[existingIdx].content = note.content;
-      } else {
-        data.notes.push({ ...note, id: uuidv4() });
-      }
-      savePlannerData(data);
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: QUERY_KEY })
+  return useOptimisticMutation<Omit<NoteItem, "id">>((data, note) => {
+    const existingIdx = data.notes.findIndex(n => n.date === note.date);
+    if (existingIdx >= 0) {
+      data.notes[existingIdx].content = note.content;
+    } else {
+      data.notes.push({ ...note, id: uuidv4() });
+    }
   });
 }

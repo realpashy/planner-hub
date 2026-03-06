@@ -15,19 +15,12 @@ interface TaskListProps {
 }
 
 function AnimatedCheckbox({ checked, onChange, taskId }: { checked: boolean, onChange: () => void, taskId: string }) {
-  const handleInteraction = (e: React.MouseEvent | React.TouchEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    onChange();
-  };
-
   return (
     <div
       role="checkbox"
       aria-checked={checked}
       tabIndex={0}
-      onMouseDown={handleInteraction}
-      onTouchStart={handleInteraction}
+      onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); onChange(); }}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onChange(); } }}
       style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent', userSelect: 'none' }}
       className={`

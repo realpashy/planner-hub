@@ -113,8 +113,7 @@ export function HabitTracker({ habits, weekStart }: { habits: HabitItem[], weekS
                         role="checkbox"
                         aria-checked={isDone}
                         tabIndex={0}
-                        onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleHabit.mutate({ id: habit.id, dateISO: iso }); }}
-                        onTouchStart={(e) => { e.preventDefault(); e.stopPropagation(); toggleHabit.mutate({ id: habit.id, dateISO: iso }); }}
+                        onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleHabit.mutate({ id: habit.id, dateISO: iso }); }}
                         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleHabit.mutate({ id: habit.id, dateISO: iso }); } }}
                         style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent', userSelect: 'none' }}
                         className={`
