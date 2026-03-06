@@ -67,6 +67,12 @@ export function useCreateEvent() {
   });
 }
 
+export function useUpdateEvent() {
+  return useOptimisticMutation<Partial<EventItem> & { id: string }>((data, { id, ...updates }) => {
+    data.events = data.events.map(e => e.id === id ? { ...e, ...updates } : e);
+  });
+}
+
 export function useDeleteEvent() {
   return useOptimisticMutation<string>((data, id) => {
     data.events = data.events.filter(e => e.id !== id);

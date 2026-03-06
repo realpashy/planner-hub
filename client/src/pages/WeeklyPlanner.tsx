@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Link } from "wouter";
 import { usePlannerData, useSaveNote } from "@/hooks/use-planner";
 import { getWeekHeader, getWeekDays, addWeeks, subWeeks, formatISODate, formatDayDate, getArabicDayFull } from "@/lib/date-utils";
@@ -10,6 +10,7 @@ import { HabitTracker } from "@/components/planner/HabitTracker";
 import { MonthCalendar } from "@/components/planner/MonthCalendar";
 import { WeeklySummary } from "@/components/planner/WeeklySummary";
 import { FAB } from "@/components/planner/FAB";
+import { GanttTimeline } from "@/components/planner/GanttTimeline";
 import { WeeklyGraphs } from "@/components/planner/WeeklyGraphs";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ChevronRight, ChevronLeft, ArrowRight, Calendar as CalendarIcon, FileText } from "lucide-react";
@@ -21,6 +22,10 @@ export default function WeeklyPlanner() {
 
   const { data, isLoading } = usePlannerData();
   const saveNote = useSaveNote();
+  const eventsRef = useRef<HTMLDivElement>(null);
+  const scrollToEvents = useCallback(() => {
+    eventsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, []);
 
   if (isLoading || !data) {
     return (
@@ -88,6 +93,10 @@ export default function WeeklyPlanner() {
           <WeeklySummary tasks={data.tasks} habits={data.habits} events={data.events} selectedDate={selectedDate} />
         </div>
 
+        <div className="mb-5 md:mb-6">
+          <GanttTimeline events={data.events} selectedDate={selectedDate} onScrollToEvents={scrollToEvents} />
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 md:gap-6">
           <div className="lg:col-span-8">
             <motion.div
@@ -123,7 +132,9 @@ export default function WeeklyPlanner() {
               <div className="h-px bg-slate-100 dark:bg-slate-800 my-5" />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <EventList events={data.events} selectedDate={selectedDate} />
+                <div ref={eventsRef}>
+                  <EventList events={data.events} selectedDate={selectedDate} />
+                </div>
                 <div className="relative">
                   <div className="md:hidden h-px bg-slate-100 dark:bg-slate-800 mb-5" />
                   <div className="hidden md:block absolute right-0 top-0 bottom-0 w-px bg-slate-100 dark:bg-slate-800" />

@@ -59,7 +59,9 @@ Premium RTL planner web app for Arabic and Hebrew users. Fully offline using loc
 
 ## Feature Details
 
-- **Events**: Show with clock icon (no emojis on events), sky-blue CircleDot for items
+- **Events**: Show with clock icon (no emojis on events), sky-blue CircleDot for items. Click event to open comment/detail dialog.
+- **Event Comments**: Optional `comment` field on events. Clickable events open a detail dialog (Drawer on mobile, modal on desktop) for viewing/editing comments.
+- **GanttTimeline**: Horizontal weekly timeline showing all events positioned by time. Collapsible, current-time red indicator, click events to open comment dialog. `onScrollToEvents` callback scrolls to the EventList section. Only renders when there are events in the week.
 - **Habits**: Have emoji auto-assignment based on name keywords
 - **Text overflow**: ExpandableText component truncates long text with "..." click-to-expand
 - **Checkboxes**: Use onPointerDown for instant mobile response, no scroll side effects
@@ -67,6 +69,7 @@ Premium RTL planner web app for Arabic and Hebrew users. Fully offline using loc
 - **Weekly Graphs**: Bar charts for daily task completion and habit tracking at bottom of planner
 - **Layout**: max-w-7xl on desktop for wider view, bigger text/elements on both desktop and mobile
 - **DayStrip**: Centered day buttons, scroll only triggers on day selection change
+- **Task Deadlines**: Optional `deadline` (date) and `deadlineTime` (time) fields. Add task dialog has quick-date buttons (today/tomorrow/next week) + date picker + optional time toggle. Tasks show live countdown badges when deadlineTime is set (1s interval updates). Status badges: done (green), on-time (blue), late (red), upcoming (amber).
 
 ## Dependencies
 

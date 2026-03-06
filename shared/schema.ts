@@ -17,6 +17,7 @@ export const eventSchema = z.object({
   time: z.string(),
   title: z.string(),
   icon: z.string().optional(),
+  comment: z.string().optional(),
 });
 
 export const taskSchema = z.object({
@@ -26,6 +27,7 @@ export const taskSchema = z.object({
   completed: z.boolean(),
   isWeekly: z.boolean().default(false),
   deadline: z.string().optional(),
+  deadlineTime: z.string().optional(),
 });
 
 export const habitSchema = z.object({
