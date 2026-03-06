@@ -3,6 +3,7 @@ import type { TaskItem } from "@shared/schema";
 import { formatISODate, getWeekDays } from "@/lib/date-utils";
 import { useUpdateTask, useCreateTask, useDeleteTask } from "@/hooks/use-planner";
 import { Plus, Trash2, ListTodo, Check, Trophy } from "lucide-react";
+import { ExpandableText } from "./ExpandableText";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import { ResponsiveConfirm } from "../ResponsiveConfirm";
@@ -178,7 +179,7 @@ export function TaskList({ tasks, selectedDate, isWeeklyMode = false }: TaskList
                 taskId={task.id}
               />
               <span className={`flex-1 text-sm md:text-base transition-all duration-300 ${task.completed ? 'text-slate-400 dark:text-slate-500 line-through opacity-60' : 'text-slate-700 dark:text-slate-200 font-medium'}`}>
-                {task.text}
+                <ExpandableText text={task.text} maxLength={55} />
               </span>
               {isWeeklyMode && task.date && !task.isWeekly && (
                 <span className="text-[10px] font-semibold text-slate-300 dark:text-slate-600 bg-slate-50 dark:bg-slate-800 px-1.5 py-0.5 rounded">يومية</span>

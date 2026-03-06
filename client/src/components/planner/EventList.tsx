@@ -3,6 +3,7 @@ import type { EventItem } from "@shared/schema";
 import { formatISODate } from "@/lib/date-utils";
 import { useCreateEvent, useDeleteEvent } from "@/hooks/use-planner";
 import { Clock, Plus, Trash2, CircleDot } from "lucide-react";
+import { ExpandableText } from "./ExpandableText";
 import { motion, AnimatePresence } from "framer-motion";
 import { ResponsiveConfirm } from "../ResponsiveConfirm";
 
@@ -17,7 +18,6 @@ export function EventList({ events, selectedDate }: { events: EventItem[], selec
   const [newTitle, setNewTitle] = useState("");
   const [newTime, setNewTime] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const handleAdd = () => {
     if (newTitle && newTime) {
@@ -73,11 +73,8 @@ export function EventList({ events, selectedDate }: { events: EventItem[], selec
                 <CircleDot className="w-3.5 h-3.5 text-sky-500 dark:text-sky-400" />
               </div>
               <div className="flex-1 min-w-0">
-                <div
-                  className={`font-semibold text-slate-700 dark:text-slate-200 text-sm md:text-base ${expandedId === event.id ? '' : 'truncate'} cursor-pointer`}
-                  onClick={() => setExpandedId(expandedId === event.id ? null : event.id)}
-                >
-                  {event.title}
+                <div className="font-semibold text-slate-700 dark:text-slate-200 text-sm md:text-base">
+                  <ExpandableText text={event.title} maxLength={40} />
                 </div>
                 <span className="text-xs text-slate-400 dark:text-slate-500 font-semibold font-sans tabular-nums">{event.time}</span>
               </div>

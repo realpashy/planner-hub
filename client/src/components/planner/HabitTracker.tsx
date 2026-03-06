@@ -3,6 +3,7 @@ import type { HabitItem } from "@shared/schema";
 import { getWeekDays, formatISODate, getDayShortName } from "@/lib/date-utils";
 import { useCreateHabit, useToggleHabitDay, useDeleteHabit } from "@/hooks/use-planner";
 import { Activity, Plus, Check, Trash2, Sparkles } from "lucide-react";
+import { ExpandableText } from "./ExpandableText";
 import { motion } from "framer-motion";
 import { ResponsiveConfirm } from "../ResponsiveConfirm";
 
@@ -86,7 +87,9 @@ export function HabitTracker({ habits, weekStart }: { habits: HabitItem[], weekS
                 <div className="flex items-center gap-2 min-w-0 flex-1">
                   {emoji && <span className="text-base flex-shrink-0">{emoji}</span>}
                   {isPerfect && !emoji && <Sparkles className="w-4 h-4 text-violet-500 flex-shrink-0" />}
-                  <span className={`text-sm font-bold ${isPerfect ? 'text-violet-700 dark:text-violet-300' : 'text-slate-700 dark:text-slate-200'}`}>{habit.name}</span>
+                  <span className={`text-sm font-bold ${isPerfect ? 'text-violet-700 dark:text-violet-300' : 'text-slate-700 dark:text-slate-200'}`}>
+                    <ExpandableText text={habit.name} maxLength={30} />
+                  </span>
                   <span className="text-[10px] font-semibold text-slate-300 dark:text-slate-600 mr-auto">{completedThisWeek}/7</span>
                 </div>
                 <button

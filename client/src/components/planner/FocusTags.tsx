@@ -3,6 +3,7 @@ import { useCreateTag, useDeleteTag } from "@/hooks/use-planner";
 import { formatISODate } from "@/lib/date-utils";
 import type { DayTag } from "@shared/schema";
 import { X } from "lucide-react";
+import { ExpandableText } from "./ExpandableText";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function FocusTags({ tags, selectedDate }: { tags: DayTag[], selectedDate: Date }) {
@@ -41,7 +42,7 @@ export function FocusTags({ tags, selectedDate }: { tags: DayTag[], selectedDate
               className="group flex items-center gap-1.5 bg-primary/6 dark:bg-primary/15 text-primary border border-primary/15 dark:border-primary/25 px-3.5 py-1.5 rounded-full text-sm md:text-base font-semibold cursor-default"
               data-testid={`focus-tag-${tag.id}`}
             >
-              {tag.text}
+              <ExpandableText text={tag.text} maxLength={35} />
               <button
                 onClick={() => deleteTag.mutate(tag.id)}
                 className="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-0.5 hover:bg-primary/15 rounded-full -mr-0.5"
