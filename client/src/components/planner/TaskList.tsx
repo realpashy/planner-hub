@@ -14,12 +14,23 @@ interface TaskListProps {
 }
 
 function AnimatedCheckbox({ checked, onChange, taskId }: { checked: boolean, onChange: () => void, taskId: string }) {
+  const handleInteraction = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onChange();
+  };
+
   return (
-    <button
-      onClick={onChange}
-      style={{ touchAction: 'manipulation' }}
+    <div
+      role="checkbox"
+      aria-checked={checked}
+      tabIndex={0}
+      onMouseDown={handleInteraction}
+      onTouchStart={handleInteraction}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onChange(); } }}
+      style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent', userSelect: 'none' }}
       className={`
-        flex-shrink-0 w-[28px] h-[28px] rounded-md border-2 flex items-center justify-center transition-all duration-200
+        flex-shrink-0 w-[28px] h-[28px] rounded-md border-2 flex items-center justify-center transition-all duration-200 cursor-pointer select-none
         ${checked
           ? 'bg-emerald-500 border-emerald-500 shadow-sm shadow-emerald-500/25'
           : 'border-slate-300 dark:border-slate-600 hover:border-primary bg-white dark:bg-slate-900'}
@@ -39,7 +50,7 @@ function AnimatedCheckbox({ checked, onChange, taskId }: { checked: boolean, onC
           />
         </svg>
       )}
-    </button>
+    </div>
   );
 }
 

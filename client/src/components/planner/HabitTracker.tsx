@@ -106,11 +106,16 @@ export function HabitTracker({ habits, weekStart }: { habits: HabitItem[], weekS
                       <span className="text-[9px] md:text-[10px] font-bold text-slate-400 dark:text-slate-500 leading-none">
                         {getDayShortName(date)}
                       </span>
-                      <button
-                        onClick={() => toggleHabit.mutate({ id: habit.id, dateISO: iso })}
-                        style={{ touchAction: 'manipulation' }}
+                      <div
+                        role="checkbox"
+                        aria-checked={isDone}
+                        tabIndex={0}
+                        onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); toggleHabit.mutate({ id: habit.id, dateISO: iso }); }}
+                        onTouchStart={(e) => { e.preventDefault(); e.stopPropagation(); toggleHabit.mutate({ id: habit.id, dateISO: iso }); }}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleHabit.mutate({ id: habit.id, dateISO: iso }); } }}
+                        style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent', userSelect: 'none' }}
                         className={`
-                          w-full aspect-square max-w-[32px] rounded-lg flex items-center justify-center transition-all duration-200
+                          w-full aspect-square max-w-[32px] rounded-lg flex items-center justify-center transition-all duration-200 cursor-pointer select-none
                           ${isDone
                             ? 'bg-violet-500 text-white shadow-sm'
                             : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-transparent hover:bg-slate-100 dark:hover:bg-slate-700'}
@@ -118,7 +123,7 @@ export function HabitTracker({ habits, weekStart }: { habits: HabitItem[], weekS
                         data-testid={`habit-checkbox-${habit.id}-${iso}`}
                       >
                         <Check className="w-3.5 h-3.5" />
-                      </button>
+                      </div>
                     </div>
                   );
                 })}

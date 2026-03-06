@@ -152,8 +152,8 @@ export default function WeeklyPlanner() {
           </div>
 
           <div className="lg:col-span-4 space-y-5 md:space-y-6">
-            <TaskList tasks={data.tasks} selectedDate={weekStart} isWeeklyMode={true} />
             <HabitTracker habits={data.habits} weekStart={weekStart} />
+            <TaskList tasks={data.tasks} selectedDate={weekStart} isWeeklyMode={true} />
           </div>
         </div>
 
