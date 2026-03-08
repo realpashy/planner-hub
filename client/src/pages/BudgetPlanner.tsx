@@ -44,6 +44,14 @@ function emptyTransactionState(type: BudgetTransactionType = "expense") {
   return { id: "", type, title: "", amount: "", date: todayISO(), categoryId: "", note: "", linkedId: "" };
 }
 
+interface AmountDialogState {
+  open: boolean;
+  title: string;
+  subtitle: string;
+  amount: string;
+  onConfirm: ((amount: number) => void) | null;
+}
+
 export default function BudgetPlanner() {
   const [data, setData] = useState<BudgetData>(() => loadBudgetData());
   const [activeTab, setActiveTab] = useState<BudgetTab>("overview");
@@ -74,6 +82,14 @@ export default function BudgetPlanner() {
   const [goalTitle, setGoalTitle] = useState("");
   const [goalTargetAmount, setGoalTargetAmount] = useState("");
   const [goalTargetDate, setGoalTargetDate] = useState(todayISO());
+
+  const [amountDialog, setAmountDialog] = useState<AmountDialogState>({
+    open: false,
+    title: "",
+    subtitle: "",
+    amount: "",
+    onConfirm: null,
+  });
 
   const applyData = (updater: (current: BudgetData) => BudgetData) => {
     setData((current) => {
@@ -337,9 +353,7 @@ export default function BudgetPlanner() {
     setGoalTargetAmount("");
   };
 
-  const addContribution = (goal: BudgetSavingGoal) => {
-    const raw = window.prompt("أدخل مبلغ المساهمة", "100");
-    const amount = Number(raw);
+  const addContribution = (goal: BudgetSavingGoal, amount: number) => {
     const categoryId = categoriesByType.saving[0]?.id;
     if (!Number.isFinite(amount) || amount <= 0 || !categoryId) return;
 
@@ -347,6 +361,47 @@ export default function BudgetPlanner() {
       ...current,
       transactions: [{ id: createBudgetId(), type: "saving", title: `مساهمة: ${goal.title}`, amount, date: todayISO(), categoryId, note: "إضافة إلى هدف", linkedId: goal.id }, ...current.transactions],
     }));
+  };
+
+  const openAmountDialog = (title: string, subtitle: string, defaultAmount: number, onConfirm: (amount: number) => void) => {
+    setAmountDialog({
+      open: true,
+      title,
+      subtitle,
+      amount: String(Math.max(Math.round(defaultAmount), 0)),
+      onConfirm,
+    });
+  };
+
+  const confirmAmountDialog = () => {
+    const amount = Number(amountDialog.amount);
+    if (!Number.isFinite(amount) || amount <= 0 || !amountDialog.onConfirm) return;
+    amountDialog.onConfirm(amount);
+    setAmountDialog({ open: false, title: "", subtitle: "", amount: "", onConfirm: null });
+  };
+
+  const closeAmountDialog = () => {
+    setAmountDialog({ open: false, title: "", subtitle: "", amount: "", onConfirm: null });
+  };
+
+  const openBillPaymentDialog = (linkedId: string, title: string, categoryId: string, remaining: number) => {
+    openAmountDialog("تسجيل دفعة فاتورة", title, remaining, (amount) => {
+      quickRegisterPayment("bill_payment", linkedId, title, categoryId, amount);
+    });
+  };
+
+  const openDebtPaymentDialog = (linkedId: string, title: string, categoryId: string, remaining: number) => {
+    openAmountDialog("تسجيل سداد دين", title, remaining, (amount) => {
+      quickRegisterPayment("debt_payment", linkedId, title, categoryId, amount);
+    });
+  };
+
+  const openSavingContributionDialog = (goal: BudgetSavingGoal) => {
+    const saved = savingsByGoalId.get(goal.id) || 0;
+    const remaining = Math.max(goal.targetAmount - saved, 0);
+    openAmountDialog("إضافة مساهمة ادخار", goal.title, remaining || 100, (amount) => {
+      addContribution(goal, amount);
+    });
   };
 
   const symbol = getCurrencySymbol(data.settings.currency);
@@ -510,8 +565,8 @@ export default function BudgetPlanner() {
                   <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5"><h3 className="font-bold text-slate-900 dark:text-slate-100 mb-3 flex items-center gap-2"><Landmark className="w-4 h-4 text-rose-500" />إضافة دين</h3><div className="space-y-2"><input value={debtTitle} onChange={(e) => setDebtTitle(e.target.value)} placeholder="اسم الدين" className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5" /><div className="grid grid-cols-2 gap-2"><input type="number" min="1" max="31" value={debtDueDay} onChange={(e) => setDebtDueDay(e.target.value)} placeholder="يوم الاستحقاق" className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5" /><input type="number" min="0" value={debtTotalAmount} onChange={(e) => setDebtTotalAmount(e.target.value)} placeholder={`إجمالي الدين (${symbol})`} className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5" /></div><select value={debtCategoryId} onChange={(e) => setDebtCategoryId(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5"><option value="">اختر فئة الدين</option>{categoriesByType.debt_payment.map((cat) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}</select><button onClick={addDebt} className="w-full rounded-xl bg-primary text-white font-semibold px-4 py-2.5">إضافة دين</button></div></div>
                 </div>
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-                  <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5"><h3 className="font-bold text-slate-900 dark:text-slate-100 mb-3">قائمة الفواتير</h3><div className="space-y-2.5">{data.bills.map((bill) => { const paid = billPaymentsById.get(bill.id) || 0; const remaining = Math.max(bill.expectedAmount - paid, 0); const progress = bill.expectedAmount > 0 ? Math.min(Math.round((paid / bill.expectedAmount) * 100), 100) : 0; return <div key={bill.id} className="rounded-xl bg-slate-50 dark:bg-slate-800/50 p-3"><div className="flex items-start justify-between"><div><p className="font-semibold text-slate-800 dark:text-slate-100">{bill.title}</p><p className="text-xs text-slate-500 dark:text-slate-400">استحقاق يوم {bill.dueDay} • متبقي {formatAmount(remaining, data.settings.currency)}</p></div><button onClick={() => applyData((current) => ({ ...current, bills: current.bills.filter((b) => b.id !== bill.id) }))} className="text-slate-400 hover:text-rose-500"><Trash2 className="w-4 h-4" /></button></div><div className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden mt-2"><div className="h-full bg-amber-500" style={{ width: `${progress}%` }} /></div><button onClick={() => { const raw = window.prompt("أدخل مبلغ الدفعة", String(Math.max(remaining, 0))); const amount = Number(raw); if (Number.isFinite(amount) && amount > 0) quickRegisterPayment("bill_payment", bill.id, bill.title, bill.categoryId, amount); }} className="mt-2 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-semibold">تسجيل دفعة</button></div>; })}{data.bills.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">لا توجد فواتير حتى الآن.</p>}</div></div>
-                  <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5"><h3 className="font-bold text-slate-900 dark:text-slate-100 mb-3">قائمة الديون</h3><div className="space-y-2.5">{data.debts.map((debt) => { const paid = debtPaymentsById.get(debt.id) || 0; const remaining = Math.max(debt.totalAmount - paid, 0); const progress = debt.totalAmount > 0 ? Math.min(Math.round((paid / debt.totalAmount) * 100), 100) : 0; return <div key={debt.id} className="rounded-xl bg-slate-50 dark:bg-slate-800/50 p-3"><div className="flex items-start justify-between"><div><p className="font-semibold text-slate-800 dark:text-slate-100">{debt.title}</p><p className="text-xs text-slate-500 dark:text-slate-400">استحقاق يوم {debt.dueDay} • متبقي {formatAmount(remaining, data.settings.currency)}</p></div><button onClick={() => applyData((current) => ({ ...current, debts: current.debts.filter((d) => d.id !== debt.id) }))} className="text-slate-400 hover:text-rose-500"><Trash2 className="w-4 h-4" /></button></div><div className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden mt-2"><div className="h-full bg-rose-500" style={{ width: `${progress}%` }} /></div><button onClick={() => { const raw = window.prompt("أدخل مبلغ السداد", String(Math.max(remaining, 0))); const amount = Number(raw); if (Number.isFinite(amount) && amount > 0) quickRegisterPayment("debt_payment", debt.id, debt.title, debt.categoryId, amount); }} className="mt-2 px-3 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 text-xs font-semibold">تسجيل سداد</button></div>; })}{data.debts.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">لا توجد ديون حتى الآن.</p>}</div></div>
+                  <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5"><h3 className="font-bold text-slate-900 dark:text-slate-100 mb-3">قائمة الفواتير</h3><div className="space-y-2.5">{data.bills.map((bill) => { const paid = billPaymentsById.get(bill.id) || 0; const remaining = Math.max(bill.expectedAmount - paid, 0); const progress = bill.expectedAmount > 0 ? Math.min(Math.round((paid / bill.expectedAmount) * 100), 100) : 0; return <div key={bill.id} className="rounded-xl bg-slate-50 dark:bg-slate-800/50 p-3"><div className="flex items-start justify-between"><div><p className="font-semibold text-slate-800 dark:text-slate-100">{bill.title}</p><p className="text-xs text-slate-500 dark:text-slate-400">استحقاق يوم {bill.dueDay} • متبقي {formatAmount(remaining, data.settings.currency)}</p></div><button onClick={() => applyData((current) => ({ ...current, bills: current.bills.filter((b) => b.id !== bill.id) }))} className="text-slate-400 hover:text-rose-500"><Trash2 className="w-4 h-4" /></button></div><div className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden mt-2"><div className="h-full bg-amber-500" style={{ width: `${progress}%` }} /></div><button onClick={() => openBillPaymentDialog(bill.id, bill.title, bill.categoryId, remaining)} className="mt-2 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-semibold">تسجيل دفعة</button></div>; })}{data.bills.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">لا توجد فواتير حتى الآن.</p>}</div></div>
+                  <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5"><h3 className="font-bold text-slate-900 dark:text-slate-100 mb-3">قائمة الديون</h3><div className="space-y-2.5">{data.debts.map((debt) => { const paid = debtPaymentsById.get(debt.id) || 0; const remaining = Math.max(debt.totalAmount - paid, 0); const progress = debt.totalAmount > 0 ? Math.min(Math.round((paid / debt.totalAmount) * 100), 100) : 0; return <div key={debt.id} className="rounded-xl bg-slate-50 dark:bg-slate-800/50 p-3"><div className="flex items-start justify-between"><div><p className="font-semibold text-slate-800 dark:text-slate-100">{debt.title}</p><p className="text-xs text-slate-500 dark:text-slate-400">استحقاق يوم {debt.dueDay} • متبقي {formatAmount(remaining, data.settings.currency)}</p></div><button onClick={() => applyData((current) => ({ ...current, debts: current.debts.filter((d) => d.id !== debt.id) }))} className="text-slate-400 hover:text-rose-500"><Trash2 className="w-4 h-4" /></button></div><div className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden mt-2"><div className="h-full bg-rose-500" style={{ width: `${progress}%` }} /></div><button onClick={() => openDebtPaymentDialog(debt.id, debt.title, debt.categoryId, remaining)} className="mt-2 px-3 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 text-xs font-semibold">تسجيل سداد</button></div>; })}{data.debts.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">لا توجد ديون حتى الآن.</p>}</div></div>
                 </div>
               </div>
             )}
@@ -519,7 +574,7 @@ export default function BudgetPlanner() {
             {activeTab === "savings" && (
               <div className="space-y-5">
                 <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5"><h3 className="font-bold text-slate-900 dark:text-slate-100 mb-3 flex items-center gap-2"><PiggyBank className="w-4 h-4 text-emerald-500" />إضافة هدف ادخار</h3><div className="grid grid-cols-1 md:grid-cols-4 gap-2"><input value={goalTitle} onChange={(e) => setGoalTitle(e.target.value)} placeholder="اسم الهدف" className="md:col-span-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5" /><input type="number" min="0" value={goalTargetAmount} onChange={(e) => setGoalTargetAmount(e.target.value)} placeholder={`المبلغ المستهدف (${symbol})`} className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5" /><input type="date" value={goalTargetDate} onChange={(e) => setGoalTargetDate(e.target.value)} className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5" /></div><button onClick={addSavingGoal} className="mt-2 px-4 py-2.5 rounded-xl bg-primary text-white font-semibold">إضافة الهدف</button></div>
-                <div className="space-y-2.5">{data.savingsGoals.map((goal) => { const saved = savingsByGoalId.get(goal.id) || 0; const remaining = Math.max(goal.targetAmount - saved, 0); const progress = goal.targetAmount > 0 ? Math.min(Math.round((saved / goal.targetAmount) * 100), 100) : 0; return <div key={goal.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5"><div className="flex items-start justify-between"><div><h4 className="font-bold text-slate-900 dark:text-slate-100">{goal.title}</h4><p className="text-sm text-slate-500 dark:text-slate-400">تاريخ الهدف: {goal.targetDate}</p></div><button onClick={() => applyData((current) => ({ ...current, savingsGoals: current.savingsGoals.filter((g) => g.id !== goal.id) }))} className="text-slate-400 hover:text-rose-500"><Trash2 className="w-4 h-4" /></button></div><div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 text-sm"><InfoCell title="المستهدف" value={formatAmount(goal.targetAmount, data.settings.currency)} /><InfoCell title="المحفوظ" value={formatAmount(saved, data.settings.currency)} /><InfoCell title="المتبقي" value={formatAmount(remaining, data.settings.currency)} /><InfoCell title="الإنجاز" value={`${progress}%`} /></div><div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden mt-3"><div className="h-full bg-emerald-500" style={{ width: `${progress}%` }} /></div><button onClick={() => addContribution(goal)} className="mt-3 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-semibold text-sm">إضافة مساهمة</button></div>; })}{data.savingsGoals.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">لا توجد أهداف ادخار بعد.</p>}</div>
+                <div className="space-y-2.5">{data.savingsGoals.map((goal) => { const saved = savingsByGoalId.get(goal.id) || 0; const remaining = Math.max(goal.targetAmount - saved, 0); const progress = goal.targetAmount > 0 ? Math.min(Math.round((saved / goal.targetAmount) * 100), 100) : 0; return <div key={goal.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5"><div className="flex items-start justify-between"><div><h4 className="font-bold text-slate-900 dark:text-slate-100">{goal.title}</h4><p className="text-sm text-slate-500 dark:text-slate-400">تاريخ الهدف: {goal.targetDate}</p></div><button onClick={() => applyData((current) => ({ ...current, savingsGoals: current.savingsGoals.filter((g) => g.id !== goal.id) }))} className="text-slate-400 hover:text-rose-500"><Trash2 className="w-4 h-4" /></button></div><div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 text-sm"><InfoCell title="المستهدف" value={formatAmount(goal.targetAmount, data.settings.currency)} /><InfoCell title="المحفوظ" value={formatAmount(saved, data.settings.currency)} /><InfoCell title="المتبقي" value={formatAmount(remaining, data.settings.currency)} /><InfoCell title="الإنجاز" value={`${progress}%`} /></div><div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden mt-3"><div className="h-full bg-emerald-500" style={{ width: `${progress}%` }} /></div><button onClick={() => openSavingContributionDialog(goal)} className="mt-3 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-semibold text-sm">إضافة مساهمة</button></div>; })}{data.savingsGoals.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">لا توجد أهداف ادخار بعد.</p>}</div>
               </div>
             )}
           </div>
@@ -532,6 +587,26 @@ export default function BudgetPlanner() {
             {recentTransactions.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">لا توجد عمليات بعد.</p>}
           </div>
         </div>
+        {amountDialog.open && (
+          <div className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={closeAmountDialog}>
+            <div className="w-full max-w-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-4" onClick={(e) => e.stopPropagation()}>
+              <h4 className="font-bold text-slate-900 dark:text-slate-100">{amountDialog.title}</h4>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{amountDialog.subtitle}</p>
+              <input
+                type="number"
+                min="0"
+                value={amountDialog.amount}
+                onChange={(e) => setAmountDialog((prev) => ({ ...prev, amount: e.target.value }))}
+                placeholder={`المبلغ (${symbol})`}
+                className="mt-3 w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 tabular-nums"
+              />
+              <div className="mt-3 flex items-center gap-2">
+                <button onClick={confirmAmountDialog} className="flex-1 rounded-xl bg-primary text-white font-semibold py-2.5">تأكيد</button>
+                <button onClick={closeAmountDialog} className="flex-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 py-2.5">إلغاء</button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
@@ -546,3 +621,5 @@ function InfoCell({ title, value, tone = "default" }: { title: string; value: st
   const toneClass = tone === "ok" ? "text-emerald-600 dark:text-emerald-400" : tone === "danger" ? "text-rose-600 dark:text-rose-400" : "text-slate-800 dark:text-slate-100";
   return <div className="rounded-xl bg-slate-50 dark:bg-slate-800/50 p-2.5"><p className="text-xs text-slate-500 dark:text-slate-400">{title}</p><p className={`font-bold tabular-nums ${toneClass}`}>{value}</p></div>;
 }
+
+
