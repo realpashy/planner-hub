@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -24,8 +25,16 @@ function PlannerSetupRoute() {
 }
 
 function PlannerRoute() {
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!isOnboarded()) {
+      setLocation("/planner/setup");
+    }
+  }, [setLocation]);
+
   if (!isOnboarded()) {
-    return <PlannerSetupRoute />;
+    return null;
   }
 
   return <WeeklyPlanner />;
