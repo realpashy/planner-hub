@@ -2,7 +2,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { ArrowRight, Calendar, CalendarClock, PiggyBank, Plus, Search, Trash2, Wallet } from "lucide-react";
+import { ArrowRight, CalendarClock, PiggyBank, Plus, Search, Trash2, Wallet } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   CURRENCY_OPTIONS,
@@ -31,6 +31,8 @@ const TAB_LABELS: Record<BudgetTab, string> = {
   categories: "إعدادات الفئات",
 };
 
+const MONTH_NAMES_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -41,15 +43,17 @@ function endOfMonthISO(monthKey: string) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-function monthLabelArabic(monthKey: string) {
-  const [y, m] = monthKey.split("-").map(Number);
-  const date = new Date(y, m - 1, 1);
-  return new Intl.DateTimeFormat("ar-u-nu-latn", { month: "long", year: "numeric" }).format(date);
+function parseAmountInput(value: string): number {
+  const normalized = value.replace(/,/g, "").trim();
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : NaN;
 }
 
-function emptyTransactionState(type: BudgetTransactionType = "expense") {
+function emptyTransactionState(type: BudgetTransactionType = "income") {
   return { id: "", type, title: "", amount: "", date: todayISO(), categoryId: "", note: "", linkedId: "" };
 }
+
+const ADD_TRANSACTION_TYPES: BudgetTransactionType[] = ["income", "expense", "bill_payment", "debt_payment"];
 
 interface AmountDialogState {
   open: boolean;
@@ -74,7 +78,7 @@ export default function BudgetPlanner() {
   const [activeTab, setActiveTab] = useState<BudgetTab>("overview");
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonthKey());
 
-  const [transactionForm, setTransactionForm] = useState(emptyTransactionState());
+  const [transactionForm, setTransactionForm] = useState(emptyTransactionState("income"));
 
   const [categoryType, setCategoryType] = useState<BudgetCategoryType>("expense");
   const [categoryName, setCategoryName] = useState("");
@@ -245,6 +249,11 @@ export default function BudgetPlanner() {
   }, [monthlyTotals, data.bills, data.debts, billPaymentsById, debtPaymentsById, selectedMonth]);
 
   const symbol = getCurrencySymbol(data.settings.currency);
+  const [selectedYear, selectedMonthNumber] = selectedMonth.split("-");
+  const yearOptions = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    return Array.from({ length: 10 }, (_, index) => String(currentYear - 4 + index));
+  }, []);
 
   const configureTransactionType = (type: BudgetTransactionType) => {
     setTransactionForm((prev) => ({
@@ -255,7 +264,7 @@ export default function BudgetPlanner() {
   };
 
   const saveTransaction = () => {
-    const amount = Number(transactionForm.amount);
+    const amount = parseAmountInput(transactionForm.amount);
     if (!transactionForm.title.trim() || !Number.isFinite(amount) || amount <= 0 || !transactionForm.categoryId) return;
 
     const payload: BudgetTransaction = {
@@ -302,7 +311,7 @@ export default function BudgetPlanner() {
     setEditingCategoryName("");
   };
   const addSavingGoal = () => {
-    const targetAmount = Number(goalTargetAmount);
+    const targetAmount = parseAmountInput(goalTargetAmount);
     if (!goalTitle.trim() || !Number.isFinite(targetAmount) || targetAmount <= 0 || !goalTargetDate) return;
 
     applyData((current) => ({
@@ -336,7 +345,7 @@ export default function BudgetPlanner() {
   };
 
   const confirmAmountDialog = () => {
-    const amount = Number(amountDialog.amount);
+    const amount = parseAmountInput(amountDialog.amount);
     if (!Number.isFinite(amount) || amount <= 0 || !amountDialog.onConfirm) return;
     amountDialog.onConfirm(amount);
     setAmountDialog({ open: false, title: "", subtitle: "", amount: "", onConfirm: null });
@@ -368,7 +377,7 @@ export default function BudgetPlanner() {
 
   const saveEditTransaction = () => {
     if (!editDialog.tx) return;
-    const amount = Number(editDialog.amount);
+    const amount = parseAmountInput(editDialog.amount);
     if (!editDialog.title.trim() || !Number.isFinite(amount) || amount <= 0 || !editDialog.categoryId) return;
 
     applyData((current) => ({
@@ -394,6 +403,14 @@ export default function BudgetPlanner() {
     applyData((current) => ({ ...current, transactions: current.transactions.filter((tx) => tx.id !== id) }));
   };
 
+  const deleteSavingGoal = (id: string) => {
+    applyData((current) => ({
+      ...current,
+      savingsGoals: current.savingsGoals.filter((goal) => goal.id !== id),
+      transactions: current.transactions.filter((tx) => !(tx.type === "saving" && tx.linkedId === id)),
+    }));
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-12" dir="rtl">
       <header className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
@@ -408,27 +425,43 @@ export default function BudgetPlanner() {
             <h1 className="text-lg md:text-2xl font-bold text-slate-900 dark:text-slate-50 flex items-center gap-2">
               <Wallet className="w-5 h-5 md:w-6 md:h-6 text-emerald-500" />
               الميزانيّة الشهرية
-            </h1>
-            <div className="hidden md:flex items-center gap-1 text-sm text-slate-700 dark:text-slate-200">
-              <Calendar className="w-4 h-4 text-slate-900 dark:text-white" />
-              <span>{monthLabelArabic(selectedMonth)}</span>
-            </div>
-          </div>
+            </h1>          </div>
 
           <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2">
-              <Calendar className="w-4 h-4 text-slate-900 dark:text-white" />
-              <input
-                type="month"
-                value={selectedMonth}
+              <select
+                value={selectedMonthNumber}
                 onChange={(e) => {
-                  const month = e.target.value;
+                  const month = `${selectedYear}-${e.target.value}`;
                   setSelectedMonth(month);
                   setGoalTargetDate(endOfMonthISO(month));
                 }}
-                className="bg-transparent outline-none text-slate-800 dark:text-slate-100 tabular-nums"
-              />
-              <span className="text-xs text-slate-500 dark:text-slate-400 mr-auto">{monthLabelArabic(selectedMonth)}</span>
+                className="bg-transparent outline-none text-slate-800 dark:text-slate-100"
+              >
+                {MONTH_NAMES_EN.map((name, index) => {
+                  const value = String(index + 1).padStart(2, "0");
+                  return (
+                    <option key={value} value={value}>
+                      {name}
+                    </option>
+                  );
+                })}
+              </select>
+              <select
+                value={selectedYear}
+                onChange={(e) => {
+                  const month = `${e.target.value}-${selectedMonthNumber}`;
+                  setSelectedMonth(month);
+                  setGoalTargetDate(endOfMonthISO(month));
+                }}
+                className="bg-transparent outline-none text-slate-800 dark:text-slate-100 tabular-nums mr-auto"
+              >
+                {yearOptions.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <select
@@ -446,11 +479,11 @@ export default function BudgetPlanner() {
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 pt-5 md:pt-6">
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-5">
-          <SummaryCard title="دخل" value={formatAmount(monthlyTotals.income, data.settings.currency)} tone="income" />
-          <SummaryCard title="مصروفات" value={formatAmount(monthlyTotals.expenses, data.settings.currency)} tone="expense" />
-          <SummaryCard title="فواتير + ديون" value={formatAmount(monthlyTotals.bills + monthlyTotals.debts, data.settings.currency)} tone="bill" />
-          <SummaryCard title="ادخار" value={formatAmount(monthlyTotals.savings, data.settings.currency)} tone="saving" />
-          <SummaryCard title="الصافي" value={formatAmount(monthlyTotals.net, data.settings.currency)} tone={monthlyTotals.net >= 0 ? "income" : "expense"} />
+          <SummaryCard title="دخل" amount={monthlyTotals.income} currency={data.settings.currency} tone="income" />
+          <SummaryCard title="مصروفات" amount={monthlyTotals.expenses} currency={data.settings.currency} tone="expense" />
+          <SummaryCard title="فواتير + ديون" amount={monthlyTotals.bills + monthlyTotals.debts} currency={data.settings.currency} tone="bill" />
+          <SummaryCard title="ادخار" amount={monthlyTotals.savings} currency={data.settings.currency} tone="saving" />
+          <SummaryCard title="الصافي" amount={monthlyTotals.net} currency={data.settings.currency} tone={monthlyTotals.net >= 0 ? "income" : "expense"} />
         </div>
 
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-3 mb-5 overflow-x-auto">
@@ -468,7 +501,7 @@ export default function BudgetPlanner() {
               <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
                 <h2 className="font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />إضافة معاملة جديدة</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <select value={transactionForm.type} onChange={(e) => configureTransactionType(e.target.value as BudgetTransactionType)} className="bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5">{(Object.keys(TRANSACTION_TYPE_LABEL) as BudgetTransactionType[]).map((type) => <option key={type} value={type}>{TRANSACTION_TYPE_LABEL[type]}</option>)}</select>
+                  <select value={transactionForm.type} onChange={(e) => configureTransactionType(e.target.value as BudgetTransactionType)} className="bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5">{ADD_TRANSACTION_TYPES.map((type) => <option key={type} value={type}>{TRANSACTION_TYPE_LABEL[type]}</option>)}</select>
                   <select value={transactionForm.categoryId} onChange={(e) => setTransactionForm((prev) => ({ ...prev, categoryId: e.target.value }))} className="bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5"><option value="">اختر الفئة</option>{transactionCategories.map((cat) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}</select>
                   <input value={transactionForm.title} onChange={(e) => setTransactionForm((prev) => ({ ...prev, title: e.target.value }))} placeholder="عنوان العملية" className="bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5" />
                   <input type="number" min="0" value={transactionForm.amount} onChange={(e) => setTransactionForm((prev) => ({ ...prev, amount: e.target.value }))} placeholder={`المبلغ (${symbol})`} className="bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 tabular-nums" />
@@ -487,24 +520,76 @@ export default function BudgetPlanner() {
                 </div>
                 <button onClick={addSavingGoal} className="mt-2 px-4 py-2.5 rounded-xl bg-primary text-white font-semibold">إضافة الهدف</button>
               </div>
+
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
+                <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-3">أهداف الادخار</h3>
+                <div className="space-y-2.5">
+                  {data.savingsGoals.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">لا توجد أهداف ادخار بعد.</p>}
+                  {data.savingsGoals.map((goal) => {
+                    const saved = savingsByGoalId.get(goal.id) || 0;
+                    const progress = goal.targetAmount > 0 ? Math.min(Math.round((saved / goal.targetAmount) * 100), 100) : 0;
+                    return (
+                      <div key={goal.id} className="rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-800/40 p-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="font-semibold text-slate-800 dark:text-slate-100">{goal.title}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">الاستحقاق: {goal.targetDate}</p>
+                          </div>
+                          <button onClick={() => deleteSavingGoal(goal.id)} className="px-2 py-1 text-xs rounded-lg bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400">حذف</button>
+                        </div>
+                        <div className="mt-2 flex items-center justify-between text-xs">
+                          <span className="text-slate-600 dark:text-slate-300">تم ادخار</span>
+                          <span className="text-slate-700 dark:text-slate-200 tabular-nums">
+                            <span className="inline-block tabular-nums whitespace-nowrap" style={{ direction: "ltr", unicodeBidi: "bidi-override" }}>
+                              {formatAmount(saved, data.settings.currency)}
+                            </span>
+                            {" / "}
+                            <span className="inline-block tabular-nums whitespace-nowrap" style={{ direction: "ltr", unicodeBidi: "bidi-override" }}>
+                              {formatAmount(goal.targetAmount, data.settings.currency)}
+                            </span>
+                          </span>
+                        </div>
+                        <div className="mt-1.5 w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                          <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }} transition={{ duration: 0.35 }} className="h-full bg-emerald-500" />
+                        </div>
+                        <div className="mt-2 flex items-center justify-between">
+                          <span className="text-xs text-slate-500 dark:text-slate-400">{progress}%</span>
+                          <button onClick={() => openSavingContributionDialog(goal)} className="px-2.5 py-1.5 rounded-lg bg-primary text-white text-xs">إضافة مساهمة</button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
 
             <div className="lg:col-span-7 space-y-5">
               <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
                 <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-4">أكبر الفئات صرفا</h3>
+                <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+                  <div className="flex justify-center">
+                    <div
+                      className="w-28 h-28 rounded-full border-4 border-white dark:border-slate-900 shadow-inner"
+                      style={{
+                        background: `conic-gradient(#22c55e 0 ${Math.max(Math.round((expenseByCategory[0]?.total || 0) / Math.max(monthlyTotals.totalOutflow,1) * 360), 1)}deg, #3b82f6 ${Math.max(Math.round((expenseByCategory[0]?.total || 0) / Math.max(monthlyTotals.totalOutflow,1) * 360), 1)}deg ${Math.max(Math.round(((expenseByCategory[0]?.total || 0) + (expenseByCategory[1]?.total || 0)) / Math.max(monthlyTotals.totalOutflow,1) * 360), 2)}deg, #f59e0b ${Math.max(Math.round(((expenseByCategory[0]?.total || 0) + (expenseByCategory[1]?.total || 0)) / Math.max(monthlyTotals.totalOutflow,1) * 360), 2)}deg ${Math.max(Math.round(((expenseByCategory[0]?.total || 0) + (expenseByCategory[1]?.total || 0) + (expenseByCategory[2]?.total || 0)) / Math.max(monthlyTotals.totalOutflow,1) * 360), 3)}deg, #ef4444 ${Math.max(Math.round(((expenseByCategory[0]?.total || 0) + (expenseByCategory[1]?.total || 0) + (expenseByCategory[2]?.total || 0)) / Math.max(monthlyTotals.totalOutflow,1) * 360), 3)}deg 360deg)`,
+                      }}
+                    >
+                      <div className="w-full h-full rounded-full flex items-center justify-center">
+                        <div className="w-14 h-14 rounded-full bg-white dark:bg-slate-900" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-sm text-slate-600 dark:text-slate-300">
+                    <p>عرض مرئي سريع لفئات الصرف الأعلى.</p>
+                    <p className="mt-1">يساعدك على فهم توزيع المصروفات خلال الشهر دون تعقيد.</p>
+                  </div>
+                </div>
                 <div className="space-y-3">
                   {expenseByCategory.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">لا توجد بيانات في هذا الشهر.</p>}
                   {expenseByCategory.map((row) => {
                     const ratio = monthlyTotals.totalOutflow > 0 ? Math.round((row.total / monthlyTotals.totalOutflow) * 100) : 0;
-                    return <div key={row.categoryId}><div className="flex items-center justify-between text-sm mb-1"><p className="font-medium text-slate-800 dark:text-slate-100">{row.name}</p><p className="text-slate-500 dark:text-slate-400 tabular-nums">{formatAmount(row.total, data.settings.currency)} • {ratio}%</p></div><div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: `${ratio}%` }} transition={{ duration: 0.3 }} className="h-full bg-primary" /></div></div>;
+                    return <div key={row.categoryId}><div className="flex items-center justify-between text-sm mb-1"><p className="font-medium text-slate-800 dark:text-slate-100">{row.name}</p><p className="text-slate-500 dark:text-slate-400 tabular-nums"><span className="inline-block tabular-nums whitespace-nowrap" style={{ direction: "ltr", unicodeBidi: "bidi-override" }}>{formatAmount(row.total, data.settings.currency)}</span> • {ratio}%</p></div><div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: `${ratio}%` }} transition={{ duration: 0.3 }} className="h-full bg-primary" /></div></div>;
                   })}
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
-                <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-4">تنبيهات قريبة</h3>
-                <div className="space-y-2.5">
-                  {upcomingWarnings.map((item, idx) => <div key={idx} className={`rounded-xl p-3 text-sm leading-relaxed ${item.tone === "good" ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300" : item.tone === "warn" ? "bg-amber-50 dark:bg-amber-500/10 text-amber-800 dark:text-amber-300" : "bg-rose-50 dark:bg-rose-500/10 text-rose-800 dark:text-rose-300"}`}>{item.text}</div>)}
                 </div>
               </div>
 
@@ -512,14 +597,34 @@ export default function BudgetPlanner() {
                 <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-3 flex items-center gap-2"><CalendarClock className="w-4 h-4 text-blue-500" />آخر عمليات هذا الشهر</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
                   <div className="relative md:col-span-2"><Search className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" /><input value={recentSearch} onChange={(e) => setRecentSearch(e.target.value)} placeholder="ابحث عن عملية محددة" className="w-full pr-9 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5" /></div>
-                  <select value={recentFilter} onChange={(e) => setRecentFilter(e.target.value as typeof recentFilter)} className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5"><option value="all">الكل / أخرى</option><option value="income">دخل</option><option value="expense">مصروف</option><option value="bill_payment">فاتورة</option><option value="debt_payment">دين</option><option value="saving">ادخار</option></select>
+                  <select value={recentFilter} onChange={(e) => setRecentFilter(e.target.value as typeof recentFilter)} className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5"><option value="all">الكل / أخرى</option><option value="income">دخل</option><option value="expense">مصروف</option><option value="bill_payment">فاتورة</option><option value="debt_payment">دين</option></select>
                 </div>
                 <div className="space-y-2.5 max-h-[520px] overflow-auto pr-1">
                   {recentTransactions.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">لا توجد عمليات مطابقة.</p>}
                   {recentTransactions.map((tx) => {
                     const category = data.categories.find((c) => c.id === tx.categoryId);
-                    return <div key={tx.id} className="rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-800/40 p-3"><div className="flex items-start justify-between gap-3"><div><p className="font-semibold text-slate-800 dark:text-slate-100">{tx.title}</p><p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{TRANSACTION_TYPE_LABEL[tx.type]} • {category?.name || "غير مصنف"} • {tx.date}</p></div><p className={`font-bold tabular-nums ${tx.type === "income" ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>{formatAmount(tx.amount, data.settings.currency)}</p></div><div className="mt-2 flex items-center gap-2"><button onClick={() => openEditTransactionDialog(tx)} className="px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs">تعديل</button><button onClick={() => deleteTransaction(tx.id)} className="px-2.5 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-1"><Trash2 className="w-3 h-3" />حذف</button></div></div>;
+                    return <div key={tx.id} className="rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-800/40 p-3"><div className="flex items-start justify-between gap-3"><div><p className="font-semibold text-slate-800 dark:text-slate-100">{tx.title}</p><p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{TRANSACTION_TYPE_LABEL[tx.type]} • {category?.name || "غير مصنف"} • {tx.date}</p></div><p className={`font-bold tabular-nums ${tx.type === "income" ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}><span className="inline-block tabular-nums whitespace-nowrap" style={{ direction: "ltr", unicodeBidi: "bidi-override" }}>{formatAmount(tx.amount, data.settings.currency)}</span></p></div><div className="mt-2 flex items-center gap-2"><button onClick={() => openEditTransactionDialog(tx)} className="px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs">تعديل</button><button onClick={() => deleteTransaction(tx.id)} className="px-2.5 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-1"><Trash2 className="w-3 h-3" />حذف</button></div></div>;
                   })}
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
+                <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-3">تنبيهات قريبة</h3>
+                <div className="space-y-2.5">
+                  {upcomingWarnings.map((warning, index) => (
+                    <div
+                      key={`${warning.text}_${index}`}
+                      className={`rounded-xl border px-3 py-2.5 text-sm ${
+                        warning.tone === "danger"
+                          ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300"
+                          : warning.tone === "warn"
+                            ? "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300"
+                            : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300"
+                      }`}
+                    >
+                      {warning.text}
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -550,6 +655,7 @@ export default function BudgetPlanner() {
                 <button onClick={confirmAmountDialog} className="flex-1 rounded-xl bg-primary text-white font-semibold py-2.5">تأكيد</button>
                 <button onClick={closeAmountDialog} className="flex-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 py-2.5">إلغاء</button>
               </div>
+
             </div>
           </div>
         )}
@@ -571,6 +677,7 @@ export default function BudgetPlanner() {
                 <button onClick={saveEditTransaction} className="flex-1 rounded-xl bg-primary text-white font-semibold py-2.5">حفظ</button>
                 <button onClick={() => setEditDialog({ open: false, tx: null, title: "", amount: "", date: todayISO(), note: "", categoryId: "" })} className="flex-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 py-2.5">إلغاء</button>
               </div>
+
             </div>
           </div>
         )}
@@ -579,7 +686,17 @@ export default function BudgetPlanner() {
   );
 }
 
-function SummaryCard({ title, value, tone }: { title: string; value: string; tone: "income" | "expense" | "bill" | "saving" }) {
+function SummaryCard({
+  title,
+  amount,
+  currency,
+  tone,
+}: {
+  title: string;
+  amount: number;
+  currency: BudgetData["settings"]["currency"];
+  tone: "income" | "expense" | "bill" | "saving";
+}) {
   const toneClass = {
     income: "text-emerald-600 dark:text-emerald-400",
     expense: "text-rose-600 dark:text-rose-400",
@@ -590,7 +707,25 @@ function SummaryCard({ title, value, tone }: { title: string; value: string; ton
   return (
     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-3 md:p-4">
       <p className="text-sm text-slate-500 dark:text-slate-400">{title}</p>
-      <p className={`text-base md:text-lg font-bold tabular-nums ${toneClass[tone]}`}>{value}</p>
+      <p className={`text-base md:text-lg font-bold ${toneClass[tone]}`}>
+        <span className="inline-block tabular-nums whitespace-nowrap" style={{ direction: "ltr", unicodeBidi: "bidi-override" }}>
+          {formatAmount(amount, currency)}
+        </span>
+      </p>
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+

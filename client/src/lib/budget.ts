@@ -138,7 +138,9 @@ export function formatNumber(value: number) {
 }
 
 export function formatAmount(value: number, currency: CurrencyCode) {
-  return `${getCurrencySymbol(currency)} ${formatNumber(value)}`;
+  const sign = value < 0 ? "-" : "";
+  const normalized = formatNumber(Math.abs(value));
+  return `${getCurrencySymbol(currency)} ${sign}${normalized}`;
 }
 
 function defaultBudgetData(): BudgetData {

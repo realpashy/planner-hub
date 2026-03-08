@@ -52,3 +52,8 @@
 
 
 
+
+- Budget period selector uses English month/year labels only (no mixed Arabic/English month duplication).
+- In budget add-transaction form, default type is دخل and ادخار is intentionally excluded.
+- Monetary text in RTL views must use an LTR direction lock to keep symbol/sign order readable (example: ₪ -2,000).
+- Widget order in budget overview keeps تنبيهات قريبة as the last card in the right column.
