@@ -28,14 +28,19 @@ Status: In Progress
 Components:
 - monthly overview KPIs
 - operations list with search/filter/edit/delete popup
-- transactions log (add/edit/delete/search/filter)
+- transactions log (add/edit/delete/search/filter)`r`n- recurring monthly entries for bills/debts with per-month exclusion control
 - category management (by transaction type)
 - bills tracker with quick payment registration
 - debts tracker with progress and quick settlement
 - savings goals with default end-of-month target date and contributions
-- currency selector (symbol + text + code)`r`n- english month/year picker for budget period`r`n- smart alerts widget (تنبيهات قريبة) with scenario-based warnings
+- currency selector (symbol + text + code)
+- english month/year picker for budget period
+- advanced financial insights widget (تحليل مالي ذكي) with scenario-based warnings
 - simplified tabs (overview + category settings)
-Notes:`r`n- Currency options implemented: ILS, USD, AED, SAR, JOD, KWD, QAR, EGP.`r`n- Add transaction defaults to دخل and excludes ادخار (handled in savings-goals widget).`r`n- Savings goals are now visible/editable with progress + contribution actions.
+Notes:
+- Currency options implemented: ILS, USD, AED, SAR, JOD, KWD, QAR, EGP.
+- Add transaction defaults to دخل and excludes ادخار (handled in savings-goals widget).
+- Savings goals are now visible/editable with progress + contribution actions.
 - Dropdown shows symbol + text + code.
 - Displayed amounts use symbol-only format.
 - Data is localStorage-backed via `client/src/lib/budget.ts`.

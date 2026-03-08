@@ -24,6 +24,7 @@ export interface BudgetTransaction {
   categoryId: string;
   note: string;
   linkedId?: string;
+  recurringTemplateId?: string;
 }
 
 export interface BudgetBill {
@@ -55,6 +56,17 @@ export interface BudgetSettings {
   rolloverEnabled: boolean;
 }
 
+export interface BudgetRecurringTemplate {
+  id: string;
+  type: Exclude<BudgetTransactionType, "saving">;
+  categoryId: string;
+  amount: number;
+  note: string;
+  dayOfMonth: number;
+  startMonth: string;
+  skippedMonths: string[];
+}
+
 export interface BudgetData {
   settings: BudgetSettings;
   categories: BudgetCategory[];
@@ -62,6 +74,7 @@ export interface BudgetData {
   bills: BudgetBill[];
   debts: BudgetDebt[];
   savingsGoals: BudgetSavingGoal[];
+  recurringTemplates: BudgetRecurringTemplate[];
 }
 
 export interface MonthlyTotals {
@@ -155,6 +168,7 @@ function defaultBudgetData(): BudgetData {
     bills: [],
     debts: [],
     savingsGoals: [],
+    recurringTemplates: [],
   };
 }
 
@@ -201,6 +215,9 @@ export function loadBudgetData(): BudgetData {
     if (raw) {
       const parsed = JSON.parse(raw) as BudgetData;
       if (parsed?.settings && parsed?.categories && parsed?.transactions && parsed?.bills && parsed?.debts && parsed?.savingsGoals) {
+        if (!Array.isArray(parsed.recurringTemplates)) {
+          parsed.recurringTemplates = [];
+        }
         return parsed;
       }
     }

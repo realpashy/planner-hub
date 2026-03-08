@@ -57,3 +57,6 @@
 - In budget add-transaction form, default type is دخل and ادخار is intentionally excluded.
 - Monetary text in RTL views must use an LTR direction lock to keep symbol/sign order readable (example: ₪ -2,000).
 - Widget order in budget overview keeps تنبيهات قريبة as the last card in the right column.
+- Amount inputs must accept Arabic/Hebrew keyboard entry and normalize numerals before parsing.
+- Bills/debts support recurring monthly creation with an explicit 'exclude this month' action.
+- Category and type emojis are part of budget visual clarity and should stay consistent across lists/selects/cards.
