@@ -134,6 +134,7 @@ export default function AuthPage() {
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
+              dir="ltr"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="كلمة المرور"
@@ -153,6 +154,7 @@ export default function AuthPage() {
             <div className="relative">
               <input
                 type={showConfirmPassword ? "text" : "password"}
+                dir="ltr"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="تأكيد كلمة المرور"
@@ -184,3 +186,4 @@ export default function AuthPage() {
     </div>
   );
 }
+
