@@ -60,3 +60,8 @@
 - Amount inputs must accept Arabic/Hebrew keyboard entry and normalize numerals before parsing.
 - Bills/debts support recurring monthly creation with an explicit 'exclude this month' action.
 - Category and type emojis are part of budget visual clarity and should stay consistent across lists/selects/cards.
+
+- Editing recurring items must offer scope selection: current month only or all months.
+- Recurring exclusion must work for both linked bills/debts and recurring templates (income/expense).
+- Budget selects and long operation lists should keep modern themed styling (modern-select, modern-scrollbar).
+

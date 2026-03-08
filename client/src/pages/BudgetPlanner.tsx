@@ -19,6 +19,7 @@ import {
   type BudgetCategory,
   type BudgetCategoryType,
   type BudgetData,
+  type BudgetRecurringTemplate,
   type BudgetSavingGoal,
   type BudgetTransaction,
   type BudgetTransactionType,
@@ -105,6 +106,13 @@ interface EditDialogState {
   categoryId: string;
 }
 
+type EditApplyScope = "current" | "all";
+
+function isRecurringTransaction(tx: BudgetTransaction | null | undefined) {
+  if (!tx) return false;
+  return Boolean(tx.recurringTemplateId || tx.linkedId);
+}
+
 export default function BudgetPlanner() {
   const [data, setData] = useState<BudgetData>(() => loadBudgetData());
   const [activeTab, setActiveTab] = useState<BudgetTab>("overview");
@@ -143,6 +151,7 @@ export default function BudgetPlanner() {
     note: "",
     categoryId: "",
   });
+  const [editApplyScope, setEditApplyScope] = useState<EditApplyScope>("current");
 
   const applyData = (updater: (current: BudgetData) => BudgetData) => {
     setData((current) => {
@@ -290,7 +299,7 @@ export default function BudgetPlanner() {
     : typeof navigator !== "undefined"
       ? navigator.language
       : "ar";
-  const selectClassName = "appearance-none bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 shadow-sm focus:ring-2 focus:ring-primary/40 focus:border-primary/40";
+  const selectClassName = "modern-select appearance-none bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 shadow-sm transition focus:ring-2 focus:ring-primary/40 focus:border-primary/40";
   const inputClassName = "bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 shadow-sm focus:ring-2 focus:ring-primary/30 focus:border-primary/40";
   const localizedMonthLabel = useMemo(() => {
     const [y, m] = selectedMonth.split("-").map(Number);
@@ -311,6 +320,26 @@ export default function BudgetPlanner() {
 
   const ensureRecurringForMonth = (current: BudgetData, monthKey: string): BudgetData => {
     const newTransactions: BudgetTransaction[] = [];
+
+    for (const template of current.recurringTemplates) {
+      if (monthLessThan(monthKey, template.startMonth)) continue;
+      if (template.skippedMonths?.includes(monthKey)) continue;
+      const exists = current.transactions.some((tx) => tx.recurringTemplateId === template.id && getMonthKey(tx.date) === monthKey);
+      if (exists) continue;
+
+      const date = `${monthKey}-${String(clampDay(template.dayOfMonth, monthKey)).padStart(2, "0")}`;
+      const title = current.categories.find((c) => c.id === template.categoryId)?.name || TRANSACTION_TYPE_LABEL[template.type];
+      newTransactions.push({
+        id: createBudgetId(),
+        type: template.type,
+        title,
+        amount: template.amount,
+        date,
+        categoryId: template.categoryId,
+        note: template.note || "معاملة شهرية تلقائية",
+        recurringTemplateId: template.id,
+      });
+    }
 
     for (const bill of current.bills) {
       const skipped = (bill as BudgetData["bills"][number] & { skippedMonths?: string[] }).skippedMonths || [];
@@ -380,10 +409,28 @@ export default function BudgetPlanner() {
 
     const category = data.categories.find((c) => c.id === transactionForm.categoryId);
     let linkedId: string | undefined;
+    let recurringTemplateId: string | undefined;
 
     applyData((current) => {
       let next = { ...current };
 
+
+      if (isRecurring && transactionForm.type !== "saving" && transactionForm.type !== "bill_payment" && transactionForm.type !== "debt_payment") {
+        const templateId = createBudgetId();
+        recurringTemplateId = templateId;
+        const dayOfMonth = Number(transactionForm.date.split("-")[2]) || 1;
+        const nextTemplate: BudgetRecurringTemplate = {
+          id: templateId,
+          type: transactionForm.type,
+          categoryId: transactionForm.categoryId,
+          amount,
+          note: transactionForm.note.trim(),
+          dayOfMonth,
+          startMonth: getMonthKey(transactionForm.date),
+          skippedMonths: [],
+        };
+        next = { ...next, recurringTemplates: [nextTemplate, ...next.recurringTemplates] };
+      }
       if (isRecurring && transactionForm.type === "bill_payment") {
         const billId = createBudgetId();
         const day = Number(transactionForm.date.split("-")[2]) || 1;
@@ -433,6 +480,7 @@ export default function BudgetPlanner() {
         categoryId: transactionForm.categoryId,
         note: transactionForm.note.trim(),
         linkedId,
+        recurringTemplateId,
       };
 
       return { ...next, transactions: [payload, ...next.transactions] };
@@ -444,10 +492,15 @@ export default function BudgetPlanner() {
   };
 
   const skipRecurringForMonth = (tx: BudgetTransaction) => {
-    if (!tx.linkedId) return;
+    if (!tx.linkedId && !tx.recurringTemplateId) return;
 
     applyData((current) => ({
       ...current,
+      recurringTemplates: current.recurringTemplates.map((template) => {
+        if (template.id !== tx.recurringTemplateId) return template;
+        if (template.skippedMonths.includes(selectedMonth)) return template;
+        return { ...template, skippedMonths: [...template.skippedMonths, selectedMonth] };
+      }),
       bills: current.bills.map((bill) => {
         if (bill.id !== tx.linkedId) return bill;
         const skipped = ((bill as BudgetData["bills"][number] & { skippedMonths?: string[] }).skippedMonths || []);
@@ -554,6 +607,7 @@ export default function BudgetPlanner() {
       note: tx.note,
       categoryId: tx.categoryId,
     });
+    setEditApplyScope("current");
   };
 
   const saveEditTransaction = () => {
@@ -561,23 +615,61 @@ export default function BudgetPlanner() {
     const amount = parseAmountInput(editDialog.amount);
     if (!Number.isFinite(amount) || amount <= 0 || !editDialog.categoryId) return;
 
-    applyData((current) => ({
-      ...current,
-      transactions: current.transactions.map((tx) =>
-        tx.id === editDialog.tx?.id
-          ? {
-              ...tx,
-              title: data.categories.find((c) => c.id === editDialog.categoryId)?.name || tx.title,
-              amount,
-              date: editDialog.date,
-              note: editDialog.note.trim(),
-              categoryId: editDialog.categoryId,
-            }
-          : tx,
-      ),
-    }));
+    const applyAllMonths = isRecurringTransaction(editDialog.tx) && editApplyScope === "all";
+    const nextDay = Number(editDialog.date.split("-")[2]) || 1;
+
+    applyData((current) => {
+      const nextTitle = current.categories.find((c) => c.id === editDialog.categoryId)?.name || editDialog.tx?.title || "";
+
+      if (!applyAllMonths) {
+        return {
+          ...current,
+          transactions: current.transactions.map((tx) =>
+            tx.id === editDialog.tx?.id
+              ? {
+                  ...tx,
+                  title: nextTitle,
+                  amount,
+                  date: editDialog.date,
+                  note: editDialog.note.trim(),
+                  categoryId: editDialog.categoryId,
+                }
+              : tx,
+          ),
+        };
+      }
+
+      return {
+        ...current,
+        bills: current.bills.map((bill) =>
+          bill.id === editDialog.tx?.linkedId && editDialog.tx?.type === "bill_payment"
+            ? { ...bill, title: nextTitle, dueDay: nextDay, expectedAmount: amount, categoryId: editDialog.categoryId }
+            : bill,
+        ),
+        debts: current.debts.map((debt) =>
+          debt.id === editDialog.tx?.linkedId && editDialog.tx?.type === "debt_payment"
+            ? { ...debt, title: nextTitle, dueDay: nextDay, totalAmount: amount, categoryId: editDialog.categoryId }
+            : debt,
+        ),
+        transactions: current.transactions.map((tx) => {
+          const sameLinked = editDialog.tx?.linkedId && tx.linkedId === editDialog.tx.linkedId;
+          const sameRecurringTemplate = editDialog.tx?.recurringTemplateId && tx.recurringTemplateId === editDialog.tx.recurringTemplateId;
+          if (!sameLinked && !sameRecurringTemplate) return tx;
+          const monthKey = getMonthKey(tx.date);
+          return {
+            ...tx,
+            title: nextTitle,
+            amount,
+            categoryId: editDialog.categoryId,
+            note: editDialog.note.trim(),
+            date: `${monthKey}-${String(clampDay(nextDay, monthKey)).padStart(2, "0")}`
+          };
+        }),
+      };
+    });
 
     setEditDialog({ open: false, tx: null, amount: "", date: todayISO(), note: "", categoryId: "" });
+    setEditApplyScope("current");
   };
 
   const deleteTransaction = (id: string) => {
@@ -664,8 +756,8 @@ export default function BudgetPlanner() {
               <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
                 <h2 className="font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />إضافة معاملة جديدة</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <select value={transactionForm.type} onChange={(e) => configureTransactionType(e.target.value as BudgetTransactionType)} className="appearance-none bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 shadow-sm focus:ring-2 focus:ring-primary/40">{ADD_TRANSACTION_TYPES.map((type) => <option key={type} value={type}>{TRANSACTION_TYPE_LABEL[type]}</option>)}</select>
-                  <select value={transactionForm.categoryId} onChange={(e) => setTransactionForm((prev) => ({ ...prev, categoryId: e.target.value }))} className="appearance-none bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 shadow-sm focus:ring-2 focus:ring-primary/40"><option value="">اختر الفئة</option>{transactionCategories.map((cat) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}</select>                  <input type="text" inputMode="decimal" value={transactionForm.amount} onChange={(e) => setTransactionForm((prev) => ({ ...prev, amount: e.target.value }))} placeholder={`المبلغ (${symbol})`} className="bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 tabular-nums" />
+                  <select value={transactionForm.type} onChange={(e) => configureTransactionType(e.target.value as BudgetTransactionType)} className={selectClassName}>{ADD_TRANSACTION_TYPES.map((type) => <option key={type} value={type}>{`${TYPE_EMOJI[type]} ${TRANSACTION_TYPE_LABEL[type]}`}</option>)}</select>
+                  <select value={transactionForm.categoryId} onChange={(e) => setTransactionForm((prev) => ({ ...prev, categoryId: e.target.value }))} className={selectClassName}><option value="">اختر الفئة</option>{transactionCategories.map((cat) => <option key={cat.id} value={cat.id}>{`${categoryEmoji(cat.name, cat.type)} ${cat.name}`}</option>)}</select>                  <input type="text" inputMode="decimal" value={transactionForm.amount} onChange={(e) => setTransactionForm((prev) => ({ ...prev, amount: e.target.value }))} placeholder={`المبلغ (${symbol})`} className="bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 tabular-nums" />
                   <input type="date" value={transactionForm.date} onChange={(e) => setTransactionForm((prev) => ({ ...prev, date: e.target.value }))} className="bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 tabular-nums" />
                   <input value={transactionForm.note} onChange={(e) => setTransactionForm((prev) => ({ ...prev, note: e.target.value }))} placeholder="ملاحظة (اختياري)" className="bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5" />
                 </div>
@@ -766,7 +858,7 @@ export default function BudgetPlanner() {
                   <div className="relative md:col-span-2"><Search className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" /><input value={recentSearch} onChange={(e) => setRecentSearch(e.target.value)} placeholder="ابحث عن عملية محددة" className="w-full pr-9 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5" /></div>
                   <select value={recentFilter} onChange={(e) => setRecentFilter(e.target.value as typeof recentFilter)} className={selectClassName}><option value="all">الكل</option><option value="income">دخل</option><option value="expense">مصروف</option><option value="bill_payment">فاتورة</option><option value="debt_payment">دين</option><option value="other">أخرى</option></select>
                 </div>
-                <div className="space-y-2.5 max-h-[520px] overflow-auto pr-1">
+                <div className="space-y-2.5 max-h-[520px] overflow-auto pr-1 modern-scrollbar">
                   {recentTransactions.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">لا توجد عمليات مطابقة.</p>}
                   {recentTransactions.map((tx) => {
                     const category = data.categories.find((c) => c.id === tx.categoryId);
@@ -859,7 +951,7 @@ export default function BudgetPlanner() {
             <div className="mt-3 space-y-2">
               <button onClick={() => { openEditTransactionDialog(operationActionsTx); setOperationActionsTx(null); }} className="w-full rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 py-2.5 text-sm">تعديل</button>
               <button onClick={() => { deleteTransaction(operationActionsTx.id); setOperationActionsTx(null); }} className="w-full rounded-xl bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-300 py-2.5 text-sm">حذف</button>
-              {(operationActionsTx.type === "bill_payment" || operationActionsTx.type === "debt_payment") && operationActionsTx.linkedId && (
+              {isRecurringTransaction(operationActionsTx) && (
                 <button onClick={() => { skipRecurringForMonth(operationActionsTx); setOperationActionsTx(null); }} className="w-full rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 py-2.5 text-sm">استثناء هذا الشهر</button>
               )}
             </div>
@@ -872,6 +964,15 @@ export default function BudgetPlanner() {
               <h4 className="font-bold text-slate-900 dark:text-slate-100">تعديل العملية</h4>
               <div className="grid grid-cols-1 gap-2 mt-3">                <input type="text" inputMode="decimal" value={editDialog.amount} onChange={(e) => setEditDialog((prev) => ({ ...prev, amount: e.target.value }))} className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 tabular-nums" />
                 <input type="date" value={editDialog.date} onChange={(e) => setEditDialog((prev) => ({ ...prev, date: e.target.value }))} className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 tabular-nums" />
+                {isRecurringTransaction(editDialog.tx) && (
+                  <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 p-2">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">تطبيق التعديل على</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button type="button" onClick={() => setEditApplyScope("current")} className={`rounded-lg px-2.5 py-2 text-xs font-semibold ${editApplyScope === "current" ? "bg-primary text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200"}`}>هذا الشهر فقط</button>
+                      <button type="button" onClick={() => setEditApplyScope("all")} className={`rounded-lg px-2.5 py-2 text-xs font-semibold ${editApplyScope === "all" ? "bg-primary text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200"}`}>كل الأشهر</button>
+                    </div>
+                  </div>
+                )}
                 <select value={editDialog.categoryId} onChange={(e) => setEditDialog((prev) => ({ ...prev, categoryId: e.target.value }))} className={selectClassName}>
                   {data.categories.filter((c) => c.type === editDialog.tx?.type).map((cat) => <option key={cat.id} value={cat.id}>{`${categoryEmoji(cat.name, cat.type)} ${cat.name}`}</option>)}
                 </select>
@@ -919,6 +1020,10 @@ function SummaryCard({
     </div>
   );
 }
+
+
+
+
 
 
 

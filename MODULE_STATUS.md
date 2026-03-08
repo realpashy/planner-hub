@@ -27,8 +27,8 @@ Notes:
 Status: In Progress
 Components:
 - monthly overview KPIs
-- operations list with search/filter/edit/delete popup
-- transactions log (add/edit/delete/search/filter)`r`n- recurring monthly entries for bills/debts with per-month exclusion control
+- operations list with search/filter/edit/delete popup and recurring edit scope (current month vs all months)
+- transactions log (add/edit/delete/search/filter)`r`n- recurring monthly entries for bills/debts with per-month exclusion control`r`n- template-based recurring entries for income/expense with month generation + exclusion
 - category management (by transaction type)
 - bills tracker with quick payment registration
 - debts tracker with progress and quick settlement
@@ -100,6 +100,7 @@ Components:
 - grocery-linked task suggestions
 Notes:
 - UI card exists on dashboard as placeholder.
+
 
 
 
