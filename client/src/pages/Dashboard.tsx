@@ -5,7 +5,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 
 const modules = [
   { id: "planner", title: "المخطط الأسبوعي", desc: "خطط أسبوعك بذكاء", icon: <Calendar className="w-7 h-7 md:w-8 md:h-8" />, color: "bg-primary/10 text-primary", active: true },
-  { id: "budget", title: "الميزانية", desc: "تتبع مصاريفك بسهولة", icon: <Wallet className="w-7 h-7 md:w-8 md:h-8" />, color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400", active: true },
+  { id: "budget", title: "الميزانيّة الشهرية", desc: "إدارة مالية شهرية واضحة", icon: <Wallet className="w-7 h-7 md:w-8 md:h-8" />, color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400", active: true },
   { id: "habits", title: "العادات", desc: "ابنِ عادات إيجابية", icon: <Activity className="w-7 h-7 md:w-8 md:h-8" />, color: "bg-orange-500/10 text-orange-600 dark:text-orange-400", active: false },
   { id: "life", title: "منظم الحياة", desc: "نظّم حياتك", icon: <Heart className="w-7 h-7 md:w-8 md:h-8" />, color: "bg-rose-500/10 text-rose-600 dark:text-rose-400", active: false },
   { id: "monthly", title: "التخطيط الشهري", desc: "خطط شهرك", icon: <CalendarDays className="w-7 h-7 md:w-8 md:h-8" />, color: "bg-blue-500/10 text-blue-600 dark:text-blue-400", active: false },
@@ -80,4 +80,5 @@ export default function Dashboard() {
     </div>
   );
 }
+
 

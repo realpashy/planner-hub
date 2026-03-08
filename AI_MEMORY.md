@@ -34,6 +34,8 @@
 
 ## Budget Rules
 - Budget module supports multiple transaction types (income, expense, bills, debt, saving).
+- Budget tabs must stay focused: overview + category settings by default.
+- Transaction management should happen from "آخر عمليات هذا الشهر" with search/filter/edit/delete.
 - Currency list must include: ILS, USD, AED, SAR, JOD, KWD, QAR, EGP.
 - Currency dropdown shows symbol + text + code.
 - Displayed amounts use symbol-only formatting.
@@ -46,5 +48,7 @@
 - GitHub is primary source repository.
 - Push to `main` triggers Vercel deployment.
 - Keep SPA rewrite in Vercel config to avoid deep-link 404s.
+
+
 
 

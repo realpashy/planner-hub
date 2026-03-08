@@ -26,7 +26,7 @@ Planner Hub is a modular RTL planning platform for Arabic/Hebrew users. The goal
 - Dashboard with modules grid
 - Weekly planner with day strip, tasks, events, focus tags, notes, habits, summary widgets, charts
 - Planner templates flow shown only when entering weekly planner setup
-- Financial planner with tabs, transactions, categories, bills/debts, savings goals, monthly analytics, and in-app payment/contribution dialogs
+- Financial planner with focused tabs, powerful monthly operations management, category customization, savings goals, Arabic month context, and smart warnings
 - Local persistence (localStorage)
 - Theme support and responsive design
 
@@ -34,4 +34,5 @@ Planner Hub is a modular RTL planning platform for Arabic/Hebrew users. The goal
 - Transition from local-only data to shared entities across modules
 - Add auth, subscriptions, and persistence later
 - Keep all module interactions suggestion-based (no silent destructive automation)
+
 

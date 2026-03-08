@@ -27,13 +27,14 @@ Notes:
 Status: In Progress
 Components:
 - monthly overview KPIs
+- operations list with search/filter/edit/delete popup
 - transactions log (add/edit/delete/search/filter)
 - category management (by transaction type)
 - bills tracker with quick payment registration
 - debts tracker with progress and quick settlement
-- savings goals with contributions
+- savings goals with default end-of-month target date and contributions
 - monthly limit + rollover + currency selector
-- in-app amount dialog for payments/savings (replaces browser prompt)
+- simplified tabs (overview + category settings)
 Notes:
 - Currency options implemented: ILS, USD, AED, SAR, JOD, KWD, QAR, EGP.
 - Dropdown shows symbol + text + code.
@@ -95,5 +96,7 @@ Components:
 - grocery-linked task suggestions
 Notes:
 - UI card exists on dashboard as placeholder.
+
+
 
 
