@@ -1,5 +1,6 @@
 const PLANNER_KEY = "planner_hub_data";
 const BUDGET_KEY = "planner_hub_budget_v2";
+let lastPushedSignature = "";
 
 function safeParse(raw: string | null) {
   if (!raw) return null;
@@ -28,6 +29,9 @@ export async function pullCloudToLocal() {
 export async function pushLocalToCloud() {
   const plannerData = safeParse(localStorage.getItem(PLANNER_KEY));
   const budgetData = safeParse(localStorage.getItem(BUDGET_KEY));
+  const signature = JSON.stringify({ plannerData, budgetData });
+
+  if (signature === lastPushedSignature) return;
 
   await fetch("/api/data", {
     method: "PUT",
@@ -35,4 +39,6 @@ export async function pushLocalToCloud() {
     credentials: "include",
     body: JSON.stringify({ plannerData, budgetData }),
   });
+
+  lastPushedSignature = signature;
 }

@@ -57,20 +57,37 @@ function Router() {
     if (!auth.user) return;
 
     let active = true;
+    const flushSync = () => {
+      pushLocalToCloud().catch(() => null);
+    };
+
     pullCloudToLocal().then(() => {
       if (active) {
         queryClient.invalidateQueries({ queryKey: ["planner_data"] });
       }
     });
 
-    const timer = setInterval(() => {
-      pushLocalToCloud().catch(() => null);
-    }, 12000);
+    const timer = setInterval(flushSync, 12000);
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        flushSync();
+      }
+    };
+
+    const onPageHide = () => {
+      flushSync();
+    };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("pagehide", onPageHide);
 
     return () => {
       active = false;
       clearInterval(timer);
-      pushLocalToCloud().catch(() => null);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("pagehide", onPageHide);
+      flushSync();
     };
   }, [auth.user]);
 
