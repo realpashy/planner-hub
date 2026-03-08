@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { ArrowRight, CalendarClock, PiggyBank, Plus, Search, Trash2, Wallet } from "lucide-react";
+import { ArrowRight, CalendarClock, PiggyBank, Plus, Search, Wallet } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   CURRENCY_OPTIONS,
@@ -31,7 +31,7 @@ const TAB_LABELS: Record<BudgetTab, string> = {
   categories: "إعدادات الفئات",
 };
 
-const MONTH_NAMES_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
 const ADD_TRANSACTION_TYPES: BudgetTransactionType[] = ["income", "expense", "bill_payment", "debt_payment"];
 
 const RECURRING_ELIGIBLE_TYPES: Array<Exclude<BudgetTransactionType, "saving">> = ["income", "expense", "bill_payment", "debt_payment"];
@@ -124,6 +124,8 @@ export default function BudgetPlanner() {
 
   const [recentSearch, setRecentSearch] = useState("");
   const [recentFilter, setRecentFilter] = useState<"all" | "other" | BudgetTransactionType>("all");
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [operationActionsTx, setOperationActionsTx] = useState<BudgetTransaction | null>(null);
 
   const [amountDialog, setAmountDialog] = useState<AmountDialogState>({
     open: false,
@@ -283,11 +285,29 @@ export default function BudgetPlanner() {
   }, [monthlyTotals, data.bills, data.debts, billPaymentsById, debtPaymentsById, selectedMonth, expenseByCategory, data.settings.currency]);
 
   const symbol = getCurrencySymbol(data.settings.currency);
-  const [selectedYear, selectedMonthNumber] = selectedMonth.split("-");
-  const yearOptions = useMemo(() => {
-    const currentYear = new Date().getFullYear();
-    return Array.from({ length: 10 }, (_, index) => String(currentYear - 4 + index));
-  }, []);
+  const locale = typeof document !== "undefined" && document.documentElement.lang
+    ? document.documentElement.lang
+    : typeof navigator !== "undefined"
+      ? navigator.language
+      : "ar";
+  const selectClassName = "appearance-none bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 shadow-sm focus:ring-2 focus:ring-primary/40 focus:border-primary/40";
+  const inputClassName = "bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 shadow-sm focus:ring-2 focus:ring-primary/30 focus:border-primary/40";
+  const localizedMonthLabel = useMemo(() => {
+    const [y, m] = selectedMonth.split("-").map(Number);
+    return new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }).format(new Date(y, m - 1, 1));
+  }, [selectedMonth, locale]);
+  const monthOptions = useMemo(() => {
+    const [year] = selectedMonth.split("-").map(Number);
+    const items: Array<{ value: string; label: string }> = [];
+    for (let y = year - 2; y <= year + 2; y += 1) {
+      for (let m = 1; m <= 12; m += 1) {
+        const value = `${y}-${String(m).padStart(2, "0")}`;
+        const label = new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }).format(new Date(y, m - 1, 1));
+        items.push({ value, label });
+      }
+    }
+    return items;
+  }, [locale, selectedMonth]);
 
   const ensureRecurringForMonth = (current: BudgetData, monthKey: string): BudgetData => {
     const newTransactions: BudgetTransaction[] = [];
@@ -338,6 +358,12 @@ export default function BudgetPlanner() {
     applyData((current) => ensureRecurringForMonth(current, selectedMonth));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMonth]);
+
+  useEffect(() => {
+    if (!toastMessage) return;
+    const timer = setTimeout(() => setToastMessage(null), 3000);
+    return () => clearTimeout(timer);
+  }, [toastMessage]);
 
   const configureTransactionType = (type: BudgetTransactionType) => {
     setTransactionForm((prev) => ({
@@ -414,6 +440,7 @@ export default function BudgetPlanner() {
 
     setTransactionForm(emptyTransactionState("income"));
     setIsRecurring(false);
+    setToastMessage(`تمت إضافة ${category?.name || "المعاملة"} بنجاح`);
   };
 
   const skipRecurringForMonth = (tx: BudgetTransaction) => {
@@ -569,59 +596,41 @@ export default function BudgetPlanner() {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-12" dir="rtl">
       <header className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-4">
-          <div className="flex items-center justify-between gap-3">
+          <div className="relative flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Link href="/" className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors p-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800">
                 <ArrowRight className="w-5 h-5 md:w-6 md:h-6" />
               </Link>
               <ThemeToggle />
             </div>
-            <h1 className="text-lg md:text-2xl font-bold text-slate-900 dark:text-slate-50 flex items-center gap-2">
+            <h1 className="absolute left-1/2 -translate-x-1/2 text-lg md:text-2xl font-bold text-slate-900 dark:text-slate-50 flex items-center gap-2">
               <Wallet className="w-5 h-5 md:w-6 md:h-6 text-emerald-500" />
               الميزانيّة الشهرية
-            </h1>          </div>
+            </h1><div className="w-[68px]" />          </div>
 
           <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2">
+            <div className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/90 dark:bg-slate-800/60 px-3 py-2.5">
+              <CalendarClock className="w-4 h-4 text-slate-900 dark:text-white" />
               <select
-                value={selectedMonthNumber}
+                value={selectedMonth}
                 onChange={(e) => {
-                  const month = `${selectedYear}-${e.target.value}`;
+                  const month = e.target.value;
                   setSelectedMonth(month);
                   setGoalTargetDate(endOfMonthISO(month));
                 }}
-                className="bg-transparent outline-none text-slate-800 dark:text-slate-100"
+                className={`${selectClassName} flex-1 border-0 bg-transparent px-0 py-0 shadow-none focus:ring-0`}
               >
-                {MONTH_NAMES_EN.map((name, index) => {
-                  const value = String(index + 1).padStart(2, "0");
-                  return (
-                    <option key={value} value={value}>
-                      {name}
-                    </option>
-                  );
-                })}
-              </select>
-              <select
-                value={selectedYear}
-                onChange={(e) => {
-                  const month = `${e.target.value}-${selectedMonthNumber}`;
-                  setSelectedMonth(month);
-                  setGoalTargetDate(endOfMonthISO(month));
-                }}
-                className="bg-transparent outline-none text-slate-800 dark:text-slate-100 tabular-nums mr-auto"
-              >
-                {yearOptions.map((year) => (
-                  <option key={year} value={year}>
-                    {year}
-                  </option>
+                {monthOptions.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
                 ))}
               </select>
+              <span className="text-xs text-slate-500 dark:text-slate-400">{localizedMonthLabel}</span>
             </div>
 
             <select
               value={data.settings.currency}
               onChange={(e) => applyData((current) => ({ ...current, settings: { ...current.settings, currency: e.target.value as BudgetData["settings"]["currency"] } }))}
-              className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100"
+              className={selectClassName}
             >
               {CURRENCY_OPTIONS.map((option) => (
                 <option key={option.code} value={option.code}>{option.label}</option>
@@ -655,8 +664,8 @@ export default function BudgetPlanner() {
               <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
                 <h2 className="font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />إضافة معاملة جديدة</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <select value={transactionForm.type} onChange={(e) => configureTransactionType(e.target.value as BudgetTransactionType)} className="bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5">{ADD_TRANSACTION_TYPES.map((type) => <option key={type} value={type}>{`${TYPE_EMOJI[type]} ${TRANSACTION_TYPE_LABEL[type]}`}</option>)}</select>
-                  <select value={transactionForm.categoryId} onChange={(e) => setTransactionForm((prev) => ({ ...prev, categoryId: e.target.value }))} className="bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5"><option value="">اختر الفئة</option>{transactionCategories.map((cat) => <option key={cat.id} value={cat.id}>{`${categoryEmoji(cat.name, cat.type)} ${cat.name}`}</option>)}</select>                  <input type="text" inputMode="decimal" value={transactionForm.amount} onChange={(e) => setTransactionForm((prev) => ({ ...prev, amount: e.target.value }))} placeholder={`المبلغ (${symbol})`} className="bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 tabular-nums" />
+                  <select value={transactionForm.type} onChange={(e) => configureTransactionType(e.target.value as BudgetTransactionType)} className="appearance-none bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 shadow-sm focus:ring-2 focus:ring-primary/40">{ADD_TRANSACTION_TYPES.map((type) => <option key={type} value={type}>{TRANSACTION_TYPE_LABEL[type]}</option>)}</select>
+                  <select value={transactionForm.categoryId} onChange={(e) => setTransactionForm((prev) => ({ ...prev, categoryId: e.target.value }))} className="appearance-none bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 shadow-sm focus:ring-2 focus:ring-primary/40"><option value="">اختر الفئة</option>{transactionCategories.map((cat) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}</select>                  <input type="text" inputMode="decimal" value={transactionForm.amount} onChange={(e) => setTransactionForm((prev) => ({ ...prev, amount: e.target.value }))} placeholder={`المبلغ (${symbol})`} className="bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 tabular-nums" />
                   <input type="date" value={transactionForm.date} onChange={(e) => setTransactionForm((prev) => ({ ...prev, date: e.target.value }))} className="bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 tabular-nums" />
                   <input value={transactionForm.note} onChange={(e) => setTransactionForm((prev) => ({ ...prev, note: e.target.value }))} placeholder="ملاحظة (اختياري)" className="bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5" />
                 </div>
@@ -666,13 +675,13 @@ export default function BudgetPlanner() {
                     معاملة شهرية تلقائية (ويمكن استثناء أي شهر لاحقاً)
                   </label>
                 )}
-                <button onClick={saveTransaction} className="mt-3 px-4 py-2.5 rounded-xl bg-primary text-white font-semibold">حفظ المعاملة</button>
+                <button onClick={saveTransaction} className="mt-3 px-4 py-2.5 rounded-xl bg-primary text-white font-semibold">إضافة معاملة</button>
               </div>
 
               <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
                 <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-3 flex items-center gap-2"><PiggyBank className="w-4 h-4 text-emerald-500" />إضافة هدف ادخار</h3>
                 <div className="grid grid-cols-1 gap-2">
-                  <input value={goalTitle} onChange={(e) => setGoalTitle(e.target.value)} placeholder="اسم الهدف" className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5" />
+                  <input value={goalTitle} onChange={(e) => setGoalTitle(e.target.value)} placeholder="اسم الهدف" className={inputClassName} />
                   <input type="text" inputMode="decimal" value={goalTargetAmount} onChange={(e) => setGoalTargetAmount(e.target.value)} placeholder={`المبلغ المستهدف (${symbol})`} className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 tabular-nums" />
                   <input type="date" value={goalTargetDate} onChange={(e) => setGoalTargetDate(e.target.value)} className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 tabular-nums" />
                 </div>
@@ -697,11 +706,9 @@ export default function BudgetPlanner() {
                         </div>
                         <div className="mt-2 flex items-center justify-between text-xs">
                           <span className="text-slate-600 dark:text-slate-300">تم ادخار</span>
-                          <span dir="ltr" className="inline-flex items-center gap-1 text-slate-700 dark:text-slate-200 tabular-nums whitespace-nowrap">
-                            <span>{formatAmount(saved, data.settings.currency)}</span>
-                            <span>/</span>
-                            <span>{formatAmount(goal.targetAmount, data.settings.currency)}</span>
-                          </span>
+                          <bdi dir="ltr" className="text-slate-700 dark:text-slate-200 tabular-nums whitespace-nowrap">
+                            {`${formatAmount(saved, data.settings.currency)} / ${formatAmount(goal.targetAmount, data.settings.currency)}`}
+                          </bdi>
                         </div>
                         <div className="mt-1.5 w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                           <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }} transition={{ duration: 0.35 }} className="h-full bg-emerald-500" />
@@ -719,7 +726,7 @@ export default function BudgetPlanner() {
 
             <div className="lg:col-span-7 space-y-5">
               <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
-                <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-4">أكبر الفئات صرفا</h3>
+                <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-4">نظرة عامّة</h3>
                 <div className="mb-3 rounded-xl border border-slate-200 dark:border-slate-700 p-3 bg-slate-50/70 dark:bg-slate-800/40">
                   <div className="flex items-center justify-between text-xs mb-1"><span>الدخل</span><span dir="ltr" className="tabular-nums">{formatAmount(monthlyTotals.income, data.settings.currency)}</span></div>
                   <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden mb-2"><motion.div initial={{ width: 0 }} animate={{ width: "100%" }} className="h-full bg-emerald-500" /></div>
@@ -757,13 +764,30 @@ export default function BudgetPlanner() {
                 <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-3 flex items-center gap-2"><CalendarClock className="w-4 h-4 text-blue-500" />آخر عمليات هذا الشهر</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
                   <div className="relative md:col-span-2"><Search className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" /><input value={recentSearch} onChange={(e) => setRecentSearch(e.target.value)} placeholder="ابحث عن عملية محددة" className="w-full pr-9 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5" /></div>
-                  <select value={recentFilter} onChange={(e) => setRecentFilter(e.target.value as typeof recentFilter)} className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5"><option value="all">الكل</option><option value="income">دخل</option><option value="expense">مصروف</option><option value="bill_payment">فاتورة</option><option value="debt_payment">دين</option><option value="other">أخرى</option></select>
+                  <select value={recentFilter} onChange={(e) => setRecentFilter(e.target.value as typeof recentFilter)} className={selectClassName}><option value="all">الكل</option><option value="income">دخل</option><option value="expense">مصروف</option><option value="bill_payment">فاتورة</option><option value="debt_payment">دين</option><option value="other">أخرى</option></select>
                 </div>
                 <div className="space-y-2.5 max-h-[520px] overflow-auto pr-1">
                   {recentTransactions.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">لا توجد عمليات مطابقة.</p>}
                   {recentTransactions.map((tx) => {
                     const category = data.categories.find((c) => c.id === tx.categoryId);
-                    const emoji = categoryEmoji(category?.name || "", category?.type || tx.type); return <div key={tx.id} className="group rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-800/40 p-3"><div className="flex items-start justify-between gap-3"><div><p className="font-semibold text-slate-800 dark:text-slate-100">{`${emoji} ${category?.name || TRANSACTION_TYPE_LABEL[tx.type]}`}</p><p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{`${TYPE_EMOJI[tx.type]} ${TRANSACTION_TYPE_LABEL[tx.type]} • ${tx.date}`}</p>{tx.note && <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{tx.note}</p>}</div><p className={`font-bold tabular-nums ${tx.type === "income" ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}><span className="inline-block tabular-nums whitespace-nowrap" style={{ direction: "ltr", unicodeBidi: "bidi-override" }}>{formatAmount(tx.amount, data.settings.currency)}</span></p></div><div className="mt-2 flex items-center gap-2 flex-wrap"><button onClick={() => openEditTransactionDialog(tx)} className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs">تعديل</button><button onClick={() => deleteTransaction(tx.id)} className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition px-2.5 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-1"><Trash2 className="w-3 h-3" />حذف</button>{(tx.type === "bill_payment" || tx.type === "debt_payment") && tx.linkedId && <button onClick={() => skipRecurringForMonth(tx)} className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition px-2.5 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 text-xs">استثناء هذا الشهر</button>}</div></div>;
+                    const emoji = categoryEmoji(category?.name || "", category?.type || tx.type);
+                    const rowTitle = tx.type === "saving" ? "مساهمة ادخار" : `${emoji} ${category?.name || TRANSACTION_TYPE_LABEL[tx.type]}`;
+                    const metaLine = `${TRANSACTION_TYPE_LABEL[tx.type]} • ${tx.date}`;
+
+                    return (
+                      <button key={tx.id} onClick={() => setOperationActionsTx(tx)} className="w-full text-right rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-800/40 p-3 hover:bg-slate-100/90 dark:hover:bg-slate-700/50 transition">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="font-semibold text-slate-800 dark:text-slate-100">{rowTitle}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{metaLine}</p>
+                            {tx.note && <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{tx.note}</p>}
+                          </div>
+                          <p className={`font-bold tabular-nums ${tx.type === "income" ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                            <span className="inline-block tabular-nums whitespace-nowrap" style={{ direction: "ltr", unicodeBidi: "bidi-override" }}>{formatAmount(tx.amount, data.settings.currency)}</span>
+                          </p>
+                        </div>
+                      </button>
+                    );
                   })}
                 </div>
               </div>
@@ -796,8 +820,8 @@ export default function BudgetPlanner() {
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
               <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-3">تخصيص الفئات</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                <select value={categoryType} onChange={(e) => setCategoryType(e.target.value as BudgetCategoryType)} className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5">{(Object.keys(TRANSACTION_TYPE_LABEL) as BudgetTransactionType[]).map((type) => <option key={type} value={type}>{`${TYPE_EMOJI[type]} ${TRANSACTION_TYPE_LABEL[type]}`}</option>)}</select>
-                <input value={categoryName} onChange={(e) => setCategoryName(e.target.value)} placeholder="أضف خيار مخصص" className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5" />
+                <select value={categoryType} onChange={(e) => setCategoryType(e.target.value as BudgetCategoryType)} className={selectClassName}>{(Object.keys(TRANSACTION_TYPE_LABEL) as BudgetTransactionType[]).map((type) => <option key={type} value={type}>{`${TYPE_EMOJI[type]} ${TRANSACTION_TYPE_LABEL[type]}`}</option>)}</select>
+                <input value={categoryName} onChange={(e) => setCategoryName(e.target.value)} placeholder="أضف خيار مخصص" className={inputClassName} />
                 <button onClick={addCategory} className="rounded-xl bg-primary text-white font-semibold px-4 py-2.5">إضافة فئة</button>
               </div>
             </div>
@@ -820,16 +844,38 @@ export default function BudgetPlanner() {
           </div>
         )}
 
+
+      {toastMessage && (
+        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="fixed top-4 right-4 z-50 rounded-xl bg-emerald-600 text-white px-4 py-2 text-sm shadow-lg">
+          {toastMessage}
+        </motion.div>
+      )}
+
+      {operationActionsTx && (
+        <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-sm flex items-end md:items-center justify-center p-4" onClick={() => setOperationActionsTx(null)}>
+          <div className="w-full max-w-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-4" onClick={(e) => e.stopPropagation()}>
+            <h4 className="font-bold text-slate-900 dark:text-slate-100">خيارات العملية</h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{operationActionsTx.date}</p>
+            <div className="mt-3 space-y-2">
+              <button onClick={() => { openEditTransactionDialog(operationActionsTx); setOperationActionsTx(null); }} className="w-full rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 py-2.5 text-sm">تعديل</button>
+              <button onClick={() => { deleteTransaction(operationActionsTx.id); setOperationActionsTx(null); }} className="w-full rounded-xl bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-300 py-2.5 text-sm">حذف</button>
+              {(operationActionsTx.type === "bill_payment" || operationActionsTx.type === "debt_payment") && operationActionsTx.linkedId && (
+                <button onClick={() => { skipRecurringForMonth(operationActionsTx); setOperationActionsTx(null); }} className="w-full rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 py-2.5 text-sm">استثناء هذا الشهر</button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
         {editDialog.open && editDialog.tx && (
           <div className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setEditDialog({ open: false, tx: null, amount: "", date: todayISO(), note: "", categoryId: "" })}>
             <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-4" onClick={(e) => e.stopPropagation()}>
               <h4 className="font-bold text-slate-900 dark:text-slate-100">تعديل العملية</h4>
               <div className="grid grid-cols-1 gap-2 mt-3">                <input type="text" inputMode="decimal" value={editDialog.amount} onChange={(e) => setEditDialog((prev) => ({ ...prev, amount: e.target.value }))} className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 tabular-nums" />
                 <input type="date" value={editDialog.date} onChange={(e) => setEditDialog((prev) => ({ ...prev, date: e.target.value }))} className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 tabular-nums" />
-                <select value={editDialog.categoryId} onChange={(e) => setEditDialog((prev) => ({ ...prev, categoryId: e.target.value }))} className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5">
+                <select value={editDialog.categoryId} onChange={(e) => setEditDialog((prev) => ({ ...prev, categoryId: e.target.value }))} className={selectClassName}>
                   {data.categories.filter((c) => c.type === editDialog.tx?.type).map((cat) => <option key={cat.id} value={cat.id}>{`${categoryEmoji(cat.name, cat.type)} ${cat.name}`}</option>)}
                 </select>
-                <input value={editDialog.note} onChange={(e) => setEditDialog((prev) => ({ ...prev, note: e.target.value }))} placeholder="ملاحظة" className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5" />
+                <input value={editDialog.note} onChange={(e) => setEditDialog((prev) => ({ ...prev, note: e.target.value }))} placeholder="ملاحظة" className={inputClassName} />
               </div>
               <div className="mt-3 flex items-center gap-2">
                 <button onClick={saveEditTransaction} className="flex-1 rounded-xl bg-primary text-white font-semibold py-2.5">حفظ</button>
@@ -873,6 +919,17 @@ function SummaryCard({
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 

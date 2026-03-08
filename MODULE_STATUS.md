@@ -34,14 +34,14 @@ Components:
 - debts tracker with progress and quick settlement
 - savings goals with default end-of-month target date and contributions
 - currency selector (symbol + text + code)
-- english month/year picker for budget period
-- advanced financial insights widget (تحليل مالي ذكي) with scenario-based warnings
+- localized month/year picker (Arabic or current app language) for budget period
+- advanced financial insights widget (تحليل مالي ذكي) with scenario-based warnings and richer narrative hints
 - simplified tabs (overview + category settings)
 Notes:
 - Currency options implemented: ILS, USD, AED, SAR, JOD, KWD, QAR, EGP.
 - Add transaction defaults to دخل and excludes ادخار (handled in savings-goals widget).
-- Savings goals are now visible/editable with progress + contribution actions.
-- Dropdown shows symbol + text + code.
+- Savings goals are now visible/editable with progress + contribution actions, and contribution rows are labeled clearly in operations.
+- Dropdowns are styled with modern consistent UI across budget flows.
 - Displayed amounts use symbol-only format.
 - Data is localStorage-backed via `client/src/lib/budget.ts`.
 
@@ -100,6 +100,7 @@ Components:
 - grocery-linked task suggestions
 Notes:
 - UI card exists on dashboard as placeholder.
+
 
 
 
