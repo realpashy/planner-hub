@@ -138,7 +138,7 @@ export default function AuthPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="كلمة المرور"
-              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 ps-10 outline-none transition-all focus:ring-2 focus:ring-primary/35"
+              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 ps-10 text-left [direction:ltr] outline-none transition-all focus:ring-2 focus:ring-primary/35"
             />
             <button
               type="button"
@@ -158,7 +158,7 @@ export default function AuthPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="تأكيد كلمة المرور"
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 ps-10 outline-none transition-all focus:ring-2 focus:ring-primary/35"
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 ps-10 text-left [direction:ltr] outline-none transition-all focus:ring-2 focus:ring-primary/35"
               />
               <button
                 type="button"
@@ -186,4 +186,5 @@ export default function AuthPage() {
     </div>
   );
 }
+
 
