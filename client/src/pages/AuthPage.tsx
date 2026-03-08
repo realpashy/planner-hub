@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useLocation } from "wouter";
 import { Eye, EyeOff, Loader2, ShieldCheck } from "lucide-react";
@@ -73,6 +73,13 @@ export default function AuthPage() {
     }
   };
 
+  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!loading) {
+      await submit();
+    }
+  };
+
   return (
     <div
       className="relative min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4 overflow-hidden"
@@ -113,7 +120,7 @@ export default function AuthPage() {
           </button>
         </div>
 
-        <div className="mt-4 space-y-3">
+        <form className="mt-4 space-y-3" onSubmit={onSubmit}>
           {mode === "register" && (
             <input
               value={displayName}
@@ -135,6 +142,7 @@ export default function AuthPage() {
             <input
               type={showPassword ? "text" : "password"}
               dir="ltr"
+              style={{ direction: "ltr", textAlign: "left" }}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="كلمة المرور"
@@ -155,6 +163,7 @@ export default function AuthPage() {
               <input
                 type={showConfirmPassword ? "text" : "password"}
                 dir="ltr"
+                style={{ direction: "ltr", textAlign: "left" }}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="تأكيد كلمة المرور"
@@ -174,17 +183,16 @@ export default function AuthPage() {
           {error && <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p>}
 
           <button
-            onClick={submit}
+            type="submit"
             disabled={loading}
             className="w-full rounded-xl bg-primary text-white font-semibold py-2.5 disabled:opacity-60 inline-flex items-center justify-center gap-2"
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             {submitLabel}
           </button>
-        </div>
+        </form>
       </motion.div>
     </div>
   );
 }
-
 
