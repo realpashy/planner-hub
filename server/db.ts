@@ -16,13 +16,14 @@ function toConnectionString() {
 }
 
 const connectionString = toConnectionString();
+const connectionStringForPool = connectionString.replace(/([?&])sslmode=require(&|$)/i, (_m, p1, p2) => (p1 === "?" && p2 ? "?" : ""));
 
 if (!connectionString) {
   throw new Error("Missing database configuration: set DATABASE_URL (or PGHOST/PGPORT/PGDATABASE/PGUSER/PGPASSWORD)");
 }
 
 export const dbPool = new Pool({
-  connectionString,
+  connectionString: connectionStringForPool,
   ssl: connectionString.includes("supabase.co") ? { rejectUnauthorized: false } : undefined,
 });
 
@@ -97,3 +98,5 @@ export async function initializeDatabase() {
     );
   }
 }
+
+
