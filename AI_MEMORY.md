@@ -65,3 +65,9 @@
 - Recurring exclusion must work for both linked bills/debts and recurring templates (income/expense).
 - Budget selects and long operation lists should keep modern themed styling (modern-select, modern-scrollbar).
 
+
+- Use session auth with secure cookies and PostgreSQL session store.
+- Keep dashboard/planner/budget routes protected behind auth.
+- Cloud sync should pull on login and push periodically while user is active.
+- AI receipt parsing must prefill fields as suggestions, not force-save transactions.
+

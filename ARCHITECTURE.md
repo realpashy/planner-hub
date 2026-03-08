@@ -64,3 +64,19 @@
 - Vercel auto-deploy from `main`
 - SPA routing rewrite configured in `vercel.json`
 - Supabase project exists for future persistence rollout
+
+
+## Authentication and Persistence (Implemented)
+- Session auth with PostgreSQL-backed session store (connect-pg-simple).
+- User table: pp_users (email, hashed password, role).
+- User cloud data table: pp_user_data (planner_json, budget_json).
+- APIs:
+  - GET /api/auth/me`r
+  - POST /api/auth/register`r
+  - POST /api/auth/login`r
+  - POST /api/auth/logout`r
+  - GET /api/data`r
+  - PUT /api/data`r
+  - POST /api/ai/receipt`r
+- Client periodically syncs local planner/budget data to server for signed-in users.
+

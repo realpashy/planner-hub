@@ -9,7 +9,10 @@ import Dashboard from "./pages/Dashboard";
 import WeeklyPlanner from "./pages/WeeklyPlanner";
 import BudgetPlanner from "./pages/BudgetPlanner";
 import Onboarding from "./pages/Onboarding";
+import AuthPage from "./pages/AuthPage";
 import { isOnboarded } from "./lib/storage";
+import { AuthProvider, useAuth } from "./lib/auth";
+import { pullCloudToLocal, pushLocalToCloud } from "./lib/cloud-sync";
 
 function PlannerSetupRoute() {
   const [, setLocation] = useLocation();
@@ -41,12 +44,45 @@ function PlannerRoute() {
 }
 
 function Router() {
+  const [, setLocation] = useLocation();
+  const auth = useAuth();
+
+  useEffect(() => {
+    if (!auth.loading && !auth.user) {
+      setLocation("/auth");
+    }
+  }, [auth.loading, auth.user, setLocation]);
+
+  useEffect(() => {
+    if (!auth.user) return;
+
+    let active = true;
+    pullCloudToLocal().then(() => {
+      if (active) {
+        queryClient.invalidateQueries({ queryKey: ["planner_data"] });
+      }
+    });
+
+    const timer = setInterval(() => {
+      pushLocalToCloud().catch(() => null);
+    }, 12000);
+
+    return () => {
+      active = false;
+      clearInterval(timer);
+      pushLocalToCloud().catch(() => null);
+    };
+  }, [auth.user]);
+
+  if (auth.loading) return null;
+
   return (
     <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route path="/planner/setup" component={PlannerSetupRoute} />
-      <Route path="/planner" component={PlannerRoute} />
-      <Route path="/budget" component={BudgetPlanner} />
+      <Route path="/auth" component={AuthPage} />
+      {auth.user && <Route path="/" component={Dashboard} />}
+      {auth.user && <Route path="/planner/setup" component={PlannerSetupRoute} />}
+      {auth.user && <Route path="/planner" component={PlannerRoute} />}
+      {auth.user && <Route path="/budget" component={BudgetPlanner} />}
       <Route component={NotFound} />
     </Switch>
   );
@@ -56,10 +92,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <div dir="rtl" className="min-h-screen font-sans bg-background text-foreground">
-          <Router />
-        </div>
-        <Toaster />
+        <AuthProvider>
+          <div dir="rtl" className="min-h-screen font-sans bg-background text-foreground">
+            <Router />
+          </div>
+          <Toaster />
+        </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

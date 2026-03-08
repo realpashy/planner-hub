@@ -134,6 +134,7 @@ export default function BudgetPlanner() {
   const [recentFilter, setRecentFilter] = useState<"all" | "other" | BudgetTransactionType>("all");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [operationActionsTx, setOperationActionsTx] = useState<BudgetTransaction | null>(null);
+  const [receiptLoading, setReceiptLoading] = useState(false);
 
   const [amountDialog, setAmountDialog] = useState<AmountDialogState>({
     open: false,
@@ -401,6 +402,51 @@ export default function BudgetPlanner() {
       categoryId: data.categories.find((c) => c.type === type)?.id || "",
     }));
     setIsRecurring(false);
+  };
+
+  const handleReceiptInput = async (file: File | null) => {
+    if (!file) return;
+
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(new Error("فشل قراءة الصورة"));
+      reader.readAsDataURL(file);
+    });
+
+    try {
+      setReceiptLoading(true);
+      const res = await fetch("/api/ai/receipt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ imageDataUrl: dataUrl }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || "فشل تحليل الصورة");
+      }
+
+      const body = (await res.json()) as { result: { type: BudgetTransactionType; amount: number; date: string; note: string; suggestedCategoryName: string } };
+      const result = body.result;
+      const matchedCategory = data.categories.find((c) => c.type === result.type && (c.name.includes(result.suggestedCategoryName) || result.suggestedCategoryName.includes(c.name)))
+        || data.categories.find((c) => c.type === result.type);
+
+      setTransactionForm((prev) => ({
+        ...prev,
+        type: result.type,
+        amount: String(result.amount || ""),
+        date: result.date || prev.date,
+        note: result.note || prev.note,
+        categoryId: matchedCategory?.id || prev.categoryId,
+      }));
+      setToastMessage("تم تحليل الإيصال وتعبئة البيانات المقترحة");
+    } catch (e) {
+      setToastMessage(e instanceof Error ? e.message : "تعذر تحليل الصورة");
+    } finally {
+      setReceiptLoading(false);
+    }
   };
 
   const saveTransaction = () => {
@@ -767,7 +813,22 @@ export default function BudgetPlanner() {
                     معاملة شهرية تلقائية (ويمكن استثناء أي شهر لاحقاً)
                   </label>
                 )}
-                <button onClick={saveTransaction} className="mt-3 px-4 py-2.5 rounded-xl bg-primary text-white font-semibold">إضافة معاملة</button>
+                <div className="mt-3 flex items-center gap-2 flex-wrap">
+                  <label className="cursor-pointer px-3 py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 text-sm font-semibold">
+                    {receiptLoading ? "جاري التحليل..." : "تحليل إيصال بالذكاء الاصطناعي"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null;
+                        handleReceiptInput(file);
+                        e.currentTarget.value = "";
+                      }}
+                    />
+                  </label>
+                  <button onClick={saveTransaction} className="px-4 py-2.5 rounded-xl bg-primary text-white font-semibold">إضافة معاملة</button>
+                </div>
               </div>
 
               <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
@@ -1020,6 +1081,8 @@ function SummaryCard({
     </div>
   );
 }
+
+
 
 
 

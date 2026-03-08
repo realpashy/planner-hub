@@ -106,3 +106,33 @@ Notes:
 
 
 
+
+## Module 11 - المصادقة والحساب
+Status: In Progress
+Components:
+- login/register page
+- session-based auth APIs
+- super admin seeding
+- route protection
+Notes:
+- super admin defaults via env (email/password).
+- Google login planned for next phase.
+
+## Module 12 - مزامنة سحابية
+Status: In Progress
+Components:
+- user data table in Postgres
+- pull/push APIs for planner + budget JSON
+- periodic client sync after login
+Notes:
+- currently JSON-based persistence for speed and low migration risk.
+
+## Module 13 - مساعد الإيصالات بالذكاء الاصطناعي
+Status: In Progress
+Components:
+- image upload in budget form
+- backend receipt parsing endpoint
+- auto-fill suggestion into transaction form
+Notes:
+- requires OPENAI_API_KEY to be set in server env.
+

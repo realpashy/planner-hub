@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { Calendar, Wallet, Activity, Heart, CalendarDays, Target, ListTodo, Map, Utensils } from "lucide-react";
 import { motion } from "framer-motion";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useAuth } from "@/lib/auth";
 
 const modules = [
   { id: "planner", title: "المخطط الأسبوعي", desc: "خطط أسبوعك بذكاء", icon: <Calendar className="w-7 h-7 md:w-8 md:h-8" />, color: "bg-primary/10 text-primary", active: true },
@@ -16,11 +17,16 @@ const modules = [
 ];
 
 export default function Dashboard() {
+  const auth = useAuth();
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 px-4 py-10 sm:px-6 lg:px-8" dir="rtl">
       <div className="max-w-5xl mx-auto">
         <header className="mb-10 text-center relative">
-          <div className="absolute top-0 left-0">
+          <div className="absolute top-0 left-0 flex items-center gap-2">
+            <button onClick={() => auth.logout()} className="px-3 py-1.5 rounded-lg text-xs bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-300">
+              خروج
+            </button>
             <ThemeToggle />
           </div>
           <motion.h1
@@ -80,5 +86,3 @@ export default function Dashboard() {
     </div>
   );
 }
-
-
