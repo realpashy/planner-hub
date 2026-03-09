@@ -72,3 +72,8 @@
 - AI receipt parsing should prefill fields as suggestions and may support explicit one-tap user-confirmed auto-add.
 
 
+
+- Budget add-transaction uses free-text category input and auto-creates missing categories by type.
+- While API quota is unavailable, AI receipt upload UI remains disabled with an in-app notice instead of upload action.
+- New budget transactions always use the current date automatically; users do not select a date in the add form.
+- New savings goals no longer require a manual target date input; target date defaults to end of selected month.

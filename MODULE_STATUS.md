@@ -45,7 +45,7 @@ Notes:
 - Savings goals are now visible/editable with progress + contribution actions, and contribution rows are labeled clearly in operations.
 - Dropdowns are styled with modern consistent UI across budget flows.
 - Displayed amounts use symbol-only format.
-- Data is localStorage-backed via `client/src/lib/budget.ts`.
+- Data is localStorage-backed via `client/src/lib/budget.ts`.`r`n- AI image autofill is temporarily disabled in UI until API quota is restored.
 
 ## Module 4 - العادات (Standalone Habit Module)
 Status: Planned
@@ -138,6 +138,7 @@ Components:
 - AI suggestion card with one-tap "auto add now" and "fill fields only" actions
 Notes:
 - requires OPENAI_API_KEY to be set in server env.
+
 
 
 
