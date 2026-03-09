@@ -72,7 +72,7 @@ export default function Dashboard() {
             );
 
             if (mod.active) {
-              const href = mod.id === "planner" ? "/planner/weekly-planner" : `/${mod.id}`;
+              const href = mod.id === "planner" ? "/weekly-planner" : `/${mod.id}`;
               return (
                 <Link key={mod.id} href={href} className="block outline-none" data-testid={`link-module-${mod.id}`}>
                   {inner}
@@ -86,4 +86,5 @@ export default function Dashboard() {
     </div>
   );
 }
+
 

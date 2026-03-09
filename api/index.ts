@@ -152,6 +152,12 @@ async function registerUser(input: { email: string; password: string; displayNam
   return getUserById(id);
 }
 
+async function doesUserExistByEmail(emailRaw: string): Promise<boolean> {
+  const email = normalizeEmail(emailRaw);
+  const result = await dbPool.query("SELECT 1 FROM app_users WHERE email = $1 LIMIT 1", [email]);
+  return Boolean(result.rowCount);
+}
+
 async function loginUser(emailRaw: string, password: string): Promise<AuthUser | null> {
   const email = normalizeEmail(emailRaw);
   const result = await dbPool.query(
@@ -384,6 +390,11 @@ app.post("/api/auth/login", async (req, res) => {
     return res.status(400).json({ message: "البريد وكلمة المرور مطلوبان" });
   }
 
+  const exists = await doesUserExistByEmail(email);
+  if (!exists) {
+    return res.status(404).json({ message: "هذا البريد غير مسجل. قم بإنشاء حساب جديد." });
+  }
+
   const user = await loginUser(email, password);
   if (!user) {
     return res.status(401).json({ message: "بيانات الدخول غير صحيحة" });
@@ -447,4 +458,7 @@ app.use((err: any, _req: express.Request, res: express.Response, next: express.N
 });
 
 export default app;
+
+
+
 

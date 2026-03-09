@@ -20,7 +20,7 @@ Components:
 - weekly summary and visual widgets
 - quick action FAB
 Notes:
-- Weekly planner is now served at `/planner/weekly-planner` (and `/planner` alias).
+- Weekly planner is now served at `/weekly-planner` (`/planner/weekly-planner` and `/planner` aliases are supported).
 - Template picker opens as an in-page popup from the weekly planner header (no separate setup route).
 - Uses localStorage persistence.
 
@@ -49,6 +49,7 @@ Notes:
 - Data is localStorage-backed via `client/src/lib/budget.ts`.
 - Overview now includes an interactive donut visualization with hover percentages by category.
 - Core widgets/classes now use unique CSS class names for faster targeted UI edits.
+- Class map documented in `AI_MEMORY.md` under "UI Class Map".
 
 ## Module 4 - العادات (Standalone Habit Module)
 Status: Planned
@@ -141,6 +142,7 @@ Components:
 - AI suggestion card with one-tap "auto add now" and "fill fields only" actions
 Notes:
 - Feature is temporarily disabled in UI until API quota/billing is restored.
+
 
 
 

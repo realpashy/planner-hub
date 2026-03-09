@@ -5,7 +5,7 @@ import connectPgSimple from "connect-pg-simple";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { dbPool, initializeDatabase } from "./db";
-import { getSessionUserId, getUserById, loginUser, registerUser } from "./auth";
+import { doesUserExistByEmail, getSessionUserId, getUserById, loginUser, registerUser } from "./auth";
 import { getCloudData, saveCloudData } from "./persistence";
 import { parseReceiptWithAI } from "./ai";
 
@@ -97,10 +97,15 @@ export async function registerRoutes(
       return res.status(400).json({ message: "البريد وكلمة المرور مطلوبان" });
     }
 
-    const user = await loginUser(email, password);
-    if (!user) {
-      return res.status(401).json({ message: "بيانات الدخول غير صحيحة" });
-    }
+    const exists = await doesUserExistByEmail(email);
+  if (!exists) {
+    return res.status(404).json({ message: "هذا البريد غير مسجل. قم بإنشاء حساب جديد." });
+  }
+
+  const user = await loginUser(email, password);
+  if (!user) {
+    return res.status(401).json({ message: "بيانات الدخول غير صحيحة" });
+  }
 
     req.session.userId = user.id;
     req.session.role = user.role;
@@ -155,3 +160,6 @@ export async function registerRoutes(
 
   return httpServer;
 }
+
+
+

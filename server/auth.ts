@@ -73,3 +73,11 @@ export async function loginUser(emailRaw: string, password: string): Promise<Aut
     role: row.role,
   };
 }
+export async function doesUserExistByEmail(emailRaw: string): Promise<boolean> {
+  const email = normalizeEmail(emailRaw);
+  const result = await dbPool.query(
+    "SELECT 1 FROM app_users WHERE email = $1 LIMIT 1",
+    [email],
+  );
+  return Boolean(result.rowCount);
+}

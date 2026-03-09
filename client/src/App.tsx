@@ -66,6 +66,7 @@ function Router() {
     <Switch>
       <Route path="/auth" component={AuthPage} />
       {auth.user && <Route path="/" component={Dashboard} />}
+      {auth.user && <Route path="/weekly-planner" component={WeeklyPlanner} />}
       {auth.user && <Route path="/planner/weekly-planner" component={WeeklyPlanner} />}
       {auth.user && <Route path="/planner" component={WeeklyPlanner} />}
       {auth.user && <Route path="/budget" component={BudgetPlanner} />}
@@ -90,3 +91,4 @@ function App() {
 }
 
 export default App;
+

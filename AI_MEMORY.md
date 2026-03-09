@@ -29,7 +29,7 @@
 - Preserve links between generated suggestions and source modules.
 
 ## Planner Rules
-- Weekly planner lives at `/planner/weekly-planner` (`/planner` alias supported).
+- Weekly planner primary route is `/weekly-planner` (`/planner/weekly-planner` and `/planner` kept as aliases).
 - Template chooser is an in-page popup trigger in weekly planner header (no dedicated setup route).
 
 ## Budget Rules
@@ -84,3 +84,40 @@
 
 
 
+
+## UI Class Map
+- Weekly Planner:
+  - `weekly-planner-page`
+  - `weekly-planner-header`
+  - `weekly-template-trigger`
+  - `weekly-template-modal`
+  - `weekly-template-modal-card`
+  - `weekly-template-option`
+  - `weekly-template-apply-btn`
+  - `weekly-template-cancel-btn`
+- Budget Module:
+  - `budget-planner-page`
+  - `budget-planner-header`
+  - `budget-header-controls`
+  - `budget-month-picker`
+  - `budget-month-select`
+  - `budget-currency-select`
+  - `budget-summary-grid`
+  - `budget-tabs-wrap`
+  - `budget-tabs-nav`
+  - `budget-tab-btn`
+  - `budget-add-transaction-widget`
+  - `budget-add-goal-widget`
+  - `budget-savings-goals-widget`
+  - `budget-overview-widget`
+  - `budget-overview-title`
+  - `budget-overview-income-expense`
+  - `budget-overview-chart-wrap`
+  - `budget-overview-donut`
+  - `budget-overview-segments`
+  - `budget-overview-segment`
+  - `budget-recent-transactions-widget`
+  - `budget-financial-insights-widget`
+  - `budget-categories-settings-widget`
+  - `budget-categories-group-widget`
+  - `budget-toast-notification`

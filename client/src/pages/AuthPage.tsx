@@ -50,6 +50,43 @@ export default function AuthPage() {
     return "";
   };
 
+  function normalizeAuthError(err: unknown, currentMode: "login" | "register") {
+    const raw = err instanceof Error ? err.message : "حدث خطأ غير متوقع";
+
+    let status = 0;
+    let apiMessage = raw;
+
+    const prefixMatch = raw.match(/^(\d+)\s*:\s*(.*)$/);
+    if (prefixMatch) {
+      status = Number(prefixMatch[1]);
+      apiMessage = prefixMatch[2] || raw;
+    }
+
+    const trimmed = apiMessage.trim();
+    if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+      try {
+        const parsed = JSON.parse(trimmed) as { message?: string };
+        if (parsed?.message) apiMessage = parsed.message;
+      } catch {
+        // keep original text
+      }
+    }
+
+    if (currentMode === "login") {
+      if (status === 404 || /غير مسجل|not found|user not found/i.test(apiMessage)) {
+        return "هذا البريد غير مسجل. قم بإنشاء حساب جديد.";
+      }
+      if (status === 401 || /بيانات الدخول غير صحيحة/.test(apiMessage)) {
+        return "بيانات الدخول غير صحيحة. إذا لم يكن لديك حساب، قم بإنشاء حساب جديد.";
+      }
+    }
+
+    if (currentMode === "register" && /مستخدم بالفعل|already exists|duplicate|unique/i.test(apiMessage)) {
+      return "هذا البريد مستخدم بالفعل. جرّب تسجيل الدخول أو استخدم بريدًا آخر.";
+    }
+
+    return apiMessage || "حدث خطأ غير متوقع";
+  }
   const submit = async () => {
     setError("");
     const validationMessage = validate();
@@ -67,7 +104,7 @@ export default function AuthPage() {
       }
       setLocation("/");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "حدث خطأ غير متوقع");
+      setError(normalizeAuthError(e, mode));
     } finally {
       setLoading(false);
     }
@@ -182,7 +219,7 @@ export default function AuthPage() {
             </div>
           )}
 
-          {error && <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p>}
+          {error && <p className="text-sm text-rose-600 dark:text-rose-400 text-center">{error}</p>}
 
           <button
             type="submit"
@@ -197,3 +234,4 @@ export default function AuthPage() {
     </div>
   );
 }
+

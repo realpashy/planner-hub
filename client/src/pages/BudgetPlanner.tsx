@@ -1,7 +1,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, CalendarClock, PiggyBank, Plus, Search, Wallet } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
@@ -798,10 +798,12 @@ export default function BudgetPlanner() {
 
     setEditDialog({ open: false, tx: null, amount: "", date: todayISO(), note: "", categoryId: "" });
     setEditApplyScope("current");
+    setToastMessage("تم تحديث العملية بنجاح");
   };
 
   const deleteTransaction = (id: string) => {
     applyData((current) => ({ ...current, transactions: current.transactions.filter((tx) => tx.id !== id) }));
+    setToastMessage("تم حذف العملية بنجاح");
   };
 
   const deleteSavingGoal = (id: string) => {
@@ -810,6 +812,7 @@ export default function BudgetPlanner() {
       savingsGoals: current.savingsGoals.filter((goal) => goal.id !== id),
       transactions: current.transactions.filter((tx) => !(tx.type === "saving" && tx.linkedId === id)),
     }));
+    setToastMessage("تم حذف هدف الادخار");
   };
 
   return (
@@ -963,15 +966,22 @@ export default function BudgetPlanner() {
                   <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: `${monthlyTotals.income > 0 ? Math.min((monthlyTotals.totalOutflow / monthlyTotals.income) * 100, 100) : 0}%` }} className="h-full bg-rose-500" /></div>
                 </div>
 
-                <div className="budget-overview-chart-wrap mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+                <div className="budget-overview-chart-wrap mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3 items-center" onMouseLeave={() => setHoveredOverviewSegment(null)}>
                   <div className="flex justify-center">
                     <motion.div
-                      whileHover={{ scale: 1.05 }}
-                      transition={{ type: "spring", stiffness: 260, damping: 18 }}
+                      animate={{
+                        scale: hoveredOverviewSegment ? 1.08 : 1,
+                        boxShadow: hoveredOverviewSegment && activeOverviewSegment
+                          ? `0 14px 26px -14px ${activeOverviewSegment.color}, inset 0 0 0 1px ${activeOverviewSegment.color}`
+                          : "0 2px 10px -6px rgba(15, 23, 42, 0.25)",
+                      }}
+                      transition={{ type: "spring", stiffness: 240, damping: 18 }}
                       className="budget-overview-donut relative w-36 h-36 rounded-full border-4 border-white dark:border-slate-900 shadow-inner"
-                      style={{ background: overviewConicGradient }}
-                    >
-                      <div className="absolute inset-0 flex items-center justify-center">
+                      style={{
+                        background: overviewConicGradient,
+                        borderColor: hoveredOverviewSegment && activeOverviewSegment ? `${activeOverviewSegment.color}55` : undefined,
+                      }}
+                    ><div className="absolute inset-0 flex items-center justify-center">
                         <div className="w-20 h-20 rounded-full bg-white dark:bg-slate-900 flex flex-col items-center justify-center text-center px-1">
                           <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">{activeOverviewSegment?.name || "نسبة"}</p>
                           <p className="text-sm font-bold text-slate-800 dark:text-slate-100 tabular-nums">{activeOverviewSegment ? `${activeOverviewSegment.percent}%` : "0%"}</p>
@@ -1104,11 +1114,20 @@ export default function BudgetPlanner() {
         </div>
       )}
 
-      {toastMessage && (
-        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="fixed top-4 right-4 z-50 rounded-xl bg-emerald-600 text-white px-4 py-2 text-sm shadow-lg">
-          {toastMessage}
-        </motion.div>
-      )}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            key={toastMessage}
+            initial={{ opacity: 0, x: 24 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 24 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
+            className="budget-toast-notification fixed top-4 right-4 z-50 rounded-xl bg-emerald-600 text-white px-4 py-2 text-sm shadow-lg"
+          >
+            {toastMessage}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {operationActionsTx && (
         <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-sm flex items-end md:items-center justify-center p-4" onClick={() => setOperationActionsTx(null)}>
@@ -1187,34 +1206,4 @@ function SummaryCard({
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

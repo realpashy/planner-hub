@@ -34,8 +34,6 @@ export function DayStrip({ days, selectedDate, onSelect, tasks = [] }: DayStripP
 
   return (
     <div className="relative" data-testid="day-strip">
-      <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-white dark:from-slate-900 to-transparent z-10 pointer-events-none" />
-      <div className="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-white dark:from-slate-900 to-transparent z-10 pointer-events-none" />
 
       <div
         ref={scrollRef}
@@ -91,3 +89,4 @@ export function DayStrip({ days, selectedDate, onSelect, tasks = [] }: DayStripP
     </div>
   );
 }
+
