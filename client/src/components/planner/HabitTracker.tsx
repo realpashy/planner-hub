@@ -165,3 +165,4 @@ export function HabitTracker({ habits, weekStart }: { habits: HabitItem[], weekS
     </div>
   );
 }
+

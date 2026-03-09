@@ -668,13 +668,13 @@ export function TaskList({ tasks, selectedDate, isWeeklyMode = false }: TaskList
 
       <div className="weekly-tasklist-body space-y-0.5">
         <AnimatePresence>
-          {relevantTasks.map(task => (
+          {relevantTasks.map((task, index) => (
             <motion.div
               key={task.id}
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="group flex items-center gap-3 py-2.5 px-1 rounded-lg hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors"
+              className={`group flex items-center gap-3 py-2.5 px-1 rounded-lg transition-colors ${isWeeklyMode ? "hover:bg-slate-50/50 dark:hover:bg-slate-800/50" : ""} ${index < relevantTasks.length - 1 ? "border-b border-slate-100 dark:border-slate-800" : ""}` }
               data-testid={`task-item-${task.id}`}
             >
               <AnimatedCheckbox
@@ -742,5 +742,6 @@ export function TaskList({ tasks, selectedDate, isWeeklyMode = false }: TaskList
     </div>
   );
 }
+
 
 
