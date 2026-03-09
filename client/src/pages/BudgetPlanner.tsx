@@ -333,16 +333,19 @@ export default function BudgetPlanner() {
     let currentAngle = -90;
     return overviewSegments.map((segment) => {
       const span = Math.max((segment.total / total) * 360, 2);
-      const startAngle = currentAngle;
-      const endAngle = Math.min(currentAngle + span, 270);
-      currentAngle = endAngle;
+      const rawStart = currentAngle;
+      const rawEnd = Math.min(currentAngle + span, 270);
+      const gap = span > 8 ? 1.2 : 0.4;
+      const startAngle = rawStart + gap / 2;
+      const endAngle = rawEnd - gap / 2;
+      currentAngle = rawEnd;
       return { ...segment, startAngle, endAngle };
     });
   }, [overviewSegments]);
 
   const activeOverviewSegment = hoveredOverviewSegment
-    ? donutSegments.find((segment) => segment.id === hoveredOverviewSegment) || donutSegments[0]
-    : donutSegments[0];
+    ? donutSegments.find((segment) => segment.id === hoveredOverviewSegment) || null
+    : null;
   const upcomingWarnings = useMemo(() => {
     const warnings: Array<{ tone: "good" | "warn" | "danger"; text: string }> = [];
 
@@ -404,8 +407,8 @@ export default function BudgetPlanner() {
     : typeof navigator !== "undefined"
       ? navigator.language
       : "ar";
-  const selectClassName = "budget-field budget-modern-select modern-select appearance-none rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 transition";
-  const inputClassName = "budget-field rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100";
+  const selectClassName = "budget-field budget-modern-select modern-select appearance-none rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 bg-[#F9FAFB] dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 transition";
+  const inputClassName = "budget-field rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 bg-[#F9FAFB] dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700";
   const localizedMonthLabel = useMemo(() => {
     const [y, m] = selectedMonth.split("-").map(Number);
     return new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }).format(new Date(y, m - 1, 1));
@@ -994,19 +997,19 @@ export default function BudgetPlanner() {
                             fill="none"
                             stroke={segment.color}
                             strokeWidth={18}
-                            strokeLinecap="round"
+                            strokeLinecap="butt"
                             opacity={0.84}
                             onMouseEnter={() => setHoveredOverviewSegment(segment.id)}
                             onMouseLeave={() => setHoveredOverviewSegment(null)}
                           />
                         ))}
-                        {activeOverviewSegment && (
+                        {hoveredOverviewSegment && activeOverviewSegment && (
                           <motion.path
                             key={`active_${activeOverviewSegment.id}`}
                             d={describeArcPath(90, 90, 62, activeOverviewSegment.startAngle, activeOverviewSegment.endAngle)}
                             fill="none"
                             stroke={activeOverviewSegment.color}
-                            strokeLinecap="round"
+                            strokeLinecap="butt"
                             initial={{ strokeWidth: 18, opacity: 0.85 }}
                             animate={{ strokeWidth: 24, opacity: 1 }}
                             transition={{ type: "spring", stiffness: 360, damping: 24 }}
@@ -1054,7 +1057,7 @@ export default function BudgetPlanner() {
               <div className="budget-recent-transactions-widget bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
                 <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-3 flex items-center gap-2"><CalendarClock className="w-4 h-4 text-blue-500" />آخر عمليات هذا الشهر</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
-                  <div className="relative md:col-span-2"><Search className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" /><input value={recentSearch} onChange={(e) => setRecentSearch(e.target.value)} placeholder="ابحث عن عملية محددة" className={`w-full pr-9 ${inputClassName}`} /></div>
+                  <div className="relative md:col-span-2"><Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input value={recentSearch} onChange={(e) => setRecentSearch(e.target.value)} placeholder="ابحث عن عملية محددة" className={`w-full pr-3 pl-9 ${inputClassName}`} /></div>
                   <select value={recentFilter} onChange={(e) => setRecentFilter(e.target.value as typeof recentFilter)} className={`budget-currency-select ${selectClassName}`}><option value="all">الكل</option><option value="income">دخل</option><option value="expense">مصروف</option><option value="bill_payment">فاتورة</option><option value="debt_payment">دين</option><option value="other">أخرى</option></select>
                 </div>
                 <div className="space-y-2.5 max-h-[520px] overflow-auto pr-1 modern-scrollbar">
@@ -1247,6 +1250,12 @@ function SummaryCard({
     </div>
   );
 }
+
+
+
+
+
+
 
 
 

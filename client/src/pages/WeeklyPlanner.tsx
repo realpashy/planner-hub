@@ -109,22 +109,22 @@ export default function WeeklyPlanner() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 md:px-6 pt-5 md:pt-6 pb-4">
-        <div className="mb-5 md:mb-6">
+      <main className="weekly-planner-main max-w-7xl mx-auto px-4 md:px-6 pt-5 md:pt-6 pb-4">
+        <div className="weekly-summary-wrap mb-5 md:mb-6">
           <WeeklySummary tasks={data.tasks} habits={data.habits} events={data.events} selectedDate={selectedDate} />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 md:gap-6">
-          <div className="lg:col-span-8">
+        <div className="weekly-layout-grid grid grid-cols-1 lg:grid-cols-12 gap-5 md:gap-6">
+          <div className="weekly-main-column lg:col-span-8">
             <motion.div
               key={dateISO}
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25 }}
-              className={`bg-white dark:bg-slate-900 rounded-2xl p-5 md:p-7 shadow-sm border transition-all duration-500 ${allDayDone ? "border-emerald-200 dark:border-emerald-500/30 bg-emerald-50/30 dark:bg-emerald-500/5" : "border-slate-100 dark:border-slate-800"}`}
+              className={`weekly-day-card bg-white dark:bg-slate-900 rounded-2xl p-5 md:p-7 shadow-sm border transition-all duration-500 lg:sticky lg:top-24 ${allDayDone ? "border-emerald-200 dark:border-emerald-500/30 bg-emerald-50/30 dark:bg-emerald-500/5" : "border-slate-100 dark:border-slate-800"}`}
               data-testid="selected-day-card"
             >
-              <div className="flex items-center justify-between mb-5">
+              <div className="weekly-day-header flex items-center justify-between mb-5">
                 <div>
                   <h3 className="text-lg md:text-xl font-bold text-slate-900 dark:text-slate-50">{getArabicDayFull(selectedDate)}</h3>
                   <p className="text-sm md:text-base text-slate-400 dark:text-slate-500 font-semibold tabular-nums">{formatDayDate(selectedDate)}</p>
@@ -148,11 +148,11 @@ export default function WeeklyPlanner() {
 
               <div className="h-px bg-slate-100 dark:bg-slate-800 my-5" />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div ref={eventsRef}>
+              <div className="weekly-sections-grid grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div ref={eventsRef} className="weekly-events-column">
                   <EventList events={data.events} selectedDate={selectedDate} />
                 </div>
-                <div className="relative">
+                <div className="weekly-day-tasks-column relative md:pr-3">
                   <div className="md:hidden h-px bg-slate-100 dark:bg-slate-800 mb-5" />
                   <div className="hidden md:block absolute right-0 top-0 bottom-0 w-px bg-slate-100 dark:bg-slate-800" />
                   <TaskList tasks={data.tasks} selectedDate={selectedDate} />
@@ -161,7 +161,7 @@ export default function WeeklyPlanner() {
 
               <div className="h-px bg-slate-100 dark:bg-slate-800 my-5" />
 
-              <div data-testid="notes-section">
+              <div className="weekly-notes-section" data-testid="notes-section">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-9 h-9 rounded-full bg-blue-50 dark:bg-blue-500/15 flex items-center justify-center">
                     <FileText className="w-4 h-4 text-blue-500 dark:text-blue-400" />
@@ -179,7 +179,7 @@ export default function WeeklyPlanner() {
             </motion.div>
           </div>
 
-          <div className="lg:col-span-4 space-y-5 md:space-y-6">
+          <div className="weekly-side-column lg:col-span-4 space-y-5 md:space-y-6">
             <HabitTracker habits={data.habits} weekStart={weekStart} />
             <TaskList tasks={data.tasks} selectedDate={weekStart} isWeeklyMode={true} />
           </div>
@@ -242,3 +242,5 @@ export default function WeeklyPlanner() {
     </div>
   );
 }
+
+

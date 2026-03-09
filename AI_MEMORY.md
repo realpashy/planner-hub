@@ -67,7 +67,7 @@
   - `weekly-template-modal-card`
   - `weekly-template-option`
   - `weekly-template-apply-btn`
-  - `weekly-template-cancel-btn`
+  - weekly-template-cancel-btn$add
 - Budget Module:
   - `budget-planner-page`
   - `budget-planner-header`
@@ -97,4 +97,5 @@
 - Light theme tokens use layered SaaS palette (#F6F7FB background, #FFFFFF cards, #F1F3F7 secondary surfaces, #E5E7EB borders) and should avoid pure-white walls.
 - Budget donut interaction uses static base ring + expanded active segment only (no full-donut scaling).
 - Auth-aware routes are always mounted to prevent mobile dead-route states when session changes.
+
 

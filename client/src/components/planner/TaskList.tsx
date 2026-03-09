@@ -620,14 +620,14 @@ export function TaskList({ tasks, selectedDate, isWeeklyMode = false }: TaskList
 
   return (
     <div
-      className={`rounded-2xl transition-all duration-500 ${
+      className={`weekly-tasklist-widget rounded-2xl transition-all duration-500 ${
         isWeeklyMode
           ? 'bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm p-4 md:p-5'
           : allCompleted ? 'animate-celebration-glow' : ''
       }`}
       data-testid={isWeeklyMode ? "weekly-tasks" : "daily-tasks"}
     >
-      <div className="flex items-center justify-between mb-3">
+      <div className="weekly-tasklist-header flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <div className={`w-9 h-9 rounded-full flex items-center justify-center ${isWeeklyMode ? 'bg-primary/8 dark:bg-primary/15' : 'bg-emerald-50 dark:bg-emerald-500/15'}`}>
             <ListTodo className={`w-4.5 h-4.5 ${isWeeklyMode ? 'text-primary' : 'text-emerald-600 dark:text-emerald-400'}`} />
@@ -666,7 +666,7 @@ export function TaskList({ tasks, selectedDate, isWeeklyMode = false }: TaskList
         </motion.div>
       )}
 
-      <div className="space-y-0.5">
+      <div className="weekly-tasklist-body space-y-0.5">
         <AnimatePresence>
           {relevantTasks.map(task => (
             <motion.div
@@ -742,3 +742,4 @@ export function TaskList({ tasks, selectedDate, isWeeklyMode = false }: TaskList
     </div>
   );
 }
+

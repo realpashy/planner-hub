@@ -478,3 +478,62 @@
 :root:not(.dark) .budget-overview-donut {
   filter: drop-shadow(0 8px 16px rgba(15, 23, 42, 0.10));
 }
+
+.dark .budget-field {
+  background: rgba(30, 41, 59, 0.72);
+  border-color: rgba(71, 85, 105, 0.55);
+  color: #e2e8f0;
+}
+
+.dark .budget-field:focus {
+  border-color: rgba(129, 140, 248, 0.8);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.24);
+}
+
+:root:not(.dark) .weekly-planner-main,
+:root:not(.dark) .weekly-layout-grid,
+:root:not(.dark) .weekly-side-column,
+:root:not(.dark) .weekly-main-column {
+  gap: 20px;
+}
+
+:root:not(.dark) .weekly-day-card,
+:root:not(.dark) .weekly-tasklist-widget,
+:root:not(.dark) .weekly-template-modal-card,
+:root:not(.dark) .weekly-focus-tags-widget,
+:root:not(.dark) .weekly-notes-section,
+:root:not(.dark) .weekly-side-column > * {
+  background: var(--ph-surface);
+  border: 1px solid var(--ph-border);
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+}
+
+:root:not(.dark) .weekly-day-header h3,
+:root:not(.dark) .weekly-focus-tags-header h3,
+:root:not(.dark) .weekly-tasklist-header h3 {
+  color: var(--ph-text);
+}
+
+:root:not(.dark) .weekly-focus-tags-input,
+:root:not(.dark) .weekly-notes-section textarea,
+:root:not(.dark) .weekly-tasklist-body input {
+  background: #F9FAFB;
+  border: 1px solid var(--ph-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+:root:not(.dark) .weekly-notes-section textarea:focus,
+:root:not(.dark) .weekly-focus-tags-input:focus,
+:root:not(.dark) .weekly-tasklist-body input:focus {
+  border-color: var(--ph-accent);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+:root:not(.dark) .weekly-tasklist-widget:hover,
+:root:not(.dark) .weekly-day-card:hover {
+  transform: translateY(-2px);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}

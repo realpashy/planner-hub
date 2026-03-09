@@ -24,13 +24,13 @@ export function FocusTags({ tags, selectedDate }: { tags: DayTag[], selectedDate
   };
 
   return (
-    <div className="mb-1" data-testid="focus-tags-section">
-      <div className="flex items-center gap-2 mb-3">
+    <div className="weekly-focus-tags-widget mb-1" data-testid="focus-tags-section">
+      <div className="weekly-focus-tags-header flex items-center gap-2 mb-3">
         <span className="text-lg">🔥</span>
         <h3 className="font-bold text-base md:text-lg text-slate-800 dark:text-slate-100">على ماذا تريد التركيز اليوم؟</h3>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="weekly-focus-tags-list flex flex-wrap items-center gap-2">
         <AnimatePresence mode="popLayout">
           {dayTags.map((tag) => (
             <motion.div
@@ -60,10 +60,11 @@ export function FocusTags({ tags, selectedDate }: { tags: DayTag[], selectedDate
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={dayTags.length === 0 ? "أضف هدفاً رئيسياً لليوم..." : "أضف المزيد..."}
-          className="flex-1 min-w-[140px] bg-transparent text-sm md:text-base py-1.5 text-slate-700 dark:text-slate-200 placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:outline-none"
+          className="weekly-focus-tags-input flex-1 min-w-[140px] bg-transparent text-sm md:text-base py-1.5 text-slate-700 dark:text-slate-200 placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:outline-none"
           data-testid="input-focus-tag"
         />
       </div>
     </div>
   );
 }
+

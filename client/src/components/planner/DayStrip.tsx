@@ -33,11 +33,11 @@ export function DayStrip({ days, selectedDate, onSelect, tasks = [] }: DayStripP
   }
 
   return (
-    <div className="relative" data-testid="day-strip">
+    <div className="weekly-day-strip-wrap relative" data-testid="day-strip">
 
       <div
         ref={scrollRef}
-        className="flex overflow-x-auto hide-scrollbar gap-2 md:gap-3 py-2 snap-x-mandatory justify-center"
+        className="weekly-day-strip flex overflow-x-auto hide-scrollbar gap-2 md:gap-3 py-2 snap-x-mandatory justify-center"
         dir="rtl"
       >
         {days.map((date) => {
@@ -53,7 +53,7 @@ export function DayStrip({ days, selectedDate, onSelect, tasks = [] }: DayStripP
               data-testid={`day-button-${date.getDay()}`}
               onClick={() => onSelect(date)}
               whileTap={{ scale: 0.95 }}
-              className={`
+              className={`weekly-day-strip-item 
                 flex-shrink-0 snap-center flex flex-col items-center justify-center
                 w-[4.5rem] h-[5.5rem] md:w-[5.5rem] md:h-[6.5rem] rounded-2xl transition-all duration-200 relative
                 ${isSelected
@@ -89,4 +89,6 @@ export function DayStrip({ days, selectedDate, onSelect, tasks = [] }: DayStripP
     </div>
   );
 }
+
+
 
