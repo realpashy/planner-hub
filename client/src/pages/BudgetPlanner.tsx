@@ -81,34 +81,6 @@ function pickDefaultCategoryName(categories: BudgetCategory[], type: BudgetTrans
   }
   return categories.find((c) => c.type === type)?.name || "";
 }
-async function compressImageForAiUpload(file: File) {
-  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const img = new Image();
-      img.onload = () => resolve(img);
-      img.onerror = () => reject(new Error("تعذر قراءة الصورة"));
-      img.src = String(reader.result || "");
-    };
-    reader.onerror = () => reject(new Error("تعذر قراءة الصورة"));
-    reader.readAsDataURL(file);
-  });
-
-  const maxWidth = 1400;
-  const scale = image.width > maxWidth ? maxWidth / image.width : 1;
-  const width = Math.round(image.width * scale);
-  const height = Math.round(image.height * scale);
-
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("تعذر تجهيز الصورة");
-  ctx.drawImage(image, 0, 0, width, height);
-
-  return canvas.toDataURL("image/jpeg", 0.78);
-}
-
 function clampDay(day: number, monthKey: string) {
   const [year, month] = monthKey.split("-").map(Number);
   const last = new Date(year, month, 0).getDate();
@@ -187,7 +159,7 @@ export default function BudgetPlanner() {
 
   const [transactionForm, setTransactionForm] = useState(() => emptyTransactionState("income", pickDefaultCategoryId(loadBudgetData().categories, "income")));
   const [isRecurring, setIsRecurring] = useState(false);
-  const [transactionCategoryText, setTransactionCategoryText] = useState(() => pickDefaultCategoryName(loadBudgetData().categories, "income"));
+  const [transactionCategoryText, setTransactionCategoryText] = useState("");
 
   const [categoryType, setCategoryType] = useState<BudgetCategoryType>("expense");
   const [categoryName, setCategoryName] = useState("");
@@ -202,7 +174,7 @@ export default function BudgetPlanner() {
   const [recentFilter, setRecentFilter] = useState<"all" | "other" | BudgetTransactionType>("all");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [operationActionsTx, setOperationActionsTx] = useState<BudgetTransaction | null>(null);
-  const [receiptLoading] = useState(false);
+  const [hoveredOverviewSegment, setHoveredOverviewSegment] = useState<string | null>(null);
 
   const [amountDialog, setAmountDialog] = useState<AmountDialogState>({
     open: false,
@@ -306,6 +278,49 @@ export default function BudgetPlanner() {
       .sort((a, b) => b.total - a.total)
       .slice(0, 6);
   }, [currentMonthTransactions, data.categories]);
+
+  const overviewSegments = useMemo(() => {
+    if (expenseByCategory.length === 0 || monthlyTotals.totalOutflow <= 0) return [];
+    const top = expenseByCategory.slice(0, 4);
+    const topTotal = top.reduce((sum, row) => sum + row.total, 0);
+    const remainder = Math.max(monthlyTotals.totalOutflow - topTotal, 0);
+    const base = top.map((row, index) => ({
+      id: row.categoryId,
+      name: row.name,
+      emoji: row.emoji,
+      total: row.total,
+      percent: Math.max(1, Math.round((row.total / monthlyTotals.totalOutflow) * 100)),
+      color: ["#22c55e", "#3b82f6", "#f59e0b", "#ef4444"][index] || "#6366f1",
+    }));
+
+    if (remainder > 0) {
+      base.push({
+        id: "other",
+        name: "فئات أخرى",
+        emoji: "🧩",
+        total: remainder,
+        percent: Math.max(1, Math.round((remainder / monthlyTotals.totalOutflow) * 100)),
+        color: "#8b5cf6",
+      });
+    }
+    return base;
+  }, [expenseByCategory, monthlyTotals.totalOutflow]);
+
+  const overviewConicGradient = useMemo(() => {
+    if (overviewSegments.length === 0) return "conic-gradient(#cbd5e1 0 360deg)";
+    let cursor = 0;
+    return `conic-gradient(${overviewSegments
+      .map((segment) => {
+        const start = cursor;
+        cursor += (segment.percent / 100) * 360;
+        return `${segment.color} ${start}deg ${Math.min(cursor, 360)}deg`;
+      })
+      .join(", ")})`;
+  }, [overviewSegments]);
+
+  const activeOverviewSegment = hoveredOverviewSegment
+    ? overviewSegments.find((segment) => segment.id === hoveredOverviewSegment) || overviewSegments[0]
+    : overviewSegments[0];
 
   const upcomingWarnings = useMemo(() => {
     const warnings: Array<{ tone: "good" | "warn" | "danger"; text: string }> = [];
@@ -470,6 +485,7 @@ export default function BudgetPlanner() {
       categoryId: pickDefaultCategoryId(data.categories, type),
     }));
     setIsRecurring(false);
+    setTransactionCategoryText("");
   };
 
   const openAiInfo = () => {
@@ -572,7 +588,7 @@ export default function BudgetPlanner() {
     });
 
     setTransactionForm(emptyTransactionState("income", pickDefaultCategoryId(data.categories, "income")));
-    setTransactionCategoryText(pickDefaultCategoryName(data.categories, "income"));
+    setTransactionCategoryText("");
     setIsRecurring(false);
     setToastMessage(successMessage || `تمت إضافة ${successCategoryName || "المعاملة"} بنجاح`);
   };
@@ -742,6 +758,17 @@ export default function BudgetPlanner() {
 
       return {
         ...current,
+        recurringTemplates: current.recurringTemplates.map((template) =>
+          template.id === editDialog.tx?.recurringTemplateId
+            ? {
+                ...template,
+                categoryId: editDialog.categoryId,
+                amount,
+                note: editDialog.note.trim(),
+                dayOfMonth: nextDay,
+              }
+            : template,
+        ),
         bills: current.bills.map((bill) =>
           bill.id === editDialog.tx?.linkedId && editDialog.tx?.type === "bill_payment"
             ? { ...bill, title: nextTitle, dueDay: nextDay, expectedAmount: amount, categoryId: editDialog.categoryId }
@@ -786,8 +813,8 @@ export default function BudgetPlanner() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-12" dir="rtl">
-      <header className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
+    <div className="budget-planner-page min-h-screen bg-slate-50 dark:bg-slate-950 pb-12" dir="rtl">
+      <header className="budget-planner-header bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-4">
           <div className="relative flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
@@ -801,8 +828,8 @@ export default function BudgetPlanner() {
               الميزانيّة الشهرية
             </h1><div className="w-[68px]" />          </div>
 
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/90 dark:bg-slate-800/60 px-3 py-2.5">
+          <div className="budget-header-controls mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="budget-month-picker flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/90 dark:bg-slate-800/60 px-3 py-2.5">
               <CalendarClock className="w-4 h-4 text-slate-900 dark:text-white" />
               <select
                 value={selectedMonth}
@@ -810,7 +837,7 @@ export default function BudgetPlanner() {
                   const month = e.target.value;
                   setSelectedMonth(month);
                                   }}
-                className={`${selectClassName} flex-1 border-0 bg-transparent px-0 py-0 shadow-none focus:ring-0`}
+                className={`budget-month-select ${selectClassName} flex-1 border-0 bg-transparent px-0 py-0 shadow-none focus:ring-0`}
               >
                 {monthOptions.map((option) => (
                   <option key={option.value} value={option.value}>{option.label}</option>
@@ -822,7 +849,7 @@ export default function BudgetPlanner() {
             <select
               value={data.settings.currency}
               onChange={(e) => applyData((current) => ({ ...current, settings: { ...current.settings, currency: e.target.value as BudgetData["settings"]["currency"] } }))}
-              className={selectClassName}
+              className={`budget-currency-select ${selectClassName}`}
             >
               {CURRENCY_OPTIONS.map((option) => (
                 <option key={option.code} value={option.code}>{option.label}</option>
@@ -833,7 +860,7 @@ export default function BudgetPlanner() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 pt-5 md:pt-6">
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-5">
+        <div className="budget-summary-grid grid grid-cols-2 lg:grid-cols-5 gap-3 mb-5">
           <SummaryCard title="دخل" amount={monthlyTotals.income} currency={data.settings.currency} tone="income" />
           <SummaryCard title="مصروفات" amount={monthlyTotals.expenses} currency={data.settings.currency} tone="expense" />
           <SummaryCard title="فواتير + ديون" amount={monthlyTotals.bills + monthlyTotals.debts} currency={data.settings.currency} tone="bill" />
@@ -841,13 +868,13 @@ export default function BudgetPlanner() {
           <SummaryCard title="الصافي" amount={monthlyTotals.net} currency={data.settings.currency} tone={monthlyTotals.net >= 0 ? "income" : "expense"} />
         </div>
 
-        <div className="mb-5 overflow-x-auto">
-          <div className="inline-flex items-center gap-2 p-1 rounded-2xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 min-w-max">
+        <div className="budget-tabs-wrap mb-5 overflow-x-auto">
+          <div className="budget-tabs-nav inline-flex items-center gap-2 p-1 rounded-2xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 min-w-max">
             {(Object.keys(TAB_LABELS) as BudgetTab[]).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${activeTab === tab ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow" : "text-slate-600 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-900/60"}`}
+                className={`budget-tab-btn budget-tab-btn-${tab} px-4 py-2 rounded-xl text-sm font-semibold transition ${activeTab === tab ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow" : "text-slate-600 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-900/60"}`}
               >
                 {TAB_LABELS[tab]}
               </button>
@@ -857,11 +884,11 @@ export default function BudgetPlanner() {
         {activeTab === "overview" && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
             <div className="lg:col-span-5 space-y-5">
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
+              <div className="budget-add-transaction-widget bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
                 <h2 className="font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />إضافة معاملة جديدة</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <select value={transactionForm.type} onChange={(e) => configureTransactionType(e.target.value as BudgetTransactionType)} className={selectClassName}>{ADD_TRANSACTION_TYPES.map((type) => <option key={type} value={type}>{`${TYPE_EMOJI[type]} ${TRANSACTION_TYPE_LABEL[type]}`}</option>)}</select>
-                  <input value={transactionCategoryText} onChange={(e) => setTransactionCategoryText(e.target.value)} placeholder="اكتب الفئة (مثال: كهرباء)" className={inputClassName} />
+                  <select value={transactionForm.type} onChange={(e) => configureTransactionType(e.target.value as BudgetTransactionType)} className={`budget-currency-select ${selectClassName}`}>{ADD_TRANSACTION_TYPES.map((type) => <option key={type} value={type}>{`${TYPE_EMOJI[type]} ${TRANSACTION_TYPE_LABEL[type]}`}</option>)}</select>
+                  <input value={transactionCategoryText} onChange={(e) => setTransactionCategoryText(e.target.value)} placeholder="اكتب الفئة (مثال: راتب, كهرباء)" className={inputClassName} />
                   <input type="text" inputMode="decimal" value={transactionForm.amount} onChange={(e) => setTransactionForm((prev) => ({ ...prev, amount: e.target.value }))} placeholder={`المبلغ (${symbol})`} className="bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 tabular-nums" />
                   <input value={transactionForm.note} onChange={(e) => setTransactionForm((prev) => ({ ...prev, note: e.target.value }))} placeholder="ملاحظة (اختياري)" className="bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5" />
                 </div>
@@ -882,7 +909,7 @@ export default function BudgetPlanner() {
                   </button>
                 </div>
               </div>
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
+              <div className="budget-add-goal-widget bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
                 <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-3 flex items-center gap-2"><PiggyBank className="w-4 h-4 text-emerald-500" />إضافة هدف ادخار</h3>
                 <div className="grid grid-cols-1 gap-2">
                   <input value={goalTitle} onChange={(e) => setGoalTitle(e.target.value)} placeholder="اسم الهدف" className={inputClassName} />
@@ -890,7 +917,7 @@ export default function BudgetPlanner() {
                 <button onClick={addSavingGoal} className="mt-2 px-4 py-2.5 rounded-xl bg-primary text-white font-semibold">إضافة الهدف</button>
               </div>
 
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
+              <div className="budget-savings-goals-widget bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
                 <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-3">أهداف الادخار</h3>
                 <div className="space-y-2.5">
                   {data.savingsGoals.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">لا توجد أهداف ادخار بعد.</p>}
@@ -927,46 +954,66 @@ export default function BudgetPlanner() {
             </div>
 
             <div className="lg:col-span-7 space-y-5">
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
-                <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-4">نظرة عامّة</h3>
-                <div className="mb-3 rounded-xl border border-slate-200 dark:border-slate-700 p-3 bg-slate-50/70 dark:bg-slate-800/40">
+              <div className="budget-overview-widget bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
+                <h3 className="budget-overview-title font-bold text-slate-900 dark:text-slate-100 mb-4">نظرة عامّة</h3>
+                <div className="budget-overview-income-expense mb-3 rounded-xl border border-slate-200 dark:border-slate-700 p-3 bg-slate-50/70 dark:bg-slate-800/40">
                   <div className="flex items-center justify-between text-xs mb-1"><span>الدخل</span><span dir="ltr" className="tabular-nums">{formatAmount(monthlyTotals.income, data.settings.currency)}</span></div>
                   <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden mb-2"><motion.div initial={{ width: 0 }} animate={{ width: "100%" }} className="h-full bg-emerald-500" /></div>
                   <div className="flex items-center justify-between text-xs mb-1"><span>المصروف الكلي</span><span dir="ltr" className="tabular-nums">{formatAmount(monthlyTotals.totalOutflow, data.settings.currency)}</span></div>
                   <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: `${monthlyTotals.income > 0 ? Math.min((monthlyTotals.totalOutflow / monthlyTotals.income) * 100, 100) : 0}%` }} className="h-full bg-rose-500" /></div>
                 </div>
-                <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+
+                <div className="budget-overview-chart-wrap mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
                   <div className="flex justify-center">
-                    <div
-                      className="w-28 h-28 rounded-full border-4 border-white dark:border-slate-900 shadow-inner"
-                      style={{
-                        background: `conic-gradient(#22c55e 0 ${Math.max(Math.round((expenseByCategory[0]?.total || 0) / Math.max(monthlyTotals.totalOutflow,1) * 360), 1)}deg, #3b82f6 ${Math.max(Math.round((expenseByCategory[0]?.total || 0) / Math.max(monthlyTotals.totalOutflow,1) * 360), 1)}deg ${Math.max(Math.round(((expenseByCategory[0]?.total || 0) + (expenseByCategory[1]?.total || 0)) / Math.max(monthlyTotals.totalOutflow,1) * 360), 2)}deg, #f59e0b ${Math.max(Math.round(((expenseByCategory[0]?.total || 0) + (expenseByCategory[1]?.total || 0)) / Math.max(monthlyTotals.totalOutflow,1) * 360), 2)}deg ${Math.max(Math.round(((expenseByCategory[0]?.total || 0) + (expenseByCategory[1]?.total || 0) + (expenseByCategory[2]?.total || 0)) / Math.max(monthlyTotals.totalOutflow,1) * 360), 3)}deg, #ef4444 ${Math.max(Math.round(((expenseByCategory[0]?.total || 0) + (expenseByCategory[1]?.total || 0) + (expenseByCategory[2]?.total || 0)) / Math.max(monthlyTotals.totalOutflow,1) * 360), 3)}deg 360deg)`,
-                      }}
+                    <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      transition={{ type: "spring", stiffness: 260, damping: 18 }}
+                      className="budget-overview-donut relative w-36 h-36 rounded-full border-4 border-white dark:border-slate-900 shadow-inner"
+                      style={{ background: overviewConicGradient }}
                     >
-                      <div className="w-full h-full rounded-full flex items-center justify-center">
-                        <div className="w-14 h-14 rounded-full bg-white dark:bg-slate-900" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-20 h-20 rounded-full bg-white dark:bg-slate-900 flex flex-col items-center justify-center text-center px-1">
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">{activeOverviewSegment?.name || "نسبة"}</p>
+                          <p className="text-sm font-bold text-slate-800 dark:text-slate-100 tabular-nums">{activeOverviewSegment ? `${activeOverviewSegment.percent}%` : "0%"}</p>
+                        </div>
                       </div>
-                    </div>
+                    </motion.div>
                   </div>
                   <div className="text-sm text-slate-600 dark:text-slate-300">
-                    <p>عرض مرئي سريع لفئات الصرف الأعلى.</p>
-                    <p className="mt-1">يساعدك على فهم توزيع المصروفات خلال الشهر دون تعقيد.</p>
+                    <p>حرّك المؤشر على أي فئة لرؤية نسبتها بسرعة.</p>
+                    <p className="mt-1">المخطط يتفاعل بصرياً مع أكبر الفئات صرفًا.</p>
                   </div>
                 </div>
-                <div className="space-y-3">
-                  {expenseByCategory.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">لا توجد بيانات في هذا الشهر.</p>}
-                  {expenseByCategory.map((row) => {
-                    const ratio = monthlyTotals.totalOutflow > 0 ? Math.round((row.total / monthlyTotals.totalOutflow) * 100) : 0;
-                    return <div key={row.categoryId}><div className="flex items-center justify-between text-sm mb-1"><p className="font-medium text-slate-800 dark:text-slate-100">{`${row.emoji} ${row.name}`}</p><p className="text-slate-500 dark:text-slate-400 tabular-nums"><span className="inline-block tabular-nums whitespace-nowrap" style={{ direction: "ltr", unicodeBidi: "bidi-override" }}>{formatAmount(row.total, data.settings.currency)}</span> • {ratio}%</p></div><div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: `${ratio}%` }} transition={{ duration: 0.3 }} className="h-full bg-primary" /></div></div>;
+
+                <div className="budget-overview-segments space-y-2.5">
+                  {overviewSegments.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">لا توجد بيانات في هذا الشهر.</p>}
+                  {overviewSegments.map((segment) => {
+                    const isActive = hoveredOverviewSegment === segment.id;
+                    return (
+                      <div
+                        key={segment.id}
+                        onMouseEnter={() => setHoveredOverviewSegment(segment.id)}
+                        onMouseLeave={() => setHoveredOverviewSegment(null)}
+                        className={`budget-overview-segment rounded-xl border p-2.5 transition ${isActive ? "border-primary/40 bg-primary/5" : "border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40"}`}
+                      >
+                        <div className="flex items-center justify-between text-sm mb-1">
+                          <p className="font-medium text-slate-800 dark:text-slate-100">{`${segment.emoji} ${segment.name}`}</p>
+                          <p className="text-slate-500 dark:text-slate-400 tabular-nums"><span className="inline-block tabular-nums whitespace-nowrap" style={{ direction: "ltr", unicodeBidi: "bidi-override" }}>{formatAmount(segment.total, data.settings.currency)}</span> • {segment.percent}%</p>
+                        </div>
+                        <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                          <motion.div initial={{ width: 0 }} animate={{ width: `${segment.percent}%` }} transition={{ duration: 0.35 }} className="h-full" style={{ backgroundColor: segment.color }} />
+                        </div>
+                      </div>
+                    );
                   })}
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
+              <div className="budget-recent-transactions-widget bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
                 <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-3 flex items-center gap-2"><CalendarClock className="w-4 h-4 text-blue-500" />آخر عمليات هذا الشهر</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
                   <div className="relative md:col-span-2"><Search className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" /><input value={recentSearch} onChange={(e) => setRecentSearch(e.target.value)} placeholder="ابحث عن عملية محددة" className="w-full pr-9 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5" /></div>
-                  <select value={recentFilter} onChange={(e) => setRecentFilter(e.target.value as typeof recentFilter)} className={selectClassName}><option value="all">الكل</option><option value="income">دخل</option><option value="expense">مصروف</option><option value="bill_payment">فاتورة</option><option value="debt_payment">دين</option><option value="other">أخرى</option></select>
+                  <select value={recentFilter} onChange={(e) => setRecentFilter(e.target.value as typeof recentFilter)} className={`budget-currency-select ${selectClassName}`}><option value="all">الكل</option><option value="income">دخل</option><option value="expense">مصروف</option><option value="bill_payment">فاتورة</option><option value="debt_payment">دين</option><option value="other">أخرى</option></select>
                 </div>
                 <div className="space-y-2.5 max-h-[520px] overflow-auto pr-1 modern-scrollbar">
                   {recentTransactions.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">لا توجد عمليات مطابقة.</p>}
@@ -994,7 +1041,7 @@ export default function BudgetPlanner() {
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
+              <div className="budget-financial-insights-widget bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
                 <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-3">تحليل مالي ذكي</h3>
                 <div className="space-y-2.5">
                   {upcomingWarnings.map((warning, index) => (
@@ -1019,16 +1066,16 @@ export default function BudgetPlanner() {
 
         {activeTab === "categories" && (
           <div className="space-y-5">
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
+            <div className="budget-categories-settings-widget bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
               <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-3">تخصيص الفئات</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                <select value={categoryType} onChange={(e) => setCategoryType(e.target.value as BudgetCategoryType)} className={selectClassName}>{(Object.keys(TRANSACTION_TYPE_LABEL) as BudgetTransactionType[]).map((type) => <option key={type} value={type}>{`${TYPE_EMOJI[type]} ${TRANSACTION_TYPE_LABEL[type]}`}</option>)}</select>
+                <select value={categoryType} onChange={(e) => setCategoryType(e.target.value as BudgetCategoryType)} className={`budget-currency-select ${selectClassName}`}>{(Object.keys(TRANSACTION_TYPE_LABEL) as BudgetTransactionType[]).map((type) => <option key={type} value={type}>{`${TYPE_EMOJI[type]} ${TRANSACTION_TYPE_LABEL[type]}`}</option>)}</select>
                 <input value={categoryName} onChange={(e) => setCategoryName(e.target.value)} placeholder="أضف خيار مخصص" className={inputClassName} />
                 <button onClick={addCategory} className="rounded-xl bg-primary text-white font-semibold px-4 py-2.5">إضافة فئة</button>
               </div>
             </div>
 
-            {(Object.keys(TRANSACTION_TYPE_LABEL) as BudgetTransactionType[]).map((type) => <div key={type} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5"><h4 className="font-bold text-slate-900 dark:text-slate-100 mb-3">{`${TYPE_EMOJI[type]} ${TRANSACTION_TYPE_LABEL[type]}`}</h4><div className="space-y-2">{categoriesByType[type].map((cat) => <div key={cat.id} className="group rounded-xl bg-slate-50 dark:bg-slate-800/50 p-2.5 flex items-center justify-between gap-2">{editingCategoryId === cat.id ? <input value={editingCategoryName} onChange={(e) => setEditingCategoryName(e.target.value)} className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5" /> : <p className="font-medium text-slate-800 dark:text-slate-100">{`${categoryEmoji(cat.name, cat.type)} ${cat.name}`}</p>}<div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition">{editingCategoryId === cat.id ? <button onClick={saveCategoryEdit} className="px-2 py-1 text-xs rounded-lg bg-primary text-white">حفظ</button> : <button onClick={() => { setEditingCategoryId(cat.id); setEditingCategoryName(cat.name); }} className="px-2 py-1 text-xs rounded-lg bg-slate-200 dark:bg-slate-700">تعديل</button>}<button onClick={() => deleteCategory(cat.id)} className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition px-2 py-1 text-xs rounded-lg bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400">حذف</button></div></div>)}{categoriesByType[type].length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">لا توجد فئات في هذا القسم.</p>}</div></div>)}
+            {(Object.keys(TRANSACTION_TYPE_LABEL) as BudgetTransactionType[]).map((type) => <div key={type} className="budget-categories-group-widget bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5"><h4 className="font-bold text-slate-900 dark:text-slate-100 mb-3">{`${TYPE_EMOJI[type]} ${TRANSACTION_TYPE_LABEL[type]}`}</h4><div className="space-y-2">{categoriesByType[type].map((cat) => <div key={cat.id} className="group rounded-xl bg-slate-50 dark:bg-slate-800/50 p-2.5 flex items-center justify-between gap-2">{editingCategoryId === cat.id ? <input value={editingCategoryName} onChange={(e) => setEditingCategoryName(e.target.value)} className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5" /> : <p className="font-medium text-slate-800 dark:text-slate-100">{`${categoryEmoji(cat.name, cat.type)} ${cat.name}`}</p>}<div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition">{editingCategoryId === cat.id ? <button onClick={saveCategoryEdit} className="px-2 py-1 text-xs rounded-lg bg-primary text-white">حفظ</button> : <button onClick={() => { setEditingCategoryId(cat.id); setEditingCategoryName(cat.name); }} className="px-2 py-1 text-xs rounded-lg bg-slate-200 dark:bg-slate-700">تعديل</button>}<button onClick={() => deleteCategory(cat.id)} className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition px-2 py-1 text-xs rounded-lg bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400">حذف</button></div></div>)}{categoriesByType[type].length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">لا توجد فئات في هذا القسم.</p>}</div></div>)}
           </div>
         )}
         {amountDialog.open && (
@@ -1044,8 +1091,8 @@ export default function BudgetPlanner() {
 
             </div>
           </div>
-        )}`r
-`r
+        )}
+
 
       {aiInfoOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setAiInfoOpen(false)}>
@@ -1055,7 +1102,9 @@ export default function BudgetPlanner() {
             <button onClick={() => setAiInfoOpen(false)} className="mt-3 w-full rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 py-2.5 text-sm">حسنًا</button>
           </div>
         </div>
-      )}      {toastMessage && (
+      )}
+
+      {toastMessage && (
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="fixed top-4 right-4 z-50 rounded-xl bg-emerald-600 text-white px-4 py-2 text-sm shadow-lg">
           {toastMessage}
         </motion.div>
@@ -1091,7 +1140,7 @@ export default function BudgetPlanner() {
                     </div>
                   </div>
                 )}
-                <select value={editDialog.categoryId} onChange={(e) => setEditDialog((prev) => ({ ...prev, categoryId: e.target.value }))} className={selectClassName}>
+                <select value={editDialog.categoryId} onChange={(e) => setEditDialog((prev) => ({ ...prev, categoryId: e.target.value }))} className={`budget-currency-select ${selectClassName}`}>
                   {data.categories.filter((c) => c.type === editDialog.tx?.type).map((cat) => <option key={cat.id} value={cat.id}>{`${categoryEmoji(cat.name, cat.type)} ${cat.name}`}</option>)}
                 </select>
                 <input value={editDialog.note} onChange={(e) => setEditDialog((prev) => ({ ...prev, note: e.target.value }))} placeholder="ملاحظة" className={inputClassName} />
@@ -1138,6 +1187,17 @@ function SummaryCard({
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 

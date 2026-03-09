@@ -20,7 +20,8 @@ Components:
 - weekly summary and visual widgets
 - quick action FAB
 Notes:
-- Template setup flow moved to `/planner/setup` and appears only when entering planner setup.
+- Weekly planner is now served at `/planner/weekly-planner` (and `/planner` alias).
+- Template picker opens as an in-page popup from the weekly planner header (no separate setup route).
 - Uses localStorage persistence.
 
 ## Module 3 - الميزانية (Financial Planner)
@@ -45,7 +46,9 @@ Notes:
 - Savings goals are now visible/editable with progress + contribution actions, and contribution rows are labeled clearly in operations.
 - Dropdowns are styled with modern consistent UI across budget flows.
 - Displayed amounts use symbol-only format.
-- Data is localStorage-backed via `client/src/lib/budget.ts`.`r`n- AI image autofill is temporarily disabled in UI until API quota is restored.
+- Data is localStorage-backed via `client/src/lib/budget.ts`.
+- Overview now includes an interactive donut visualization with hover percentages by category.
+- Core widgets/classes now use unique CSS class names for faster targeted UI edits.
 
 ## Module 4 - العادات (Standalone Habit Module)
 Status: Planned
@@ -130,14 +133,18 @@ Notes:
 - currently JSON-based persistence for speed and low migration risk.
 
 ## Module 13 - مساعد الإيصالات بالذكاء الاصطناعي
-Status: In Progress
+Status: Paused (Quota)
 Components:
 - image upload in budget form
 - backend receipt parsing endpoint
 - auto-fill suggestion into transaction form
 - AI suggestion card with one-tap "auto add now" and "fill fields only" actions
 Notes:
-- requires OPENAI_API_KEY to be set in server env.
+- Feature is temporarily disabled in UI until API quota/billing is restored.
+
+
+
+
 
 
 

@@ -29,8 +29,8 @@
 - Preserve links between generated suggestions and source modules.
 
 ## Planner Rules
-- Template chooser belongs to planner setup flow only.
-- Entering weekly planner should use setup route when onboarding is incomplete.
+- Weekly planner lives at `/planner/weekly-planner` (`/planner` alias supported).
+- Template chooser is an in-page popup trigger in weekly planner header (no dedicated setup route).
 
 ## Budget Rules
 - Budget module supports multiple transaction types (income, expense, bills, debt, saving).
@@ -77,3 +77,10 @@
 - While API quota is unavailable, AI receipt upload UI remains disabled with an in-app notice instead of upload action.
 - New budget transactions always use the current date automatically; users do not select a date in the add form.
 - New savings goals no longer require a manual target date input; target date defaults to end of selected month.
+
+- Budget UI elements should carry stable unique class names for fast, targeted follow-up edits.
+- Budget overview uses an interactive donut + segment hover percentages and should preserve this behavior unless explicitly redesigned.
+
+
+
+

@@ -8,40 +8,9 @@ import NotFound from "@/pages/not-found";
 import Dashboard from "./pages/Dashboard";
 import WeeklyPlanner from "./pages/WeeklyPlanner";
 import BudgetPlanner from "./pages/BudgetPlanner";
-import Onboarding from "./pages/Onboarding";
 import AuthPage from "./pages/AuthPage";
-import { isOnboarded } from "./lib/storage";
 import { AuthProvider, useAuth } from "./lib/auth";
 import { pullCloudToLocal, pushLocalToCloud } from "./lib/cloud-sync";
-
-function PlannerSetupRoute() {
-  const [, setLocation] = useLocation();
-
-  return (
-    <Onboarding
-      onComplete={() => {
-        queryClient.invalidateQueries({ queryKey: ["planner_data"] });
-        setLocation("/planner");
-      }}
-    />
-  );
-}
-
-function PlannerRoute() {
-  const [, setLocation] = useLocation();
-
-  useEffect(() => {
-    if (!isOnboarded()) {
-      setLocation("/planner/setup");
-    }
-  }, [setLocation]);
-
-  if (!isOnboarded()) {
-    return null;
-  }
-
-  return <WeeklyPlanner />;
-}
 
 function Router() {
   const [, setLocation] = useLocation();
@@ -97,8 +66,8 @@ function Router() {
     <Switch>
       <Route path="/auth" component={AuthPage} />
       {auth.user && <Route path="/" component={Dashboard} />}
-      {auth.user && <Route path="/planner/setup" component={PlannerSetupRoute} />}
-      {auth.user && <Route path="/planner" component={PlannerRoute} />}
+      {auth.user && <Route path="/planner/weekly-planner" component={WeeklyPlanner} />}
+      {auth.user && <Route path="/planner" component={WeeklyPlanner} />}
       {auth.user && <Route path="/budget" component={BudgetPlanner} />}
       <Route component={NotFound} />
     </Switch>
