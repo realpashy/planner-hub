@@ -69,5 +69,6 @@
 - Use session auth with secure cookies and PostgreSQL session store.
 - Keep dashboard/planner/budget routes protected behind auth.
 - Cloud sync should pull on login and push periodically while user is active.
-- AI receipt parsing must prefill fields as suggestions, not force-save transactions.
+- AI receipt parsing should prefill fields as suggestions and may support explicit one-tap user-confirmed auto-add.
+
 

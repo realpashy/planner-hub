@@ -28,7 +28,9 @@ Status: In Progress
 Components:
 - monthly overview KPIs
 - operations list with search/filter/edit/delete popup and recurring edit scope (current month vs all months)
-- transactions log (add/edit/delete/search/filter)`r`n- recurring monthly entries for bills/debts with per-month exclusion control`r`n- template-based recurring entries for income/expense with month generation + exclusion
+- transactions log (add/edit/delete/search/filter)
+- recurring monthly entries for bills/debts with per-month exclusion control
+- template-based recurring entries for income/expense with month generation + exclusion
 - category management (by transaction type)
 - bills tracker with quick payment registration
 - debts tracker with progress and quick settlement
@@ -133,6 +135,9 @@ Components:
 - image upload in budget form
 - backend receipt parsing endpoint
 - auto-fill suggestion into transaction form
+- AI suggestion card with one-tap "auto add now" and "fill fields only" actions
 Notes:
 - requires OPENAI_API_KEY to be set in server env.
+
+
 

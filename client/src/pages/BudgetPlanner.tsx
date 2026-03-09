@@ -108,6 +108,15 @@ interface EditDialogState {
 
 type EditApplyScope = "current" | "all";
 
+interface ReceiptSuggestion {
+  type: BudgetTransactionType;
+  amount: number;
+  date: string;
+  note: string;
+  categoryId: string;
+  categoryName: string;
+}
+
 function isRecurringTransaction(tx: BudgetTransaction | null | undefined) {
   if (!tx) return false;
   return Boolean(tx.recurringTemplateId || tx.linkedId);
@@ -135,6 +144,7 @@ export default function BudgetPlanner() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [operationActionsTx, setOperationActionsTx] = useState<BudgetTransaction | null>(null);
   const [receiptLoading, setReceiptLoading] = useState(false);
+  const [receiptSuggestion, setReceiptSuggestion] = useState<ReceiptSuggestion | null>(null);
 
   const [amountDialog, setAmountDialog] = useState<AmountDialogState>({
     open: false,
@@ -404,6 +414,34 @@ export default function BudgetPlanner() {
     setIsRecurring(false);
   };
 
+  const toReceiptSuggestion = (result: { type: BudgetTransactionType; amount: number; date: string; note: string; suggestedCategoryName: string }): ReceiptSuggestion => {
+    const matchedCategory =
+      data.categories.find(
+        (c) => c.type === result.type && (c.name.includes(result.suggestedCategoryName) || result.suggestedCategoryName.includes(c.name)),
+      ) || data.categories.find((c) => c.type === result.type);
+
+    return {
+      type: result.type,
+      amount: Number(result.amount) || 0,
+      date: result.date || todayISO(),
+      note: result.note || "",
+      categoryId: matchedCategory?.id || "",
+      categoryName: matchedCategory?.name || "غير مصنف",
+    };
+  };
+
+  const applyReceiptSuggestion = (suggestion: ReceiptSuggestion) => {
+    setTransactionForm((prev) => ({
+      ...prev,
+      type: suggestion.type,
+      amount: suggestion.amount > 0 ? String(suggestion.amount) : prev.amount,
+      date: suggestion.date || prev.date,
+      note: suggestion.note || prev.note,
+      categoryId: suggestion.categoryId || prev.categoryId,
+    }));
+    setIsRecurring(false);
+  };
+
   const handleReceiptInput = async (file: File | null) => {
     if (!file) return;
 
@@ -428,20 +466,14 @@ export default function BudgetPlanner() {
         throw new Error(text || "فشل تحليل الصورة");
       }
 
-      const body = (await res.json()) as { result: { type: BudgetTransactionType; amount: number; date: string; note: string; suggestedCategoryName: string } };
-      const result = body.result;
-      const matchedCategory = data.categories.find((c) => c.type === result.type && (c.name.includes(result.suggestedCategoryName) || result.suggestedCategoryName.includes(c.name)))
-        || data.categories.find((c) => c.type === result.type);
+      const body = (await res.json()) as {
+        result: { type: BudgetTransactionType; amount: number; date: string; note: string; suggestedCategoryName: string };
+      };
 
-      setTransactionForm((prev) => ({
-        ...prev,
-        type: result.type,
-        amount: String(result.amount || ""),
-        date: result.date || prev.date,
-        note: result.note || prev.note,
-        categoryId: matchedCategory?.id || prev.categoryId,
-      }));
-      setToastMessage("تم تحليل الإيصال وتعبئة البيانات المقترحة");
+      const suggestion = toReceiptSuggestion(body.result);
+      setReceiptSuggestion(suggestion);
+      applyReceiptSuggestion(suggestion);
+      setToastMessage("تم تحليل الإيصال. راجع البيانات أو أضفها مباشرة.");
     } catch (e) {
       setToastMessage(e instanceof Error ? e.message : "تعذر تحليل الصورة");
     } finally {
@@ -449,37 +481,37 @@ export default function BudgetPlanner() {
     }
   };
 
-  const saveTransaction = () => {
-    const amount = parseAmountInput(transactionForm.amount);
-    if (!Number.isFinite(amount) || amount <= 0 || !transactionForm.categoryId) return;
+  const commitTransaction = (form: typeof transactionForm, recurring: boolean, successMessage?: string) => {
+    const amount = parseAmountInput(form.amount);
+    if (!Number.isFinite(amount) || amount <= 0 || !form.categoryId) return;
 
-    const category = data.categories.find((c) => c.id === transactionForm.categoryId);
+    const category = data.categories.find((c) => c.id === form.categoryId);
     let linkedId: string | undefined;
     let recurringTemplateId: string | undefined;
 
     applyData((current) => {
       let next = { ...current };
 
-
-      if (isRecurring && transactionForm.type !== "saving" && transactionForm.type !== "bill_payment" && transactionForm.type !== "debt_payment") {
+      if (recurring && form.type !== "saving" && form.type !== "bill_payment" && form.type !== "debt_payment") {
         const templateId = createBudgetId();
         recurringTemplateId = templateId;
-        const dayOfMonth = Number(transactionForm.date.split("-")[2]) || 1;
+        const dayOfMonth = Number(form.date.split("-")[2]) || 1;
         const nextTemplate: BudgetRecurringTemplate = {
           id: templateId,
-          type: transactionForm.type,
-          categoryId: transactionForm.categoryId,
+          type: form.type,
+          categoryId: form.categoryId,
           amount,
-          note: transactionForm.note.trim(),
+          note: form.note.trim(),
           dayOfMonth,
-          startMonth: getMonthKey(transactionForm.date),
+          startMonth: getMonthKey(form.date),
           skippedMonths: [],
         };
         next = { ...next, recurringTemplates: [nextTemplate, ...next.recurringTemplates] };
       }
-      if (isRecurring && transactionForm.type === "bill_payment") {
+
+      if (recurring && form.type === "bill_payment") {
         const billId = createBudgetId();
-        const day = Number(transactionForm.date.split("-")[2]) || 1;
+        const day = Number(form.date.split("-")[2]) || 1;
         linkedId = billId;
         next = {
           ...next,
@@ -489,7 +521,7 @@ export default function BudgetPlanner() {
               title: category?.name || "فاتورة",
               dueDay: day,
               expectedAmount: amount,
-              categoryId: transactionForm.categoryId,
+              categoryId: form.categoryId,
               skippedMonths: [],
             } as BudgetData["bills"][number] & { skippedMonths: string[] },
             ...next.bills,
@@ -497,9 +529,9 @@ export default function BudgetPlanner() {
         };
       }
 
-      if (isRecurring && transactionForm.type === "debt_payment") {
+      if (recurring && form.type === "debt_payment") {
         const debtId = createBudgetId();
-        const day = Number(transactionForm.date.split("-")[2]) || 1;
+        const day = Number(form.date.split("-")[2]) || 1;
         linkedId = debtId;
         next = {
           ...next,
@@ -509,7 +541,7 @@ export default function BudgetPlanner() {
               title: category?.name || "دين",
               dueDay: day,
               totalAmount: amount,
-              categoryId: transactionForm.categoryId,
+              categoryId: form.categoryId,
               skippedMonths: [],
             } as BudgetData["debts"][number] & { skippedMonths: string[] },
             ...next.debts,
@@ -519,12 +551,12 @@ export default function BudgetPlanner() {
 
       const payload: BudgetTransaction = {
         id: createBudgetId(),
-        type: transactionForm.type,
-        title: category?.name || TRANSACTION_TYPE_LABEL[transactionForm.type],
+        type: form.type,
+        title: category?.name || TRANSACTION_TYPE_LABEL[form.type],
         amount,
-        date: transactionForm.date,
-        categoryId: transactionForm.categoryId,
-        note: transactionForm.note.trim(),
+        date: form.date,
+        categoryId: form.categoryId,
+        note: form.note.trim(),
         linkedId,
         recurringTemplateId,
       };
@@ -533,10 +565,27 @@ export default function BudgetPlanner() {
     });
 
     setTransactionForm(emptyTransactionState("income"));
+    setReceiptSuggestion(null);
     setIsRecurring(false);
-    setToastMessage(`تمت إضافة ${category?.name || "المعاملة"} بنجاح`);
+    setToastMessage(successMessage || `تمت إضافة ${category?.name || "المعاملة"} بنجاح`);
   };
 
+  const saveTransaction = () => {
+    commitTransaction(transactionForm, isRecurring);
+  };
+
+  const autoAddFromReceipt = () => {
+    if (!receiptSuggestion) return;
+    const formToSave = {
+      ...emptyTransactionState("income"),
+      type: receiptSuggestion.type,
+      amount: String(receiptSuggestion.amount || ""),
+      date: receiptSuggestion.date,
+      categoryId: receiptSuggestion.categoryId,
+      note: receiptSuggestion.note,
+    };
+    commitTransaction(formToSave, false, "تمت إضافة العملية تلقائياً من الإيصال");
+  };
   const skipRecurringForMonth = (tx: BudgetTransaction) => {
     if (!tx.linkedId && !tx.recurringTemplateId) return;
 
@@ -831,6 +880,24 @@ export default function BudgetPlanner() {
                 </div>
               </div>
 
+                {receiptSuggestion && (
+                  <div className="mt-3 rounded-xl border border-indigo-200 dark:border-indigo-700/40 bg-indigo-50/70 dark:bg-indigo-500/10 p-3">
+                    <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-200">اقتراح الذكاء الاصطناعي جاهز</p>
+                    <div className="mt-1 grid grid-cols-2 gap-2 text-xs text-slate-700 dark:text-slate-300">
+                      <p>النوع: {TRANSACTION_TYPE_LABEL[receiptSuggestion.type]}</p>
+                      <p dir="ltr" className="tabular-nums">المبلغ: {formatAmount(receiptSuggestion.amount, data.settings.currency)}</p>
+                      <p>الفئة: {receiptSuggestion.categoryName}</p>
+                      <p>التاريخ: {receiptSuggestion.date}</p>
+                    </div>
+                    {receiptSuggestion.note && <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">{receiptSuggestion.note}</p>}
+                    <div className="mt-2 flex items-center gap-2 flex-wrap">
+                      <button onClick={() => applyReceiptSuggestion(receiptSuggestion)} className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-xs font-semibold">تعبئة الحقول فقط</button>
+                      <button onClick={autoAddFromReceipt} className="px-3 py-2 rounded-lg bg-emerald-600 text-white text-xs font-semibold">إضافة تلقائية الآن</button>
+                      <button onClick={() => setReceiptSuggestion(null)} className="px-3 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs">إخفاء</button>
+                    </div>
+                  </div>
+                )}
+
               <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
                 <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-3 flex items-center gap-2"><PiggyBank className="w-4 h-4 text-emerald-500" />إضافة هدف ادخار</h3>
                 <div className="grid grid-cols-1 gap-2">
@@ -1081,6 +1148,8 @@ function SummaryCard({
     </div>
   );
 }
+
+
 
 
 
