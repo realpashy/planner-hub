@@ -602,3 +602,17 @@
 .dark .weekly-gantt-scroll::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(90deg, #475569, #64748b);
 }
+
+.dark .budget-primary-btn {
+  background: linear-gradient(135deg, #6366F1, #7C3AED);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
+}
+
+.dark .budget-primary-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.45);
+}
+
+.dark .budget-primary-btn:active {
+  transform: translateY(0);
+}

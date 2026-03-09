@@ -183,7 +183,6 @@ export default function BudgetPlanner() {
 
   const [goalTitle, setGoalTitle] = useState("");
   const [goalTargetAmount, setGoalTargetAmount] = useState("");
-  const [aiInfoOpen, setAiInfoOpen] = useState(false);
 
   const [recentSearch, setRecentSearch] = useState("");
   const [recentFilter, setRecentFilter] = useState<"all" | "other" | BudgetTransactionType>("all");
@@ -504,10 +503,6 @@ export default function BudgetPlanner() {
     }));
     setIsRecurring(false);
     setTransactionCategoryText("");
-  };
-
-  const openAiInfo = () => {
-    setAiInfoOpen(true);
   };
 
   const commitTransaction = (form: typeof transactionForm, recurring: boolean, successMessage?: string) => {
@@ -922,13 +917,6 @@ export default function BudgetPlanner() {
                 )}
                 <div className="mt-3">
                   <button onClick={saveTransaction} className="budget-primary-btn px-4 py-2.5 rounded-xl text-white font-semibold">إضافة معاملة</button>
-                  <button
-                    type="button"
-                    onClick={openAiInfo}
-                    className="mt-2 block text-xs text-slate-500 dark:text-slate-400 hover:underline"
-                  >
-                    تحليل إيصال بالذكاء الاصطناعي
-                  </button>
                 </div>
               </div>
               <div className="budget-add-goal-widget bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
@@ -1138,17 +1126,6 @@ export default function BudgetPlanner() {
           </div>
         )}
 
-
-      {aiInfoOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setAiInfoOpen(false)}>
-          <div className="w-full max-w-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-4" onClick={(e) => e.stopPropagation()}>
-            <h4 className="font-bold text-slate-900 dark:text-slate-100">ميزة التحليل الذكي موقوفة مؤقتًا</h4>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">سيتم تفعيلها بعد إعادة شحن رصيد واجهة الذكاء الاصطناعي.</p>
-            <button onClick={() => setAiInfoOpen(false)} className="mt-3 w-full rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 py-2.5 text-sm">حسنًا</button>
-          </div>
-        </div>
-      )}
-
       {operationActionsTx && (
         <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-sm flex items-end md:items-center justify-center p-4" onClick={() => setOperationActionsTx(null)}>
           <div className="w-full max-w-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-4" onClick={(e) => e.stopPropagation()}>
@@ -1250,6 +1227,9 @@ function SummaryCard({
     </div>
   );
 }
+
+
+
 
 
 
