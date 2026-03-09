@@ -60,8 +60,45 @@ function parseAmountInput(value: string): number {
   return Number.isFinite(parsed) ? parsed : NaN;
 }
 
-function emptyTransactionState(type: BudgetTransactionType = "income") {
-  return { id: "", type, title: "", amount: "", date: todayISO(), categoryId: "", note: "", linkedId: "" };
+function emptyTransactionState(type: BudgetTransactionType = "income", categoryId = "") {
+  return { id: "", type, title: "", amount: "", date: todayISO(), categoryId, note: "", linkedId: "" };
+}
+
+function pickDefaultCategoryId(categories: BudgetCategory[], type: BudgetTransactionType) {
+  if (type === "income") {
+    return categories.find((c) => c.type === "income" && c.name.includes("راتب"))?.id
+      || categories.find((c) => c.type === "income")?.id
+      || "";
+  }
+  return categories.find((c) => c.type === type)?.id || "";
+}
+
+async function compressImageForAiUpload(file: File) {
+  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("تعذر قراءة الصورة"));
+      img.src = String(reader.result || "");
+    };
+    reader.onerror = () => reject(new Error("تعذر قراءة الصورة"));
+    reader.readAsDataURL(file);
+  });
+
+  const maxWidth = 1400;
+  const scale = image.width > maxWidth ? maxWidth / image.width : 1;
+  const width = Math.round(image.width * scale);
+  const height = Math.round(image.height * scale);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("تعذر تجهيز الصورة");
+  ctx.drawImage(image, 0, 0, width, height);
+
+  return canvas.toDataURL("image/jpeg", 0.78);
 }
 
 function clampDay(day: number, monthKey: string) {
@@ -76,14 +113,36 @@ function monthLessThan(a: string, b: string) {
 
 function categoryEmoji(name: string, type: BudgetTransactionType) {
   const n = name.toLowerCase();
-  if (type === "income") return "💼";
-  if (type === "bill_payment") return "🧾";
-  if (type === "debt_payment") return "💳";
-  if (type === "saving") return "🏦";
-  if (n.includes("طعام") || n.includes("مطعم") || n.includes("قهوة")) return "🍽️";
-  if (n.includes("مواصل") || n.includes("وقود") || n.includes("بنزين")) return "🚗";
-  if (n.includes("صحة") || n.includes("دواء")) return "🩺";
-  if (n.includes("ترفيه") || n.includes("هواية")) return "🎯";
+  if (type === "income") {
+    if (n.includes("راتب")) return "💼";
+    if (n.includes("إضافي") || n.includes("حر")) return "🧑‍💻";
+    if (n.includes("استثمار") || n.includes("أرباح")) return "📈";
+    return "💰";
+  }
+  if (type === "bill_payment") {
+    if (n.includes("كهرب")) return "⚡";
+    if (n.includes("ماء")) return "💧";
+    if (n.includes("إنترنت") || n.includes("اتصال")) return "🌐";
+    if (n.includes("إيجار")) return "🏠";
+    return "🧾";
+  }
+  if (type === "debt_payment") {
+    if (n.includes("بطاق")) return "💳";
+    if (n.includes("قرض")) return "🏦";
+    return "📉";
+  }
+  if (type === "saving") {
+    if (n.includes("طوارئ")) return "🛟";
+    if (n.includes("سفر")) return "✈️";
+    if (n.includes("بيت") || n.includes("منزل")) return "🏡";
+    return "🏦";
+  }
+  if (n.includes("طعام") || n.includes("مطعم") || n.includes("قهوة") || n.includes("سوبر")) return "🍽️";
+  if (n.includes("مواصل") || n.includes("وقود") || n.includes("بنزين") || n.includes("سيارة")) return "🚗";
+  if (n.includes("صحة") || n.includes("دواء") || n.includes("طب")) return "🩺";
+  if (n.includes("ترفيه") || n.includes("هواية") || n.includes("لعب")) return "🎮";
+  if (n.includes("ملابس") || n.includes("موضة")) return "👕";
+  if (n.includes("تعليم") || n.includes("دورة")) return "📚";
   return "🧩";
 }
 
@@ -127,7 +186,7 @@ export default function BudgetPlanner() {
   const [activeTab, setActiveTab] = useState<BudgetTab>("overview");
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonthKey());
 
-  const [transactionForm, setTransactionForm] = useState(emptyTransactionState("income"));
+  const [transactionForm, setTransactionForm] = useState(() => emptyTransactionState("income", pickDefaultCategoryId(loadBudgetData().categories, "income")));
   const [isRecurring, setIsRecurring] = useState(false);
 
   const [categoryType, setCategoryType] = useState<BudgetCategoryType>("expense");
@@ -145,6 +204,7 @@ export default function BudgetPlanner() {
   const [operationActionsTx, setOperationActionsTx] = useState<BudgetTransaction | null>(null);
   const [receiptLoading, setReceiptLoading] = useState(false);
   const [receiptSuggestion, setReceiptSuggestion] = useState<ReceiptSuggestion | null>(null);
+  const [receiptPickerOpen, setReceiptPickerOpen] = useState(false);
 
   const [amountDialog, setAmountDialog] = useState<AmountDialogState>({
     open: false,
@@ -409,7 +469,7 @@ export default function BudgetPlanner() {
     setTransactionForm((prev) => ({
       ...prev,
       type,
-      categoryId: data.categories.find((c) => c.type === type)?.id || "",
+      categoryId: pickDefaultCategoryId(data.categories, type),
     }));
     setIsRecurring(false);
   };
@@ -445,12 +505,7 @@ export default function BudgetPlanner() {
   const handleReceiptInput = async (file: File | null) => {
     if (!file) return;
 
-    const dataUrl = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result || ""));
-      reader.onerror = () => reject(new Error("فشل قراءة الصورة"));
-      reader.readAsDataURL(file);
-    });
+    const dataUrl = await compressImageForAiUpload(file);
 
     try {
       setReceiptLoading(true);
@@ -474,6 +529,7 @@ export default function BudgetPlanner() {
       setReceiptSuggestion(suggestion);
       applyReceiptSuggestion(suggestion);
       setToastMessage("تم تحليل الإيصال. راجع البيانات أو أضفها مباشرة.");
+      setReceiptPickerOpen(false);
     } catch (e) {
       setToastMessage(e instanceof Error ? e.message : "تعذر تحليل الصورة");
     } finally {
@@ -564,7 +620,7 @@ export default function BudgetPlanner() {
       return { ...next, transactions: [payload, ...next.transactions] };
     });
 
-    setTransactionForm(emptyTransactionState("income"));
+    setTransactionForm(emptyTransactionState("income", pickDefaultCategoryId(data.categories, "income")));
     setReceiptSuggestion(null);
     setIsRecurring(false);
     setToastMessage(successMessage || `تمت إضافة ${category?.name || "المعاملة"} بنجاح`);
@@ -862,21 +918,15 @@ export default function BudgetPlanner() {
                     معاملة شهرية تلقائية (ويمكن استثناء أي شهر لاحقاً)
                   </label>
                 )}
-                <div className="mt-3 flex items-center gap-2 flex-wrap">
-                  <label className="cursor-pointer px-3 py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 text-sm font-semibold">
-                    {receiptLoading ? "جاري التحليل..." : "تحليل إيصال بالذكاء الاصطناعي"}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0] || null;
-                        handleReceiptInput(file);
-                        e.currentTarget.value = "";
-                      }}
-                    />
-                  </label>
+                <div className="mt-3">
                   <button onClick={saveTransaction} className="px-4 py-2.5 rounded-xl bg-primary text-white font-semibold">إضافة معاملة</button>
+                  <button
+                    type="button"
+                    onClick={() => setReceiptPickerOpen(true)}
+                    className="mt-2 block text-xs text-indigo-600 dark:text-indigo-300 hover:underline"
+                  >
+                    {receiptLoading ? "جاري التحليل..." : "تحليل إيصال بالذكاء الاصطناعي"}
+                  </button>
                 </div>
               </div>
 
@@ -1065,7 +1115,29 @@ export default function BudgetPlanner() {
         )}
 
 
-      {toastMessage && (
+
+      {receiptPickerOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setReceiptPickerOpen(false)}>
+          <div className="w-full max-w-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-4" onClick={(e) => e.stopPropagation()}>
+            <h4 className="font-bold text-slate-900 dark:text-slate-100">تحليل إيصال بالذكاء الاصطناعي</h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">اختر صورة واضحة، وسنقترح تعبئة المعاملة تلقائيًا.</p>
+            <label className="mt-3 flex items-center justify-center rounded-xl border border-dashed border-indigo-300 dark:border-indigo-700 bg-indigo-50/60 dark:bg-indigo-500/10 px-3 py-5 text-sm font-semibold text-indigo-700 dark:text-indigo-300 cursor-pointer">
+              اختر صورة الإيصال
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null;
+                  handleReceiptInput(file);
+                  e.currentTarget.value = "";
+                }}
+              />
+            </label>
+            <button onClick={() => setReceiptPickerOpen(false)} className="mt-3 w-full rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 py-2.5 text-sm">إغلاق</button>
+          </div>
+        </div>
+      )}`r`n`r`n      {toastMessage && (
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="fixed top-4 right-4 z-50 rounded-xl bg-emerald-600 text-white px-4 py-2 text-sm shadow-lg">
           {toastMessage}
         </motion.div>
@@ -1148,36 +1220,4 @@ function SummaryCard({
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

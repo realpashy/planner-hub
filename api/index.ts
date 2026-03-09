@@ -308,12 +308,13 @@ app.use(
 
 app.use(
   express.json({
+    limit: "10mb",
     verify: (req, _res, buf) => {
       req.rawBody = buf;
     },
   }),
 );
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: false, limit: "10mb" }));
 
 let initPromise: Promise<void> | null = null;
 async function ensureInit() {
@@ -446,3 +447,4 @@ app.use((err: any, _req: express.Request, res: express.Response, next: express.N
 });
 
 export default app;
+
