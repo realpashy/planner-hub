@@ -19,37 +19,32 @@ Components:
 - weekly tasks and habit tracker
 - weekly summary and visual widgets
 - quick action FAB
+- in-page template popup trigger in header
 Notes:
-- Weekly planner is now served at `/weekly-planner` (`/planner/weekly-planner` and `/planner` aliases are supported).
-- Template picker opens as an in-page popup from the weekly planner header (no separate setup route).
-- Uses localStorage persistence.
+- Primary route: `/weekly-planner`.
+- Aliases: `/weekly-planner/`, `/planner/weekly-planner`, `/planner/weekly-planner/`, `/planner`, `/planner/setup`.
+- Edge blur overlays removed from day strip.
+- Uses localStorage + cloud sync when authenticated.
 
-## Module 3 - الميزانية (Financial Planner)
+## Module 3 - الميزانيّة الشهرية (Financial Planner)
 Status: In Progress
 Components:
-- monthly overview KPIs
-- operations list with search/filter/edit/delete popup and recurring edit scope (current month vs all months)
-- transactions log (add/edit/delete/search/filter)
-- recurring monthly entries for bills/debts with per-month exclusion control
-- template-based recurring entries for income/expense with month generation + exclusion
-- category management (by transaction type)
-- bills tracker with quick payment registration
-- debts tracker with progress and quick settlement
-- savings goals with default end-of-month target date and contributions
-- currency selector (symbol + text + code)
-- localized month/year picker (Arabic or current app language) for budget period
-- advanced financial insights widget (تحليل مالي ذكي) with scenario-based warnings and richer narrative hints
-- simplified tabs (overview + category settings)
+- monthly KPIs and net indicators
+- add/edit/delete transaction flow
+- recurring monthly transactions with month-exclusion control
+- latest operations list with search/filter and action popup
+- category settings and custom categories
+- savings goals and contributions
+- interactive overview chart and segment list
+- financial insights widget with scenario-based warnings
 Notes:
 - Currency options implemented: ILS, USD, AED, SAR, JOD, KWD, QAR, EGP.
-- Add transaction defaults to دخل and excludes ادخار (handled in savings-goals widget).
-- Savings goals are now visible/editable with progress + contribution actions, and contribution rows are labeled clearly in operations.
-- Dropdowns are styled with modern consistent UI across budget flows.
-- Displayed amounts use symbol-only format.
-- Data is localStorage-backed via `client/src/lib/budget.ts`.
-- Overview now includes an interactive donut visualization with hover percentages by category.
-- Core widgets/classes now use unique CSS class names for faster targeted UI edits.
-- Class map documented in `AI_MEMORY.md` under "UI Class Map".
+- Add-transaction defaults to دخل and excludes ادخار from type picker.
+- New transactions use current date automatically.
+- Savings goals default target date to end of selected month.
+- Overview chart now renders a static donut with an active-slice overlay so only the hovered category slice grows.
+- Budget actions now emit global stacked notifications (add/edit/delete/skip/category/goal/contribution).
+- Core budget widgets/classes use unique class names documented in `AI_MEMORY.md`.
 
 ## Module 4 - العادات (Standalone Habit Module)
 Status: Planned
@@ -61,68 +56,31 @@ Notes:
 
 ## Module 5 - منظم الحياة
 Status: Planned
-Components:
-- personal areas and routines
-- cross-linking with tasks/events
-Notes:
-- UI card exists on dashboard as placeholder.
 
 ## Module 6 - التخطيط الشهري
 Status: Planned
-Components:
-- month goals and timeline
-- calendar-level planning
-Notes:
-- UI card exists on dashboard as placeholder.
 
 ## Module 7 - أهداف السنة
 Status: Planned
-Components:
-- yearly goals
-- progress checkpoints
-Notes:
-- UI card exists on dashboard as placeholder.
 
 ## Module 8 - تتبع المهام
 Status: Planned
-Components:
-- central task hub
-- filters/priority/status
-Notes:
-- Task capability currently embedded in weekly planner.
 
 ## Module 9 - مخطط السفر
 Status: Planned
-Components:
-- travel events and checklist
-- automation suggestions into planner
-Notes:
-- UI card exists on dashboard as placeholder.
 
 ## Module 10 - وجبات الأسبوع
 Status: Planned
-Components:
-- meal plan grid
-- grocery-linked task suggestions
-Notes:
-- UI card exists on dashboard as placeholder.
-
-
-
-
-
-
 
 ## Module 11 - المصادقة والحساب
 Status: In Progress
 Components:
 - login/register page
-- session-based auth APIs
-- super admin seeding
+- session auth APIs
 - route protection
 Notes:
-- super admin defaults via env (email/password).
-- Google login planned for next phase.
+- super admin defaults via env.
+- Google login planned next phase.
 
 ## Module 12 - مزامنة سحابية
 Status: In Progress
@@ -131,23 +89,13 @@ Components:
 - pull/push APIs for planner + budget JSON
 - periodic client sync after login
 Notes:
-- currently JSON-based persistence for speed and low migration risk.
+- JSON persistence chosen for speed and minimal migration risk.
 
 ## Module 13 - مساعد الإيصالات بالذكاء الاصطناعي
 Status: Paused (Quota)
 Components:
-- image upload in budget form
-- backend receipt parsing endpoint
-- auto-fill suggestion into transaction form
-- AI suggestion card with one-tap "auto add now" and "fill fields only" actions
+- receipt upload and parse endpoint
+- smart field suggestion flow
 Notes:
-- Feature is temporarily disabled in UI until API quota/billing is restored.
-
-
-
-
-
-
-
-
+- Feature currently disabled in UI until quota/billing is restored.
 

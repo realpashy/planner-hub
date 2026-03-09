@@ -1,89 +1,62 @@
 # AI Memory
 
-## Source of Truth Rule
-- These memory files are the persistent source of truth:
+## Source of Truth
+- Persistent project memory files:
   - `PROJECT_OVERVIEW.md`
   - `ARCHITECTURE.md`
   - `MODULE_STATUS.md`
   - `AI_MEMORY.md`
-- Do not rely on chat memory alone.
-- After major module work, update these files.
+- Always read these at new-session start.
+- Update them after significant module work.
 
 ## Product Rules
-- App is RTL-first.
-- End-user UI should avoid English text.
-- Use Latin digits for all numbers/time (example: 2026, 57%, 12:30).
-- Visual style must remain premium, calm, minimal, mobile-first.
-- Keep interaction simple and non-distracting.
-- Prefer in-app dialogs for critical inputs; avoid browser-native prompts.
+- RTL-first app.
+- No English UI copy for end users.
+- Latin digits only for numbers/time display.
+- Keep UX premium, calm, minimal, mobile-first.
+- Avoid distracting UI patterns.
 
-## Architecture Rules
-- Maintain modular boundaries; avoid tight coupling.
-- Keep code extensible for multi-module integration.
-- Prefer shared entity approach for future inter-module links.
-- Persist locally for now; keep migration path to Supabase clear.
+## Core Technical Rules
+- Maintain modular structure and avoid tight coupling.
+- Keep migration path from local-first storage to shared entities.
+- Automations must be suggestion-based (accept/dismiss), never silent creation.
 
-## Automation Rules
-- Automations should suggest actions, not create items silently.
-- Suggestions must be accept/dismiss.
-- Preserve links between generated suggestions and source modules.
-
-## Planner Rules
-- Weekly planner primary route is `/weekly-planner` (`/planner/weekly-planner` and `/planner` kept as aliases).
-- Template chooser is an in-page popup trigger in weekly planner header (no dedicated setup route).
+## Routing Rules
+- Weekly planner canonical route: `/weekly-planner`.
+- Keep aliases for reliability and old links:
+  - `/weekly-planner/`
+  - `/planner/weekly-planner`
+  - `/planner/weekly-planner/`
+  - `/planner`
+  - `/planner/setup` (legacy fallback to weekly planner page)
 
 ## Budget Rules
-- Budget module supports multiple transaction types (income, expense, bills, debt, saving).
-- Budget tabs must stay focused: overview + category settings by default.
-- Transaction management should happen from "آخر عمليات هذا الشهر" with search/filter/edit/delete.
-- Currency list must include: ILS, USD, AED, SAR, JOD, KWD, QAR, EGP.
-- Currency dropdown shows symbol + text + code.
-- Displayed amounts use symbol-only formatting.
+- Module title: "الميزانيّة الشهرية".
+- Supported currencies: ILS, USD, AED, SAR, JOD, KWD, QAR, EGP.
+- Currency dropdown shows symbol + name + code.
+- Display amounts with symbol-first format and LTR lock where needed.
+- Add transaction defaults to income.
+- Savings type is handled via savings-goals flow (not add-transaction type picker).
+- New transactions use current date automatically.
+- New savings goals default date to end of selected month.
+- Category input in add-transaction is free text and can auto-create category.
+- Debt emoji should stay bank-style.
+- Financial insights widget should provide scenario-rich warnings.
 
-## Data Safety Rules
-- Deleting or editing categories should not break linked records.
-- Prevent destructive operations when categories are in active use.
+## Notifications Rules
+- Use one global toast system for all module actions.
+- Notifications should stack and animate (slide in/out) from top-right.
+- Every meaningful add/edit/delete/update action should show a toast.
 
-## Deployment Rules
-- GitHub is primary source repository.
-- Push to `main` triggers Vercel deployment.
-- Keep SPA rewrite in Vercel config to avoid deep-link 404s.
+## UI/Theme Rules
+- Light theme must avoid harsh brightness.
+- Prefer layered surfaces, stronger contrast separation, and calm palettes.
+- Preserve dark mode quality.
+- Keep modern scrollbar/select styling where present.
 
-
-
-
-
-- Budget period selector must use the current language locale month/year labels (Arabic now, extensible for future languages).
-- In budget add-transaction form, default type is دخل and ادخار is intentionally excluded.
-- Monetary text in RTL views must use an LTR direction lock to keep symbol/sign order readable (example: ₪ -2,000).
-- Widget order in budget overview keeps تحليل مالي ذكي as the last card in the right column.
-- Amount inputs must accept Arabic/Hebrew keyboard entry and normalize numerals before parsing.
-- Bills/debts support recurring monthly creation with an explicit 'exclude this month' action.
-- Category and type emojis are part of budget visual clarity and should stay consistent across lists/selects/cards.
-
-- Editing recurring items must offer scope selection: current month only or all months.
-- Recurring exclusion must work for both linked bills/debts and recurring templates (income/expense).
-- Budget selects and long operation lists should keep modern themed styling (modern-select, modern-scrollbar).
-
-
-- Use session auth with secure cookies and PostgreSQL session store.
-- Keep dashboard/planner/budget routes protected behind auth.
-- Cloud sync should pull on login and push periodically while user is active.
-- AI receipt parsing should prefill fields as suggestions and may support explicit one-tap user-confirmed auto-add.
-
-
-
-- Budget add-transaction uses free-text category input and auto-creates missing categories by type.
-- While API quota is unavailable, AI receipt upload UI remains disabled with an in-app notice instead of upload action.
-- New budget transactions always use the current date automatically; users do not select a date in the add form.
-- New savings goals no longer require a manual target date input; target date defaults to end of selected month.
-
-- Budget UI elements should carry stable unique class names for fast, targeted follow-up edits.
-- Budget overview uses an interactive donut + segment hover percentages and should preserve this behavior unless explicitly redesigned.
-
-
-
-
+## AI Receipt Feature Rule
+- Keep AI receipt parsing disabled in UI while quota is unavailable.
+- Re-enable only after confirmed API quota/billing.
 
 ## UI Class Map
 - Weekly Planner:
@@ -120,4 +93,8 @@
   - `budget-financial-insights-widget`
   - `budget-categories-settings-widget`
   - `budget-categories-group-widget`
-  - `budget-toast-notification`
+
+- Light theme tokens use layered SaaS palette (#F6F7FB background, #FFFFFF cards, #F1F3F7 secondary surfaces, #E5E7EB borders) and should avoid pure-white walls.
+- Budget donut interaction uses static base ring + expanded active segment only (no full-donut scaling).
+- Auth-aware routes are always mounted to prevent mobile dead-route states when session changes.
+

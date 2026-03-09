@@ -62,14 +62,22 @@ function Router() {
 
   if (auth.loading) return null;
 
+  const AuthAwareDashboard = auth.user ? Dashboard : AuthPage;
+  const AuthAwareWeekly = auth.user ? WeeklyPlanner : AuthPage;
+  const AuthAwareBudget = auth.user ? BudgetPlanner : AuthPage;
+
   return (
     <Switch>
       <Route path="/auth" component={AuthPage} />
-      {auth.user && <Route path="/" component={Dashboard} />}
-      {auth.user && <Route path="/weekly-planner" component={WeeklyPlanner} />}
-      {auth.user && <Route path="/planner/weekly-planner" component={WeeklyPlanner} />}
-      {auth.user && <Route path="/planner" component={WeeklyPlanner} />}
-      {auth.user && <Route path="/budget" component={BudgetPlanner} />}
+      <Route path="/" component={AuthAwareDashboard} />
+      <Route path="/weekly-planner" component={AuthAwareWeekly} />
+      <Route path="/weekly-planner/" component={AuthAwareWeekly} />
+      <Route path="/planner/weekly-planner" component={AuthAwareWeekly} />
+      <Route path="/planner/weekly-planner/" component={AuthAwareWeekly} />
+      <Route path="/planner/setup" component={AuthAwareWeekly} />
+      <Route path="/planner/setup/" component={AuthAwareWeekly} />
+      <Route path="/planner" component={AuthAwareWeekly} />
+      <Route path="/budget" component={AuthAwareBudget} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -91,4 +99,3 @@ function App() {
 }
 
 export default App;
-

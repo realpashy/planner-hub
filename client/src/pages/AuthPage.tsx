@@ -119,7 +119,7 @@ export default function AuthPage() {
 
   return (
     <div
-      className="relative min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4 overflow-hidden"
+      className="auth-page relative min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4 overflow-hidden"
       dir="rtl"
     >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(56,189,248,0.16),_transparent_55%),radial-gradient(ellipse_at_bottom,_rgba(14,165,233,0.13),_transparent_60%)]" />
@@ -234,4 +234,5 @@ export default function AuthPage() {
     </div>
   );
 }
+
 

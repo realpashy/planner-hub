@@ -13,13 +13,35 @@ const STORAGE_KEY = "planner_hub_data";
 const ONBOARDED_KEY = "planner_hub_onboarded";
 
 const DEFAULT_DATA: PlannerData = {
-  settings: { language: 'ar', theme: 'light' },
+  settings: { language: "ar", theme: "light" },
   tags: [],
   events: [],
   tasks: [],
   habits: [],
-  notes: []
+  notes: [],
 };
+
+function asArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
+function sanitizePlannerData(value: unknown): PlannerData {
+  const raw = (value && typeof value === "object" ? value : {}) as Partial<PlannerData> & {
+    settings?: Partial<Settings>;
+  };
+
+  return {
+    settings: {
+      language: raw.settings?.language === "he" ? "he" : "ar",
+      theme: raw.settings?.theme === "dark" ? "dark" : "light",
+    },
+    tags: asArray<DayTag>(raw.tags),
+    events: asArray<EventItem>(raw.events),
+    tasks: asArray<TaskItem>(raw.tasks),
+    habits: asArray<HabitItem>(raw.habits),
+    notes: asArray<NoteItem>(raw.notes),
+  };
+}
 
 export function isOnboarded(): boolean {
   if (localStorage.getItem(ONBOARDED_KEY) === "true") return true;
@@ -40,7 +62,10 @@ export function getPlannerData(): PlannerData {
     if (!raw) {
       return DEFAULT_DATA;
     }
-    return JSON.parse(raw);
+
+    const parsed = JSON.parse(raw);
+    const safe = sanitizePlannerData(parsed);
+    return safe;
   } catch (e) {
     console.error("Failed to parse local storage, using default", e);
     return DEFAULT_DATA;
@@ -48,7 +73,7 @@ export function getPlannerData(): PlannerData {
 }
 
 export function savePlannerData(data: PlannerData): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitizePlannerData(data)));
 }
 
 export function clearPlannerData(): void {

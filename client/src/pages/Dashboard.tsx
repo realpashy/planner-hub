@@ -20,7 +20,7 @@ export default function Dashboard() {
   const auth = useAuth();
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 px-4 py-10 sm:px-6 lg:px-8" dir="rtl">
+    <div className="dashboard-page min-h-screen bg-slate-50 dark:bg-slate-950 px-4 py-10 sm:px-6 lg:px-8" dir="rtl">
       <div className="max-w-5xl mx-auto">
         <header className="mb-10 text-center relative">
           <div className="absolute top-0 left-0 flex items-center gap-2">
@@ -86,5 +86,6 @@ export default function Dashboard() {
     </div>
   );
 }
+
 
 
