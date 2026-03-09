@@ -62,14 +62,14 @@ export function WeeklySummary({ tasks, habits, events, selectedDate }: WeeklySum
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3" data-testid="weekly-summary">
+    <div className="weekly-summary-cards grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3" data-testid="weekly-summary">
       {cards.map((card, i) => (
         <motion.div
           key={card.label}
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: i * 0.05 }}
-          className="bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 p-3 md:p-4 flex items-center gap-3"
+          className="weekly-summary-card bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 p-3 md:p-4 flex items-center gap-3"
         >
           <div className={`w-10 h-10 md:w-11 md:h-11 rounded-lg ${card.bg} ${card.color} flex items-center justify-center flex-shrink-0`}>
             {card.icon}
@@ -83,3 +83,4 @@ export function WeeklySummary({ tasks, habits, events, selectedDate }: WeeklySum
     </div>
   );
 }
+

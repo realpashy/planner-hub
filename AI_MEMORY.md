@@ -99,3 +99,11 @@
 - Auth-aware routes are always mounted to prevent mobile dead-route states when session changes.
 
 
+  - `weekly-events-widget`
+  - `weekly-events-add-btn`
+  - `weekly-event-row`
+  - `weekly-summary-cards`
+  - `weekly-summary-card`
+  - `weekly-tasklist-mode-daily`
+  - `weekly-tasklist-mode-weekly`
+  - `weekly-gantt-scroll`

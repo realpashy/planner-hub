@@ -109,7 +109,7 @@ export function EventList({ events, selectedDate }: { events: EventItem[], selec
   };
 
   return (
-    <div data-testid="events-section">
+    <div className="weekly-events-widget" data-testid="events-section">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <div className="w-9 h-9 rounded-full bg-amber-50 dark:bg-amber-500/15 flex items-center justify-center">
@@ -126,7 +126,7 @@ export function EventList({ events, selectedDate }: { events: EventItem[], selec
             const now = new Date();
             setNewTime(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`);
           }}
-          className="text-sm font-semibold text-primary flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-primary/5 transition-colors"
+          className="weekly-events-add-btn text-sm font-semibold text-white flex items-center gap-1 px-3 py-1.5 rounded-lg transition-all"
           data-testid="button-add-event"
         >
           <Plus className="w-4 h-4" />
@@ -143,7 +143,7 @@ export function EventList({ events, selectedDate }: { events: EventItem[], selec
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, x: 20 }}
               onClick={() => setDetailEvent(event)}
-              className="group flex items-center gap-3 bg-slate-50/80 dark:bg-slate-800/50 rounded-xl p-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              className="weekly-event-row group flex items-center gap-3 bg-slate-100/90 dark:bg-slate-800/60 rounded-xl p-3 hover:bg-slate-200/80 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               data-testid={`event-item-${event.id}`}
             >
               <div className="flex-shrink-0 w-8 h-8 rounded-full bg-sky-50 dark:bg-sky-500/15 flex items-center justify-center">
@@ -214,3 +214,4 @@ export function EventList({ events, selectedDate }: { events: EventItem[], selec
     </div>
   );
 }
+

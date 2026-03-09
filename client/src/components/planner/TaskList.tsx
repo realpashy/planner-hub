@@ -620,7 +620,7 @@ export function TaskList({ tasks, selectedDate, isWeeklyMode = false }: TaskList
 
   return (
     <div
-      className={`weekly-tasklist-widget rounded-2xl transition-all duration-500 ${
+      className={`weekly-tasklist-widget ${isWeeklyMode ? "weekly-tasklist-mode-weekly" : "weekly-tasklist-mode-daily"} rounded-2xl transition-all duration-500 ${
         isWeeklyMode
           ? 'bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm p-4 md:p-5'
           : allCompleted ? 'animate-celebration-glow' : ''
@@ -742,4 +742,5 @@ export function TaskList({ tasks, selectedDate, isWeeklyMode = false }: TaskList
     </div>
   );
 }
+
 

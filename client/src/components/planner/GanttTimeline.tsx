@@ -276,7 +276,7 @@ export function GanttTimeline({ events, selectedDate, onScrollToEvents }: GanttT
 
             <div
               ref={scrollRef}
-              className={`overflow-x-auto pb-4 px-4 md:px-5 ${isScrollable ? 'scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700 scrollbar-track-transparent' : ''}`}
+              className={`weekly-gantt-scroll overflow-x-auto pb-4 px-4 md:px-5 ${isScrollable ? "" : ""}`}
               dir="ltr"
             >
               <div style={{ width: Math.max(fullWidth, containerWidth - 32) }}>
@@ -390,3 +390,4 @@ export function GanttTimeline({ events, selectedDate, onScrollToEvents }: GanttT
     </div>
   );
 }
+
