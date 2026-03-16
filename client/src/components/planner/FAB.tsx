@@ -22,7 +22,7 @@ export function FAB({ onAction }: { onAction: (action: string) => void }) {
   ];
 
   return (
-    <div className="fixed bottom-6 left-6 z-40 md:hidden" data-testid="fab-container">
+    <div className="fixed bottom-6 left-6 rtl:left-auto rtl:right-6 z-40 md:hidden" data-testid="fab-container">
       <AnimatePresence>
         {isOpen && (
           <>
@@ -37,7 +37,7 @@ export function FAB({ onAction }: { onAction: (action: string) => void }) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute bottom-16 left-0 flex flex-col gap-2.5 pb-2 z-40"
+              className="absolute bottom-16 left-0 rtl:left-auto rtl:right-0 flex flex-col gap-2.5 pb-2 z-40"
             >
               {actions.map((act, i) => (
                 <motion.div

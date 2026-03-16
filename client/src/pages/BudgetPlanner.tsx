@@ -1101,8 +1101,8 @@ export default function BudgetPlanner() {
                 <CardContent className="space-y-3">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                   <div className="relative md:col-span-2">
-                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <Input value={recentSearch} onChange={(e) => setRecentSearch(e.target.value)} placeholder="ابحث عن عملية محددة" className="pl-9" />
+                    <Search className="w-4 h-4 absolute left-3 rtl:left-auto rtl:right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                    <Input value={recentSearch} onChange={(e) => setRecentSearch(e.target.value)} placeholder="ابحث عن عملية محددة" className="pl-9 rtl:pl-3 rtl:pr-9" />
                   </div>
                   <Select value={recentFilter} onValueChange={(v) => setRecentFilter(v as typeof recentFilter)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
@@ -1222,7 +1222,7 @@ export default function BudgetPlanner() {
         </TabsContent>
         </Tabs>
         <Dialog open={amountDialog.open} onOpenChange={(open) => { if (!open) closeAmountDialog(); }}>
-          <DialogContent className="max-w-sm">
+          <DialogContent className="max-w-sm" dir="rtl">
             <DialogHeader>
               <DialogTitle>{amountDialog.title}</DialogTitle>
               <DialogDescription>{amountDialog.subtitle}</DialogDescription>
@@ -1236,7 +1236,7 @@ export default function BudgetPlanner() {
         </Dialog>
 
       <Dialog open={!!operationActionsTx} onOpenChange={(open) => { if (!open) setOperationActionsTx(null); }}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm" dir="rtl">
           <DialogHeader>
             <DialogTitle>خيارات العملية</DialogTitle>
             {operationActionsTx && <DialogDescription>{operationActionsTx.date}</DialogDescription>}
@@ -1253,7 +1253,7 @@ export default function BudgetPlanner() {
         </DialogContent>
       </Dialog>
       <Dialog open={editDialog.open && !!editDialog.tx} onOpenChange={(open) => { if (!open) setEditDialog({ open: false, tx: null, amount: "", date: todayISO(), note: "", categoryId: "" }); }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md" dir="rtl">
           <DialogHeader>
             <DialogTitle>تعديل العملية</DialogTitle>
           </DialogHeader>

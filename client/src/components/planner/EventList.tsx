@@ -81,7 +81,7 @@ function EventDetailDialog({ isOpen, onClose, event, onSave }: {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md" dir="rtl">
         <DialogHeader>
           <DialogTitle>تفاصيل الموعد</DialogTitle>
           <DialogDescription className="sr-only">عرض وتعديل ملاحظات الموعد</DialogDescription>

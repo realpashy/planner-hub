@@ -501,7 +501,7 @@ function AddTaskDialog({ isOpen, onClose, onSubmit, initialText, isWeeklyMode, d
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto" dir="rtl">
         <DialogHeader>
           <DialogTitle>{isWeeklyMode ? "مهمة أسبوعية جديدة" : "مهمة جديدة"}</DialogTitle>
           <DialogDescription className="sr-only">إضافة مهمة جديدة</DialogDescription>

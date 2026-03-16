@@ -27,7 +27,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background px-4 py-10 sm:px-6 lg:px-8" dir="rtl">
       <div className="max-w-5xl mx-auto">
         <header className="mb-10 text-center relative">
-          <div className="absolute top-0 left-0 flex items-center gap-2">
+          <div className="absolute top-0 left-0 rtl:left-auto rtl:right-0 flex items-center gap-2">
             <Button variant="destructive" size="sm" onClick={() => auth.logout()}>
               خروج
             </Button>

@@ -103,7 +103,7 @@ export default function WeeklyPlanner() {
                   </span>
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="center" sideOffset={8}>
+              <PopoverContent className="w-auto p-0" align="center" sideOffset={8} dir="rtl">
                 <MonthCalendar selectedDate={selectedDate} onSelectDate={setSelectedDate} />
               </PopoverContent>
             </Popover>
@@ -233,7 +233,7 @@ export default function WeeklyPlanner() {
       </main>
 
       <Dialog open={templatePickerOpen} onOpenChange={setTemplatePickerOpen}>
-        <DialogContent className="max-w-2xl" onClick={(e) => e.stopPropagation()}>
+        <DialogContent className="max-w-2xl" dir="rtl" onClick={(e) => e.stopPropagation()}>
           <DialogHeader>
             <DialogTitle>اختر قالبًا للمخطط الأسبوعي</DialogTitle>
             <DialogDescription>سيتم تعبئة الصفحة مباشرة بدون الانتقال لصفحة إعداد.</DialogDescription>
