@@ -1,7 +1,8 @@
 import { Drawer } from "vaul";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { X, AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
 
 interface ResponsiveConfirmProps {
   isOpen: boolean;
@@ -34,20 +35,12 @@ export function ResponsiveConfirm({
                 <Drawer.Description className="text-slate-500 dark:text-slate-400 mb-6">{description}</Drawer.Description>
               </div>
               <div className="flex gap-3 px-4">
-                <button
-                  onClick={() => { onConfirm(); onClose(); }}
-                  className="flex-1 bg-red-500 text-white font-semibold py-3.5 rounded-xl hover:bg-red-600 transition-colors"
-                  data-testid="button-confirm-delete"
-                >
+                <Button variant="destructive" className="flex-1" onClick={() => { onConfirm(); onClose(); }} data-testid="button-confirm-delete">
                   {confirmText}
-                </button>
-                <button
-                  onClick={onClose}
-                  className="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold py-3.5 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-                  data-testid="button-cancel-delete"
-                >
+                </Button>
+                <Button variant="secondary" className="flex-1" onClick={onClose} data-testid="button-cancel-delete">
                   {cancelText}
-                </button>
+                </Button>
               </div>
             </div>
           </Drawer.Content>
@@ -73,31 +66,20 @@ export function ResponsiveConfirm({
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             className="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-md shadow-2xl relative z-10"
           >
-            <button onClick={onClose} className="absolute top-4 left-4 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 p-2 rounded-full transition-colors" data-testid="button-close-dialog">
-              <X className="w-5 h-5" />
-            </button>
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-full bg-red-50 dark:bg-red-500/15 text-red-500 flex items-center justify-center flex-shrink-0">
+              <div className="w-12 h-12 rounded-full bg-destructive/10 text-destructive flex items-center justify-center flex-shrink-0">
                 <AlertTriangle className="w-6 h-6" />
               </div>
-              <div className="pt-1">
-                <h3 className="text-xl font-bold text-slate-900 dark:text-slate-50 mb-2" data-testid="text-confirm-title">{title}</h3>
-                <p className="text-slate-500 dark:text-slate-400 mb-6">{description}</p>
+              <div className="pt-1 flex-1">
+                <h3 className="text-xl font-bold text-foreground mb-2" data-testid="text-confirm-title">{title}</h3>
+                <p className="text-muted-foreground mb-6">{description}</p>
                 <div className="flex justify-end gap-3">
-                  <button
-                    onClick={onClose}
-                    className="px-5 py-2.5 rounded-xl font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                    data-testid="button-cancel-delete"
-                  >
+                  <Button variant="secondary" onClick={onClose} data-testid="button-cancel-delete">
                     {cancelText}
-                  </button>
-                  <button
-                    onClick={() => { onConfirm(); onClose(); }}
-                    className="px-5 py-2.5 rounded-xl font-semibold bg-red-500 text-white hover:bg-red-600 shadow-lg shadow-red-500/20 transition-all"
-                    data-testid="button-confirm-delete"
-                  >
+                  </Button>
+                  <Button variant="destructive" onClick={() => { onConfirm(); onClose(); }} data-testid="button-confirm-delete">
                     {confirmText}
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>

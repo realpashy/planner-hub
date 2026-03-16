@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { Plus, CheckSquare, Clock, Crosshair, FileText, X } from "lucide-react";
+import { Plus, CheckSquare, Clock, Crosshair, FileText } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface FABAction {
   id: string;
@@ -38,39 +40,47 @@ export function FAB({ onAction }: { onAction: (action: string) => void }) {
               className="absolute bottom-16 left-0 flex flex-col gap-2.5 pb-2 z-40"
             >
               {actions.map((act, i) => (
-                <motion.button
+                <motion.div
                   key={act.id}
                   initial={{ opacity: 0, y: 10, scale: 0.9 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.9 }}
                   transition={{ delay: i * 0.04 }}
-                  onClick={() => { onAction(act.id); setIsOpen(false); }}
                   className="flex items-center justify-end gap-2.5"
-                  data-testid={`fab-action-${act.id}`}
                 >
-                  <span className="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-xs font-bold px-3 py-1.5 rounded-lg shadow-md whitespace-nowrap">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="shadow-md whitespace-nowrap"
+                    onClick={() => { onAction(act.id); setIsOpen(false); }}
+                    data-testid={`fab-action-${act.id}`}
+                  >
                     {act.label}
-                  </span>
-                  <div className={`w-11 h-11 rounded-full ${act.color} text-white flex items-center justify-center shadow-lg`}>
+                  </Button>
+                  <div className={cn("w-11 h-11 rounded-full text-white flex items-center justify-center shadow-lg", act.color)}>
                     {act.icon}
                   </div>
-                </motion.button>
+                </motion.div>
               ))}
             </motion.div>
           </>
         )}
       </AnimatePresence>
 
-      <motion.button
+      <Button
+        size="icon"
         onClick={() => setIsOpen(!isOpen)}
-        animate={{ rotate: isOpen ? 45 : 0 }}
-        transition={{ duration: 0.2 }}
-        className={`relative z-40 w-13 h-13 rounded-full flex items-center justify-center shadow-lg transition-colors duration-200 ${isOpen ? 'bg-slate-800 dark:bg-slate-600' : 'bg-primary shadow-primary/30'}`}
-        style={{ width: '52px', height: '52px' }}
+        className={cn(
+          "relative z-40 w-13 h-13 rounded-full shadow-lg transition-colors duration-200",
+          isOpen ? "bg-muted-foreground" : "bg-primary shadow-primary/30"
+        )}
+        style={{ width: "52px", height: "52px" }}
         data-testid="button-fab"
       >
-        <Plus className="w-6 h-6 text-white" />
-      </motion.button>
+        <motion.span animate={{ rotate: isOpen ? 45 : 0 }} transition={{ duration: 0.2 }}>
+          <Plus className="w-6 h-6 text-primary-foreground" />
+        </motion.span>
+      </Button>
     </div>
   );
 }

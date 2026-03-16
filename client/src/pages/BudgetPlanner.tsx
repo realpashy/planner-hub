@@ -1,10 +1,32 @@
-
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { ArrowRight, CalendarClock, Landmark, PiggyBank, Plus, ReceiptText, Search, TrendingUp, Wallet } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { toast } from "@/hooks/use-toast";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import {
   CURRENCY_OPTIONS,
   TRANSACTION_TYPE_LABEL,
@@ -406,8 +428,6 @@ export default function BudgetPlanner() {
     : typeof navigator !== "undefined"
       ? navigator.language
       : "ar";
-  const selectClassName = "budget-field budget-modern-select modern-select appearance-none rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 bg-[#F9FAFB] dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 transition";
-  const inputClassName = "budget-field rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-100 bg-[#F9FAFB] dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700";
   const localizedMonthLabel = useMemo(() => {
     const [y, m] = selectedMonth.split("-").map(Number);
     return new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }).format(new Date(y, m - 1, 1));
@@ -830,54 +850,60 @@ export default function BudgetPlanner() {
   };
 
   return (
-    <div className="budget-planner-page min-h-screen bg-slate-50 dark:bg-slate-950 pb-12" dir="rtl">
-      <header className="budget-planner-header bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
+    <div className="min-h-screen bg-background pb-12" dir="rtl">
+      <header className="sticky top-0 z-30 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-4">
           <div className="relative flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <Link href="/" className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors p-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800">
-                <ArrowRight className="w-5 h-5 md:w-6 md:h-6" />
-              </Link>
+              <Button variant="ghost" size="icon" asChild>
+                <Link href="/">
+                  <ArrowRight className="w-5 h-5 md:w-6 md:h-6" />
+                </Link>
+              </Button>
               <ThemeToggle />
             </div>
-            <h1 className="absolute left-1/2 -translate-x-1/2 text-lg md:text-2xl font-bold text-slate-900 dark:text-slate-50 flex items-center gap-2">
+            <h1 className="absolute left-1/2 -translate-x-1/2 text-lg md:text-2xl font-bold text-foreground flex items-center gap-2">
               <Wallet className="w-5 h-5 md:w-6 md:h-6 text-emerald-500" />
               الميزانيّة الشهرية
-            </h1><div className="w-[68px]" />          </div>
+            </h1>
+            <div className="w-[68px]" />
+          </div>
 
-          <div className="budget-header-controls mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="budget-month-picker flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/90 dark:bg-slate-800/60 px-3 py-2.5">
-              <CalendarClock className="w-4 h-4 text-slate-900 dark:text-white" />
-              <select
-                value={selectedMonth}
-                onChange={(e) => {
-                  const month = e.target.value;
-                  setSelectedMonth(month);
-                                  }}
-                className={`budget-month-select ${selectClassName} flex-1 border-0 bg-transparent px-0 py-0 shadow-none focus:ring-0`}
-              >
-                {monthOptions.map((option) => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
-              <span className="text-xs text-slate-500 dark:text-slate-400">{localizedMonthLabel}</span>
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2.5">
+              <CalendarClock className="w-4 h-4 text-foreground" />
+              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                <SelectTrigger className="flex-1 border-0 bg-transparent shadow-none focus:ring-0 w-auto min-w-0">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {monthOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <span className="text-xs text-muted-foreground">{localizedMonthLabel}</span>
             </div>
 
-            <select
+            <Select
               value={data.settings.currency}
-              onChange={(e) => applyData((current) => ({ ...current, settings: { ...current.settings, currency: e.target.value as BudgetData["settings"]["currency"] } }))}
-              className={`budget-currency-select ${selectClassName}`}
+              onValueChange={(value) => applyData((current) => ({ ...current, settings: { ...current.settings, currency: value as BudgetData["settings"]["currency"] } }))}
             >
-              {CURRENCY_OPTIONS.map((option) => (
-                <option key={option.code} value={option.code}>{option.label}</option>
-              ))}
-            </select>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CURRENCY_OPTIONS.map((option) => (
+                  <SelectItem key={option.code} value={option.code}>{option.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 pt-5 md:pt-6">
-        <div className="budget-summary-grid grid grid-cols-2 lg:grid-cols-5 gap-3 mb-5">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-5">
           <SummaryCard title="دخل" amount={monthlyTotals.income} currency={data.settings.currency} tone="income" />
           <SummaryCard title="مصروفات" amount={monthlyTotals.expenses} currency={data.settings.currency} tone="expense" />
           <SummaryCard title="فواتير + ديون" amount={monthlyTotals.bills + monthlyTotals.debts} currency={data.settings.currency} tone="bill" />
@@ -885,95 +911,117 @@ export default function BudgetPlanner() {
           <SummaryCard title="الصافي" amount={monthlyTotals.net} currency={data.settings.currency} tone={monthlyTotals.net >= 0 ? "income" : "expense"} />
         </div>
 
-        <div className="budget-tabs-wrap mb-5 overflow-x-auto">
-          <div className="budget-tabs-nav inline-flex items-center gap-2 p-1 rounded-2xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 min-w-max">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as BudgetTab)} className="mb-5">
+          <TabsList className="inline-flex w-auto rounded-2xl p-1 bg-muted">
             {(Object.keys(TAB_LABELS) as BudgetTab[]).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`budget-tab-btn budget-tab-btn-${tab} px-4 py-2 rounded-xl text-sm font-semibold transition ${activeTab === tab ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow" : "text-slate-600 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-900/60"}`}
-              >
+              <TabsTrigger key={tab} value={tab} className="rounded-xl px-4 py-2 data-[state=active]:shadow-sm">
                 {TAB_LABELS[tab]}
-              </button>
+              </TabsTrigger>
             ))}
-          </div>
-        </div>
-        {activeTab === "overview" && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          </TabsList>
+        <TabsContent value="overview" className="mt-5">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-5 space-y-6">
-              <div className="budget-add-transaction-widget bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
-                <h2 className="font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />إضافة معاملة جديدة</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <select value={transactionForm.type} onChange={(e) => configureTransactionType(e.target.value as BudgetTransactionType)} className={`budget-currency-select ${selectClassName}`}>{ADD_TRANSACTION_TYPES.map((type) => <option key={type} value={type}>{`${TYPE_EMOJI[type]} ${TRANSACTION_TYPE_LABEL[type]}`}</option>)}</select>
-                  <input value={transactionCategoryText} onChange={(e) => setTransactionCategoryText(e.target.value)} placeholder="اكتب الفئة (مثال: راتب, كهرباء)" className={inputClassName} />
-                  <input type="text" inputMode="decimal" value={transactionForm.amount} onChange={(e) => setTransactionForm((prev) => ({ ...prev, amount: e.target.value }))} placeholder={`المبلغ (${symbol})`} className={`${inputClassName} tabular-nums`} />
-                  <input value={transactionForm.note} onChange={(e) => setTransactionForm((prev) => ({ ...prev, note: e.target.value }))} placeholder="ملاحظة (اختياري)" className={inputClassName} />
-                </div>
-                {RECURRING_ELIGIBLE_TYPES.includes(transactionForm.type as Exclude<BudgetTransactionType, "saving">) && (
-                  <label className="mt-3 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
-                    <input type="checkbox" checked={isRecurring} onChange={(e) => setIsRecurring(e.target.checked)} className="rounded border-slate-300" />
-                    معاملة شهرية تلقائية (ويمكن استثناء أي شهر لاحقاً)
-                  </label>
-                )}
-                <div className="mt-3">
-                  <button onClick={saveTransaction} className="budget-primary-btn px-4 py-2.5 rounded-xl text-white font-semibold">إضافة معاملة</button>
-                </div>
-              </div>
-              <div className="budget-add-goal-widget bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
-                <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-3 flex items-center gap-2"><PiggyBank className="w-4 h-4 text-emerald-500" />إضافة هدف ادخار</h3>
-                <div className="grid grid-cols-1 gap-2">
-                  <input value={goalTitle} onChange={(e) => setGoalTitle(e.target.value)} placeholder="اسم الهدف" className={inputClassName} />
-                  <input type="text" inputMode="decimal" value={goalTargetAmount} onChange={(e) => setGoalTargetAmount(e.target.value)} placeholder={`المبلغ المستهدف (${symbol})`} className={`${inputClassName} tabular-nums`} />                </div>
-                <button onClick={addSavingGoal} className="budget-primary-btn mt-2 px-4 py-2.5 rounded-xl text-white font-semibold">إضافة الهدف</button>
-              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Plus className="w-4 h-4 text-primary" />
+                    إضافة معاملة جديدة
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Select value={transactionForm.type} onValueChange={(v) => configureTransactionType(v as BudgetTransactionType)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ADD_TRANSACTION_TYPES.map((type) => (
+                          <SelectItem key={type} value={type}>{`${TYPE_EMOJI[type]} ${TRANSACTION_TYPE_LABEL[type]}`}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input value={transactionCategoryText} onChange={(e) => setTransactionCategoryText(e.target.value)} placeholder="اكتب الفئة (مثال: راتب, كهرباء)" />
+                    <Input type="text" inputMode="decimal" value={transactionForm.amount} onChange={(e) => setTransactionForm((prev) => ({ ...prev, amount: e.target.value }))} placeholder={`المبلغ (${symbol})`} className="tabular-nums" />
+                    <Input value={transactionForm.note} onChange={(e) => setTransactionForm((prev) => ({ ...prev, note: e.target.value }))} placeholder="ملاحظة (اختياري)" />
+                  </div>
+                  {RECURRING_ELIGIBLE_TYPES.includes(transactionForm.type as Exclude<BudgetTransactionType, "saving">) && (
+                    <div className="flex items-center gap-2">
+                      <Checkbox id="recurring" checked={isRecurring} onCheckedChange={(c) => setIsRecurring(!!c)} />
+                      <Label htmlFor="recurring" className="text-sm">معاملة شهرية تلقائية (ويمكن استثناء أي شهر لاحقاً)</Label>
+                    </div>
+                  )}
+                  <Button onClick={saveTransaction}>إضافة معاملة</Button>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <PiggyBank className="w-4 h-4 text-emerald-500" />
+                    إضافة هدف ادخار
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <Input value={goalTitle} onChange={(e) => setGoalTitle(e.target.value)} placeholder="اسم الهدف" />
+                  <Input type="text" inputMode="decimal" value={goalTargetAmount} onChange={(e) => setGoalTargetAmount(e.target.value)} placeholder={`المبلغ المستهدف (${symbol})`} className="tabular-nums" />
+                  <Button onClick={addSavingGoal}>إضافة الهدف</Button>
+                </CardContent>
+              </Card>
 
-              <div className="budget-savings-goals-widget bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
-                <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-3">أهداف الادخار</h3>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">أهداف الادخار</CardTitle>
+                </CardHeader>
+                <CardContent>
                 <div className="space-y-2.5">
-                  {data.savingsGoals.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">لا توجد أهداف ادخار بعد.</p>}
+                  {data.savingsGoals.length === 0 && <p className="text-sm text-muted-foreground">لا توجد أهداف ادخار بعد.</p>}
                   {data.savingsGoals.map((goal) => {
                     const saved = savingsByGoalId.get(goal.id) || 0;
                     const progress = goal.targetAmount > 0 ? Math.min(Math.round((saved / goal.targetAmount) * 100), 100) : 0;
                     return (
-                      <div key={goal.id} className="group rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-800/40 p-3">
+                      <div key={goal.id} className="group rounded-xl border bg-muted/50 p-3">
                         <div className="flex items-start justify-between gap-2">
                           <div>
-                            <p className="font-semibold text-slate-800 dark:text-slate-100">{goal.title}</p>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">الاستحقاق: {goal.targetDate}</p>
+                            <p className="font-semibold text-foreground">{goal.title}</p>
+                            <p className="text-xs text-muted-foreground mt-1">الاستحقاق: {goal.targetDate}</p>
                           </div>
-                          <button onClick={() => deleteSavingGoal(goal.id)} className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition px-2 py-1 text-xs rounded-lg bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400">حذف</button>
+                          <Button variant="destructive" size="sm" className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition text-xs h-7" onClick={() => deleteSavingGoal(goal.id)}>حذف</Button>
                         </div>
                         <div className="mt-2 flex items-center justify-between text-xs">
-                          <span className="text-slate-600 dark:text-slate-300">تم ادخار</span>
-                          <bdi dir="ltr" className="text-slate-700 dark:text-slate-200 tabular-nums whitespace-nowrap">
+                          <span className="text-muted-foreground">تم ادخار</span>
+                          <bdi dir="ltr" className="text-foreground tabular-nums whitespace-nowrap">
                             {`${formatAmount(saved, data.settings.currency)} / ${formatAmount(goal.targetAmount, data.settings.currency)}`}
                           </bdi>
                         </div>
-                        <div className="mt-1.5 w-full h-2.5 bg-slate-100 dark:bg-slate-800 rounded-[8px] overflow-hidden">
+                        <div className="mt-1.5 w-full h-2.5 bg-muted rounded-lg overflow-hidden">
                           <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }} transition={{ duration: 0.35 }} className="h-full bg-emerald-500" />
                         </div>
                         <div className="mt-2 flex items-center justify-between">
-                          <span className="text-xs text-slate-500 dark:text-slate-400">{progress}%</span>
-                          <button onClick={() => openSavingContributionDialog(goal)} className="budget-primary-btn px-2.5 py-1.5 rounded-lg text-white text-xs">إضافة مساهمة</button>
+                          <span className="text-xs text-muted-foreground">{progress}%</span>
+                          <Button size="sm" className="text-xs h-7" onClick={() => openSavingContributionDialog(goal)}>إضافة مساهمة</Button>
                         </div>
                       </div>
                     );
                   })}
                 </div>
-              </div>
+                </CardContent>
+              </Card>
             </div>
 
             <div className="lg:col-span-7 space-y-6">
-              <div className="budget-overview-widget bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
-                <h3 className="budget-overview-title font-bold text-slate-900 dark:text-slate-100 mb-4">نظرة عامّة</h3>
-                <div className="budget-overview-income-expense mb-3 rounded-xl border border-slate-200 dark:border-slate-700 p-3 bg-slate-50/70 dark:bg-slate-800/40">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">نظرة عامّة</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                <div className="mb-3 rounded-xl border bg-muted/50 p-3">
                   <div className="flex items-center justify-between text-xs mb-1"><span>الدخل</span><span dir="ltr" className="tabular-nums">{formatAmount(monthlyTotals.income, data.settings.currency)}</span></div>
-                  <div className="w-full h-2.5 rounded-[8px] bg-slate-200 dark:bg-slate-700 overflow-hidden mb-2"><motion.div initial={{ width: 0 }} animate={{ width: "100%" }} className="h-full bg-emerald-500" /></div>
+                  <div className="w-full h-2.5 rounded-lg bg-muted overflow-hidden mb-2"><motion.div initial={{ width: 0 }} animate={{ width: "100%" }} className="h-full bg-emerald-500" /></div>
                   <div className="flex items-center justify-between text-xs mb-1"><span>المصروف الكلي</span><span dir="ltr" className="tabular-nums">{formatAmount(monthlyTotals.totalOutflow, data.settings.currency)}</span></div>
-                  <div className="w-full h-2.5 rounded-[8px] bg-slate-200 dark:bg-slate-700 overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: `${monthlyTotals.income > 0 ? Math.min((monthlyTotals.totalOutflow / monthlyTotals.income) * 100, 100) : 0}%` }} className="h-full bg-rose-500" /></div>
+                  <div className="w-full h-2.5 rounded-lg bg-muted overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: `${monthlyTotals.income > 0 ? Math.min((monthlyTotals.totalOutflow / monthlyTotals.income) * 100, 100) : 0}%` }} className="h-full bg-rose-500" /></div>
                 </div>
 
-                <div className="budget-overview-chart-wrap mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3 items-center" onMouseLeave={() => setHoveredOverviewSegment(null)}>
+                <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-4 items-center" onMouseLeave={() => setHoveredOverviewSegment(null)}>
                   <div className="flex justify-center">
                     <div className="budget-overview-donut relative w-44 h-44">
                       <svg viewBox="0 0 180 180" className="w-full h-full drop-shadow-sm">
@@ -1005,21 +1053,21 @@ export default function BudgetPlanner() {
                         )}
                       </svg>
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="w-20 h-20 rounded-full bg-white dark:bg-slate-900 ring-1 ring-slate-200/60 dark:ring-slate-700/70 flex flex-col items-center justify-center text-center px-1">
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">{activeOverviewSegment?.name || "نسبة"}</p>
-                          <p className="text-sm font-bold text-slate-800 dark:text-slate-100 tabular-nums">{activeOverviewSegment ? `${activeOverviewSegment.percent}%` : "0%"}</p>
+                        <div className="w-20 h-20 rounded-full bg-card border border-border flex flex-col items-center justify-center text-center px-1">
+                          <p className="text-[11px] text-muted-foreground leading-tight">{activeOverviewSegment?.name || "نسبة"}</p>
+                          <p className="text-sm font-bold text-foreground tabular-nums">{activeOverviewSegment ? `${activeOverviewSegment.percent}%` : "0%"}</p>
                         </div>
                       </div>
                     </div>
                   </div>
-                  <div className="text-sm text-slate-600 dark:text-slate-300">
+                  <div className="text-sm text-muted-foreground">
                     <p>حرّك المؤشر على أي فئة لرؤية نسبتها بسرعة.</p>
                     <p className="mt-1">يتم تكبير الجزء المطابق للفئة فقط لربط القائمة بالمخطط.</p>
                   </div>
                 </div>
 
-                <div className="budget-overview-segments space-y-2.5">
-                  {overviewSegments.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">لا توجد بيانات في هذا الشهر.</p>}
+                <div className="space-y-2.5">
+                  {overviewSegments.length === 0 && <p className="text-sm text-muted-foreground">لا توجد بيانات في هذا الشهر.</p>}
                   {overviewSegments.map((segment) => {
                     const isActive = hoveredOverviewSegment === segment.id;
                     return (
@@ -1027,29 +1075,49 @@ export default function BudgetPlanner() {
                         key={segment.id}
                         onMouseEnter={() => setHoveredOverviewSegment(segment.id)}
                         onMouseLeave={() => setHoveredOverviewSegment(null)}
-                        className={`budget-overview-segment rounded-xl border p-2.5 transition ${isActive ? "border-primary/40 bg-primary/5" : "border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40"}`}
+                        className={cn("rounded-xl border p-2.5 transition", isActive ? "border-primary/40 bg-primary/5" : "bg-muted/50")}
                       >
                         <div className="flex items-center justify-between text-sm mb-1">
-                          <p className="font-medium text-slate-800 dark:text-slate-100">{`${segment.emoji} ${segment.name}`}</p>
-                          <p className="text-slate-500 dark:text-slate-400 tabular-nums"><span className="inline-block tabular-nums whitespace-nowrap" style={{ direction: "ltr", unicodeBidi: "bidi-override" }}>{formatAmount(segment.total, data.settings.currency)}</span> • {segment.percent}%</p>
+                          <p className="font-medium text-foreground">{`${segment.emoji} ${segment.name}`}</p>
+                          <p className="text-muted-foreground tabular-nums"><span className="inline-block tabular-nums whitespace-nowrap" style={{ direction: "ltr", unicodeBidi: "bidi-override" }}>{formatAmount(segment.total, data.settings.currency)}</span> • {segment.percent}%</p>
                         </div>
-                        <div className="w-full h-2.5 bg-slate-100 dark:bg-slate-800 rounded-[8px] overflow-hidden">
+                        <div className="w-full h-2.5 bg-muted rounded-lg overflow-hidden">
                           <motion.div initial={{ width: 0 }} animate={{ width: `${segment.percent}%` }} transition={{ duration: 0.35 }} className="h-full" style={{ backgroundColor: segment.color }} />
                         </div>
                       </div>
                     );
                   })}
                 </div>
-              </div>
+                </CardContent>
+              </Card>
 
-              <div className="budget-recent-transactions-widget bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
-                <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-3 flex items-center gap-2"><CalendarClock className="w-4 h-4 text-blue-500" />آخر عمليات هذا الشهر</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
-                  <div className="relative md:col-span-2"><Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input value={recentSearch} onChange={(e) => setRecentSearch(e.target.value)} placeholder="ابحث عن عملية محددة" className={`w-full pr-3 pl-9 ${inputClassName}`} /></div>
-                  <select value={recentFilter} onChange={(e) => setRecentFilter(e.target.value as typeof recentFilter)} className={`budget-currency-select ${selectClassName}`}><option value="all">الكل</option><option value="income">دخل</option><option value="expense">مصروف</option><option value="bill_payment">فاتورة</option><option value="debt_payment">دين</option><option value="other">أخرى</option></select>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <CalendarClock className="w-4 h-4 text-primary" />
+                    آخر عمليات هذا الشهر
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                  <div className="relative md:col-span-2">
+                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Input value={recentSearch} onChange={(e) => setRecentSearch(e.target.value)} placeholder="ابحث عن عملية محددة" className="pl-9" />
+                  </div>
+                  <Select value={recentFilter} onValueChange={(v) => setRecentFilter(v as typeof recentFilter)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">الكل</SelectItem>
+                      <SelectItem value="income">دخل</SelectItem>
+                      <SelectItem value="expense">مصروف</SelectItem>
+                      <SelectItem value="bill_payment">فاتورة</SelectItem>
+                      <SelectItem value="debt_payment">دين</SelectItem>
+                      <SelectItem value="other">أخرى</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="space-y-2.5 max-h-[520px] overflow-auto pr-1 modern-scrollbar">
-                  {recentTransactions.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">لا توجد عمليات مطابقة.</p>}
+                <div className="space-y-2 max-h-[520px] overflow-auto">
+                  {recentTransactions.length === 0 && <p className="text-sm text-muted-foreground">لا توجد عمليات مطابقة.</p>}
                   {recentTransactions.map((tx) => {
                     const category = data.categories.find((c) => c.id === tx.categoryId);
                     const emoji = categoryEmoji(category?.name || "", category?.type || tx.type);
@@ -1057,118 +1125,168 @@ export default function BudgetPlanner() {
                     const metaLine = `${TRANSACTION_TYPE_LABEL[tx.type]} • ${tx.date}`;
 
                     return (
-                      <button key={tx.id} onClick={() => setOperationActionsTx(tx)} className="w-full text-right rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-800/40 p-3 hover:bg-slate-100/90 dark:hover:bg-slate-700/50 transition">
-                        <div className="flex items-start justify-between gap-3">
+                      <Button key={tx.id} variant="outline" className="w-full h-auto justify-between p-3 text-right font-normal" onClick={() => setOperationActionsTx(tx)}>
+                        <div className="flex items-start justify-between gap-3 w-full">
                           <div>
-                            <p className="font-semibold text-slate-800 dark:text-slate-100">{rowTitle}</p>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{metaLine}</p>
-                            {tx.note && <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{tx.note}</p>}
+                            <p className="font-semibold text-foreground">{rowTitle}</p>
+                            <p className="text-xs text-muted-foreground mt-1">{metaLine}</p>
+                            {tx.note && <p className="text-xs text-muted-foreground mt-1">{tx.note}</p>}
                           </div>
-                          <p className={`font-bold tabular-nums ${tx.type === "income" ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                          <p className={cn("font-bold tabular-nums shrink-0", tx.type === "income" ? "text-emerald-600 dark:text-emerald-400" : "text-destructive")}>
                             <span className="inline-block tabular-nums whitespace-nowrap" style={{ direction: "ltr", unicodeBidi: "bidi-override" }}>{formatAmount(tx.amount, data.settings.currency)}</span>
                           </p>
                         </div>
-                      </button>
+                      </Button>
                     );
                   })}
                 </div>
-              </div>
+                </CardContent>
+              </Card>
 
-              <div className="budget-financial-insights-widget bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
-                <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-3">تحليل مالي ذكي</h3>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">تحليل مالي ذكي</CardTitle>
+                </CardHeader>
+                <CardContent>
                 <div className="space-y-2.5">
                   {upcomingWarnings.map((warning, index) => (
                     <div
                       key={`${warning.text}_${index}`}
-                      className={`rounded-xl border px-3 py-2.5 text-sm ${
-                        warning.tone === "danger"
-                          ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300"
-                          : warning.tone === "warn"
-                            ? "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300"
-                            : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300"
-                      }`}
+                      className={cn(
+                        "rounded-xl border px-3 py-2.5 text-sm",
+                        warning.tone === "danger" && "border-destructive/30 bg-destructive/10 text-destructive",
+                        warning.tone === "warn" && "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+                        warning.tone === "good" && "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                      )}
                     >
                       {warning.text}
                     </div>
                   ))}
                 </div>
-              </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
-        )}
+        </TabsContent>
 
-        {activeTab === "categories" && (
-          <div className="space-y-6">
-            <div className="budget-categories-settings-widget bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5">
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-3">تخصيص الفئات</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                <select value={categoryType} onChange={(e) => setCategoryType(e.target.value as BudgetCategoryType)} className={`budget-currency-select ${selectClassName}`}>{(Object.keys(TRANSACTION_TYPE_LABEL) as BudgetTransactionType[]).map((type) => <option key={type} value={type}>{`${TYPE_EMOJI[type]} ${TRANSACTION_TYPE_LABEL[type]}`}</option>)}</select>
-                <input value={categoryName} onChange={(e) => setCategoryName(e.target.value)} placeholder="أضف خيار مخصص" className={inputClassName} />
-                <button onClick={addCategory} className="budget-primary-btn rounded-xl text-white font-semibold px-4 py-2.5">إضافة فئة</button>
-              </div>
+        <TabsContent value="categories" className="mt-5 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">تخصيص الفئات</CardTitle>
+            </CardHeader>
+            <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+              <Select value={categoryType} onValueChange={(v) => setCategoryType(v as BudgetCategoryType)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(TRANSACTION_TYPE_LABEL) as BudgetTransactionType[]).map((type) => (
+                    <SelectItem key={type} value={type}>{`${TYPE_EMOJI[type]} ${TRANSACTION_TYPE_LABEL[type]}`}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input value={categoryName} onChange={(e) => setCategoryName(e.target.value)} placeholder="أضف خيار مخصص" />
+              <Button onClick={addCategory}>إضافة فئة</Button>
             </div>
+            </CardContent>
+          </Card>
 
-            {(Object.keys(TRANSACTION_TYPE_LABEL) as BudgetTransactionType[]).map((type) => <div key={type} className="budget-categories-group-widget bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 md:p-5"><h4 className="font-bold text-slate-900 dark:text-slate-100 mb-3">{`${TYPE_EMOJI[type]} ${TRANSACTION_TYPE_LABEL[type]}`}</h4><div className="space-y-2">{categoriesByType[type].map((cat) => <div key={cat.id} className="group rounded-xl bg-slate-50 dark:bg-slate-800/50 p-2.5 flex items-center justify-between gap-2">{editingCategoryId === cat.id ? <input value={editingCategoryName} onChange={(e) => setEditingCategoryName(e.target.value)} className={`flex-1 ${inputClassName} px-2 py-1.5`} /> : <p className="font-medium text-slate-800 dark:text-slate-100">{`${categoryEmoji(cat.name, cat.type)} ${cat.name}`}</p>}<div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition">{editingCategoryId === cat.id ? <button onClick={saveCategoryEdit} className="budget-primary-btn px-2 py-1 text-xs rounded-lg text-white">حفظ</button> : <button onClick={() => { setEditingCategoryId(cat.id); setEditingCategoryName(cat.name); }} className="px-2 py-1 text-xs rounded-lg bg-slate-200 dark:bg-slate-700">تعديل</button>}<button onClick={() => deleteCategory(cat.id)} className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition px-2 py-1 text-xs rounded-lg bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400">حذف</button></div></div>)}{categoriesByType[type].length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">لا توجد فئات في هذا القسم.</p>}</div></div>)}
-          </div>
-        )}
-        {amountDialog.open && (
-          <div className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={closeAmountDialog}>
-            <div className="w-full max-w-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-4" onClick={(e) => e.stopPropagation()}>
-              <h4 className="font-bold text-slate-900 dark:text-slate-100">{amountDialog.title}</h4>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{amountDialog.subtitle}</p>
-              <input type="text" inputMode="decimal" value={amountDialog.amount} onChange={(e) => setAmountDialog((prev) => ({ ...prev, amount: e.target.value }))} placeholder={`المبلغ (${symbol})`} className="mt-3 w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 tabular-nums" />
-              <div className="mt-3 flex items-center gap-2">
-                <button onClick={confirmAmountDialog} className="budget-primary-btn flex-1 rounded-xl text-white font-semibold py-2.5">تأكيد</button>
-                <button onClick={closeAmountDialog} className="flex-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 py-2.5">إلغاء</button>
-              </div>
-
-            </div>
-          </div>
-        )}
-
-      {operationActionsTx && (
-        <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-sm flex items-end md:items-center justify-center p-4" onClick={() => setOperationActionsTx(null)}>
-          <div className="w-full max-w-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-4" onClick={(e) => e.stopPropagation()}>
-            <h4 className="font-bold text-slate-900 dark:text-slate-100">خيارات العملية</h4>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{operationActionsTx.date}</p>
-            <div className="mt-3 space-y-2">
-              <button onClick={() => { openEditTransactionDialog(operationActionsTx); setOperationActionsTx(null); }} className="w-full rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 py-2.5 text-sm">تعديل</button>
-              <button onClick={() => { deleteTransaction(operationActionsTx.id); setOperationActionsTx(null); }} className="w-full rounded-xl bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-300 py-2.5 text-sm">حذف</button>
-              {isRecurringTransaction(operationActionsTx) && (
-                <button onClick={() => { skipRecurringForMonth(operationActionsTx); setOperationActionsTx(null); }} className="w-full rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 py-2.5 text-sm">استثناء هذا الشهر</button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-        {editDialog.open && editDialog.tx && (
-          <div className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setEditDialog({ open: false, tx: null, amount: "", date: todayISO(), note: "", categoryId: "" })}>
-            <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-4" onClick={(e) => e.stopPropagation()}>
-              <h4 className="font-bold text-slate-900 dark:text-slate-100">تعديل العملية</h4>
-              <div className="grid grid-cols-1 gap-2 mt-3">                <input type="text" inputMode="decimal" value={editDialog.amount} onChange={(e) => setEditDialog((prev) => ({ ...prev, amount: e.target.value }))} className={`${inputClassName} tabular-nums`} />
-                <input type="date" value={editDialog.date} onChange={(e) => setEditDialog((prev) => ({ ...prev, date: e.target.value }))} className={`${inputClassName} tabular-nums`} />
-                {isRecurringTransaction(editDialog.tx) && (
-                  <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 p-2">
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">تطبيق التعديل على</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button type="button" onClick={() => setEditApplyScope("current")} className={`rounded-lg px-2.5 py-2 text-xs font-semibold ${editApplyScope === "current" ? "budget-primary-btn text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200"}`}>هذا الشهر فقط</button>
-                      <button type="button" onClick={() => setEditApplyScope("all")} className={`rounded-lg px-2.5 py-2 text-xs font-semibold ${editApplyScope === "all" ? "budget-primary-btn text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200"}`}>كل الأشهر</button>
+          {(Object.keys(TRANSACTION_TYPE_LABEL) as BudgetTransactionType[]).map((type) => (
+            <Card key={type}>
+              <CardHeader>
+                <CardTitle className="text-base">{`${TYPE_EMOJI[type]} ${TRANSACTION_TYPE_LABEL[type]}`}</CardTitle>
+              </CardHeader>
+              <CardContent>
+              <div className="space-y-2">
+                {categoriesByType[type].map((cat) => (
+                  <div key={cat.id} className="group rounded-xl bg-muted/50 p-2.5 flex items-center justify-between gap-2">
+                    {editingCategoryId === cat.id ? (
+                      <Input value={editingCategoryName} onChange={(e) => setEditingCategoryName(e.target.value)} className="flex-1 h-8" />
+                    ) : (
+                      <p className="font-medium text-foreground">{`${categoryEmoji(cat.name, cat.type)} ${cat.name}`}</p>
+                    )}
+                    <div className="flex items-center gap-1">
+                      {editingCategoryId === cat.id ? (
+                        <Button size="sm" className="h-7 text-xs" onClick={saveCategoryEdit}>حفظ</Button>
+                      ) : (
+                        <Button variant="secondary" size="sm" className="h-7 text-xs opacity-100 md:opacity-0 md:group-hover:opacity-100" onClick={() => { setEditingCategoryId(cat.id); setEditingCategoryName(cat.name); }}>تعديل</Button>
+                      )}
+                      <Button variant="destructive" size="sm" className="h-7 text-xs opacity-100 md:opacity-0 md:group-hover:opacity-100" onClick={() => deleteCategory(cat.id)}>حذف</Button>
                     </div>
                   </div>
-                )}
-                <select value={editDialog.categoryId} onChange={(e) => setEditDialog((prev) => ({ ...prev, categoryId: e.target.value }))} className={`budget-currency-select ${selectClassName}`}>
-                  {data.categories.filter((c) => c.type === editDialog.tx?.type).map((cat) => <option key={cat.id} value={cat.id}>{`${categoryEmoji(cat.name, cat.type)} ${cat.name}`}</option>)}
-                </select>
-                <input value={editDialog.note} onChange={(e) => setEditDialog((prev) => ({ ...prev, note: e.target.value }))} placeholder="ملاحظة" className={inputClassName} />
+                ))}
+                {categoriesByType[type].length === 0 && <p className="text-sm text-muted-foreground">لا توجد فئات في هذا القسم.</p>}
               </div>
-              <div className="mt-3 flex items-center gap-2">
-                <button onClick={saveEditTransaction} className="budget-primary-btn flex-1 rounded-xl text-white font-semibold py-2.5">حفظ</button>
-                <button onClick={() => setEditDialog({ open: false, tx: null, amount: "", date: todayISO(), note: "", categoryId: "" })} className="flex-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 py-2.5">إلغاء</button>
-              </div>
+              </CardContent>
+            </Card>
+          ))}
+        </TabsContent>
+        </Tabs>
+        <Dialog open={amountDialog.open} onOpenChange={(open) => { if (!open) closeAmountDialog(); }}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>{amountDialog.title}</DialogTitle>
+              <DialogDescription>{amountDialog.subtitle}</DialogDescription>
+            </DialogHeader>
+            <Input type="text" inputMode="decimal" value={amountDialog.amount} onChange={(e) => setAmountDialog((prev) => ({ ...prev, amount: e.target.value }))} placeholder={`المبلغ (${symbol})`} className="tabular-nums mt-2" />
+            <DialogFooter>
+              <Button variant="secondary" onClick={closeAmountDialog}>إلغاء</Button>
+              <Button onClick={confirmAmountDialog}>تأكيد</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
+      <Dialog open={!!operationActionsTx} onOpenChange={(open) => { if (!open) setOperationActionsTx(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>خيارات العملية</DialogTitle>
+            {operationActionsTx && <DialogDescription>{operationActionsTx.date}</DialogDescription>}
+          </DialogHeader>
+          {operationActionsTx && (
+            <div className="space-y-2">
+              <Button variant="secondary" className="w-full" onClick={() => { openEditTransactionDialog(operationActionsTx); setOperationActionsTx(null); }}>تعديل</Button>
+              <Button variant="destructive" className="w-full" onClick={() => { deleteTransaction(operationActionsTx.id); setOperationActionsTx(null); }}>حذف</Button>
+              {isRecurringTransaction(operationActionsTx) && (
+                <Button variant="outline" className="w-full text-amber-700 dark:text-amber-300" onClick={() => { skipRecurringForMonth(operationActionsTx); setOperationActionsTx(null); }}>استثناء هذا الشهر</Button>
+              )}
             </div>
-          </div>
-        )}
+          )}
+        </DialogContent>
+      </Dialog>
+      <Dialog open={editDialog.open && !!editDialog.tx} onOpenChange={(open) => { if (!open) setEditDialog({ open: false, tx: null, amount: "", date: todayISO(), note: "", categoryId: "" }); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>تعديل العملية</DialogTitle>
+          </DialogHeader>
+          {editDialog.tx && (
+            <div className="grid grid-cols-1 gap-3">
+              <Input type="text" inputMode="decimal" value={editDialog.amount} onChange={(e) => setEditDialog((prev) => ({ ...prev, amount: e.target.value }))} className="tabular-nums" />
+              <Input type="date" value={editDialog.date} onChange={(e) => setEditDialog((prev) => ({ ...prev, date: e.target.value }))} className="tabular-nums" />
+              {isRecurringTransaction(editDialog.tx) && (
+                <div className="rounded-lg border bg-muted/50 p-2 space-y-2">
+                  <p className="text-xs text-muted-foreground">تطبيق التعديل على</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button type="button" size="sm" variant={editApplyScope === "current" ? "default" : "secondary"} onClick={() => setEditApplyScope("current")}>هذا الشهر فقط</Button>
+                    <Button type="button" size="sm" variant={editApplyScope === "all" ? "default" : "secondary"} onClick={() => setEditApplyScope("all")}>كل الأشهر</Button>
+                  </div>
+                </div>
+              )}
+              <Select value={editDialog.categoryId} onValueChange={(v) => setEditDialog((prev) => ({ ...prev, categoryId: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {data.categories.filter((c) => c.type === editDialog.tx?.type).map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>{`${categoryEmoji(cat.name, cat.type)} ${cat.name}`}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input value={editDialog.note} onChange={(e) => setEditDialog((prev) => ({ ...prev, note: e.target.value }))} placeholder="ملاحظة" />
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setEditDialog({ open: false, tx: null, amount: "", date: todayISO(), note: "", categoryId: "" })}>إلغاء</Button>
+            <Button onClick={saveEditTransaction}>حفظ</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       </main>
     </div>
   );
@@ -1212,19 +1330,21 @@ function SummaryCard({
   const Icon = entry.icon;
 
   return (
-    <div className="budget-stat-card bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5">
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <p className="budget-stat-label text-xs font-semibold tracking-wide text-slate-500 dark:text-slate-400">{title}</p>
-        <span className={`budget-stat-icon-wrap inline-flex items-center justify-center rounded-lg p-1.5 ${entry.soft}`}>
-          <Icon className="w-4 h-4" />
-        </span>
-      </div>
-      <p className={`budget-stat-value text-2xl md:text-[28px] font-bold ${entry.text}`}>
-        <span className="inline-block tabular-nums whitespace-nowrap" style={{ direction: "ltr", unicodeBidi: "bidi-override" }}>
-          {formatAmount(amount, currency)}
-        </span>
-      </p>
-    </div>
+    <Card className="p-5 transition-all hover:shadow-md">
+      <CardContent className="p-0">
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <p className="text-xs font-semibold tracking-wide text-muted-foreground">{title}</p>
+          <span className={cn("inline-flex items-center justify-center rounded-lg p-1.5", entry.soft)}>
+            <Icon className="w-4 h-4" />
+          </span>
+        </div>
+        <p className={cn("text-2xl md:text-[28px] font-bold leading-tight", entry.text)}>
+          <span className="inline-block tabular-nums whitespace-nowrap" style={{ direction: "ltr", unicodeBidi: "bidi-override" }}>
+            {formatAmount(amount, currency)}
+          </span>
+        </p>
+      </CardContent>
+    </Card>
   );
 }
 

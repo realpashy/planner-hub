@@ -2,12 +2,24 @@ import { useState, useEffect } from "react";
 import type { EventItem } from "@shared/schema";
 import { formatISODate } from "@/lib/date-utils";
 import { useCreateEvent, useDeleteEvent, useUpdateEvent } from "@/hooks/use-planner";
-import { Clock, Plus, Trash2, CircleDot, MessageSquare, X } from "lucide-react";
+import { Clock, Plus, Trash2, CircleDot, MessageSquare } from "lucide-react";
 import { ExpandableText } from "./ExpandableText";
 import { motion, AnimatePresence } from "framer-motion";
 import { ResponsiveConfirm } from "../ResponsiveConfirm";
 import { Drawer } from "vaul";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 function EventDetailDialog({ isOpen, onClose, event, onSave }: {
   isOpen: boolean; onClose: () => void; event: EventItem | null;
@@ -27,24 +39,24 @@ function EventDetailDialog({ isOpen, onClose, event, onSave }: {
       <div>
         <div className="flex items-center gap-2 mb-1">
           <Clock className="w-4 h-4 text-amber-500" />
-          <span className="text-sm font-bold text-slate-500 dark:text-slate-400 font-sans tabular-nums">{event.time}</span>
+          <span className="text-sm font-bold text-muted-foreground font-sans tabular-nums">{event.time}</span>
         </div>
-        <h4 className="font-bold text-base text-slate-800 dark:text-slate-100">{event.title}</h4>
+        <h4 className="font-bold text-base text-foreground">{event.title}</h4>
       </div>
-      <div>
-        <label className="text-sm font-bold text-slate-600 dark:text-slate-300 mb-2 block">ملاحظات</label>
-        <textarea
+      <div className="space-y-2">
+        <Label className="text-sm font-bold">ملاحظات</Label>
+        <Textarea
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           placeholder="أضف ملاحظات لهذا الموعد..."
           rows={3}
-          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 placeholder:text-slate-300 dark:placeholder:text-slate-600 resize-none transition-all"
+          className="resize-none"
           data-testid="textarea-event-detail-comment"
         />
       </div>
       <div className="flex gap-3">
-        <button onClick={() => { onSave(event.id, comment); onClose(); }} className="flex-1 bg-primary text-white font-bold py-3 rounded-xl hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20" data-testid="button-save-detail-comment">حفظ</button>
-        <button onClick={onClose} className="px-5 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" data-testid="button-cancel-detail-comment">إلغاء</button>
+        <Button className="flex-1" onClick={() => { onSave(event.id, comment); onClose(); }} data-testid="button-save-detail-comment">حفظ</Button>
+        <Button variant="secondary" onClick={onClose} data-testid="button-cancel-detail-comment">إلغاء</Button>
       </div>
     </div>
   );
@@ -68,20 +80,15 @@ function EventDetailDialog({ isOpen, onClose, event, onSave }: {
   }
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" dir="rtl">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-          <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-md shadow-2xl relative z-10">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-50">تفاصيل الموعد</h3>
-              <button onClick={onClose} className="text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 p-2 rounded-full transition-colors" data-testid="button-close-event-detail"><X className="w-5 h-5" /></button>
-            </div>
-            {content}
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>تفاصيل الموعد</DialogTitle>
+          <DialogDescription className="sr-only">عرض وتعديل ملاحظات الموعد</DialogDescription>
+        </DialogHeader>
+        {content}
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -109,29 +116,29 @@ export function EventList({ events, selectedDate }: { events: EventItem[], selec
   };
 
   return (
-    <div className="weekly-events-widget" data-testid="events-section">
-      <div className="flex items-center justify-between mb-3">
+    <div className="space-y-4" data-testid="events-section">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-full bg-amber-50 dark:bg-amber-500/15 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-full bg-amber-500/10 flex items-center justify-center">
             <Clock className="w-4.5 h-4.5 text-amber-600 dark:text-amber-400" />
           </div>
-          <h3 className="font-bold text-base md:text-lg text-slate-800 dark:text-slate-100">المواعيد</h3>
+          <h3 className="font-bold text-base md:text-lg text-foreground">المواعيد</h3>
           {dayEvents.length > 0 && (
-            <span className="text-xs font-semibold text-slate-400 bg-slate-100 dark:bg-slate-800 dark:text-slate-300 px-2 py-0.5 rounded-full">{dayEvents.length}</span>
+            <span className="text-xs font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{dayEvents.length}</span>
           )}
         </div>
-        <button
+        <Button
+          size="sm"
           onClick={() => {
             setIsAdding(true);
             const now = new Date();
             setNewTime(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`);
           }}
-          className="weekly-events-add-btn text-sm font-semibold text-white flex items-center gap-1 px-3 py-1.5 rounded-lg transition-all"
           data-testid="button-add-event"
         >
           <Plus className="w-4 h-4" />
-          <span>إضافة</span>
-        </button>
+          إضافة
+        </Button>
       </div>
 
       <div className="space-y-2">
@@ -143,32 +150,30 @@ export function EventList({ events, selectedDate }: { events: EventItem[], selec
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, x: 20 }}
               onClick={() => setDetailEvent(event)}
-              className="weekly-event-row group flex items-center gap-3 bg-slate-100/90 dark:bg-slate-800/60 rounded-xl p-3 hover:bg-slate-200/80 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              className="group flex items-center gap-3 bg-muted/80 rounded-xl p-3 hover:bg-muted transition-colors cursor-pointer border border-transparent hover:border-border"
               data-testid={`event-item-${event.id}`}
             >
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-sky-50 dark:bg-sky-500/15 flex items-center justify-center">
-                <CircleDot className="w-3.5 h-3.5 text-sky-500 dark:text-sky-400" />
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <CircleDot className="w-3.5 h-3.5 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="font-semibold text-slate-700 dark:text-slate-200 text-sm md:text-base">
+                <div className="font-semibold text-foreground text-sm md:text-base">
                   <ExpandableText text={event.title} maxLength={40} />
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-400 dark:text-slate-500 font-semibold font-sans tabular-nums">{event.time}</span>
-                  {event.comment && (
-                    <span className="flex items-center gap-0.5 text-[10px] text-slate-400 dark:text-slate-500">
-                      <MessageSquare className="w-2.5 h-2.5" />
-                    </span>
-                  )}
+                  <span className="text-xs text-muted-foreground font-semibold font-sans tabular-nums">{event.time}</span>
+                  {event.comment && <MessageSquare className="w-2.5 h-2.5 text-muted-foreground" />}
                 </div>
               </div>
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
+                className="opacity-0 group-hover:opacity-100 focus:opacity-100 h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
                 onClick={(e) => { e.stopPropagation(); setDeleteId(event.id); }}
-                className="opacity-0 group-hover:opacity-100 focus:opacity-100 p-1.5 text-red-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all flex-shrink-0"
                 data-testid={`button-delete-event-${event.id}`}
               >
                 <Trash2 className="w-3.5 h-3.5" />
-              </button>
+              </Button>
             </motion.div>
           ))}
         </AnimatePresence>
@@ -177,21 +182,21 @@ export function EventList({ events, selectedDate }: { events: EventItem[], selec
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
-            className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3"
+            className="rounded-xl border bg-card p-3 space-y-2"
           >
-            <div className="flex gap-2 mb-2">
-              <input type="time" value={newTime} onChange={(e) => setNewTime(e.target.value)} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-2.5 text-sm font-sans focus:outline-none focus:border-primary w-28 text-slate-700 dark:text-slate-200" data-testid="input-event-time" />
-              <input type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="عنوان الموعد..." autoFocus className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-primary text-slate-700 dark:text-slate-200 placeholder:text-slate-300 dark:placeholder:text-slate-600" onKeyDown={(e) => e.key === 'Enter' && handleAdd()} data-testid="input-event-title" />
+            <div className="flex gap-2">
+              <Input type="time" value={newTime} onChange={(e) => setNewTime(e.target.value)} className="w-28" data-testid="input-event-time" />
+              <Input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="عنوان الموعد..." autoFocus onKeyDown={(e) => e.key === 'Enter' && handleAdd()} className="flex-1" data-testid="input-event-title" />
             </div>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setIsAdding(false)} className="text-sm px-4 py-2 font-semibold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors" data-testid="button-cancel-event">إلغاء</button>
-              <button onClick={handleAdd} className="text-sm px-4 py-2 font-semibold bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors" data-testid="button-save-event">حفظ</button>
+              <Button variant="secondary" size="sm" onClick={() => setIsAdding(false)} data-testid="button-cancel-event">إلغاء</Button>
+              <Button size="sm" onClick={handleAdd} data-testid="button-save-event">حفظ</Button>
             </div>
           </motion.div>
         )}
 
         {!isAdding && dayEvents.length === 0 && (
-          <div className="text-center py-6 text-slate-300 dark:text-slate-600 text-sm rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+          <div className="text-center py-6 text-muted-foreground text-sm rounded-xl border border-dashed border-border">
             لا توجد مواعيد
           </div>
         )}

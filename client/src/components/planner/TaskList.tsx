@@ -9,6 +9,19 @@ import confetti from "canvas-confetti";
 import { ResponsiveConfirm } from "../ResponsiveConfirm";
 import { Drawer } from "vaul";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 interface TaskListProps {
   tasks: TaskItem[];
@@ -136,35 +149,24 @@ function getCountdownStatus(countdownEnd: number, completed?: boolean): { label:
 
 function QuickDateButton({ label, isSelected, onClick, testId }: { label: string; isSelected: boolean; onClick: () => void; testId: string }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-        isSelected
-          ? 'bg-primary text-white shadow-sm'
-          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-      }`}
-      data-testid={testId}
-    >
+    <Button type="button" variant={isSelected ? "default" : "secondary"} size="sm" onClick={onClick} data-testid={testId} className="text-xs font-bold">
       {label}
-    </button>
+    </Button>
   );
 }
 
 function DurationButton({ label, minutes, isSelected, onClick, testId }: { label: string; minutes: number; isSelected: boolean; onClick: () => void; testId: string }) {
   return (
-    <button
+    <Button
       type="button"
+      size="sm"
       onClick={onClick}
-      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-        isSelected
-          ? 'bg-violet-500 text-white shadow-sm'
-          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-      }`}
       data-testid={testId}
+      className={cn("text-xs font-bold", isSelected ? "bg-violet-500 hover:bg-violet-600 text-white" : "")}
+      variant={isSelected ? "default" : "secondary"}
     >
       {label}
-    </button>
+    </Button>
   );
 }
 
@@ -226,18 +228,17 @@ function AddTaskContent({ onSubmit, onClose, initialText, isWeeklyMode, defaultD
 
   return (
     <div className="space-y-4">
-      <div>
-        <label className="text-sm font-bold text-slate-600 dark:text-slate-300 mb-2 block">
+      <div className="space-y-2">
+        <Label className="text-sm font-bold">
           {isWeeklyMode ? "المهمة الأسبوعية" : "المهمة"}
-        </label>
-        <input
-          type="text"
+        </Label>
+        <Input
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter' && text.trim()) handleSubmit(); }}
           placeholder={isWeeklyMode ? "أضف مهمة أسبوعية..." : "أضف مهمة..."}
           autoFocus
-          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm md:text-base text-slate-700 dark:text-slate-200 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 placeholder:text-slate-300 dark:placeholder:text-slate-600 transition-all"
+          className="h-11"
           data-testid="input-task-dialog-text"
         />
       </div>
@@ -459,21 +460,17 @@ function AddTaskContent({ onSubmit, onClose, initialText, isWeeklyMode, defaultD
       </AnimatePresence>
 
       <div className="flex gap-3 pt-2">
-        <button
+        <Button
           onClick={handleSubmit}
           disabled={!text.trim() || (timingMode === 'countdown' && countdownMinutes === 0)}
-          className="flex-1 bg-primary text-white font-bold py-3 rounded-xl hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-lg shadow-primary/20"
+          className="flex-1"
           data-testid="button-submit-task"
         >
           إضافة المهمة
-        </button>
-        <button
-          onClick={onClose}
-          className="px-5 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-          data-testid="button-cancel-task"
-        >
+        </Button>
+        <Button variant="secondary" onClick={onClose} data-testid="button-cancel-task">
           إلغاء
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -503,24 +500,15 @@ function AddTaskDialog({ isOpen, onClose, onSubmit, initialText, isWeeklyMode, d
   }
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" dir="rtl">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-          <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-md shadow-2xl relative z-10 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-50">
-                {isWeeklyMode ? "مهمة أسبوعية جديدة" : "مهمة جديدة"}
-              </h3>
-              <button onClick={onClose} className="text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 p-2 rounded-full transition-colors" data-testid="button-close-task-dialog">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <AddTaskContent onSubmit={onSubmit} onClose={onClose} initialText={initialText} isWeeklyMode={isWeeklyMode} defaultDate={defaultDate} />
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{isWeeklyMode ? "مهمة أسبوعية جديدة" : "مهمة جديدة"}</DialogTitle>
+          <DialogDescription className="sr-only">إضافة مهمة جديدة</DialogDescription>
+        </DialogHeader>
+        <AddTaskContent onSubmit={onSubmit} onClose={onClose} initialText={initialText} isWeeklyMode={isWeeklyMode} defaultDate={defaultDate} />
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -619,109 +607,120 @@ export function TaskList({ tasks, selectedDate, isWeeklyMode = false }: TaskList
   };
 
   return (
-    <div
-      className={`weekly-tasklist-widget ${isWeeklyMode ? "weekly-tasklist-mode-weekly" : "weekly-tasklist-mode-daily"} rounded-2xl transition-all duration-500 ${
-        isWeeklyMode
-          ? 'bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm p-4 md:p-5'
-          : allCompleted ? 'animate-celebration-glow' : ''
-      }`}
+    <>
+    <Card
+      className={cn(
+        "transition-all duration-300",
+        isWeeklyMode && "shadow-sm",
+        !isWeeklyMode && allCompleted && "animate-celebration-glow"
+      )}
       data-testid={isWeeklyMode ? "weekly-tasks" : "daily-tasks"}
     >
-      <div className="weekly-tasklist-header flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <div className={`w-9 h-9 rounded-full flex items-center justify-center ${isWeeklyMode ? 'bg-primary/8 dark:bg-primary/15' : 'bg-emerald-50 dark:bg-emerald-500/15'}`}>
-            <ListTodo className={`w-4.5 h-4.5 ${isWeeklyMode ? 'text-primary' : 'text-emerald-600 dark:text-emerald-400'}`} />
-          </div>
-          <h3 className="font-bold text-base md:text-lg text-slate-800 dark:text-slate-100">{isWeeklyMode ? 'مهام الأسبوع' : 'مهام اليوم'}</h3>
-        </div>
-        {totalCount > 0 && (
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">{completedCount}/{totalCount}</span>
-            <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${allCompleted ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
-              {progress}%
-            </span>
+            <div className={cn("w-9 h-9 rounded-full flex items-center justify-center", isWeeklyMode ? "bg-primary/10" : "bg-emerald-500/10")}>
+              <ListTodo className={cn("w-4.5 h-4.5", isWeeklyMode ? "text-primary" : "text-emerald-600 dark:text-emerald-400")} />
+            </div>
+            <h3 className="font-bold text-base md:text-lg text-foreground">{isWeeklyMode ? 'مهام الأسبوع' : 'مهام اليوم'}</h3>
           </div>
-        )}
-      </div>
-
-      {totalCount > 0 && (
-        <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full mb-3 overflow-hidden">
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className={`h-full rounded-full transition-colors duration-300 ${allCompleted ? 'bg-emerald-500' : 'bg-primary'}`}
-          />
-        </div>
-      )}
-
-      {allCompleted && !isWeeklyMode && totalCount > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: -5 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-sm font-bold px-3 py-2.5 rounded-xl mb-3"
-        >
-          <Trophy className="w-4 h-4" />
-          <span>أحسنت! اكتمل اليوم</span>
-        </motion.div>
-      )}
-
-      <div className="weekly-tasklist-body space-y-0.5">
-        <AnimatePresence>
-          {relevantTasks.map((task, index) => (
-            <motion.div
-              key={task.id}
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className={`group flex items-center gap-3 py-2.5 px-1 rounded-lg transition-colors ${isWeeklyMode ? "hover:bg-slate-50/50 dark:hover:bg-slate-800/50" : ""} ${index < relevantTasks.length - 1 ? "border-b border-slate-100 dark:border-slate-800" : ""}` }
-              data-testid={`task-item-${task.id}`}
-            >
-              <AnimatedCheckbox
-                checked={task.completed}
-                onChange={() => updateTask.mutate({ id: task.id, completed: !task.completed })}
-                taskId={task.id}
-              />
-              <div className="flex-1 min-w-0">
-                <span className={`text-sm md:text-base transition-all duration-300 ${task.completed ? 'text-slate-400 dark:text-slate-500 line-through opacity-60' : 'text-slate-700 dark:text-slate-200 font-medium'}`}>
-                  <ExpandableText text={task.text} maxLength={55} />
-                </span>
-                {(task.deadline || task.countdownEnd) && (
-                  <LiveCountdownBadge deadline={task.deadline} deadlineTime={task.deadlineTime} countdownEnd={task.countdownEnd} completed={task.completed} />
-                )}
-              </div>
-              {isWeeklyMode && task.date && !task.isWeekly && (
-                <span className="text-[10px] font-semibold text-slate-300 dark:text-slate-600 bg-slate-50 dark:bg-slate-800 px-1.5 py-0.5 rounded flex-shrink-0">يومية</span>
-              )}
-              <button
-                onClick={() => setDeleteId(task.id)}
-                className="opacity-0 group-hover:opacity-100 focus:opacity-100 p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all flex-shrink-0"
-                data-testid={`button-delete-task-${task.id}`}
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-
-        <div className="flex items-center gap-3 pt-2.5 mt-1 border-t border-slate-100/80 dark:border-slate-800">
-          <div className="p-0.5 text-slate-300 dark:text-slate-600"><Plus className="w-4 h-4" /></div>
-          <input
-            type="text"
-            value={newTaskText}
-            onChange={(e) => setNewTaskText(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && newTaskText.trim()) { e.preventDefault(); setShowAddDialog(true); } }}
-            placeholder={isWeeklyMode ? "أضف مهمة أسبوعية..." : "أضف مهمة..."}
-            className="flex-1 bg-transparent border-none focus:outline-none text-sm md:text-base text-slate-700 dark:text-slate-200 placeholder:text-slate-300 dark:placeholder:text-slate-600"
-            data-testid={isWeeklyMode ? "input-weekly-task" : "input-daily-task"}
-          />
-          {newTaskText.trim() && (
-            <button onClick={() => setShowAddDialog(true)} className="p-1.5 text-primary hover:bg-primary/10 rounded-lg transition-colors" data-testid="button-open-add-task">
-              <Plus className="w-4 h-4" />
-            </button>
+          {totalCount > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-muted-foreground">{completedCount}/{totalCount}</span>
+              <Badge variant={allCompleted ? "default" : "secondary"} className={cn(allCompleted && "bg-emerald-500 hover:bg-emerald-600")}>
+                {progress}%
+              </Badge>
+            </div>
           )}
         </div>
-      </div>
+      </CardHeader>
+      <CardContent className="pt-0 space-y-3">
+        {totalCount > 0 && (
+          <div className="w-full bg-muted h-1.5 rounded-full overflow-hidden">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              className={cn("h-full rounded-full transition-colors duration-300", allCompleted ? "bg-emerald-500" : "bg-primary")}
+            />
+          </div>
+        )}
+
+        {allCompleted && !isWeeklyMode && totalCount > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-2 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-sm font-bold px-3 py-2.5 rounded-lg"
+          >
+            <Trophy className="w-4 h-4" />
+            <span>أحسنت! اكتمل اليوم</span>
+          </motion.div>
+        )}
+
+        <div className="space-y-0.5">
+          <AnimatePresence>
+            {relevantTasks.map((task, index) => (
+              <motion.div
+                key={task.id}
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className={cn(
+                  "group flex items-center gap-3 py-2.5 px-1 rounded-lg transition-colors",
+                  isWeeklyMode && "hover:bg-muted/50",
+                  index < relevantTasks.length - 1 && "border-b border-border"
+                )}
+                data-testid={`task-item-${task.id}`}
+              >
+                <AnimatedCheckbox
+                  checked={task.completed}
+                  onChange={() => updateTask.mutate({ id: task.id, completed: !task.completed })}
+                  taskId={task.id}
+                />
+                <div className="flex-1 min-w-0">
+                  <span className={cn("text-sm md:text-base transition-all duration-300", task.completed ? "text-muted-foreground line-through opacity-60" : "text-foreground font-medium")}>
+                    <ExpandableText text={task.text} maxLength={55} />
+                  </span>
+                  {(task.deadline || task.countdownEnd) && (
+                    <LiveCountdownBadge deadline={task.deadline} deadlineTime={task.deadlineTime} countdownEnd={task.countdownEnd} completed={task.completed} />
+                  )}
+                </div>
+                {isWeeklyMode && task.date && !task.isWeekly && (
+                  <Badge variant="outline" className="text-[10px] flex-shrink-0">يومية</Badge>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="opacity-0 group-hover:opacity-100 focus:opacity-100 h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
+                  onClick={() => setDeleteId(task.id)}
+                  data-testid={`button-delete-task-${task.id}`}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+
+          <div className="flex items-center gap-3 pt-2.5 mt-1 border-t border-border">
+            <Plus className="w-4 h-4 text-muted-foreground" />
+            <Input
+              value={newTaskText}
+              onChange={(e) => setNewTaskText(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' && newTaskText.trim()) { e.preventDefault(); setShowAddDialog(true); } }}
+              placeholder={isWeeklyMode ? "أضف مهمة أسبوعية..." : "أضف مهمة..."}
+              className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none h-9 px-0"
+              data-testid={isWeeklyMode ? "input-weekly-task" : "input-daily-task"}
+            />
+            {newTaskText.trim() && (
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-primary" onClick={() => setShowAddDialog(true)} data-testid="button-open-add-task">
+                <Plus className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+      </CardContent>
+
+      </Card>
 
       <AddTaskDialog
         isOpen={showAddDialog}
@@ -739,7 +738,7 @@ export function TaskList({ tasks, selectedDate, isWeeklyMode = false }: TaskList
         title="حذف المهمة"
         description="هل أنت متأكد من حذف هذه المهمة؟"
       />
-    </div>
+    </>
   );
 }
 

@@ -16,9 +16,23 @@ import { WeeklyGraphs } from "@/components/planner/WeeklyGraphs";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { TEMPLATES, generateTemplateData } from "@/lib/templates";
 import { savePlannerData } from "@/lib/storage";
-import { ChevronRight, ChevronLeft, ArrowRight, Calendar as CalendarIcon, FileText, WandSparkles, Check } from "lucide-react";
+import { ChevronRight, ChevronLeft, Calendar as CalendarIcon, FileText, WandSparkles, Check } from "lucide-react";
 import { motion } from "framer-motion";
-import * as Popover from "@radix-ui/react-popover";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 export default function WeeklyPlanner() {
   const queryClient = useQueryClient();
@@ -42,14 +56,13 @@ export default function WeeklyPlanner() {
 
   if (isLoading || !data) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
-        <div className="w-10 h-10 border-3 border-primary/20 border-t-primary rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-10 h-10 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
       </div>
     );
   }
 
   const weekDays = getWeekDays(selectedDate);
-  const weekStart = weekDays[0];
   const dateISO = formatISODate(selectedDate);
   const currentNote = data.notes.find((n) => n.date === dateISO)?.content || "";
 
@@ -60,48 +73,58 @@ export default function WeeklyPlanner() {
   const allDayDone = totalDayTasks > 0 && completedDayTasks === totalDayTasks;
 
   return (
-    <div className="weekly-planner-page min-h-screen bg-slate-50 dark:bg-slate-950 pb-24 md:pb-8" dir="rtl">
-      <header className="weekly-planner-header bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
+    <div className="min-h-screen bg-background pb-24 md:pb-8" dir="rtl">
+      <header className="sticky top-0 z-30 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 md:py-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <Link href="/" className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors p-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="link-back-dashboard">
-                <ArrowRight className="w-5 h-5 md:w-6 md:h-6" />
-              </Link>
+              <Button variant="ghost" size="icon" asChild>
+                <Link href="/" data-testid="link-back-dashboard">
+                  <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
+                </Link>
+              </Button>
               <ThemeToggle />
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => setTemplatePickerOpen(true)}
-                className="weekly-template-trigger p-2 rounded-lg text-slate-500 hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800 transition"
                 title="اختيار قالب"
               >
                 <WandSparkles className="w-4 h-4 md:w-5 md:h-5" />
-              </button>
+              </Button>
             </div>
 
-            <Popover.Root>
-              <Popover.Trigger asChild>
-                <button className="flex flex-col items-center group" data-testid="button-open-calendar">
-                  <h2 className="text-sm md:text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5 group-hover:text-primary transition-colors">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" className="flex flex-col items-center h-auto py-1 px-2" data-testid="button-open-calendar">
+                  <span className="text-sm md:text-lg font-bold text-foreground flex items-center gap-1.5">
                     {getWeekHeader(selectedDate)}
-                    <CalendarIcon className="w-4 h-4 md:w-5 md:h-5 text-slate-400 group-hover:text-primary transition-colors" />
-                  </h2>
-                </button>
-              </Popover.Trigger>
-              <Popover.Portal>
-                <Popover.Content className="z-50" align="center" sideOffset={8}>
-                  <MonthCalendar selectedDate={selectedDate} onSelectDate={setSelectedDate} />
-                </Popover.Content>
-              </Popover.Portal>
-            </Popover.Root>
+                    <CalendarIcon className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
+                  </span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="center" sideOffset={8}>
+                <MonthCalendar selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+              </PopoverContent>
+            </Popover>
 
             <div className="flex items-center gap-0.5" dir="ltr">
-              <button onClick={() => setSelectedDate(subWeeks(selectedDate, 1))} className="p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors" data-testid="button-prev-week">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSelectedDate(subWeeks(selectedDate, 1))}
+                data-testid="button-prev-week"
+              >
                 <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
-              </button>
-              <button onClick={() => setSelectedDate(addWeeks(selectedDate, 1))} className="p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors" data-testid="button-next-week">
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSelectedDate(addWeeks(selectedDate, 1))}
+                data-testid="button-next-week"
+              >
                 <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -109,79 +132,94 @@ export default function WeeklyPlanner() {
         </div>
       </header>
 
-      <main className="weekly-planner-main max-w-7xl mx-auto px-4 md:px-6 pt-5 md:pt-6 pb-4">
-        <div className="weekly-summary-wrap mb-5 md:mb-6">
+      <main className="max-w-7xl mx-auto px-4 md:px-6 pt-5 md:pt-6 pb-4">
+        <div className="mb-5 md:mb-6">
           <WeeklySummary tasks={data.tasks} habits={data.habits} events={data.events} selectedDate={selectedDate} />
         </div>
 
-        <div className="weekly-layout-grid grid grid-cols-1 lg:grid-cols-12 gap-5 md:gap-6">
-          <div className="weekly-main-column lg:col-span-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 md:gap-6">
+          <div className="lg:col-span-8">
             <motion.div
               key={dateISO}
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25 }}
-              className={`weekly-day-card bg-white dark:bg-slate-900 rounded-2xl p-5 md:p-7 shadow-sm border transition-all duration-500 lg:sticky lg:top-24 ${allDayDone ? "border-emerald-200 dark:border-emerald-500/30 bg-emerald-50/30 dark:bg-emerald-500/5" : "border-slate-100 dark:border-slate-800"}`}
-              data-testid="selected-day-card"
             >
-              <div className="weekly-day-header flex items-center justify-between mb-5">
-                <div>
-                  <h3 className="text-lg md:text-xl font-bold text-slate-900 dark:text-slate-50">{getArabicDayFull(selectedDate)}</h3>
-                  <p className="text-sm md:text-base text-slate-400 dark:text-slate-500 font-semibold tabular-nums">{formatDayDate(selectedDate)}</p>
-                </div>
-                {totalDayTasks > 0 && (
-                  <div className="flex items-center gap-2">
-                    <div className="w-24 bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${dayProgress}%` }}
-                        transition={{ duration: 0.4 }}
-                        className={`h-full rounded-full ${allDayDone ? "bg-emerald-500" : "bg-primary"}`}
-                      />
-                    </div>
-                    <span className={`text-sm font-bold ${allDayDone ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"}`}>{dayProgress}%</span>
-                  </div>
+              <Card
+                className={cn(
+                  "lg:sticky lg:top-24 transition-all duration-300",
+                  allDayDone && "border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-500/10"
                 )}
-              </div>
-
-              <FocusTags tags={data.tags} selectedDate={selectedDate} />
-
-              <div className="h-px bg-slate-100 dark:bg-slate-800 my-5" />
-
-              <div className="weekly-sections-grid grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div ref={eventsRef} className="weekly-events-column">
-                  <EventList events={data.events} selectedDate={selectedDate} />
-                </div>
-                <div className="weekly-day-tasks-column relative md:pr-3">
-                  <div className="md:hidden h-px bg-slate-100 dark:bg-slate-800 mb-5" />
-                  <div className="hidden md:block absolute right-0 top-0 bottom-0 w-px bg-slate-100 dark:bg-slate-800" />
-                  <TaskList tasks={data.tasks} selectedDate={selectedDate} />
-                </div>
-              </div>
-
-              <div className="h-px bg-slate-100 dark:bg-slate-800 my-5" />
-
-              <div className="weekly-notes-section" data-testid="notes-section">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-9 h-9 rounded-full bg-blue-50 dark:bg-blue-500/15 flex items-center justify-center">
-                    <FileText className="w-4 h-4 text-blue-500 dark:text-blue-400" />
+                data-testid="selected-day-card"
+              >
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg md:text-xl font-bold text-foreground">{getArabicDayFull(selectedDate)}</h3>
+                      <p className="text-sm md:text-base text-muted-foreground font-semibold tabular-nums">{formatDayDate(selectedDate)}</p>
+                    </div>
+                    {totalDayTasks > 0 && (
+                      <div className="flex items-center gap-2">
+                        <div className="w-24 bg-muted h-2 rounded-full overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${dayProgress}%` }}
+                            transition={{ duration: 0.4 }}
+                            className={cn("h-full rounded-full", allDayDone ? "bg-emerald-500" : "bg-primary")}
+                          />
+                        </div>
+                        <span className={cn("text-sm font-bold", allDayDone ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground")}>
+                          {dayProgress}%
+                        </span>
+                      </div>
+                    )}
                   </div>
-                  <h3 className="font-bold text-base md:text-lg text-slate-800 dark:text-slate-100">ملاحظات</h3>
-                </div>
-                <textarea
-                  value={currentNote}
-                  onChange={(e) => saveNote.mutate({ date: dateISO, content: e.target.value })}
-                  placeholder="اكتب أفكارك هنا..."
-                  className="w-full h-28 md:h-32 bg-slate-50/80 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-xl p-3 md:p-4 text-sm md:text-base text-slate-700 dark:text-slate-200 focus:outline-none focus:border-primary/30 focus:ring-2 focus:ring-primary/8 resize-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
-                  data-testid="textarea-notes"
-                />
-              </div>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                  <FocusTags tags={data.tags} selectedDate={selectedDate} />
+
+                  <Separator />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div ref={eventsRef}>
+                      <EventList events={data.events} selectedDate={selectedDate} />
+                    </div>
+                    <div className="relative md:pr-3">
+                      <div className="md:hidden">
+                        <Separator className="mb-5" />
+                      </div>
+                      <div className="hidden md:block absolute right-0 top-0 bottom-0">
+                        <Separator orientation="vertical" className="h-full" />
+                      </div>
+                      <TaskList tasks={data.tasks} selectedDate={selectedDate} />
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div data-testid="notes-section">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+                        <FileText className="w-4 h-4 text-primary" />
+                      </div>
+                      <h3 className="font-bold text-base md:text-lg text-foreground">ملاحظات</h3>
+                    </div>
+                    <Textarea
+                      value={currentNote}
+                      onChange={(e) => saveNote.mutate({ date: dateISO, content: e.target.value })}
+                      placeholder="اكتب أفكارك هنا..."
+                      className="min-h-[7rem] md:min-h-[8rem] resize-none"
+                      data-testid="textarea-notes"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
             </motion.div>
           </div>
 
-          <div className="weekly-side-column lg:col-span-4 space-y-5 md:space-y-6">
-            <HabitTracker habits={data.habits} weekStart={weekStart} />
-            <TaskList tasks={data.tasks} selectedDate={weekStart} isWeeklyMode={true} />
+          <div className="lg:col-span-4 space-y-5 md:space-y-6">
+            <HabitTracker habits={data.habits} weekStart={weekDays[0]} />
+            <TaskList tasks={data.tasks} selectedDate={weekDays[0]} isWeeklyMode={true} />
           </div>
         </div>
 
@@ -194,40 +232,46 @@ export default function WeeklyPlanner() {
         </div>
       </main>
 
-      {templatePickerOpen && (
-        <div className="weekly-template-modal fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setTemplatePickerOpen(false)}>
-          <div className="weekly-template-modal-card w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 md:p-5" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-50 mb-1">اختر قالبًا للمخطط الأسبوعي</h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">سيتم تعبئة الصفحة مباشرة بدون الانتقال لصفحة إعداد.</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[50vh] overflow-auto modern-scrollbar pr-1">
-              {TEMPLATES.map((template) => {
-                const selected = selectedTemplateId === template.id;
-                return (
-                  <button
-                    key={template.id}
-                    type="button"
-                    onClick={() => setSelectedTemplateId(template.id)}
-                    className={`weekly-template-option text-right rounded-xl border p-3 transition ${selected ? "border-primary bg-primary/5" : "border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/50"}`}
-                  >
-                    <div className="flex items-start gap-2">
-                      <span className="text-xl">{template.emoji}</span>
-                      <div className="flex-1">
-                        <p className="font-semibold text-slate-800 dark:text-slate-100">{template.name}</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{template.description}</p>
-                      </div>
-                      {selected && <Check className="w-4 h-4 text-primary" />}
+      <Dialog open={templatePickerOpen} onOpenChange={setTemplatePickerOpen}>
+        <DialogContent className="max-w-2xl" onClick={(e) => e.stopPropagation()}>
+          <DialogHeader>
+            <DialogTitle>اختر قالبًا للمخطط الأسبوعي</DialogTitle>
+            <DialogDescription>سيتم تعبئة الصفحة مباشرة بدون الانتقال لصفحة إعداد.</DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[50vh] overflow-auto pr-1">
+            {TEMPLATES.map((template) => {
+              const selected = selectedTemplateId === template.id;
+              return (
+                <Button
+                  key={template.id}
+                  type="button"
+                  variant={selected ? "default" : "outline"}
+                  className={cn(
+                    "h-auto py-3 px-3 justify-start text-right",
+                    selected && "ring-2 ring-primary ring-offset-2"
+                  )}
+                  onClick={() => setSelectedTemplateId(template.id)}
+                >
+                  <div className="flex items-start gap-2 w-full">
+                    <span className="text-xl">{template.emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-foreground">{template.name}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5 truncate">{template.description}</p>
                     </div>
-                  </button>
-                );
-              })}
-            </div>
-            <div className="mt-3 flex items-center gap-2">
-              <button onClick={applyTemplateInPlace} className="weekly-template-apply-btn flex-1 rounded-xl bg-primary text-white py-2.5 font-semibold">تطبيق القالب</button>
-              <button onClick={() => setTemplatePickerOpen(false)} className="weekly-template-cancel-btn flex-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 py-2.5">إلغاء</button>
-            </div>
+                    {selected && <Check className="w-4 h-4 shrink-0 text-primary-foreground" />}
+                  </div>
+                </Button>
+              );
+            })}
           </div>
-        </div>
-      )}
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setTemplatePickerOpen(false)}>
+              إلغاء
+            </Button>
+            <Button onClick={applyTemplateInPlace}>تطبيق القالب</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <FAB
         onAction={(action) => {
@@ -242,5 +286,3 @@ export default function WeeklyPlanner() {
     </div>
   );
 }
-
-

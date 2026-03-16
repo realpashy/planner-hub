@@ -5,6 +5,9 @@ import type { DayTag } from "@shared/schema";
 import { X } from "lucide-react";
 import { ExpandableText } from "./ExpandableText";
 import { motion, AnimatePresence } from "framer-motion";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export function FocusTags({ tags, selectedDate }: { tags: DayTag[], selectedDate: Date }) {
   const [input, setInput] = useState("");
@@ -24,13 +27,13 @@ export function FocusTags({ tags, selectedDate }: { tags: DayTag[], selectedDate
   };
 
   return (
-    <div className="weekly-focus-tags-widget mb-1" data-testid="focus-tags-section">
-      <div className="weekly-focus-tags-header flex items-center gap-2 mb-3">
+    <div className="mb-1" data-testid="focus-tags-section">
+      <div className="flex items-center gap-2 mb-3">
         <span className="text-lg">🔥</span>
-        <h3 className="font-bold text-base md:text-lg text-slate-800 dark:text-slate-100">على ماذا تريد التركيز اليوم؟</h3>
+        <h3 className="font-bold text-base md:text-lg text-foreground">على ماذا تريد التركيز اليوم؟</h3>
       </div>
 
-      <div className="weekly-focus-tags-list flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <AnimatePresence mode="popLayout">
           {dayTags.map((tag) => (
             <motion.div
@@ -39,28 +42,32 @@ export function FocusTags({ tags, selectedDate }: { tags: DayTag[], selectedDate
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.85 }}
               layout
-              className="group flex items-center gap-1.5 bg-primary/6 dark:bg-primary/15 text-primary border border-primary/15 dark:border-primary/25 px-3.5 py-1.5 rounded-full text-sm md:text-base font-semibold cursor-default"
+              className="group inline-flex items-center gap-1.5"
               data-testid={`focus-tag-${tag.id}`}
             >
-              <ExpandableText text={tag.text} maxLength={35} />
-              <button
+              <Badge variant="secondary" className="bg-primary/10 text-primary border border-primary/20 px-3.5 py-1.5 rounded-full text-sm font-semibold cursor-default">
+                <ExpandableText text={tag.text} maxLength={35} />
+              </Badge>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 opacity-0 group-hover:opacity-100 focus:opacity-100 rounded-full -mr-0.5 hover:bg-primary/15 text-primary"
                 onClick={() => deleteTag.mutate(tag.id)}
-                className="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-0.5 hover:bg-primary/15 rounded-full -mr-0.5"
                 data-testid={`delete-tag-${tag.id}`}
               >
                 <X className="w-3.5 h-3.5" />
-              </button>
+              </Button>
             </motion.div>
           ))}
         </AnimatePresence>
 
-        <input
+        <Input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={dayTags.length === 0 ? "أضف هدفاً رئيسياً لليوم..." : "أضف المزيد..."}
-          className="weekly-focus-tags-input flex-1 min-w-[140px] bg-transparent text-sm md:text-base py-1.5 text-slate-700 dark:text-slate-200 placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:outline-none"
+          className="flex-1 min-w-[140px] border-0 bg-transparent shadow-none focus-visible:ring-0 h-9 px-0"
           data-testid="input-focus-tag"
         />
       </div>

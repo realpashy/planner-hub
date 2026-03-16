@@ -2,6 +2,8 @@ import { useRef, useEffect } from "react";
 import { getDayShortName, isSameDay, formatISODate } from "@/lib/date-utils";
 import { motion } from "framer-motion";
 import type { TaskItem } from "@shared/schema";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface DayStripProps {
   days: Date[];
@@ -47,42 +49,40 @@ export function DayStrip({ days, selectedDate, onSelect, tasks = [] }: DayStripP
           const allDone = total > 0 && completed === total;
 
           return (
-            <motion.button
-              key={date.toISOString()}
-              data-selected={isSelected}
-              data-testid={`day-button-${date.getDay()}`}
-              onClick={() => onSelect(date)}
-              whileTap={{ scale: 0.95 }}
-              className={`weekly-day-strip-item 
-                flex-shrink-0 snap-center flex flex-col items-center justify-center
-                w-[4.5rem] h-[5.5rem] md:w-[5.5rem] md:h-[6.5rem] rounded-2xl transition-all duration-200 relative
-                ${isSelected
-                  ? 'bg-primary text-white shadow-lg shadow-primary/30'
-                  : isToday
-                    ? 'bg-primary/8 dark:bg-primary/15 text-primary border-2 border-primary/25'
-                    : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-100/80 dark:border-slate-700 hover:border-primary/20 hover:bg-primary/5'}
-              `}
-            >
-              <span className={`text-xs md:text-sm font-semibold mb-0.5 ${isSelected ? 'text-white/75' : isToday ? 'text-primary/70' : 'text-slate-400 dark:text-slate-500'}`}>
-                {getDayShortName(date)}
-              </span>
-              <span className={`text-xl md:text-2xl font-bold leading-none ${isSelected ? 'text-white' : ''}`}>
-                {date.getDate()}
-              </span>
-
-              {total > 0 && (
-                <div className="flex gap-0.5 mt-1.5">
-                  {allDone ? (
-                    <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-green-300' : 'bg-green-500'}`} />
-                  ) : (
-                    <>
-                      <div className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white/60' : 'bg-slate-300 dark:bg-slate-600'}`} />
-                      <div className={`w-1 h-1 rounded-full ${completed >= 1 ? (isSelected ? 'bg-white' : 'bg-primary') : (isSelected ? 'bg-white/30' : 'bg-slate-200 dark:bg-slate-700')}`} />
-                    </>
-                  )}
-                </div>
-              )}
-            </motion.button>
+            <motion.div key={date.toISOString()} whileTap={{ scale: 0.95 }} className="flex-shrink-0 snap-center">
+              <Button
+                variant={isSelected ? "default" : "outline"}
+                size="sm"
+                className={cn(
+                  "flex flex-col items-center justify-center w-[4.5rem] h-[5.5rem] md:w-[5.5rem] md:h-[6.5rem] rounded-2xl gap-0.5 transition-all duration-200",
+                  isSelected && "shadow-lg shadow-primary/30",
+                  !isSelected && isToday && "bg-primary/10 text-primary border-2 border-primary/25 hover:bg-primary/15",
+                  !isSelected && !isToday && "bg-muted hover:border-primary/20 hover:bg-primary/5"
+                )}
+                onClick={() => onSelect(date)}
+                data-selected={isSelected}
+                data-testid={`day-button-${date.getDay()}`}
+              >
+                <span className={cn("text-xs md:text-sm font-semibold", isSelected && "text-primary-foreground/75", !isSelected && isToday && "text-primary/70", !isSelected && !isToday && "text-muted-foreground")}>
+                  {getDayShortName(date)}
+                </span>
+                <span className="text-xl md:text-2xl font-bold leading-none">
+                  {date.getDate()}
+                </span>
+                {total > 0 && (
+                  <div className="flex gap-0.5 mt-1.5">
+                    {allDone ? (
+                      <div className={cn("w-1.5 h-1.5 rounded-full", isSelected ? "bg-green-300" : "bg-green-500")} />
+                    ) : (
+                      <>
+                        <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-primary-foreground/60" : "bg-muted-foreground/50")} />
+                        <div className={cn("w-1 h-1 rounded-full", completed >= 1 ? (isSelected ? "bg-primary-foreground" : "bg-primary") : (isSelected ? "bg-primary-foreground/30" : "bg-muted"))} />
+                      </>
+                    )}
+                  </div>
+                )}
+              </Button>
+            </motion.div>
           );
         })}
       </div>
