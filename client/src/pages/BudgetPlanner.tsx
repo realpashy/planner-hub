@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { ArrowRight, CalendarClock, Landmark, PiggyBank, Plus, ReceiptText, Search, Settings2, TrendingUp, Wallet } from "lucide-react";
+import { ArrowRight, CalendarClock, Landmark, Menu, PiggyBank, Plus, ReceiptText, Search, Settings2, TrendingUp, Wallet } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { toast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +27,23 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import {
   CURRENCY_OPTIONS,
@@ -314,6 +331,14 @@ interface SavingsGoalEditDialogState {
   status: BudgetSavingGoalStatus;
 }
 
+interface DeleteConfirmState {
+  open: boolean;
+  title: string;
+  description: string;
+  confirmLabel: string;
+  onConfirm: (() => void) | null;
+}
+
 type EditApplyScope = "current" | "all";
 type OverviewDetailKey = BudgetTransactionType | "saving";
 interface CreateSubcategoryDialogState {
@@ -378,6 +403,14 @@ export default function BudgetPlanner() {
     recurringEnabled: getSavingsGoalBehavior(DEFAULT_SAVINGS_CATEGORY).defaultRecurring,
     status: "active",
   });
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<DeleteConfirmState>({
+    open: false,
+    title: "",
+    description: "",
+    confirmLabel: "حذف",
+    onConfirm: null,
+  });
   const [editApplyScope, setEditApplyScope] = useState<EditApplyScope>("current");
   const [categoriesDialogOpen, setCategoriesDialogOpen] = useState(false);
   const [createSubcategoryDialog, setCreateSubcategoryDialog] = useState<CreateSubcategoryDialogState>({
@@ -388,6 +421,12 @@ export default function BudgetPlanner() {
 
   const pushNotice = (message: string) => {
     toast({ description: message, duration: 3000 });
+  };
+  const closeDeleteConfirm = () => {
+    setDeleteConfirm({ open: false, title: "", description: "", confirmLabel: "حذف", onConfirm: null });
+  };
+  const openDeleteConfirm = (title: string, description: string, onConfirm: () => void, confirmLabel = "حذف") => {
+    setDeleteConfirm({ open: true, title, description, confirmLabel, onConfirm });
   };
   const goalBehavior = getSavingsGoalBehavior(goalCategory);
 
@@ -1149,17 +1188,24 @@ export default function BudgetPlanner() {
 
   const saveEditTransaction = () => {
     if (!editDialog.tx) return;
+    const isLinkedSavingsTransaction = Boolean(editDialog.tx.savingsGoalId);
     const amount = parseAmountInput(editDialog.amount);
-    if (!Number.isFinite(amount) || amount <= 0 || !editDialog.subcategoryId) return;
+    const effectiveSubcategoryId = isLinkedSavingsTransaction ? editDialog.tx.subcategoryId : editDialog.subcategoryId;
+    if (!Number.isFinite(amount) || amount <= 0 || !effectiveSubcategoryId) return;
 
     const applyAllMonths = isRecurringTransaction(editDialog.tx) && editApplyScope === "all";
     const nextDay = Number(editDialog.date.split("-")[2]) || 1;
 
     applyData((current) => {
-      const nextTitle = current.categories.find((c) => c.id === editDialog.subcategoryId)?.name || editDialog.tx?.title || "";
-      const nextSavingsGoalId = editDialog.tx?.type === "expense" && editDialog.savingsGoalId
+      const nextSavingsGoalId = isLinkedSavingsTransaction
+        ? editDialog.tx?.savingsGoalId || ""
+        : editDialog.tx?.type === "expense" && editDialog.savingsGoalId
         ? current.savingsGoals.find((goal) => goal.id === editDialog.savingsGoalId)?.id || ""
         : "";
+      const linkedGoal = nextSavingsGoalId ? current.savingsGoals.find((goal) => goal.id === nextSavingsGoalId) : null;
+      const nextTitle = linkedGoal
+        ? getSavingsGoalDisplayTitle(linkedGoal)
+        : current.categories.find((c) => c.id === effectiveSubcategoryId)?.name || editDialog.tx?.title || "";
 
       if (!applyAllMonths) {
         return {
@@ -1171,8 +1217,8 @@ export default function BudgetPlanner() {
                   title: nextTitle,
                   amount,
                   date: editDialog.date,
-                  subcategoryId: editDialog.subcategoryId,
-                  categoryId: editDialog.subcategoryId,
+                  subcategoryId: effectiveSubcategoryId,
+                  categoryId: effectiveSubcategoryId,
                   savingsGoalId: nextSavingsGoalId || undefined,
                 }
               : tx,
@@ -1190,7 +1236,7 @@ export default function BudgetPlanner() {
           template.id === editDialog.tx?.recurringTemplateId
             ? {
                 ...template,
-                categoryId: editDialog.subcategoryId,
+                categoryId: effectiveSubcategoryId,
                 amount,
                 note: "",
                 dayOfMonth: nextDay,
@@ -1226,8 +1272,8 @@ export default function BudgetPlanner() {
             ...tx,
             title: nextTitle,
             amount,
-            subcategoryId: editDialog.subcategoryId,
-            categoryId: editDialog.subcategoryId,
+            subcategoryId: effectiveSubcategoryId,
+            categoryId: effectiveSubcategoryId,
             note: "",
             savingsGoalId: nextSavingsGoalId || undefined,
             date: `${monthKey}-${String(clampDay(nextDay, monthKey)).padStart(2, "0")}`
@@ -1331,8 +1377,18 @@ export default function BudgetPlanner() {
     <div className="min-h-screen bg-background pb-12" dir="rtl">
       <header className="sticky top-0 z-30 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-4">
-          <div className="relative flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
+          <div className="relative flex min-h-[48px] items-center justify-between gap-3 md:min-h-[56px]">
+            <div className="absolute left-0 flex items-center gap-2 md:hidden">
+              <Button
+                variant="outline"
+                className="h-9 rounded-xl px-3 text-sm"
+                onClick={() => setMobileMenuOpen(true)}
+              >
+                <Menu className="h-4 w-4" />
+                القائمة
+              </Button>
+            </div>
+            <div className="hidden items-center gap-2 md:flex">
               <Button variant="ghost" size="icon" asChild>
                 <Link href="/">
                   <ArrowRight className="w-5 h-5 md:w-6 md:h-6" />
@@ -1374,14 +1430,81 @@ export default function BudgetPlanner() {
                 <Settings2 className="w-4 h-4" />
               </Button>
             </div>
-            <h1 className="absolute left-1/2 -translate-x-1/2 text-lg md:text-2xl font-bold text-foreground flex items-center gap-2">
+            <h1 className="mx-auto flex items-center gap-2 px-20 text-center text-base font-bold text-foreground sm:text-lg md:absolute md:left-1/2 md:mx-0 md:-translate-x-1/2 md:px-0 md:text-2xl">
               <Wallet className="w-5 h-5 md:w-6 md:h-6 text-emerald-500" />
               الميزانيّة الشهرية
             </h1>
-            <div className="w-[68px]" />
+            <div className="absolute right-0 flex items-center justify-end gap-2 md:hidden">
+              <Button variant="ghost" size="icon" asChild>
+                <Link href="/">
+                  <ArrowRight className="w-5 h-5" />
+                </Link>
+              </Button>
+            </div>
           </div>
         </div>
       </header>
+
+      <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+        <SheetContent side="left" className="w-[88vw] max-w-sm" dir="rtl">
+          <SheetHeader className="text-right">
+            <SheetTitle>القائمة</SheetTitle>
+            <SheetDescription>الوصول السريع إلى أدوات الميزانية من الجوال.</SheetDescription>
+          </SheetHeader>
+          <div className="mt-6 space-y-5">
+            <div className="rounded-2xl border bg-muted/20 p-3">
+              <p className="text-sm font-medium text-right text-foreground">المظهر</p>
+              <div className="mt-3 flex justify-end">
+                <ThemeToggle />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm text-right">الشهر الحالي</Label>
+              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                <SelectTrigger className="budget-rtl-select-trigger">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent dir="rtl" className="budget-rtl-select-content budget-roomy-select-content">
+                  {monthOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value} className="budget-select-item">{option.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm text-right">العملة</Label>
+              <Select
+                value={data.settings.currency}
+                onValueChange={(value) => applyData((current) => ({ ...current, settings: { ...current.settings, currency: value as BudgetData["settings"]["currency"] } }))}
+              >
+                <SelectTrigger className="budget-rtl-select-trigger">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent dir="rtl" className="budget-rtl-select-content budget-roomy-select-content">
+                  {CURRENCY_OPTIONS.map((option) => (
+                    <SelectItem key={option.code} value={option.code} className="budget-select-item">{option.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-1 gap-2">
+              <Button variant="secondary" className="justify-between" onClick={() => { setCategoriesDialogOpen(true); setMobileMenuOpen(false); }}>
+                <span>إعدادات الفئات</span>
+                <Settings2 className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" className="justify-between" asChild>
+                <Link href="/">
+                  <span>العودة إلى الرئيسية</span>
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 pt-5 md:pt-6">
         <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-6">
@@ -1591,21 +1714,23 @@ export default function BudgetPlanner() {
                     </TabsList>
                   </Tabs>
                 </div>
-                <div className="space-y-2.5">
+                <div className="space-y-4">
                   {savingsGoalCards.length === 0 && <p className="text-sm text-right text-muted-foreground">لا توجد أهداف ادخار مطابقة حالياً.</p>}
                   {savingsGoalCards.map((goal) => {
                     return (
-                      <div key={goal.id} className="group rounded-2xl border bg-muted/50 p-3 shadow-sm">
-                        <div className="rtl-row items-start">
-                          <div className="flex-1 text-right">
-                            <div className="flex flex-wrap justify-end gap-2">
-                              <Badge variant="outline" className="rounded-full">{`${SAVINGS_GOAL_META[goal.category].emoji} ${getSavingsGoalCategoryLabel(goal.category)}`}</Badge>
+                      <div key={goal.id} className="group rounded-3xl border border-slate-200/80 bg-white/95 p-4 shadow-[0_14px_40px_-24px_rgba(15,23,42,0.24)] transition hover:border-slate-300/70 dark:border-border dark:bg-muted/40 dark:shadow-none">
+                        <div className="rtl-row items-start gap-3">
+                          <div className="min-w-0 flex-1 text-right">
+                            <p className="truncate text-base font-semibold text-foreground">{goal.displayTitle}</p>
+                            <div className="mt-2 flex flex-wrap justify-end gap-2">
+                              <Badge variant="outline" className="rounded-full border-slate-200 bg-slate-50/90 text-slate-700 dark:border-border dark:bg-background/60 dark:text-foreground">
+                                {`${SAVINGS_GOAL_META[goal.category].emoji} ${getSavingsGoalCategoryLabel(goal.category)}`}
+                              </Badge>
                             </div>
-                            <p className="mt-2 font-semibold text-foreground">{goal.displayTitle}</p>
                           </div>
                           <div className="budget-value-left flex flex-col items-start gap-1">
                             <Select value={goal.status} onValueChange={(value) => updateSavingGoalStatus(goal.id, value as BudgetSavingGoalStatus)}>
-                              <SelectTrigger className="h-8 w-[108px] budget-rtl-select-trigger text-xs">
+                              <SelectTrigger className="h-8 w-[108px] budget-rtl-select-trigger border-slate-200 bg-white text-xs dark:border-border dark:bg-background/60">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent dir="rtl" className="budget-rtl-select-content">
@@ -1618,18 +1743,18 @@ export default function BudgetPlanner() {
                               variant="ghost"
                               size="sm"
                               className="h-6 px-1 text-xs text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
-                              onClick={() => deleteSavingGoal(goal.id)}
+                              onClick={() => openDeleteConfirm("حذف هدف الادخار", "سيتم حذف الهدف وكل المساهمات المرتبطة به. هل تريد المتابعة؟", () => deleteSavingGoal(goal.id))}
                             >
                               حذف
                             </Button>
                           </div>
                         </div>
                         <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                          <div className="rounded-xl border bg-background/70 p-2.5 text-right">
+                          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3 text-right dark:border-border dark:bg-background/70">
                             <p className="text-[11px] text-muted-foreground">الإجمالي</p>
                             <p className="mt-1 rtl-number text-sm font-semibold text-foreground">{formatAmount(goal.totalSaved, data.settings.currency)}</p>
                           </div>
-                          <div className="rounded-xl border bg-background/70 p-2.5 text-right">
+                          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3 text-right dark:border-border dark:bg-background/70">
                             <p className="text-[11px] text-muted-foreground">هذا الشهر</p>
                             <p className="mt-1 text-sm font-semibold text-foreground">
                               {goal.monthlySaved > 0 ? <span className="rtl-number">{formatAmount(goal.monthlySaved, data.settings.currency)}</span> : "لا توجد مساهمة هذا الشهر"}
@@ -1637,23 +1762,23 @@ export default function BudgetPlanner() {
                           </div>
                         </div>
                         <div className="mt-3 grid grid-cols-3 gap-2 text-right text-xs">
-                          <div className="rounded-xl bg-background/70 p-2">
+                          <div className="rounded-2xl border border-slate-200/70 bg-slate-50/70 p-2.5 dark:border-border dark:bg-background/70">
                             <p className="text-muted-foreground">الهدف</p>
                             <p className="mt-1 font-semibold text-foreground">{goal.hasTarget ? <span className="rtl-number">{formatAmount(goal.targetAmount, data.settings.currency)}</span> : "غير محدد"}</p>
                           </div>
-                          <div className="rounded-xl bg-background/70 p-2">
+                          <div className="rounded-2xl border border-slate-200/70 bg-slate-50/70 p-2.5 dark:border-border dark:bg-background/70">
                             <p className="text-muted-foreground">المتبقي</p>
                             <p className="mt-1 font-semibold text-foreground">{goal.hasTarget ? <span className="rtl-number">{formatAmount(goal.remaining, data.settings.currency)}</span> : "مرن"}</p>
                           </div>
-                          <div className="rounded-xl bg-background/70 p-2">
+                          <div className="rounded-2xl border border-slate-200/70 bg-slate-50/70 p-2.5 dark:border-border dark:bg-background/70">
                             <p className="text-muted-foreground">التقدم</p>
                             <p className="mt-1 font-semibold text-foreground">{goal.hasTarget ? `${goal.progress}%` : "مرن"}</p>
                           </div>
                         </div>
-                        <div className="mt-3 h-2.5 w-full overflow-hidden rounded-lg bg-muted">
+                        <div className="mt-4 h-2.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-muted">
                           <motion.div initial={{ width: 0 }} animate={{ width: `${goal.progress}%` }} transition={{ duration: 0.35 }} className="h-full bg-emerald-500" />
                         </div>
-                        <div className="mt-3 rtl-row items-center">
+                        <div className="mt-4 rtl-row items-center">
                           <div className="flex-1 text-right text-xs text-muted-foreground">
                             {goal.lastContributionDate ? `آخر مساهمة: ${goal.lastContributionDate}` : "لم يتم تسجيل أي مساهمة بعد"}
                           </div>
@@ -1921,7 +2046,17 @@ export default function BudgetPlanner() {
           {operationActionsTx && (
             <div className="space-y-2">
               <Button variant="secondary" className="w-full" onClick={() => { openEditTransactionDialog(operationActionsTx); setOperationActionsTx(null); }}>تعديل</Button>
-              <Button variant="destructive" className="w-full" onClick={() => { deleteTransaction(operationActionsTx.id); setOperationActionsTx(null); }}>حذف</Button>
+              <Button
+                variant="destructive"
+                className="w-full"
+                onClick={() => {
+                  const txId = operationActionsTx.id;
+                  setOperationActionsTx(null);
+                  openDeleteConfirm("حذف العملية", "سيتم حذف هذه العملية نهائياً من السجل. هل تريد المتابعة؟", () => deleteTransaction(txId));
+                }}
+              >
+                حذف
+              </Button>
               {isRecurringTransaction(operationActionsTx) && (
                 <Button variant="outline" className="w-full text-amber-700 dark:text-amber-300" onClick={() => { skipRecurringForMonth(operationActionsTx); setOperationActionsTx(null); }}>استثناء هذا الشهر</Button>
               )}
@@ -2112,6 +2247,14 @@ export default function BudgetPlanner() {
           </DialogHeader>
           {editDialog.tx && (
             <div className="grid grid-cols-1 gap-3">
+              {editDialog.tx.savingsGoalId && (
+                <div className="rounded-2xl border bg-muted/20 p-3 text-right">
+                  <p className="text-xs text-muted-foreground">العنصر المرتبط</p>
+                  <p className="mt-1 text-sm font-medium text-foreground">
+                    {getSavingsGoalDisplayTitle(data.savingsGoals.find((goal) => goal.id === editDialog.tx?.savingsGoalId) || { category: "personal_goal", customName: "", title: editDialog.tx.title })}
+                  </p>
+                </div>
+              )}
               <Input
                 dir="rtl"
                 type="text"
@@ -2138,16 +2281,21 @@ export default function BudgetPlanner() {
                   </div>
                 </div>
               )}
-              <Select value={editDialog.subcategoryId} onValueChange={(v) => handleEditSubcategorySelection(v, editDialog.tx?.type || "expense")}>
-                <SelectTrigger className="budget-rtl-select-trigger"><SelectValue /></SelectTrigger>
-                <SelectContent dir="rtl" className="budget-rtl-select-content budget-roomy-select-content">
-                  {data.categories.filter((c) => c.type === editDialog.tx?.type).map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id} className="budget-select-item">{`${categoryEmoji(cat.name, cat.type)} ${cat.name}`}</SelectItem>
-                  ))}
-                  <SelectItem value={NEW_SUBCATEGORY_VALUE} className="budget-select-item">+ إضافة فئة فرعية</SelectItem>
-                </SelectContent>
-              </Select>
-              {editDialog.tx.type === "expense" && (
+              {!editDialog.tx.savingsGoalId && (
+                <div className="space-y-2">
+                  <Label className="text-sm text-right">الفئة الفرعية</Label>
+                  <Select value={editDialog.subcategoryId} onValueChange={(v) => handleEditSubcategorySelection(v, editDialog.tx?.type || "expense")}>
+                    <SelectTrigger className="budget-rtl-select-trigger"><SelectValue /></SelectTrigger>
+                    <SelectContent dir="rtl" className="budget-rtl-select-content budget-roomy-select-content">
+                      {data.categories.filter((c) => c.type === editDialog.tx?.type).map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id} className="budget-select-item">{`${categoryEmoji(cat.name, cat.type)} ${cat.name}`}</SelectItem>
+                      ))}
+                      <SelectItem value={NEW_SUBCATEGORY_VALUE} className="budget-select-item">+ إضافة فئة فرعية</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {editDialog.tx.type === "expense" && !editDialog.tx.savingsGoalId && (
                 <Select value={editDialog.savingsGoalId || "none"} onValueChange={(v) => setEditDialog((prev) => ({ ...prev, savingsGoalId: v === "none" ? "" : v }))}>
                   <SelectTrigger className="budget-rtl-select-trigger"><SelectValue placeholder="ربط بهدف ادخار" /></SelectTrigger>
                   <SelectContent dir="rtl" className="budget-rtl-select-content budget-roomy-select-content">
@@ -2256,7 +2404,14 @@ export default function BudgetPlanner() {
                           ) : (
                             <Button variant="secondary" size="sm" className="h-7 text-xs opacity-100 md:opacity-0 md:group-hover:opacity-100" onClick={() => { setEditingCategoryId(cat.id); setEditingCategoryName(cat.name); }}>تعديل</Button>
                           )}
-                          <Button variant="destructive" size="sm" className="h-7 text-xs opacity-100 md:opacity-0 md:group-hover:opacity-100" onClick={() => deleteCategory(cat.id)}>حذف</Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="h-7 text-xs opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                            onClick={() => openDeleteConfirm("حذف الفئة", "سيتم حذف هذه الفئة إذا لم تكن مرتبطة ببيانات حالية. هل تريد المتابعة؟", () => deleteCategory(cat.id))}
+                          >
+                            حذف
+                          </Button>
                         </div>
                       </div>
                     ))}
@@ -2268,6 +2423,26 @@ export default function BudgetPlanner() {
           </div>
         </DialogContent>
       </Dialog>
+      <AlertDialog open={deleteConfirm.open} onOpenChange={(open) => { if (!open) closeDeleteConfirm(); }}>
+        <AlertDialogContent dir="rtl" className="max-w-md text-right">
+          <AlertDialogHeader className="text-right sm:text-right">
+            <AlertDialogTitle>{deleteConfirm.title}</AlertDialogTitle>
+            <AlertDialogDescription>{deleteConfirm.description}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="sm:flex-row-reverse">
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                deleteConfirm.onConfirm?.();
+                closeDeleteConfirm();
+              }}
+            >
+              {deleteConfirm.confirmLabel}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       </main>
     </div>
   );

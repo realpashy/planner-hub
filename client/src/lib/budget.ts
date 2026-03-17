@@ -157,6 +157,34 @@ export function createBudgetId() {
   return `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
+function isBillLikeCategoryName(name: string) {
+  return /^(ماء|مياه|فاتورة ماء|كهرباء|إنترنت|هاتف|تأمين سيارة|أرنونا|أرنونه|arnona|ארנונה)$/i.test(name.trim());
+}
+
+function isFoodLikeCategoryName(name: string) {
+  return /(طعام|مطعم|قهوة|بقالة|سوبر|شراب)/.test(name.trim());
+}
+
+function normalizeCategoryEntry(item: BudgetCategory): BudgetCategory {
+  const rawName = item.name?.trim() || "";
+  const normalizedType = isBillLikeCategoryName(rawName)
+    ? "bill_payment"
+    : isFoodLikeCategoryName(rawName)
+      ? "expense"
+      : item.type;
+
+  let normalizedName = rawName;
+  if (/^(أرنونه|arnona|ארנונה)$/i.test(rawName)) normalizedName = "أرنونا";
+  if (normalizedType === "bill_payment" && /^(مياه|فاتورة ماء)$/i.test(rawName)) normalizedName = "ماء";
+  if (normalizedType === "expense" && isFoodLikeCategoryName(rawName)) normalizedName = "طعام";
+
+  return {
+    id: item.id || createBudgetId(),
+    type: normalizedType,
+    name: normalizedName || TRANSACTION_TYPE_LABEL[normalizedType],
+  };
+}
+
 function getDefaultCategories(): BudgetCategory[] {
   return [
     { id: createBudgetId(), type: "income", name: "راتب" },
@@ -164,6 +192,7 @@ function getDefaultCategories(): BudgetCategory[] {
     { id: createBudgetId(), type: "income", name: "دخل استثماري" },
     { id: createBudgetId(), type: "expense", name: "طعام" },
     { id: createBudgetId(), type: "expense", name: "مواصلات" },
+    { id: createBudgetId(), type: "expense", name: "منزل ومعيشة" },
     { id: createBudgetId(), type: "expense", name: "صحة" },
     { id: createBudgetId(), type: "expense", name: "تسوق" },
     { id: createBudgetId(), type: "expense", name: "تعليم" },
@@ -218,14 +247,12 @@ function normalizeCategories(rawCategories: BudgetCategory[] | undefined) {
   const next = Array.isArray(rawCategories)
     ? rawCategories
         .filter((item) => item && isValidTransactionType(item.type))
-        .map((item) => ({
-          id: item.id || createBudgetId(),
-          type: item.type,
-          name: item.name?.trim() || fallback.find((candidate) => candidate.type === item.type)?.name || TRANSACTION_TYPE_LABEL[item.type],
-        }))
+        .map((item) => normalizeCategoryEntry(item))
     : [];
 
-  const ensured = [...next];
+  const ensured = next.filter((item, index, array) =>
+    array.findIndex((candidate) => candidate.type === item.type && candidate.name === item.name) === index
+  );
   for (const item of fallback) {
     if (!ensured.some((candidate) => candidate.type === item.type && candidate.name === item.name)) {
       ensured.push(item);
