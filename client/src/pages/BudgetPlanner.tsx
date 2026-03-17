@@ -921,10 +921,10 @@ export default function BudgetPlanner() {
           </TabsList>
         <TabsContent value="overview" className="mt-5">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div className="lg:col-span-5 space-y-6">
+            <div className="lg:col-span-5 space-y-6 lg:order-2">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
+                  <CardTitle className="text-base flex items-center gap-2 justify-end">
                     <Plus className="w-4 h-4 text-primary" />
                     إضافة معاملة جديدة
                   </CardTitle>
@@ -1042,7 +1042,7 @@ export default function BudgetPlanner() {
               </Card>
             </div>
 
-            <div className="lg:col-span-7 space-y-6">
+            <div className="lg:col-span-7 space-y-6 lg:order-1">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">نظرة عامّة</CardTitle>
