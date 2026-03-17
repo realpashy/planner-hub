@@ -7,7 +7,6 @@ import { toast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -24,11 +23,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import {
   CURRENCY_OPTIONS,
+  SAVINGS_GOAL_CATEGORY_OPTIONS,
   TRANSACTION_TYPE_LABEL,
   createBudgetId,
   formatAmount,
@@ -43,15 +44,29 @@ import {
   type BudgetCategoryType,
   type BudgetData,
   type BudgetRecurringTemplate,
+  type BudgetSavingGoalCategory,
+  type BudgetSavingGoalStatus,
   type BudgetSavingGoal,
   type BudgetTransaction,
   type BudgetTransactionType,
 } from "@/lib/budget";
 
 const ADD_TRANSACTION_TYPES: BudgetTransactionType[] = ["income", "expense", "bill_payment", "debt_payment"];
+const RECURRING_ELIGIBLE_TYPES: BudgetTransactionType[] = ["income", "expense", "bill_payment", "debt_payment"];
+const TYPE_EMOJI: Record<BudgetTransactionType, string> = { income: "💼", expense: "🛍️", bill_payment: "🧾", debt_payment: "🏦" };
+const DEFAULT_SAVINGS_CATEGORY: BudgetSavingGoalCategory = "emergency_fund";
 
-const RECURRING_ELIGIBLE_TYPES: Array<Exclude<BudgetTransactionType, "saving">> = ["income", "expense", "bill_payment", "debt_payment"];
-const TYPE_EMOJI: Record<BudgetTransactionType, string> = { income: "💼", expense: "🛍️", bill_payment: "🧾", debt_payment: "🏦", saving: "🏦" };
+const SAVINGS_GOAL_META: Record<BudgetSavingGoalCategory, { emoji: string; shortLabel: string }> = {
+  emergency_fund: { emoji: "🛟", shortLabel: "صندوق طوارئ" },
+  personal_investments: { emoji: "📈", shortLabel: "استثمارات شخصية" },
+  retirement: { emoji: "🌅", shortLabel: "تقاعد" },
+  education_fund: { emoji: "🎓", shortLabel: "صندوق استكمال" },
+  housing: { emoji: "🏡", shortLabel: "ادخار للسكن" },
+  children: { emoji: "👨‍👩‍👧‍👦", shortLabel: "ادخار للأطفال" },
+  travel: { emoji: "✈️", shortLabel: "هدف سفر" },
+  personal_goal: { emoji: "✨", shortLabel: "هدف شخصي" },
+  big_purchases: { emoji: "🎯", shortLabel: "أهداف كبيرة" },
+};
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
@@ -75,8 +90,18 @@ function parseAmountInput(value: string): number {
   return Number.isFinite(parsed) ? parsed : NaN;
 }
 
-function emptyTransactionState(type: BudgetTransactionType = "income", categoryId = "") {
-  return { id: "", type, title: "", amount: "", date: todayISO(), categoryId, note: "", linkedId: "" };
+interface TransactionFormState {
+  id: string;
+  type: BudgetTransactionType;
+  amount: string;
+  date: string;
+  subcategoryId: string;
+  note: string;
+  savingsGoalId: string;
+}
+
+function emptyTransactionState(type: BudgetTransactionType = "income", subcategoryId = ""): TransactionFormState {
+  return { id: "", type, amount: "", date: todayISO(), subcategoryId, note: "", savingsGoalId: "" };
 }
 
 function pickDefaultCategoryId(categories: BudgetCategory[], type: BudgetTransactionType) {
@@ -86,15 +111,6 @@ function pickDefaultCategoryId(categories: BudgetCategory[], type: BudgetTransac
       || "";
   }
   return categories.find((c) => c.type === type)?.id || "";
-}
-
-function pickDefaultCategoryName(categories: BudgetCategory[], type: BudgetTransactionType) {
-  if (type === "income") {
-    return categories.find((c) => c.type === "income" && c.name.includes("راتب"))?.name
-      || categories.find((c) => c.type === "income")?.name
-      || "";
-  }
-  return categories.find((c) => c.type === type)?.name || "";
 }
 function clampDay(day: number, monthKey: string) {
   const [year, month] = monthKey.split("-").map(Number);
@@ -106,7 +122,7 @@ function monthLessThan(a: string, b: string) {
   return a < b;
 }
 
-function categoryEmoji(name: string, type: BudgetTransactionType) {
+function categoryEmoji(name: string, type: BudgetCategoryType) {
   const n = name.toLowerCase();
   if (type === "income") {
     if (n.includes("راتب")) return "💼";
@@ -126,12 +142,6 @@ function categoryEmoji(name: string, type: BudgetTransactionType) {
     if (n.includes("قرض")) return "🏦";
     return "📉";
   }
-  if (type === "saving") {
-    if (n.includes("طوارئ")) return "🛟";
-    if (n.includes("سفر")) return "✈️";
-    if (n.includes("بيت") || n.includes("منزل")) return "🏡";
-    return "🏦";
-  }
   if (n.includes("طعام") || n.includes("مطعم") || n.includes("قهوة") || n.includes("سوبر")) return "🍽️";
   if (n.includes("مواصل") || n.includes("وقود") || n.includes("بنزين") || n.includes("سيارة")) return "🚗";
   if (n.includes("صحة") || n.includes("دواء") || n.includes("طب")) return "🩺";
@@ -139,6 +149,16 @@ function categoryEmoji(name: string, type: BudgetTransactionType) {
   if (n.includes("ملابس") || n.includes("موضة")) return "👕";
   if (n.includes("تعليم") || n.includes("دورة")) return "📚";
   return "🧩";
+}
+
+function getSavingsGoalCategoryLabel(category: BudgetSavingGoalCategory) {
+  return SAVINGS_GOAL_CATEGORY_OPTIONS.find((item) => item.value === category)?.label || SAVINGS_GOAL_META[category].shortLabel;
+}
+
+function getSavingsStatusLabel(status: BudgetSavingGoalStatus) {
+  if (status === "completed") return "مكتمل";
+  if (status === "archived") return "مؤرشف";
+  return "نشط";
 }
 
 
@@ -171,7 +191,8 @@ interface EditDialogState {
   amount: string;
   date: string;
   note: string;
-  categoryId: string;
+  subcategoryId: string;
+  savingsGoalId: string;
 }
 
 type EditApplyScope = "current" | "all";
@@ -187,7 +208,6 @@ export default function BudgetPlanner() {
 
   const [transactionForm, setTransactionForm] = useState(() => emptyTransactionState("income", pickDefaultCategoryId(loadBudgetData().categories, "income")));
   const [isRecurring, setIsRecurring] = useState(false);
-  const [transactionCategoryText, setTransactionCategoryText] = useState("");
 
   const [categoryType, setCategoryType] = useState<BudgetCategoryType>("expense");
   const [categoryName, setCategoryName] = useState("");
@@ -196,12 +216,18 @@ export default function BudgetPlanner() {
 
   const [goalTitle, setGoalTitle] = useState("");
   const [goalTargetAmount, setGoalTargetAmount] = useState("");
+  const [goalCategory, setGoalCategory] = useState<BudgetSavingGoalCategory>(DEFAULT_SAVINGS_CATEGORY);
+  const [goalTargetDate, setGoalTargetDate] = useState(endOfMonthISO(getCurrentMonthKey()));
+  const [goalRecurringEnabled, setGoalRecurringEnabled] = useState(false);
+  const [goalRecurringAmount, setGoalRecurringAmount] = useState("");
+  const [goalStatusFilter, setGoalStatusFilter] = useState<BudgetSavingGoalStatus | "all">("active");
 
   const [recentSearch, setRecentSearch] = useState("");
-  const [recentFilter, setRecentFilter] = useState<"all" | "other" | BudgetTransactionType>("all");
+  const [recentFilter, setRecentFilter] = useState<"all" | "linked_savings" | BudgetTransactionType>("all");
 
   const [operationActionsTx, setOperationActionsTx] = useState<BudgetTransaction | null>(null);
   const [hoveredOverviewSegment, setHoveredOverviewSegment] = useState<string | null>(null);
+  const [overviewDetailType, setOverviewDetailType] = useState<BudgetTransactionType | null>(null);
 
   const [amountDialog, setAmountDialog] = useState<AmountDialogState>({
     open: false,
@@ -217,7 +243,8 @@ export default function BudgetPlanner() {
     amount: "",
     date: todayISO(),
     note: "",
-    categoryId: "",
+    subcategoryId: "",
+    savingsGoalId: "",
   });
   const [editApplyScope, setEditApplyScope] = useState<EditApplyScope>("current");
   const [categoriesDialogOpen, setCategoriesDialogOpen] = useState(false);
@@ -249,7 +276,6 @@ export default function BudgetPlanner() {
     expense: data.categories.filter((c) => c.type === "expense"),
     bill_payment: data.categories.filter((c) => c.type === "bill_payment"),
     debt_payment: data.categories.filter((c) => c.type === "debt_payment"),
-    saving: data.categories.filter((c) => c.type === "saving"),
   }), [data.categories]);
 
   const transactionCategories = useMemo(
@@ -260,7 +286,25 @@ export default function BudgetPlanner() {
   const savingsByGoalId = useMemo(() => {
     const map = new Map<string, number>();
     for (const tx of data.transactions) {
-      if (tx.type === "saving" && tx.linkedId) map.set(tx.linkedId, (map.get(tx.linkedId) || 0) + tx.amount);
+      if (tx.savingsGoalId) map.set(tx.savingsGoalId, (map.get(tx.savingsGoalId) || 0) + tx.amount);
+    }
+    return map;
+  }, [data.transactions]);
+  const monthlySavingsByGoalId = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const tx of currentMonthTransactions) {
+      if (tx.savingsGoalId) map.set(tx.savingsGoalId, (map.get(tx.savingsGoalId) || 0) + tx.amount);
+    }
+    return map;
+  }, [currentMonthTransactions]);
+  const savingsLastContributionByGoalId = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const tx of data.transactions) {
+      if (!tx.savingsGoalId) continue;
+      const current = map.get(tx.savingsGoalId);
+      if (!current || tx.date > current) {
+        map.set(tx.savingsGoalId, tx.date);
+      }
     }
     return map;
   }, [data.transactions]);
@@ -283,21 +327,22 @@ export default function BudgetPlanner() {
   const recentTransactions = useMemo(() => {
     const sorted = [...currentMonthTransactions].sort((a, b) => b.date.localeCompare(a.date));
     return sorted
-      .filter((tx) => recentFilter === "all" ? true : recentFilter === "other" ? tx.type === "saving" : tx.type === recentFilter)
+      .filter((tx) => recentFilter === "all" ? true : recentFilter === "linked_savings" ? Boolean(tx.savingsGoalId) : tx.type === recentFilter)
       .filter((tx) => {
         const q = recentSearch.trim().toLowerCase();
         if (!q) return true;
-        const categoryNameText = data.categories.find((c) => c.id === tx.categoryId)?.name || "";
-        return `${categoryNameText} ${tx.note} ${tx.amount}`.toLowerCase().includes(q);
+        const subcategoryName = data.categories.find((c) => c.id === tx.subcategoryId)?.name || "";
+        const linkedGoal = tx.savingsGoalId ? data.savingsGoals.find((goal) => goal.id === tx.savingsGoalId)?.title || "" : "";
+        return `${subcategoryName} ${linkedGoal} ${tx.note} ${tx.amount}`.toLowerCase().includes(q);
       })
       .slice(0, 60);
-  }, [currentMonthTransactions, recentFilter, recentSearch, data.categories]);
+  }, [currentMonthTransactions, recentFilter, recentSearch, data.categories, data.savingsGoals]);
 
   const expenseByCategory = useMemo(() => {
     const map = new Map<string, number>();
     for (const tx of currentMonthTransactions) {
-      if (tx.type === "income") continue;
-      map.set(tx.categoryId, (map.get(tx.categoryId) || 0) + tx.amount);
+      if (tx.type === "income" || tx.savingsGoalId) continue;
+      map.set(tx.subcategoryId, (map.get(tx.subcategoryId) || 0) + tx.amount);
     }
 
     return Array.from(map.entries())
@@ -310,6 +355,119 @@ export default function BudgetPlanner() {
       .sort((a, b) => b.total - a.total)
       .slice(0, 6);
   }, [currentMonthTransactions, data.categories]);
+  const savingsGoalCards = useMemo(() => {
+    return data.savingsGoals
+      .filter((goal) => goalStatusFilter === "all" || goal.status === goalStatusFilter)
+      .map((goal) => {
+        const totalSaved = savingsByGoalId.get(goal.id) || 0;
+        const monthlySaved = monthlySavingsByGoalId.get(goal.id) || 0;
+        const remaining = Math.max(goal.targetAmount - totalSaved, 0);
+        const progress = goal.targetAmount > 0 ? Math.min(Math.round((totalSaved / goal.targetAmount) * 100), 100) : 0;
+        return {
+          ...goal,
+          totalSaved,
+          monthlySaved,
+          remaining,
+          progress,
+          lastContributionDate: savingsLastContributionByGoalId.get(goal.id) || "",
+        };
+      })
+      .sort((a, b) => {
+        if (a.status !== b.status) {
+          if (a.status === "active") return -1;
+          if (b.status === "active") return 1;
+          if (a.status === "completed") return -1;
+          if (b.status === "completed") return 1;
+        }
+        return b.totalSaved - a.totalSaved;
+      });
+  }, [data.savingsGoals, goalStatusFilter, monthlySavingsByGoalId, savingsByGoalId, savingsLastContributionByGoalId]);
+  const overviewTypeCards = useMemo(() => ([
+    {
+      type: "income" as const,
+      title: "الدخل",
+      total: monthlyTotals.income,
+      description: "كل مصادر الدخل المسجلة لهذا الشهر",
+      tone: "text-emerald-600 dark:text-emerald-400",
+    },
+    {
+      type: "expense" as const,
+      title: "المصروفات",
+      total: monthlyTotals.expenses,
+      description: "المصروفات التشغيلية بدون الادخار",
+      tone: "text-rose-600 dark:text-rose-400",
+    },
+    {
+      type: "bill_payment" as const,
+      title: "الفواتير",
+      total: monthlyTotals.bills,
+      description: "فواتير مرتبطة باستحقاقات ثابتة",
+      tone: "text-amber-600 dark:text-amber-400",
+    },
+    {
+      type: "debt_payment" as const,
+      title: "الديون",
+      total: monthlyTotals.debts,
+      description: "دفعات القروض والبطاقات والالتزامات",
+      tone: "text-indigo-600 dark:text-indigo-400",
+    },
+  ]), [monthlyTotals]);
+  const overviewDetailData = useMemo(() => {
+    if (!overviewDetailType) return null;
+
+    const typeTransactions = currentMonthTransactions.filter((tx) => {
+      if (tx.type !== overviewDetailType) return false;
+      if (overviewDetailType === "expense") return !tx.savingsGoalId;
+      return true;
+    });
+    const total = typeTransactions.reduce((sum, tx) => sum + tx.amount, 0);
+    const breakdownMap = new Map<string, number>();
+    for (const tx of typeTransactions) {
+      breakdownMap.set(tx.subcategoryId, (breakdownMap.get(tx.subcategoryId) || 0) + tx.amount);
+    }
+    const breakdown = Array.from(breakdownMap.entries())
+      .map(([subcategoryId, value]) => {
+        const subcategory = data.categories.find((category) => category.id === subcategoryId);
+        return {
+          id: subcategoryId,
+          label: subcategory?.name || "غير مصنف",
+          emoji: categoryEmoji(subcategory?.name || "", subcategory?.type || overviewDetailType),
+          value,
+        };
+      })
+      .sort((a, b) => b.value - a.value);
+
+    const recent = typeTransactions
+      .slice()
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .slice(0, 5);
+    const trendMonths = Array.from({ length: 4 }, (_, index) => {
+      const date = new Date();
+      date.setMonth(date.getMonth() - (3 - index));
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      const monthTotal = data.transactions
+        .filter((tx) => getMonthKey(tx.date) === monthKey)
+        .filter((tx) => {
+          if (tx.type !== overviewDetailType) return false;
+          if (overviewDetailType === "expense") return !tx.savingsGoalId;
+          return true;
+        })
+        .reduce((sum, tx) => sum + tx.amount, 0);
+      return {
+        monthKey,
+        label: monthKey,
+        total: monthTotal,
+      };
+    });
+
+    return {
+      meta: overviewTypeCards.find((item) => item.type === overviewDetailType) || null,
+      total,
+      breakdown,
+      recent,
+      trendMonths,
+    };
+  }, [overviewDetailType, currentMonthTransactions, data.categories, data.transactions, overviewTypeCards]);
 
   const overviewSegments = useMemo(() => {
     if (expenseByCategory.length === 0 || monthlyTotals.totalOutflow <= 0) return [];
@@ -359,6 +517,8 @@ export default function BudgetPlanner() {
   const activeOverviewSegment = hoveredOverviewSegment
     ? donutSegments.find((segment) => segment.id === hoveredOverviewSegment) || null
     : null;
+  const hasOverviewData = monthlyTotals.income > 0 || monthlyTotals.totalOutflow > 0;
+  const remainingSpendableBalance = monthlyTotals.income - monthlyTotals.totalOutflow;
   const upcomingWarnings = useMemo(() => {
     const warnings: Array<{ tone: "good" | "warn" | "danger"; text: string }> = [];
 
@@ -439,6 +599,7 @@ export default function BudgetPlanner() {
 
   const ensureRecurringForMonth = (current: BudgetData, monthKey: string): BudgetData => {
     const newTransactions: BudgetTransaction[] = [];
+    const defaultExpenseSubcategoryId = pickDefaultCategoryId(current.categories, "expense");
 
     for (const template of current.recurringTemplates) {
       if (monthLessThan(monthKey, template.startMonth)) continue;
@@ -454,6 +615,7 @@ export default function BudgetPlanner() {
         title,
         amount: template.amount,
         date,
+        subcategoryId: template.categoryId,
         categoryId: template.categoryId,
         note: template.note || "معاملة شهرية تلقائية",
         recurringTemplateId: template.id,
@@ -473,6 +635,7 @@ export default function BudgetPlanner() {
         title: current.categories.find((c) => c.id === bill.categoryId)?.name || "فاتورة",
         amount: bill.expectedAmount,
         date,
+        subcategoryId: bill.categoryId,
         categoryId: bill.categoryId,
         note: "دفعة شهرية تلقائية",
         linkedId: bill.id,
@@ -492,9 +655,31 @@ export default function BudgetPlanner() {
         title: current.categories.find((c) => c.id === debt.categoryId)?.name || "دين",
         amount: debt.totalAmount,
         date,
+        subcategoryId: debt.categoryId,
         categoryId: debt.categoryId,
         note: "دفعة شهرية تلقائية",
         linkedId: debt.id,
+      });
+    }
+
+    for (const goal of current.savingsGoals) {
+      if (!goal.monthlyContributionEnabled || goal.monthlyContributionAmount <= 0 || goal.status !== "active") continue;
+      if (goal.excludedMonths?.includes(monthKey)) continue;
+      const recurringTemplateId = `goal:${goal.id}`;
+      const exists = current.transactions.some((tx) => tx.recurringTemplateId === recurringTemplateId && getMonthKey(tx.date) === monthKey);
+      if (exists || !defaultExpenseSubcategoryId) continue;
+
+      newTransactions.push({
+        id: createBudgetId(),
+        type: "expense",
+        title: goal.title,
+        amount: goal.monthlyContributionAmount,
+        date: `${monthKey}-${String(clampDay(1, monthKey)).padStart(2, "0")}`,
+        subcategoryId: defaultExpenseSubcategoryId,
+        categoryId: defaultExpenseSubcategoryId,
+        note: "مساهمة شهرية تلقائية",
+        savingsGoalId: goal.id,
+        recurringTemplateId,
       });
     }
 
@@ -511,39 +696,48 @@ export default function BudgetPlanner() {
     setTransactionForm((prev) => ({
       ...prev,
       type,
-      categoryId: pickDefaultCategoryId(data.categories, type),
+      subcategoryId: pickDefaultCategoryId(data.categories, type),
+      savingsGoalId: type === "expense" ? prev.savingsGoalId : "",
     }));
     setIsRecurring(false);
-    setTransactionCategoryText("");
   };
 
-  const commitTransaction = (form: typeof transactionForm, recurring: boolean, successMessage?: string) => {
+  const commitTransaction = (form: TransactionFormState, recurring: boolean, successMessage?: string) => {
     const amount = parseAmountInput(form.amount);
-    if (!Number.isFinite(amount) || amount <= 0) return;
+    if (!Number.isFinite(amount) || amount <= 0 || !form.subcategoryId) return;
 
-    const date = todayISO();
-    const categoryInput = form.title.trim();
-    let successCategoryName = categoryInput || TRANSACTION_TYPE_LABEL[form.type];
+    const date = form.date || todayISO();
+    let successCategoryName = TRANSACTION_TYPE_LABEL[form.type];
 
     applyData((current) => {
       let next = { ...current };
-      const foundCategory = current.categories.find((c) => c.type === form.type && c.name.trim().toLowerCase() === categoryInput.toLowerCase());
-      let resolvedCategory = foundCategory || (form.categoryId ? current.categories.find((c) => c.id === form.categoryId) : undefined);
-
-      if (!resolvedCategory) {
-        const fallbackName = categoryInput || pickDefaultCategoryName(current.categories, form.type) || TRANSACTION_TYPE_LABEL[form.type];
-        const newCategory: BudgetCategory = { id: createBudgetId(), type: form.type, name: fallbackName };
-        next = { ...next, categories: [newCategory, ...next.categories] };
-        resolvedCategory = newCategory;
-      }
-
+      const resolvedCategory = current.categories.find((c) => c.id === form.subcategoryId && c.type === form.type);
+      if (!resolvedCategory) return current;
       successCategoryName = resolvedCategory.name;
       const resolvedCategoryId = resolvedCategory.id;
+      const resolvedSavingsGoalId = form.type === "expense" && form.savingsGoalId
+        ? current.savingsGoals.find((goal) => goal.id === form.savingsGoalId)?.id
+        : undefined;
       let linkedId: string | undefined;
       let recurringTemplateId: string | undefined;
       const dayOfMonth = Number(date.split("-")[2]) || 1;
 
-      if (recurring && form.type !== "saving" && form.type !== "bill_payment" && form.type !== "debt_payment") {
+      if (recurring && form.type === "expense" && resolvedSavingsGoalId) {
+        recurringTemplateId = `goal:${resolvedSavingsGoalId}`;
+        next = {
+          ...next,
+          savingsGoals: next.savingsGoals.map((goal) =>
+            goal.id === resolvedSavingsGoalId
+              ? {
+                  ...goal,
+                  monthlyContributionEnabled: true,
+                  monthlyContributionAmount: amount,
+                  excludedMonths: goal.excludedMonths.filter((month) => month !== getMonthKey(date)),
+                }
+              : goal
+          ),
+        };
+      } else if (recurring && form.type !== "bill_payment" && form.type !== "debt_payment") {
         const templateId = createBudgetId();
         recurringTemplateId = templateId;
         const nextTemplate: BudgetRecurringTemplate = {
@@ -600,11 +794,15 @@ export default function BudgetPlanner() {
       const payload: BudgetTransaction = {
         id: createBudgetId(),
         type: form.type,
-        title: resolvedCategory.name || TRANSACTION_TYPE_LABEL[form.type],
+        title: resolvedSavingsGoalId
+          ? current.savingsGoals.find((goal) => goal.id === resolvedSavingsGoalId)?.title || resolvedCategory.name
+          : resolvedCategory.name || TRANSACTION_TYPE_LABEL[form.type],
         amount,
         date,
+        subcategoryId: resolvedCategoryId,
         categoryId: resolvedCategoryId,
         note: form.note.trim(),
+        savingsGoalId: resolvedSavingsGoalId,
         linkedId,
         recurringTemplateId,
       };
@@ -613,14 +811,13 @@ export default function BudgetPlanner() {
     });
 
     setTransactionForm(emptyTransactionState("income", pickDefaultCategoryId(data.categories, "income")));
-    setTransactionCategoryText("");
     setIsRecurring(false);
     pushNotice(successMessage || `تمت إضافة ${successCategoryName || "المعاملة"} بنجاح`);
   };
 
   const saveTransaction = () => {
     const amount = parseAmountInput(transactionForm.amount);
-    if (!Number.isFinite(amount) || amount <= 0) {
+    if (!Number.isFinite(amount) || amount <= 0 || !transactionForm.subcategoryId) {
       pushNotice("أدخل مبلغا صحيحا");
       return;
     }
@@ -628,8 +825,6 @@ export default function BudgetPlanner() {
     const formToSave = {
       ...transactionForm,
       date: todayISO(),
-      title: transactionCategoryText.trim(),
-      categoryId: "",
     };
 
     commitTransaction(formToSave, isRecurring);
@@ -656,6 +851,11 @@ export default function BudgetPlanner() {
         if (skipped.includes(selectedMonth)) return debt;
         return { ...(debt as any), skippedMonths: [...skipped, selectedMonth] } as unknown as BudgetData["debts"][number];
       }),
+      savingsGoals: current.savingsGoals.map((goal) => {
+        if (tx.recurringTemplateId !== `goal:${goal.id}`) return goal;
+        if (goal.excludedMonths.includes(selectedMonth)) return goal;
+        return { ...goal, excludedMonths: [...goal.excludedMonths, selectedMonth] };
+      }),
       transactions: current.transactions.filter((item) => item.id !== tx.id),
     }));
   };
@@ -671,7 +871,7 @@ export default function BudgetPlanner() {
   };
 
   const deleteCategory = (id: string) => {
-    const used = data.transactions.some((tx) => tx.categoryId === id) || data.bills.some((b) => b.categoryId === id) || data.debts.some((d) => d.categoryId === id);
+    const used = data.transactions.some((tx) => tx.subcategoryId === id) || data.bills.some((b) => b.categoryId === id) || data.debts.some((d) => d.categoryId === id);
     if (used) {
       window.alert("لا يمكن حذف الفئة لأنها مرتبطة ببيانات حالية.");
       return;
@@ -691,24 +891,49 @@ export default function BudgetPlanner() {
   };
   const addSavingGoal = () => {
     const targetAmount = parseAmountInput(goalTargetAmount);
+    const recurringAmount = parseAmountInput(goalRecurringAmount);
     if (!goalTitle.trim() || !Number.isFinite(targetAmount) || targetAmount <= 0) return;
 
     applyData((current) => ({
       ...current,
-      savingsGoals: [{ id: createBudgetId(), title: goalTitle.trim(), targetAmount, targetDate: endOfMonthISO(selectedMonth) }, ...current.savingsGoals],
+      savingsGoals: [{
+        id: createBudgetId(),
+        title: goalTitle.trim(),
+        category: goalCategory,
+        targetAmount,
+        targetDate: goalTargetDate || "",
+        monthlyContributionEnabled: goalRecurringEnabled && Number.isFinite(recurringAmount) && recurringAmount > 0,
+        monthlyContributionAmount: goalRecurringEnabled && Number.isFinite(recurringAmount) && recurringAmount > 0 ? recurringAmount : 0,
+        excludedMonths: [],
+        status: "active",
+      }, ...current.savingsGoals],
     }));
 
     setGoalTitle("");
     setGoalTargetAmount("");
+    setGoalCategory(DEFAULT_SAVINGS_CATEGORY);
+    setGoalTargetDate(endOfMonthISO(selectedMonth));
+    setGoalRecurringEnabled(false);
+    setGoalRecurringAmount("");
   };
 
   const addContribution = (goal: BudgetSavingGoal, amount: number) => {
-    const categoryId = categoriesByType.saving[0]?.id;
-    if (!Number.isFinite(amount) || amount <= 0 || !categoryId) return;
+    const subcategoryId = pickDefaultCategoryId(data.categories, "expense");
+    if (!Number.isFinite(amount) || amount <= 0 || !subcategoryId) return;
 
     applyData((current) => ({
       ...current,
-      transactions: [{ id: createBudgetId(), type: "saving", title: "مساهمة ادخار", amount, date: todayISO(), categoryId, note: "إضافة إلى هدف", linkedId: goal.id }, ...current.transactions],
+      transactions: [{
+        id: createBudgetId(),
+        type: "expense",
+        title: goal.title,
+        amount,
+        date: todayISO(),
+        subcategoryId,
+        categoryId: subcategoryId,
+        note: "ربط بهدف ادخار",
+        savingsGoalId: goal.id,
+      }, ...current.transactions],
     }));
   };
 
@@ -748,7 +973,8 @@ export default function BudgetPlanner() {
       amount: String(tx.amount),
       date: tx.date,
       note: tx.note,
-      categoryId: tx.categoryId,
+      subcategoryId: tx.subcategoryId,
+      savingsGoalId: tx.savingsGoalId || "",
     });
     setEditApplyScope("current");
   };
@@ -756,13 +982,16 @@ export default function BudgetPlanner() {
   const saveEditTransaction = () => {
     if (!editDialog.tx) return;
     const amount = parseAmountInput(editDialog.amount);
-    if (!Number.isFinite(amount) || amount <= 0 || !editDialog.categoryId) return;
+    if (!Number.isFinite(amount) || amount <= 0 || !editDialog.subcategoryId) return;
 
     const applyAllMonths = isRecurringTransaction(editDialog.tx) && editApplyScope === "all";
     const nextDay = Number(editDialog.date.split("-")[2]) || 1;
 
     applyData((current) => {
-      const nextTitle = current.categories.find((c) => c.id === editDialog.categoryId)?.name || editDialog.tx?.title || "";
+      const nextTitle = current.categories.find((c) => c.id === editDialog.subcategoryId)?.name || editDialog.tx?.title || "";
+      const nextSavingsGoalId = editDialog.tx?.type === "expense" && editDialog.savingsGoalId
+        ? current.savingsGoals.find((goal) => goal.id === editDialog.savingsGoalId)?.id || ""
+        : "";
 
       if (!applyAllMonths) {
         return {
@@ -775,12 +1004,18 @@ export default function BudgetPlanner() {
                   amount,
                   date: editDialog.date,
                   note: editDialog.note.trim(),
-                  categoryId: editDialog.categoryId,
+                  subcategoryId: editDialog.subcategoryId,
+                  categoryId: editDialog.subcategoryId,
+                  savingsGoalId: nextSavingsGoalId || undefined,
                 }
               : tx,
           ),
         };
       }
+
+      const recurringGoalId = editDialog.tx?.recurringTemplateId?.startsWith("goal:")
+        ? editDialog.tx.recurringTemplateId.replace("goal:", "")
+        : "";
 
       return {
         ...current,
@@ -788,7 +1023,7 @@ export default function BudgetPlanner() {
           template.id === editDialog.tx?.recurringTemplateId
             ? {
                 ...template,
-                categoryId: editDialog.categoryId,
+                categoryId: editDialog.subcategoryId,
                 amount,
                 note: editDialog.note.trim(),
                 dayOfMonth: nextDay,
@@ -797,13 +1032,22 @@ export default function BudgetPlanner() {
         ),
         bills: current.bills.map((bill) =>
           bill.id === editDialog.tx?.linkedId && editDialog.tx?.type === "bill_payment"
-            ? { ...bill, title: nextTitle, dueDay: nextDay, expectedAmount: amount, categoryId: editDialog.categoryId }
+            ? { ...bill, title: nextTitle, dueDay: nextDay, expectedAmount: amount, categoryId: editDialog.subcategoryId }
             : bill,
         ),
         debts: current.debts.map((debt) =>
           debt.id === editDialog.tx?.linkedId && editDialog.tx?.type === "debt_payment"
-            ? { ...debt, title: nextTitle, dueDay: nextDay, totalAmount: amount, categoryId: editDialog.categoryId }
+            ? { ...debt, title: nextTitle, dueDay: nextDay, totalAmount: amount, categoryId: editDialog.subcategoryId }
             : debt,
+        ),
+        savingsGoals: current.savingsGoals.map((goal) =>
+          goal.id === recurringGoalId
+            ? {
+                ...goal,
+                monthlyContributionAmount: amount,
+                monthlyContributionEnabled: true,
+              }
+            : goal
         ),
         transactions: current.transactions.map((tx) => {
           const sameLinked = editDialog.tx?.linkedId && tx.linkedId === editDialog.tx.linkedId;
@@ -814,15 +1058,17 @@ export default function BudgetPlanner() {
             ...tx,
             title: nextTitle,
             amount,
-            categoryId: editDialog.categoryId,
+            subcategoryId: editDialog.subcategoryId,
+            categoryId: editDialog.subcategoryId,
             note: editDialog.note.trim(),
+            savingsGoalId: nextSavingsGoalId || undefined,
             date: `${monthKey}-${String(clampDay(nextDay, monthKey)).padStart(2, "0")}`
           };
         }),
       };
     });
 
-    setEditDialog({ open: false, tx: null, amount: "", date: todayISO(), note: "", categoryId: "" });
+    setEditDialog({ open: false, tx: null, amount: "", date: todayISO(), note: "", subcategoryId: "", savingsGoalId: "" });
     setEditApplyScope("current");
     pushNotice("تم تحديث العملية بنجاح");
   };
@@ -836,9 +1082,15 @@ export default function BudgetPlanner() {
     applyData((current) => ({
       ...current,
       savingsGoals: current.savingsGoals.filter((goal) => goal.id !== id),
-      transactions: current.transactions.filter((tx) => !(tx.type === "saving" && tx.linkedId === id)),
+      transactions: current.transactions.filter((tx) => tx.savingsGoalId !== id),
     }));
     pushNotice("تم حذف هدف الادخار");
+  };
+  const updateSavingGoalStatus = (id: string, status: BudgetSavingGoalStatus) => {
+    applyData((current) => ({
+      ...current,
+      savingsGoals: current.savingsGoals.map((goal) => goal.id === id ? { ...goal, status } : goal),
+    }));
   };
 
   return (
@@ -915,8 +1167,14 @@ export default function BudgetPlanner() {
                     <span>إضافة معاملة جديدة</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <CardContent className="space-y-4">
+                  <div className="rounded-2xl border bg-muted/40 p-3 text-right">
+                    <p className="text-sm font-medium text-foreground">إدخال منظم وواضح</p>
+                    <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                      اختر نوع العملية ثم الفئة الفرعية المناسبة. ويمكنك ربط المصروف بهدف ادخار بشكل منفصل من دون خلطه مع نوع العملية.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <Select value={transactionForm.type} onValueChange={(v) => configureTransactionType(v as BudgetTransactionType)}>
                       <SelectTrigger className="budget-rtl-select-trigger">
                         <SelectValue />
@@ -927,13 +1185,18 @@ export default function BudgetPlanner() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <Input
-                      dir="rtl"
-                      className="budget-rtl-input"
-                      value={transactionCategoryText}
-                      onChange={(e) => setTransactionCategoryText(e.target.value)}
-                      placeholder="اكتب الفئة (مثال: راتب, كهرباء)"
-                    />
+                    <Select value={transactionForm.subcategoryId} onValueChange={(value) => setTransactionForm((prev) => ({ ...prev, subcategoryId: value }))}>
+                      <SelectTrigger className="budget-rtl-select-trigger">
+                        <SelectValue placeholder="الفئة الفرعية" />
+                      </SelectTrigger>
+                      <SelectContent dir="rtl" className="budget-rtl-select-content budget-roomy-select-content">
+                        {transactionCategories.map((category) => (
+                          <SelectItem key={category.id} value={category.id} className="budget-select-item">
+                            {`${categoryEmoji(category.name, category.type)} ${category.name}`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <Input
                       dir="rtl"
                       type="text"
@@ -948,16 +1211,52 @@ export default function BudgetPlanner() {
                       className="budget-rtl-input"
                       value={transactionForm.note}
                       onChange={(e) => setTransactionForm((prev) => ({ ...prev, note: e.target.value }))}
-                      placeholder="ملاحظة (اختياري)"
+                      placeholder="أضف ملاحظة"
                     />
                   </div>
-                  {RECURRING_ELIGIBLE_TYPES.includes(transactionForm.type as Exclude<BudgetTransactionType, "saving">) && (
-                    <div className="flex items-center gap-2">
-                      <Checkbox id="recurring" checked={isRecurring} onCheckedChange={(c) => setIsRecurring(!!c)} />
-                      <Label htmlFor="recurring" className="text-sm">معاملة شهرية تلقائية (ويمكن استثناء أي شهر لاحقاً)</Label>
+                  {transactionForm.type === "expense" && (
+                    <div className="space-y-2">
+                      <Label className="text-sm text-right">ربط بهدف ادخار</Label>
+                      <Select value={transactionForm.savingsGoalId || "none"} onValueChange={(value) => setTransactionForm((prev) => ({ ...prev, savingsGoalId: value === "none" ? "" : value }))}>
+                        <SelectTrigger className="budget-rtl-select-trigger">
+                          <SelectValue placeholder="بدون ربط" />
+                        </SelectTrigger>
+                        <SelectContent dir="rtl" className="budget-rtl-select-content budget-roomy-select-content">
+                          <SelectItem value="none" className="budget-select-item">بدون ربط</SelectItem>
+                          {data.savingsGoals.filter((goal) => goal.status === "active").map((goal) => (
+                            <SelectItem key={goal.id} value={goal.id} className="budget-select-item">
+                              {`${SAVINGS_GOAL_META[goal.category].emoji} ${goal.title}`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   )}
-                  <Button onClick={saveTransaction}>إضافة معاملة</Button>
+                  {RECURRING_ELIGIBLE_TYPES.includes(transactionForm.type) && (
+                    <div className="rounded-2xl border bg-card p-3">
+                      <div className="rtl-row items-center gap-3">
+                        <div className="flex-1 text-right">
+                          <p className="text-sm font-medium text-foreground">
+                            {transactionForm.type === "expense" && transactionForm.savingsGoalId ? "مساهمة شهرية تلقائية" : "معاملة شهرية تلقائية"}
+                          </p>
+                          <p className="mt-1 text-xs text-muted-foreground">يمكنك تفعيلها الآن، ثم استثناء أي شهر لاحقاً من داخل السجل.</p>
+                        </div>
+                        <Switch checked={isRecurring} onCheckedChange={setIsRecurring} />
+                      </div>
+                    </div>
+                  )}
+                  <div className="rtl-row items-center rounded-2xl border bg-muted/30 px-3 py-2">
+                    <div className="flex-1 text-right">
+                      <p className="text-xs text-muted-foreground">المسار الحالي</p>
+                      <p className="mt-1 text-sm font-medium text-foreground">
+                        {TRANSACTION_TYPE_LABEL[transactionForm.type]}
+                        {transactionForm.subcategoryId && ` • ${data.categories.find((category) => category.id === transactionForm.subcategoryId)?.name || "غير مصنف"}`}
+                        {transactionForm.savingsGoalId && ` • ${data.savingsGoals.find((goal) => goal.id === transactionForm.savingsGoalId)?.title || "هدف ادخار"}`}
+                      </p>
+                    </div>
+                    <Badge variant="secondary" className="shrink-0">{TYPE_EMOJI[transactionForm.type]}</Badge>
+                  </div>
+                  <Button className="w-full" onClick={saveTransaction}>إضافة معاملة</Button>
                 </CardContent>
               </Card>
               <Card>
@@ -967,7 +1266,7 @@ export default function BudgetPlanner() {
                     <span>إضافة هدف ادخار</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2">
+                <CardContent className="space-y-3">
                   <Input
                     dir="rtl"
                     className="budget-rtl-input"
@@ -975,6 +1274,18 @@ export default function BudgetPlanner() {
                     onChange={(e) => setGoalTitle(e.target.value)}
                     placeholder="اسم الهدف"
                   />
+                  <Select value={goalCategory} onValueChange={(value) => setGoalCategory(value as BudgetSavingGoalCategory)}>
+                    <SelectTrigger className="budget-rtl-select-trigger">
+                      <SelectValue placeholder="تصنيف الادخار" />
+                    </SelectTrigger>
+                    <SelectContent dir="rtl" className="budget-rtl-select-content budget-roomy-select-content">
+                      {SAVINGS_GOAL_CATEGORY_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value} className="budget-select-item">
+                          {`${SAVINGS_GOAL_META[option.value].emoji} ${option.label}`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <Input
                     dir="rtl"
                     type="text"
@@ -984,7 +1295,34 @@ export default function BudgetPlanner() {
                     placeholder={`المبلغ المستهدف (${symbol})`}
                     className="tabular-nums budget-rtl-input"
                   />
-                  <Button onClick={addSavingGoal}>إضافة الهدف</Button>
+                  <Input
+                    dir="ltr"
+                    type="date"
+                    value={goalTargetDate}
+                    onChange={(e) => setGoalTargetDate(e.target.value)}
+                    className="budget-date-input tabular-nums"
+                  />
+                  <div className="rounded-2xl border bg-muted/30 p-3 space-y-3">
+                    <div className="rtl-row items-center">
+                      <div className="flex-1 text-right">
+                        <p className="text-sm font-medium text-foreground">مساهمة شهرية تلقائية</p>
+                        <p className="mt-1 text-xs text-muted-foreground">ويمكن استثناء أي شهر لاحقاً</p>
+                      </div>
+                      <Switch checked={goalRecurringEnabled} onCheckedChange={setGoalRecurringEnabled} />
+                    </div>
+                    {goalRecurringEnabled && (
+                      <Input
+                        dir="rtl"
+                        type="text"
+                        inputMode="decimal"
+                        value={goalRecurringAmount}
+                        onChange={(e) => setGoalRecurringAmount(e.target.value)}
+                        placeholder={`المبلغ الشهري (${symbol})`}
+                        className="tabular-nums budget-rtl-input"
+                      />
+                    )}
+                  </div>
+                  <Button className="w-full" onClick={addSavingGoal}>إضافة الهدف</Button>
                 </CardContent>
               </Card>
 
@@ -995,33 +1333,89 @@ export default function BudgetPlanner() {
                     <span>أهداف الادخار</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-3">
+                <div className="rtl-row items-center">
+                  <div className="flex-1 text-right">
+                    <p className="text-sm font-medium text-foreground">متابعة تراكمية + شهرية</p>
+                    <p className="mt-1 text-xs text-muted-foreground">كل هدف يستمر عبر الأشهر، مع عرض مساهمة هذا الشهر بشكل منفصل.</p>
+                  </div>
+                  <Select value={goalStatusFilter} onValueChange={(value) => setGoalStatusFilter(value as typeof goalStatusFilter)}>
+                    <SelectTrigger className="h-8 w-[128px] budget-rtl-select-trigger">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent dir="rtl" className="budget-rtl-select-content">
+                      <SelectItem value="all" className="budget-select-item">الكل</SelectItem>
+                      <SelectItem value="active" className="budget-select-item">نشطة</SelectItem>
+                      <SelectItem value="completed" className="budget-select-item">مكتملة</SelectItem>
+                      <SelectItem value="archived" className="budget-select-item">مؤرشفة</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="space-y-2.5">
-                  {data.savingsGoals.length === 0 && <p className="text-sm text-muted-foreground">لا توجد أهداف ادخار بعد.</p>}
-                  {data.savingsGoals.map((goal) => {
-                    const saved = savingsByGoalId.get(goal.id) || 0;
-                    const progress = goal.targetAmount > 0 ? Math.min(Math.round((saved / goal.targetAmount) * 100), 100) : 0;
+                  {savingsGoalCards.length === 0 && <p className="text-sm text-right text-muted-foreground">لا توجد أهداف ادخار مطابقة حالياً.</p>}
+                  {savingsGoalCards.map((goal) => {
                     return (
-                      <div key={goal.id} className="group rounded-xl border bg-muted/50 p-3">
+                      <div key={goal.id} className="group rounded-2xl border bg-muted/50 p-3 shadow-sm">
                         <div className="rtl-row items-start">
                           <div className="flex-1 text-right">
-                            <p className="font-semibold text-foreground">{goal.title}</p>
-                            <p className="text-xs text-muted-foreground mt-1">الاستحقاق: {goal.targetDate}</p>
+                            <div className="rtl-row items-center gap-2">
+                              <p className="font-semibold text-foreground">{goal.title}</p>
+                              <Badge variant="secondary" className="rounded-full">{getSavingsStatusLabel(goal.status)}</Badge>
+                            </div>
+                            <div className="mt-2 flex flex-wrap justify-end gap-2 text-xs">
+                              <Badge variant="outline" className="rounded-full">{`${SAVINGS_GOAL_META[goal.category].emoji} ${getSavingsGoalCategoryLabel(goal.category)}`}</Badge>
+                              {goal.targetDate && <Badge variant="outline" className="rounded-full">{`الاستحقاق: ${goal.targetDate}`}</Badge>}
+                              {goal.monthlyContributionEnabled && <Badge variant="outline" className="rounded-full">{`تلقائي: ${formatAmount(goal.monthlyContributionAmount, data.settings.currency)}`}</Badge>}
+                            </div>
                           </div>
-                          <Button variant="destructive" size="sm" className="budget-value-left opacity-100 md:opacity-0 md:group-hover:opacity-100 transition text-xs h-7" onClick={() => deleteSavingGoal(goal.id)}>حذف</Button>
+                          <div className="budget-value-left flex items-center gap-2">
+                            <Select value={goal.status} onValueChange={(value) => updateSavingGoalStatus(goal.id, value as BudgetSavingGoalStatus)}>
+                              <SelectTrigger className="h-7 w-[96px] budget-rtl-select-trigger text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent dir="rtl" className="budget-rtl-select-content">
+                                <SelectItem value="active" className="budget-select-item">نشط</SelectItem>
+                                <SelectItem value="completed" className="budget-select-item">مكتمل</SelectItem>
+                                <SelectItem value="archived" className="budget-select-item">مؤرشف</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button variant="destructive" size="sm" className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition text-xs h-7" onClick={() => deleteSavingGoal(goal.id)}>حذف</Button>
+                          </div>
                         </div>
-                        <div className="mt-2 rtl-row text-xs">
-                          <span className="text-muted-foreground">تم ادخار</span>
-                          <span className="budget-value-left rtl-number text-foreground tabular-nums whitespace-nowrap">
-                            {`${formatAmount(saved, data.settings.currency)} / ${formatAmount(goal.targetAmount, data.settings.currency)}`}
-                          </span>
+                        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                          <div className="rounded-xl border bg-background/70 p-2.5 text-right">
+                            <p className="text-[11px] text-muted-foreground">الإجمالي</p>
+                            <p className="mt-1 rtl-number text-sm font-semibold text-foreground">{formatAmount(goal.totalSaved, data.settings.currency)}</p>
+                          </div>
+                          <div className="rounded-xl border bg-background/70 p-2.5 text-right">
+                            <p className="text-[11px] text-muted-foreground">هذا الشهر</p>
+                            <p className="mt-1 rtl-number text-sm font-semibold text-foreground">
+                              {goal.monthlySaved > 0 ? formatAmount(goal.monthlySaved, data.settings.currency) : "لا توجد مساهمة هذا الشهر"}
+                            </p>
+                          </div>
                         </div>
-                        <div className="mt-1.5 w-full h-2.5 bg-muted rounded-lg overflow-hidden">
-                          <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }} transition={{ duration: 0.35 }} className="h-full bg-emerald-500" />
+                        <div className="mt-3 grid grid-cols-3 gap-2 text-right text-xs">
+                          <div className="rounded-xl bg-background/70 p-2">
+                            <p className="text-muted-foreground">المستهدف</p>
+                            <p className="mt-1 rtl-number font-semibold text-foreground">{formatAmount(goal.targetAmount, data.settings.currency)}</p>
+                          </div>
+                          <div className="rounded-xl bg-background/70 p-2">
+                            <p className="text-muted-foreground">المتبقي</p>
+                            <p className="mt-1 rtl-number font-semibold text-foreground">{formatAmount(goal.remaining, data.settings.currency)}</p>
+                          </div>
+                          <div className="rounded-xl bg-background/70 p-2">
+                            <p className="text-muted-foreground">التقدم</p>
+                            <p className="mt-1 font-semibold text-foreground">{goal.progress}%</p>
+                          </div>
                         </div>
-                        <div className="mt-2 rtl-row">
-                          <span className="text-xs text-muted-foreground">{progress}%</span>
-                          <Button size="sm" className="text-xs h-7" onClick={() => openSavingContributionDialog(goal)}>إضافة مساهمة</Button>
+                        <div className="mt-3 h-2.5 w-full overflow-hidden rounded-lg bg-muted">
+                          <motion.div initial={{ width: 0 }} animate={{ width: `${goal.progress}%` }} transition={{ duration: 0.35 }} className="h-full bg-emerald-500" />
+                        </div>
+                        <div className="mt-3 rtl-row items-center">
+                          <div className="flex-1 text-right text-xs text-muted-foreground">
+                            {goal.lastContributionDate ? `آخر مساهمة: ${goal.lastContributionDate}` : "لم يتم تسجيل أي مساهمة بعد"}
+                          </div>
+                          <Button size="sm" className="h-8 rounded-xl text-xs" onClick={() => openSavingContributionDialog(goal)}>إضافة مساهمة</Button>
                         </div>
                       </div>
                     );
@@ -1045,11 +1439,83 @@ export default function BudgetPlanner() {
                   <div className="w-full h-2.5 rounded-lg bg-muted overflow-hidden mb-2"><motion.div initial={{ width: 0 }} animate={{ width: "100%" }} className="h-full bg-emerald-500" /></div>
                   <div className="rtl-row text-xs mb-1"><span className="flex-1 text-right">المصروف الكلي</span><span className="budget-value-left rtl-number tabular-nums">{formatAmount(monthlyTotals.totalOutflow, data.settings.currency)}</span></div>
                   <div className="w-full h-2.5 rounded-lg bg-muted overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: `${monthlyTotals.income > 0 ? Math.min((monthlyTotals.totalOutflow / monthlyTotals.income) * 100, 100) : 0}%` }} className="h-full bg-rose-500" /></div>
+                  {hasOverviewData && (
+                    <div className={cn(
+                      "mt-3 rounded-xl border px-3 py-2 text-right",
+                      remainingSpendableBalance >= 0
+                        ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                        : "border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-300"
+                    )}>
+                      <div className="rtl-row items-center gap-3">
+                        <p className="flex-1 text-xs font-medium leading-5">
+                          {remainingSpendableBalance >= 0
+                            ? "المتبقي القابل للصرف بعد المصروف الكلي"
+                            : "تم تجاوز الدخل بهذا المقدار بعد احتساب المصروف الكلي"}
+                        </p>
+                        <Badge variant="secondary" className="rtl-number whitespace-nowrap rounded-full border border-current/15 bg-background/80 px-2.5 py-1 text-[11px] font-semibold text-inherit shadow-none">
+                          {formatAmount(remainingSpendableBalance, data.settings.currency)}
+                        </Badge>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  {overviewTypeCards.map((item) => (
+                    <Button
+                      key={item.type}
+                      variant="outline"
+                      className="h-auto rounded-2xl border bg-card p-4 text-start font-normal"
+                      onClick={() => setOverviewDetailType(item.type)}
+                    >
+                      <div className="w-full rtl-row items-start">
+                        <div className="flex-1 text-right">
+                          <p className="text-sm font-semibold text-foreground">{item.title}</p>
+                          <p className="mt-1 text-xs leading-5 text-muted-foreground">{item.description}</p>
+                        </div>
+                        <div className="budget-value-left text-left">
+                          <p className={cn("rtl-number whitespace-nowrap text-base font-semibold", item.tone)}>{formatAmount(item.total, data.settings.currency)}</p>
+                          <p className="mt-1 text-[11px] text-muted-foreground">عرض التفاصيل</p>
+                        </div>
+                      </div>
+                    </Button>
+                  ))}
+                </div>
+
+                <div className="rounded-2xl border bg-card p-4">
+                  <div className="rtl-row items-center">
+                    <div className="flex-1 text-right">
+                      <p className="text-sm font-semibold text-foreground">صناديق الادخار النشطة</p>
+                      <p className="mt-1 text-xs text-muted-foreground">عرض سريع للإجمالي والمساهمة الشهرية لكل هدف نشط.</p>
+                    </div>
+                    <Badge variant="outline" className="rounded-full">{`${savingsGoalCards.filter((goal) => goal.status === "active").length} أهداف`}</Badge>
+                  </div>
+                  <div className="mt-3 space-y-2">
+                    {savingsGoalCards.filter((goal) => goal.status === "active").slice(0, 3).map((goal) => (
+                      <div key={goal.id} className="rounded-xl bg-muted/40 p-3">
+                        <div className="rtl-row items-center">
+                          <div className="flex-1 text-right">
+                            <p className="text-sm font-medium text-foreground">{`${SAVINGS_GOAL_META[goal.category].emoji} ${goal.title}`}</p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {`هذا الشهر: ${goal.monthlySaved > 0 ? formatAmount(goal.monthlySaved, data.settings.currency) : "لا توجد مساهمة هذا الشهر"}`}
+                            </p>
+                          </div>
+                          <div className="budget-value-left text-left">
+                            <p className="rtl-number text-sm font-semibold text-foreground">{formatAmount(goal.totalSaved, data.settings.currency)}</p>
+                            <p className="mt-1 text-[11px] text-muted-foreground">{`${goal.progress}%`}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {savingsGoalCards.filter((goal) => goal.status === "active").length === 0 && (
+                      <p className="text-sm text-right text-muted-foreground">لا توجد أهداف ادخار نشطة حالياً.</p>
+                    )}
+                  </div>
                 </div>
 
                 <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-center sm:gap-6" onMouseLeave={() => setHoveredOverviewSegment(null)}>
                   <div className="flex justify-center">
-                    <div className="budget-overview-donut relative h-56 w-56">
+                    <div className="budget-overview-donut relative h-60 w-60">
                       <svg viewBox="0 0 180 180" className="w-full h-full drop-shadow-sm">
                         <circle cx="90" cy="90" r="56" fill="none" stroke="rgba(148, 163, 184, 0.18)" strokeWidth="18" />
                         {donutSegments.map((segment) => (
@@ -1091,9 +1557,9 @@ export default function BudgetPlanner() {
                         )}
                       </svg>
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="w-20 h-20 rounded-full bg-card border border-border flex flex-col items-center justify-center text-center px-1">
+                        <div className="flex h-24 w-24 flex-col items-center justify-center rounded-full border border-border bg-card px-2 text-center">
                           <p className="text-[11px] text-muted-foreground leading-tight">{activeOverviewSegment?.name || "إجمالي الصرف"}</p>
-                          <p className="text-sm font-bold text-foreground tabular-nums">{activeOverviewSegment ? `${activeOverviewSegment.percent}%` : formatAmount(monthlyTotals.totalOutflow, data.settings.currency)}</p>
+                          <p className="rtl-number whitespace-nowrap text-sm font-bold text-foreground tabular-nums">{activeOverviewSegment ? `${activeOverviewSegment.percent}%` : formatAmount(monthlyTotals.totalOutflow, data.settings.currency)}</p>
                         </div>
                       </div>
                     </div>
@@ -1175,17 +1641,18 @@ export default function BudgetPlanner() {
                       <SelectItem value="expense" className="budget-select-item">مصروف</SelectItem>
                       <SelectItem value="bill_payment" className="budget-select-item">فاتورة</SelectItem>
                       <SelectItem value="debt_payment" className="budget-select-item">دين</SelectItem>
-                      <SelectItem value="other" className="budget-select-item">أخرى</SelectItem>
+                      <SelectItem value="linked_savings" className="budget-select-item">مرتبطة بادخار</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2 max-h-[520px] overflow-auto modern-scrollbar">
                   {recentTransactions.length === 0 && <p className="text-sm text-muted-foreground">لا توجد عمليات مطابقة.</p>}
                   {recentTransactions.map((tx) => {
-                    const category = data.categories.find((c) => c.id === tx.categoryId);
+                    const category = data.categories.find((c) => c.id === tx.subcategoryId);
+                    const linkedGoal = tx.savingsGoalId ? data.savingsGoals.find((goal) => goal.id === tx.savingsGoalId) : null;
                     const emoji = categoryEmoji(category?.name || "", category?.type || tx.type);
-                    const rowTitle = tx.type === "saving" ? "🏦 مساهمة ادخار" : `${emoji} ${category?.name || TRANSACTION_TYPE_LABEL[tx.type]}`;
-                    const metaLine = `${TRANSACTION_TYPE_LABEL[tx.type]} • ${tx.date}`;
+                    const rowTitle = linkedGoal ? `${SAVINGS_GOAL_META[linkedGoal.category].emoji} ${linkedGoal.title}` : `${emoji} ${category?.name || TRANSACTION_TYPE_LABEL[tx.type]}`;
+                    const metaLine = `${TRANSACTION_TYPE_LABEL[tx.type]} • ${tx.date}${linkedGoal ? " • ربط بهدف ادخار" : ""}`;
 
                     return (
                       <Button key={tx.id} variant="outline" className="w-full h-auto justify-between p-3 text-start font-normal" onClick={() => setOperationActionsTx(tx)}>
@@ -1246,7 +1713,83 @@ export default function BudgetPlanner() {
           )}
         </DialogContent>
       </Dialog>
-      <Dialog open={editDialog.open && !!editDialog.tx} onOpenChange={(open) => { if (!open) setEditDialog({ open: false, tx: null, amount: "", date: todayISO(), note: "", categoryId: "" }); }}>
+      <Dialog open={!!overviewDetailType} onOpenChange={(open) => { if (!open) setOverviewDetailType(null); }}>
+        <DialogContent className="max-w-2xl" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>{overviewDetailData?.meta?.title || "تفاصيل القسم"}</DialogTitle>
+            <DialogDescription>{overviewDetailData?.meta?.description || "عرض تفصيلي قابل للتوسعة لاحقاً."}</DialogDescription>
+          </DialogHeader>
+          {overviewDetailData && (
+            <div className="space-y-4">
+              <div className="rounded-2xl border bg-muted/40 p-4">
+                <div className="rtl-row items-center">
+                  <div className="flex-1 text-right">
+                    <p className="text-sm font-medium text-foreground">الإجمالي لهذا الشهر</p>
+                    <p className="mt-1 text-xs text-muted-foreground">نقطة انطلاق سريعة قبل إضافة الرسم البياني الكامل لاحقاً.</p>
+                  </div>
+                  <Badge variant="secondary" className="rtl-number rounded-full px-3 py-1">{formatAmount(overviewDetailData.total, data.settings.currency)}</Badge>
+                </div>
+              </div>
+              <div className="rounded-2xl border bg-card p-4">
+                <div className="rtl-row items-center">
+                  <p className="flex-1 text-right text-sm font-medium text-foreground">اتجاه الأشهر الأخيرة</p>
+                  <Badge variant="outline" className="rounded-full">Placeholder</Badge>
+                </div>
+                <div className="mt-4 grid grid-cols-4 gap-2">
+                  {overviewDetailData.trendMonths.map((item) => {
+                    const max = Math.max(...overviewDetailData.trendMonths.map((entry) => entry.total), 1);
+                    const height = item.total > 0 ? Math.max((item.total / max) * 100, 12) : 8;
+                    return (
+                      <div key={item.monthKey} className="flex flex-col items-center justify-end gap-2 rounded-xl bg-muted/40 p-2">
+                        <div className="flex h-24 items-end">
+                          <div className="w-8 rounded-t-lg bg-primary/70" style={{ height: `${height}%` }} />
+                        </div>
+                        <p className="rtl-number text-[11px] font-medium text-foreground">{formatAmount(item.total, data.settings.currency)}</p>
+                        <p className="text-center text-[10px] leading-4 text-muted-foreground">{item.label}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="rounded-2xl border bg-card p-4">
+                  <p className="text-sm font-medium text-right text-foreground">تفصيل الفئات الفرعية</p>
+                  <Separator className="my-3" />
+                  <div className="space-y-2">
+                    {overviewDetailData.breakdown.length === 0 && <p className="text-sm text-right text-muted-foreground">لا توجد بيانات تفصيلية بعد.</p>}
+                    {overviewDetailData.breakdown.map((item) => (
+                      <div key={item.id} className="rtl-row rounded-xl bg-muted/40 p-2.5 text-sm">
+                        <p className="flex-1 text-right font-medium text-foreground">{`${item.emoji} ${item.label}`}</p>
+                        <p className="budget-value-left rtl-number text-muted-foreground">{formatAmount(item.value, data.settings.currency)}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="rounded-2xl border bg-card p-4">
+                  <p className="text-sm font-medium text-right text-foreground">أحدث العمليات</p>
+                  <Separator className="my-3" />
+                  <div className="space-y-2">
+                    {overviewDetailData.recent.length === 0 && <p className="text-sm text-right text-muted-foreground">لا توجد عمليات حديثة لهذا القسم.</p>}
+                    {overviewDetailData.recent.map((tx) => {
+                      const subcategory = data.categories.find((category) => category.id === tx.subcategoryId);
+                      return (
+                        <div key={tx.id} className="rounded-xl bg-muted/40 p-2.5">
+                          <div className="rtl-row text-sm">
+                            <p className="flex-1 text-right font-medium text-foreground">{subcategory?.name || tx.title}</p>
+                            <p className="budget-value-left rtl-number text-muted-foreground">{formatAmount(tx.amount, data.settings.currency)}</p>
+                          </div>
+                          <p className="mt-1 text-right text-xs text-muted-foreground">{tx.date}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      <Dialog open={editDialog.open && !!editDialog.tx} onOpenChange={(open) => { if (!open) setEditDialog({ open: false, tx: null, amount: "", date: todayISO(), note: "", subcategoryId: "", savingsGoalId: "" }); }}>
           <DialogContent className="max-w-md" dir="rtl">
           <DialogHeader>
             <DialogTitle>تعديل العملية</DialogTitle>
@@ -1279,7 +1822,7 @@ export default function BudgetPlanner() {
                   </div>
                 </div>
               )}
-              <Select value={editDialog.categoryId} onValueChange={(v) => setEditDialog((prev) => ({ ...prev, categoryId: v }))}>
+              <Select value={editDialog.subcategoryId} onValueChange={(v) => setEditDialog((prev) => ({ ...prev, subcategoryId: v }))}>
                 <SelectTrigger className="budget-rtl-select-trigger"><SelectValue /></SelectTrigger>
                 <SelectContent dir="rtl" className="budget-rtl-select-content budget-roomy-select-content">
                   {data.categories.filter((c) => c.type === editDialog.tx?.type).map((cat) => (
@@ -1287,17 +1830,28 @@ export default function BudgetPlanner() {
                   ))}
                 </SelectContent>
               </Select>
+              {editDialog.tx.type === "expense" && (
+                <Select value={editDialog.savingsGoalId || "none"} onValueChange={(v) => setEditDialog((prev) => ({ ...prev, savingsGoalId: v === "none" ? "" : v }))}>
+                  <SelectTrigger className="budget-rtl-select-trigger"><SelectValue placeholder="ربط بهدف ادخار" /></SelectTrigger>
+                  <SelectContent dir="rtl" className="budget-rtl-select-content budget-roomy-select-content">
+                    <SelectItem value="none" className="budget-select-item">بدون ربط</SelectItem>
+                    {data.savingsGoals.filter((goal) => goal.status === "active" || goal.id === editDialog.savingsGoalId).map((goal) => (
+                      <SelectItem key={goal.id} value={goal.id} className="budget-select-item">{`${SAVINGS_GOAL_META[goal.category].emoji} ${goal.title}`}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
               <Input
                 dir="rtl"
                 className="budget-rtl-input"
                 value={editDialog.note}
                 onChange={(e) => setEditDialog((prev) => ({ ...prev, note: e.target.value }))}
-                placeholder="ملاحظة"
+                placeholder="أضف ملاحظة"
               />
             </div>
           )}
           <DialogFooter className="sm:flex-row-reverse">
-            <Button variant="secondary" onClick={() => setEditDialog({ open: false, tx: null, amount: "", date: todayISO(), note: "", categoryId: "" })}>إلغاء</Button>
+            <Button variant="secondary" onClick={() => setEditDialog({ open: false, tx: null, amount: "", date: todayISO(), note: "", subcategoryId: "", savingsGoalId: "" })}>إلغاء</Button>
             <Button onClick={saveEditTransaction}>حفظ</Button>
           </DialogFooter>
         </DialogContent>
