@@ -912,14 +912,14 @@ export default function BudgetPlanner() {
           <SummaryCard title="مصروفات" amount={monthlyTotals.expenses} currency={data.settings.currency} tone="expense" />
           <SummaryCard title="فواتير + ديون" amount={monthlyTotals.bills + monthlyTotals.debts} currency={data.settings.currency} tone="bill" />
           <SummaryCard title="ادخار" amount={monthlyTotals.savings} currency={data.settings.currency} tone="saving" />
-          <SummaryCard title="الصافي" amount={monthlyTotals.net} currency={data.settings.currency} tone={monthlyTotals.net >= 0 ? "income" : "expense"} />
+          <SummaryCard className="col-span-2 lg:col-span-1" title="الصافي" amount={monthlyTotals.net} currency={data.settings.currency} tone={monthlyTotals.net >= 0 ? "income" : "expense"} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-5 space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base rtl-header budget-widget-title">
+                  <CardTitle className="text-base budget-icon-title">
                     <Plus className="w-4 h-4 text-primary" />
                     إضافة معاملة جديدة
                   </CardTitle>
@@ -971,7 +971,7 @@ export default function BudgetPlanner() {
               </Card>
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base rtl-header budget-widget-title">
+                  <CardTitle className="text-base budget-icon-title">
                     <PiggyBank className="w-4 h-4 text-emerald-500" />
                     إضافة هدف ادخار
                   </CardTitle>
@@ -1010,7 +1010,7 @@ export default function BudgetPlanner() {
                     return (
                       <div key={goal.id} className="group rounded-xl border bg-muted/50 p-3">
                         <div className="rtl-row items-start">
-                          <div>
+                          <div className="flex-1 text-right">
                             <p className="font-semibold text-foreground">{goal.title}</p>
                             <p className="text-xs text-muted-foreground mt-1">الاستحقاق: {goal.targetDate}</p>
                           </div>
@@ -1044,9 +1044,9 @@ export default function BudgetPlanner() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                 <div className="mb-3 rounded-xl border bg-muted/50 p-3">
-                  <div className="rtl-row text-xs mb-1"><span>الدخل</span><span className="rtl-number tabular-nums">{formatAmount(monthlyTotals.income, data.settings.currency)}</span></div>
+                  <div className="rtl-row text-xs mb-1"><span className="text-right">الدخل</span><span className="rtl-number tabular-nums">{formatAmount(monthlyTotals.income, data.settings.currency)}</span></div>
                   <div className="w-full h-2.5 rounded-lg bg-muted overflow-hidden mb-2"><motion.div initial={{ width: 0 }} animate={{ width: "100%" }} className="h-full bg-emerald-500" /></div>
-                  <div className="rtl-row text-xs mb-1"><span>المصروف الكلي</span><span className="rtl-number tabular-nums">{formatAmount(monthlyTotals.totalOutflow, data.settings.currency)}</span></div>
+                  <div className="rtl-row text-xs mb-1"><span className="text-right">المصروف الكلي</span><span className="rtl-number tabular-nums">{formatAmount(monthlyTotals.totalOutflow, data.settings.currency)}</span></div>
                   <div className="w-full h-2.5 rounded-lg bg-muted overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: `${monthlyTotals.income > 0 ? Math.min((monthlyTotals.totalOutflow / monthlyTotals.income) * 100, 100) : 0}%` }} className="h-full bg-rose-500" /></div>
                 </div>
 
@@ -1107,7 +1107,7 @@ export default function BudgetPlanner() {
                         className={cn("rounded-xl border p-2.5 transition", isActive ? "border-primary/40 bg-primary/5" : "bg-muted/50")}
                       >
                         <div className="rtl-row text-sm mb-1">
-                          <p className="font-medium text-foreground">{`${segment.emoji} ${segment.name}`}</p>
+                          <p className="flex-1 text-right font-medium text-foreground">{`${segment.emoji} ${segment.name}`}</p>
                           <p className="text-muted-foreground tabular-nums"><span className="inline-block rtl-number tabular-nums whitespace-nowrap">{formatAmount(segment.total, data.settings.currency)}</span> • {segment.percent}%</p>
                         </div>
                         <div className="w-full h-2.5 bg-muted rounded-lg overflow-hidden">
@@ -1122,7 +1122,7 @@ export default function BudgetPlanner() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base rtl-header budget-widget-title">
+                  <CardTitle className="text-base budget-icon-title">
                     <CalendarClock className="w-4 h-4 text-primary" />
                     آخر عمليات هذا الشهر
                   </CardTitle>
@@ -1162,7 +1162,7 @@ export default function BudgetPlanner() {
                     return (
                       <Button key={tx.id} variant="outline" className="w-full h-auto justify-between p-3 text-start font-normal" onClick={() => setOperationActionsTx(tx)}>
                         <div className="rtl-row items-start w-full">
-                          <div>
+                          <div className="flex-1 text-right">
                             <p className="font-semibold text-foreground">{rowTitle}</p>
                             <p className="text-xs text-muted-foreground mt-1">{metaLine}</p>
                             {tx.note && <p className="text-xs text-muted-foreground mt-1">{tx.note}</p>}
@@ -1346,7 +1346,7 @@ export default function BudgetPlanner() {
                             onChange={(e) => setEditingCategoryName(e.target.value)}
                           />
                         ) : (
-                          <p className="font-medium text-foreground text-right">{`${categoryEmoji(cat.name, cat.type)} ${cat.name}`}</p>
+                          <p className="flex-1 font-medium text-foreground text-right">{`${categoryEmoji(cat.name, cat.type)} ${cat.name}`}</p>
                         )}
                         <div className="budget-actions">
                           {editingCategoryId === cat.id ? (
@@ -1372,11 +1372,13 @@ export default function BudgetPlanner() {
 }
 
 function SummaryCard({
+  className,
   title,
   amount,
   currency,
   tone,
 }: {
+  className?: string;
   title: string;
   amount: number;
   currency: BudgetData["settings"]["currency"];
@@ -1409,7 +1411,7 @@ function SummaryCard({
   const Icon = entry.icon;
 
   return (
-    <Card className="p-5 transition-all hover:shadow-md">
+    <Card className={cn("p-5 transition-all hover:shadow-md", className)}>
       <CardContent className="p-0">
         <div className="rtl-row items-start mb-2">
           <p className="text-xs font-semibold tracking-wide text-muted-foreground text-right">{title}</p>

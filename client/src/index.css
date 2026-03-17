@@ -199,6 +199,14 @@
     @apply text-right w-full;
   }
 
+  .budget-icon-title {
+    @apply flex w-full items-center justify-end gap-2 text-right;
+  }
+
+  [dir="rtl"] .budget-icon-title {
+    flex-direction: row-reverse;
+  }
+
   .budget-actions {
     @apply flex items-center gap-1;
   }
