@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { ArrowRight, CalendarClock, Landmark, PiggyBank, Plus, ReceiptText, Search, TrendingUp, Wallet } from "lucide-react";
+import { ArrowRight, CalendarClock, Landmark, PiggyBank, Plus, ReceiptText, Search, Settings2, TrendingUp, Wallet } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { toast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,14 +47,6 @@ import {
   type BudgetTransaction,
   type BudgetTransactionType,
 } from "@/lib/budget";
-
-type BudgetTab = "overview" | "categories";
-
-const TAB_LABELS: Record<BudgetTab, string> = {
-  overview: "نظرة عامة",
-  categories: "إعدادات الفئات",
-};
-
 
 const ADD_TRANSACTION_TYPES: BudgetTransactionType[] = ["income", "expense", "bill_payment", "debt_payment"];
 
@@ -191,7 +183,6 @@ function isRecurringTransaction(tx: BudgetTransaction | null | undefined) {
 
 export default function BudgetPlanner() {
   const [data, setData] = useState<BudgetData>(() => loadBudgetData());
-  const [activeTab, setActiveTab] = useState<BudgetTab>("overview");
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonthKey());
 
   const [transactionForm, setTransactionForm] = useState(() => emptyTransactionState("income", pickDefaultCategoryId(loadBudgetData().categories, "income")));
@@ -229,6 +220,7 @@ export default function BudgetPlanner() {
     categoryId: "",
   });
   const [editApplyScope, setEditApplyScope] = useState<EditApplyScope>("current");
+  const [categoriesDialogOpen, setCategoriesDialogOpen] = useState(false);
 
   const pushNotice = (message: string) => {
     toast({ description: message, duration: 3000 });
@@ -861,6 +853,15 @@ export default function BudgetPlanner() {
                 </Link>
               </Button>
               <ThemeToggle />
+              <Button
+                variant="outline"
+                size="icon"
+                className="rounded-full"
+                onClick={() => setCategoriesDialogOpen(true)}
+                aria-label="إعدادات الفئات"
+              >
+                <Settings2 className="w-4 h-4" />
+              </Button>
             </div>
             <h1 className="absolute left-1/2 -translate-x-1/2 text-lg md:text-2xl font-bold text-foreground flex items-center gap-2">
               <Wallet className="w-5 h-5 md:w-6 md:h-6 text-emerald-500" />
@@ -885,19 +886,22 @@ export default function BudgetPlanner() {
               <span className="text-xs text-muted-foreground">{localizedMonthLabel}</span>
             </div>
 
-            <Select
-              value={data.settings.currency}
-              onValueChange={(value) => applyData((current) => ({ ...current, settings: { ...current.settings, currency: value as BudgetData["settings"]["currency"] } }))}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CURRENCY_OPTIONS.map((option) => (
-                  <SelectItem key={option.code} value={option.code}>{option.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2.5 justify-between">
+              <span className="text-xs text-muted-foreground">العملة</span>
+              <Select
+                value={data.settings.currency}
+                onValueChange={(value) => applyData((current) => ({ ...current, settings: { ...current.settings, currency: value as BudgetData["settings"]["currency"] } }))}
+              >
+                <SelectTrigger className="flex-1 border-0 bg-transparent shadow-none focus:ring-0 w-auto min-w-0">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CURRENCY_OPTIONS.map((option) => (
+                    <SelectItem key={option.code} value={option.code}>{option.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
       </header>
@@ -911,20 +915,11 @@ export default function BudgetPlanner() {
           <SummaryCard title="الصافي" amount={monthlyTotals.net} currency={data.settings.currency} tone={monthlyTotals.net >= 0 ? "income" : "expense"} />
         </div>
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as BudgetTab)} className="mb-5">
-          <TabsList className="inline-flex w-auto rounded-2xl p-1 bg-muted">
-            {(Object.keys(TAB_LABELS) as BudgetTab[]).map((tab) => (
-              <TabsTrigger key={tab} value={tab} className="rounded-xl px-4 py-2 data-[state=active]:shadow-sm">
-                {TAB_LABELS[tab]}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        <TabsContent value="overview" className="mt-5">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-5 space-y-6 lg:order-2">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2 justify-end">
+                  <CardTitle className="text-base flex flex-row-reverse items-center gap-2 justify-between">
                     <Plus className="w-4 h-4 text-primary" />
                     إضافة معاملة جديدة
                   </CardTitle>
@@ -976,7 +971,7 @@ export default function BudgetPlanner() {
               </Card>
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
+                  <CardTitle className="text-base flex flex-row-reverse items-center gap-2 justify-between">
                     <PiggyBank className="w-4 h-4 text-emerald-500" />
                     إضافة هدف ادخار
                   </CardTitle>
@@ -1004,7 +999,7 @@ export default function BudgetPlanner() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">أهداف الادخار</CardTitle>
+                  <CardTitle className="text-base text-right">أهداف الادخار</CardTitle>
                 </CardHeader>
                 <CardContent>
                 <div className="space-y-2.5">
@@ -1045,7 +1040,7 @@ export default function BudgetPlanner() {
             <div className="lg:col-span-7 space-y-6 lg:order-1">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">نظرة عامّة</CardTitle>
+                  <CardTitle className="text-base text-right">نظرة عامّة</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                 <div className="mb-3 rounded-xl border bg-muted/50 p-3">
@@ -1127,7 +1122,7 @@ export default function BudgetPlanner() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
+                  <CardTitle className="text-base flex flex-row-reverse items-center gap-2 justify-between">
                     <CalendarClock className="w-4 h-4 text-primary" />
                     آخر عمليات هذا الشهر
                   </CardTitle>
@@ -1185,10 +1180,10 @@ export default function BudgetPlanner() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">تحليل مالي ذكي</CardTitle>
+                  <CardTitle className="text-base text-right">تحليل مالي ذكي</CardTitle>
                 </CardHeader>
                 <CardContent>
-                <div className="space-y-2.5">
+                <div className="space-y-2.5 text-right">
                   {upcomingWarnings.map((warning, index) => (
                     <div
                       key={`${warning.text}_${index}`}
@@ -1207,71 +1202,6 @@ export default function BudgetPlanner() {
               </Card>
             </div>
           </div>
-        </TabsContent>
-
-        <TabsContent value="categories" className="mt-5 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">تخصيص الفئات</CardTitle>
-            </CardHeader>
-            <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-              <Select value={categoryType} onValueChange={(v) => setCategoryType(v as BudgetCategoryType)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {(Object.keys(TRANSACTION_TYPE_LABEL) as BudgetTransactionType[]).map((type) => (
-                    <SelectItem key={type} value={type}>{`${TYPE_EMOJI[type]} ${TRANSACTION_TYPE_LABEL[type]}`}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Input
-                dir="rtl"
-                className="text-right"
-                value={categoryName}
-                onChange={(e) => setCategoryName(e.target.value)}
-                placeholder="أضف خيار مخصص"
-              />
-              <Button onClick={addCategory}>إضافة فئة</Button>
-            </div>
-            </CardContent>
-          </Card>
-
-          {(Object.keys(TRANSACTION_TYPE_LABEL) as BudgetTransactionType[]).map((type) => (
-            <Card key={type}>
-              <CardHeader>
-                <CardTitle className="text-base">{`${TYPE_EMOJI[type]} ${TRANSACTION_TYPE_LABEL[type]}`}</CardTitle>
-              </CardHeader>
-              <CardContent>
-              <div className="space-y-2">
-                {categoriesByType[type].map((cat) => (
-                  <div key={cat.id} className="group rounded-xl bg-muted/50 p-2.5 flex items-center justify-between gap-2">
-                    {editingCategoryId === cat.id ? (
-                      <Input
-                        dir="rtl"
-                        className="flex-1 h-8 text-right"
-                        value={editingCategoryName}
-                        onChange={(e) => setEditingCategoryName(e.target.value)}
-                      />
-                    ) : (
-                      <p className="font-medium text-foreground">{`${categoryEmoji(cat.name, cat.type)} ${cat.name}`}</p>
-                    )}
-                    <div className="flex items-center gap-1">
-                      {editingCategoryId === cat.id ? (
-                        <Button size="sm" className="h-7 text-xs" onClick={saveCategoryEdit}>حفظ</Button>
-                      ) : (
-                        <Button variant="secondary" size="sm" className="h-7 text-xs opacity-100 md:opacity-0 md:group-hover:opacity-100" onClick={() => { setEditingCategoryId(cat.id); setEditingCategoryName(cat.name); }}>تعديل</Button>
-                      )}
-                      <Button variant="destructive" size="sm" className="h-7 text-xs opacity-100 md:opacity-0 md:group-hover:opacity-100" onClick={() => deleteCategory(cat.id)}>حذف</Button>
-                    </div>
-                  </div>
-                ))}
-                {categoriesByType[type].length === 0 && <p className="text-sm text-muted-foreground">لا توجد فئات في هذا القسم.</p>}
-              </div>
-              </CardContent>
-            </Card>
-          ))}
-        </TabsContent>
-        </Tabs>
         <Dialog open={amountDialog.open} onOpenChange={(open) => { if (!open) closeAmountDialog(); }}>
           <DialogContent className="max-w-sm" dir="rtl">
             <DialogHeader>
@@ -1327,11 +1257,11 @@ export default function BudgetPlanner() {
                 className="tabular-nums text-right"
               />
               <Input
-                dir="rtl"
+                dir="ltr"
                 type="date"
                 value={editDialog.date}
                 onChange={(e) => setEditDialog((prev) => ({ ...prev, date: e.target.value }))}
-                className="tabular-nums text-right"
+                className="tabular-nums text-left"
               />
               {isRecurringTransaction(editDialog.tx) && (
                 <div className="rounded-lg border bg-muted/50 p-2 space-y-2">
@@ -1363,6 +1293,75 @@ export default function BudgetPlanner() {
             <Button variant="secondary" onClick={() => setEditDialog({ open: false, tx: null, amount: "", date: todayISO(), note: "", categoryId: "" })}>إلغاء</Button>
             <Button onClick={saveEditTransaction}>حفظ</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={categoriesDialogOpen} onOpenChange={setCategoriesDialogOpen}>
+        <DialogContent className="max-w-2xl" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>إعدادات الفئات</DialogTitle>
+          </DialogHeader>
+          <div className="mt-2 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base text-right">تخصيص الفئات</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                  <Select value={categoryType} onValueChange={(v) => setCategoryType(v as BudgetCategoryType)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {(Object.keys(TRANSACTION_TYPE_LABEL) as BudgetTransactionType[]).map((type) => (
+                        <SelectItem key={type} value={type}>{`${TYPE_EMOJI[type]} ${TRANSACTION_TYPE_LABEL[type]}`}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    dir="rtl"
+                    className="text-right"
+                    value={categoryName}
+                    onChange={(e) => setCategoryName(e.target.value)}
+                    placeholder="أضف خيار مخصص"
+                  />
+                  <Button onClick={addCategory}>إضافة فئة</Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {(Object.keys(TRANSACTION_TYPE_LABEL) as BudgetTransactionType[]).map((type) => (
+              <Card key={type}>
+                <CardHeader>
+                  <CardTitle className="text-base text-right">{`${TYPE_EMOJI[type]} ${TRANSACTION_TYPE_LABEL[type]}`}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {categoriesByType[type].map((cat) => (
+                      <div key={cat.id} className="group rounded-xl bg-muted/50 p-2.5 flex items-center justify-between gap-2">
+                        {editingCategoryId === cat.id ? (
+                          <Input
+                            dir="rtl"
+                            className="flex-1 h-8 text-right"
+                            value={editingCategoryName}
+                            onChange={(e) => setEditingCategoryName(e.target.value)}
+                          />
+                        ) : (
+                          <p className="font-medium text-foreground">{`${categoryEmoji(cat.name, cat.type)} ${cat.name}`}</p>
+                        )}
+                        <div className="flex items-center gap-1">
+                          {editingCategoryId === cat.id ? (
+                            <Button size="sm" className="h-7 text-xs" onClick={saveCategoryEdit}>حفظ</Button>
+                          ) : (
+                            <Button variant="secondary" size="sm" className="h-7 text-xs opacity-100 md:opacity-0 md:group-hover:opacity-100" onClick={() => { setEditingCategoryId(cat.id); setEditingCategoryName(cat.name); }}>تعديل</Button>
+                          )}
+                          <Button variant="destructive" size="sm" className="h-7 text-xs opacity-100 md:opacity-0 md:group-hover:opacity-100" onClick={() => deleteCategory(cat.id)}>حذف</Button>
+                        </div>
+                      </div>
+                    ))}
+                    {categoriesByType[type].length === 0 && <p className="text-sm text-muted-foreground">لا توجد فئات في هذا القسم.</p>}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </DialogContent>
       </Dialog>
       </main>
