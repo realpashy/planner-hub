@@ -924,7 +924,7 @@ export default function BudgetPlanner() {
             <div className="lg:col-span-5 space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2 text-red-500">
+                  <CardTitle className="text-base flex items-center gap-2">
                     <Plus className="w-4 h-4 text-primary" />
                     إضافة معاملة جديدة
                   </CardTitle>
@@ -1136,7 +1136,13 @@ export default function BudgetPlanner() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                   <div className="relative md:col-span-2">
                     <Search className="w-4 h-4 absolute left-3 rtl:left-auto rtl:right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-                    <Input value={recentSearch} onChange={(e) => setRecentSearch(e.target.value)} placeholder="ابحث عن عملية محددة" className="pl-9 rtl:pl-3 rtl:pr-9" />
+                    <Input
+                      dir="rtl"
+                      value={recentSearch}
+                      onChange={(e) => setRecentSearch(e.target.value)}
+                      placeholder="ابحث عن عملية محددة"
+                      className="pl-9 rtl:pl-3 rtl:pr-9 text-right"
+                    />
                   </div>
                   <Select value={recentFilter} onValueChange={(v) => setRecentFilter(v as typeof recentFilter)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
