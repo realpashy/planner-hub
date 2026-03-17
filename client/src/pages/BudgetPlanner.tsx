@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { ArrowRight, CalendarClock, Landmark, Menu, Moon, PiggyBank, Plus, ReceiptText, Search, Settings2, Sun, TrendingUp, Wallet } from "lucide-react";
@@ -236,6 +236,12 @@ function clampDay(day: number, monthKey: string) {
   return Math.max(1, Math.min(day, last));
 }
 
+function shiftMonthKey(monthKey: string, offset: number) {
+  const [year, month] = monthKey.split("-").map(Number);
+  const date = new Date(year, month - 1 + offset, 1);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
 function monthLessThan(a: string, b: string) {
   return a < b;
 }
@@ -371,13 +377,14 @@ export default function BudgetPlanner() {
   const [goalCategory, setGoalCategory] = useState<BudgetSavingGoalCategory>(DEFAULT_SAVINGS_CATEGORY);
   const [goalRecurringEnabled, setGoalRecurringEnabled] = useState(getSavingsGoalBehavior(DEFAULT_SAVINGS_CATEGORY).defaultRecurring);
   const [goalRecurringAmount, setGoalRecurringAmount] = useState("");
-  const [goalStatusFilter, setGoalStatusFilter] = useState<BudgetSavingGoalStatus | "all">("active");
+  const [goalStatusFilter, setGoalStatusFilter] = useState<BudgetSavingGoalStatus | "all">("all");
 
   const [recentSearch, setRecentSearch] = useState("");
   const [recentFilter, setRecentFilter] = useState<"all" | "linked_savings" | BudgetTransactionType>("all");
 
   const [operationActionsTx, setOperationActionsTx] = useState<BudgetTransaction | null>(null);
   const [hoveredOverviewSegment, setHoveredOverviewSegment] = useState<string | null>(null);
+  const [selectedOverviewSegment, setSelectedOverviewSegment] = useState<string | null>(null);
   const [overviewDetailType, setOverviewDetailType] = useState<OverviewDetailKey | null>(null);
 
   const [amountDialog, setAmountDialog] = useState<AmountDialogState>({
@@ -421,6 +428,7 @@ export default function BudgetPlanner() {
     type: "expense",
     name: "",
   });
+  const overviewInteractionRef = useRef<HTMLDivElement | null>(null);
 
   const pushNotice = (message: string) => {
     toast({ description: message, duration: 3000 });
@@ -460,6 +468,15 @@ export default function BudgetPlanner() {
   const monthlyTotals = useMemo(
     () => getMonthlyTotals(data.transactions, selectedMonth),
     [data.transactions, selectedMonth],
+  );
+  const previousMonthKey = useMemo(() => shiftMonthKey(selectedMonth, -1), [selectedMonth]);
+  const previousMonthTransactions = useMemo(
+    () => data.transactions.filter((tx) => getMonthKey(tx.date) === previousMonthKey),
+    [data.transactions, previousMonthKey],
+  );
+  const previousMonthTotals = useMemo(
+    () => getMonthlyTotals(data.transactions, previousMonthKey),
+    [data.transactions, previousMonthKey],
   );
 
   const categoriesByType = useMemo(() => ({
@@ -680,38 +697,177 @@ export default function BudgetPlanner() {
     });
   }, [overviewSegments]);
 
-  const activeOverviewSegment = hoveredOverviewSegment
-    ? donutSegments.find((segment) => segment.id === hoveredOverviewSegment) || null
-    : null;
+  const activeOverviewSegment = useMemo(() => {
+    const activeId = hoveredOverviewSegment || selectedOverviewSegment;
+    return activeId ? donutSegments.find((segment) => segment.id === activeId) || null : null;
+  }, [donutSegments, hoveredOverviewSegment, selectedOverviewSegment]);
   const hasOverviewData = monthlyTotals.income > 0 || monthlyTotals.totalOutflow > 0;
   const remainingSpendableBalance = monthlyTotals.income - monthlyTotals.totalOutflow;
   const upcomingWarnings = useMemo(() => {
-    const warnings: Array<{ tone: "good" | "warn" | "danger"; text: string }> = [];
+    const insights: Array<{ id: string; priority: number; tone: "good" | "warn" | "danger"; text: string }> = [];
+    const addInsight = (id: string, priority: number, tone: "good" | "warn" | "danger", text: string) => {
+      if (insights.some((item) => item.id === id)) return;
+      insights.push({ id, priority, tone, text });
+    };
 
     const income = monthlyTotals.income;
     const outflow = monthlyTotals.totalOutflow;
-    const expensesRatio = income > 0 ? Math.round((monthlyTotals.expenses / income) * 100) : 0;
-    const billDebtRatio = income > 0 ? Math.round(((monthlyTotals.bills + monthlyTotals.debts) / income) * 100) : 0;
+    const expenseRatio = income > 0 ? Math.round((monthlyTotals.expenses / income) * 100) : 0;
+    const billsRatio = income > 0 ? Math.round((monthlyTotals.bills / income) * 100) : 0;
+    const debtsRatio = income > 0 ? Math.round((monthlyTotals.debts / income) * 100) : 0;
     const savingsRatio = income > 0 ? Math.round((monthlyTotals.savings / income) * 100) : 0;
+    const previousOutflow = previousMonthTotals.totalOutflow;
+    const previousSavings = previousMonthTotals.savings;
+    const activeGoals = data.savingsGoals.filter((goal) => goal.status === "active");
+    const emergencyGoal = activeGoals.find((goal) => goal.category === "emergency_fund");
+    const emergencyGoalMonthlySaved = emergencyGoal ? monthlySavingsByGoalId.get(emergencyGoal.id) || 0 : 0;
+    const recurringGoalsWithoutContribution = activeGoals.filter((goal) => goal.monthlyContributionEnabled && (monthlySavingsByGoalId.get(goal.id) || 0) === 0);
+
+    const categoryTotals = currentMonthTransactions
+      .filter((tx) => tx.type !== "income")
+      .map((tx) => {
+        const linkedGoal = tx.savingsGoalId ? data.savingsGoals.find((goal) => goal.id === tx.savingsGoalId) : null;
+        const subcategory = data.categories.find((category) => category.id === tx.subcategoryId);
+        return {
+          amount: tx.amount,
+          type: tx.savingsGoalId ? "saving" : tx.type,
+          label: linkedGoal ? getSavingsGoalDisplayTitle(linkedGoal) : (subcategory?.name || tx.title || "غير مصنف"),
+        };
+      });
+
+    const topDriver = [...categoryTotals].sort((a, b) => b.amount - a.amount)[0];
+    const topExpenseCategory = expenseByCategory[0];
+    const topExpenseShare = monthlyTotals.expenses > 0 && topExpenseCategory
+      ? Math.round((topExpenseCategory.total / monthlyTotals.expenses) * 100)
+      : 0;
+
+    const billBreakdown = currentMonthTransactions
+      .filter((tx) => tx.type === "bill_payment")
+      .reduce((map, tx) => {
+        const label = data.categories.find((category) => category.id === tx.subcategoryId)?.name || tx.title || "فاتورة";
+        map.set(label, (map.get(label) || 0) + tx.amount);
+        return map;
+      }, new Map<string, number>());
+    const topBill = Array.from(billBreakdown.entries()).sort((a, b) => b[1] - a[1])[0];
+    const topBillShare = monthlyTotals.bills > 0 && topBill ? Math.round((topBill[1] / monthlyTotals.bills) * 100) : 0;
+
+    const currentExpenseCategoryTotals = currentMonthTransactions
+      .filter((tx) => tx.type === "expense" && !tx.savingsGoalId)
+      .reduce((map, tx) => {
+        const name = data.categories.find((category) => category.id === tx.subcategoryId)?.name || "غير مصنف";
+        map.set(name, (map.get(name) || 0) + tx.amount);
+        return map;
+      }, new Map<string, number>());
+
+    const previousExpenseCategoryTotals = previousMonthTransactions
+      .filter((tx) => tx.type === "expense" && !tx.savingsGoalId)
+      .reduce((map, tx) => {
+        const name = data.categories.find((category) => category.id === tx.subcategoryId)?.name || "غير مصنف";
+        map.set(name, (map.get(name) || 0) + tx.amount);
+        return map;
+      }, new Map<string, number>());
+
+    const foodCurrent = Array.from(currentExpenseCategoryTotals.entries())
+      .filter(([name]) => /(طعام|مطعم|قهوة|بقالة|سوبر)/.test(name))
+      .reduce((sum, [, value]) => sum + value, 0);
+    const foodPrevious = Array.from(previousExpenseCategoryTotals.entries())
+      .filter(([name]) => /(طعام|مطعم|قهوة|بقالة|سوبر)/.test(name))
+      .reduce((sum, [, value]) => sum + value, 0);
+
+    const transportCurrent = Array.from(currentExpenseCategoryTotals.entries())
+      .filter(([name]) => /(مواصل|وقود|بنزين|سيارة)/.test(name))
+      .reduce((sum, [, value]) => sum + value, 0);
+    const transportPrevious = Array.from(previousExpenseCategoryTotals.entries())
+      .filter(([name]) => /(مواصل|وقود|بنزين|سيارة)/.test(name))
+      .reduce((sum, [, value]) => sum + value, 0);
+
+    const discretionaryCurrent = Array.from(currentExpenseCategoryTotals.entries())
+      .filter(([name]) => /(تسوق|ترفيه)/.test(name))
+      .reduce((sum, [, value]) => sum + value, 0);
+
+    const consistentSavingsGoals = activeGoals.filter((goal) => {
+      const monthKeys = [selectedMonth, shiftMonthKey(selectedMonth, -1), shiftMonthKey(selectedMonth, -2)];
+      return monthKeys.every((monthKey) =>
+        data.transactions.some((tx) => tx.savingsGoalId === goal.id && getMonthKey(tx.date) === monthKey)
+      );
+    });
 
     if (income === 0 && outflow > 0) {
-      warnings.push({ tone: "danger", text: "⚠️ لا يوجد دخل مسجل هذا الشهر، ومع ذلك هناك مصروفات. يفضّل تسجيل مصادر الدخل لتقييم الوضع بدقة." });
+      addInsight("no-income", 100, "danger", "لا يوجد دخل مسجل هذا الشهر رغم وجود مصروفات. سجّل الدخل أولاً حتى تكون القراءة المالية دقيقة.");
     }
 
-    if (expensesRatio >= 75) {
-      warnings.push({ tone: "danger", text: `🚨 المصروفات استهلكت ${expensesRatio}% من الدخل. حاول تقليل المصروفات غير الأساسية هذا الأسبوع.` });
-    } else if (expensesRatio >= 55) {
-      warnings.push({ tone: "warn", text: `⚡ المصروفات وصلت إلى ${expensesRatio}% من الدخل. أنت قريب من منطقة الضغط المالي.` });
+    if (income > 0 && outflow > income) {
+      addInsight("overspending", 95, "danger", `إجمالي الصرف تجاوز الدخل هذا الشهر بمقدار ${formatAmount(outflow - income, data.settings.currency)}، ويحتاج ذلك إلى تهدئة سريعة للمصروفات.`);
     }
 
-    if (billDebtRatio >= 40) {
-      warnings.push({ tone: "warn", text: `📌 الفواتير والديون تمثل ${billDebtRatio}% من الدخل. راقب مواعيد الاستحقاق لتجنب تراكم جديد.` });
+    if (income > 0 && expenseRatio >= 75) {
+      addInsight("high-expense-ratio", 92, "danger", `المصروفات التشغيلية وحدها تستهلك ${expenseRatio}% من الدخل، وهذا ضغط مرتفع على السيولة.`);
+    } else if (income > 0 && expenseRatio >= 55) {
+      addInsight("watch-expense-ratio", 74, "warn", `المصروفات التشغيلية عند ${expenseRatio}% من الدخل. راقب البنود غير الضرورية قبل نهاية الشهر.`);
     }
 
-    if (income > 0 && savingsRatio < 10) {
-      warnings.push({ tone: "warn", text: `💡 الادخار الحالي ${savingsRatio}% فقط من الدخل. هدف عملي: ارفع النسبة تدريجيا إلى 15%.` });
+    if (income > 0 && debtsRatio >= 25) {
+      addInsight("debt-burden", 88, "danger", `الديون تستهلك ${debtsRatio}% من الدخل هذا الشهر، وهذا عبء مرتفع يحتاج ضبطاً في الدفعات القادمة.`);
+    } else if (income > 0 && debtsRatio >= 15) {
+      addInsight("debt-watch", 68, "warn", `نسبة الديون وصلت إلى ${debtsRatio}% من الدخل. من الجيد مراقبتها حتى لا تزاحم الادخار.`);
+    }
+
+    if (income > 0 && billsRatio >= 35) {
+      addInsight("bill-pressure", 80, "warn", `الفواتير الثابتة تستهلك ${billsRatio}% من الدخل هذا الشهر، ما يعني ضغطاً واضحاً من الالتزامات المتكررة.`);
+    }
+
+    if (topBill && topBillShare >= 55) {
+      addInsight("bill-concentration", 66, "warn", `أعلى فاتورة هذا الشهر هي ${topBill[0]} وتشكل ${topBillShare}% من إجمالي الفواتير.`);
+    }
+
+    if (topExpenseCategory && topExpenseShare >= 45) {
+      addInsight("expense-concentration", 78, "warn", `أكبر بند مصروف هذا الشهر هو ${topExpenseCategory.name} ويستحوذ على ${topExpenseShare}% من المصروفات التشغيلية.`);
+    }
+
+    if (foodPrevious > 0 && foodCurrent >= foodPrevious * 1.25) {
+      addInsight("food-rise", 72, "warn", `مصروف الطعام ارتفع مقارنة بالشهر السابق بحوالي ${formatAmount(foodCurrent - foodPrevious, data.settings.currency)}.`);
+    }
+
+    if (transportPrevious > 0 && transportCurrent >= transportPrevious * 1.25) {
+      addInsight("transport-rise", 70, "warn", `تكلفة المواصلات ارتفعت بشكل ملحوظ هذا الشهر مقارنة بالشهر السابق.`);
+    }
+
+    if (monthlyTotals.expenses > 0 && discretionaryCurrent >= monthlyTotals.expenses * 0.35) {
+      addInsight("discretionary-high", 69, "warn", `بنود التسوق والترفيه تمثل جزءاً كبيراً من المصروفات هذا الشهر، فمراجعتها قد تمنحك هامشاً أسرع.`);
+    }
+
+    if (activeGoals.length > 0 && monthlyTotals.savings === 0) {
+      addInsight("missing-savings", 90, "warn", "لديك أهداف ادخار نشطة لكن لم تُسجل أي مساهمة هذا الشهر حتى الآن.");
     } else if (income > 0 && savingsRatio >= 20) {
-      warnings.push({ tone: "good", text: `✅ ممتاز! الادخار وصل إلى ${savingsRatio}% من الدخل، وهذا يمنحك هامش أمان جيد.` });
+      addInsight("strong-savings", 64, "good", `هذا شهر ادخار قوي: تم توجيه ${savingsRatio}% من الدخل إلى الأهداف الادخارية.`);
+    } else if (income > 0 && savingsRatio > 0 && savingsRatio < 10) {
+      addInsight("low-savings", 61, "warn", `نسبة الادخار الحالية ${savingsRatio}% فقط من الدخل، ويمكن تحسينها بخطوة صغيرة في المصروفات المرنة.`);
+    }
+
+    if (previousSavings > 0 && monthlyTotals.savings >= previousSavings * 1.3) {
+      addInsight("savings-momentum", 58, "good", "مساهمات الادخار هذا الشهر أفضل بوضوح من الشهر السابق، وهذا مؤشر إيجابي على الانضباط المالي.");
+    }
+
+    if (emergencyGoal && emergencyGoalMonthlySaved === 0) {
+      addInsight("emergency-fund", 62, "warn", "صندوق الطوارئ نشط لكن بدون مساهمة هذا الشهر. حتى دفعة صغيرة تحافظ على الاستمرارية.");
+    }
+
+    if (recurringGoalsWithoutContribution.length > 0) {
+      addInsight("missed-goals", 57, "warn", `هناك ${recurringGoalsWithoutContribution.length} هدف ادخار بتفعيل شهري لكن من دون مساهمة مسجلة هذا الشهر.`);
+    }
+
+    if (consistentSavingsGoals.length > 0) {
+      addInsight("consistent-goals", 54, "good", `تحافظ على مساهمة منتظمة في ${consistentSavingsGoals.length} هدف ادخار لعدة أشهر متتالية، وهذا ممتاز لبناء التراكم.`);
+    }
+
+    if (topDriver && topDriver.amount > 0) {
+      addInsight("top-driver", 52, topDriver.type === "saving" ? "good" : "warn", `أكبر بند مالي هذا الشهر هو ${topDriver.label} بقيمة ${formatAmount(topDriver.amount, data.settings.currency)}.`);
+    }
+
+    if (previousOutflow > 0 && outflow <= previousOutflow * 0.85) {
+      addInsight("better-than-previous", 50, "good", "إجمالي الصرف انخفض مقارنة بالشهر السابق، وهذا تحسن واضح في الإيقاع المالي.");
+    } else if (previousOutflow > 0 && outflow >= previousOutflow * 1.2) {
+      addInsight("worse-than-previous", 73, "warn", "الصرف هذا الشهر أعلى من الشهر السابق بشكل ملحوظ. راجع البنود التي قفزت سريعاً.");
     }
 
     const nearBills = data.bills.filter((bill) => {
@@ -719,26 +875,49 @@ export default function BudgetPlanner() {
       const days = getUpcomingDaysCount(bill.dueDay, selectedMonth);
       return remaining > 0 && days >= 0 && days <= 5;
     });
-
     const nearDebts = data.debts.filter((debt) => {
       const remaining = Math.max(debt.totalAmount - (debtPaymentsById.get(debt.id) || 0), 0);
       const days = getUpcomingDaysCount(debt.dueDay, selectedMonth);
       return remaining > 0 && days >= 0 && days <= 5;
     });
-
     if (nearBills.length > 0 || nearDebts.length > 0) {
-      warnings.push({
-        tone: "danger",
-        text: `⏳ لديك ${nearBills.length} فاتورة و ${nearDebts.length} دين مستحق قريباً خلال 5 أيام. سجّل الدفعات مبكراً.`,
-      });
+      addInsight("due-soon", 84, "danger", `هناك ${nearBills.length} فاتورة و${nearDebts.length} دفعة دين مستحقة قريباً خلال الأيام القادمة.`);
     }
 
-    if (warnings.length === 0) {
-      warnings.push({ tone: "good", text: "🌿 الوضع المالي متوازن حالياً. استمر على نفس النمط وراجع العمليات الجديدة أسبوعياً." });
+    if (!hasOverviewData) {
+      return [{ tone: "good" as const, text: "ابدأ بتسجيل دخل أو مصروفات هذا الشهر ليظهر لك تحليل مالي ذكي مخصص لبياناتك الفعلية." }];
     }
 
-    return warnings.slice(0, 5);
-  }, [monthlyTotals, data.bills, data.debts, billPaymentsById, debtPaymentsById, selectedMonth, expenseByCategory, data.settings.currency]);
+    if (insights.length === 0 && currentMonthTransactions.length <= 3) {
+      return [{ tone: "good" as const, text: "البيانات الحالية ما زالت محدودة. بعد تسجيل عدة عمليات إضافية سيظهر تحليل أدق للأنماط والاتجاهات." }];
+    }
+
+    if (insights.length === 0) {
+      return [{ tone: "good" as const, text: "الوضع المالي هذا الشهر يبدو متوازناً حتى الآن، ولا توجد إشارات ضغط بارزة في البيانات الحالية." }];
+    }
+
+    return insights
+      .sort((a, b) => b.priority - a.priority)
+      .slice(0, 6)
+      .map(({ tone, text }) => ({ tone, text }));
+  }, [
+    monthlyTotals,
+    previousMonthTotals,
+    previousMonthTransactions,
+    data.bills,
+    data.categories,
+    data.debts,
+    data.savingsGoals,
+    data.settings.currency,
+    data.transactions,
+    currentMonthTransactions,
+    expenseByCategory,
+    monthlySavingsByGoalId,
+    billPaymentsById,
+    debtPaymentsById,
+    selectedMonth,
+    hasOverviewData,
+  ]);
 
   const symbol = getCurrencySymbol(data.settings.currency);
   const locale = typeof document !== "undefined" && document.documentElement.lang
@@ -882,6 +1061,25 @@ export default function BudgetPlanner() {
     window.addEventListener("planner-theme-change", handleThemeEvent);
     return () => window.removeEventListener("planner-theme-change", handleThemeEvent);
   }, []);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (overviewInteractionRef.current?.contains(target)) return;
+      setSelectedOverviewSegment(null);
+      setHoveredOverviewSegment(null);
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, []);
+
+  useEffect(() => {
+    setSelectedOverviewSegment(null);
+    setHoveredOverviewSegment(null);
+  }, [selectedMonth]);
 
   useEffect(() => {
     setGoalRecurringEnabled(goalBehavior.defaultRecurring);
@@ -1469,12 +1667,16 @@ export default function BudgetPlanner() {
                 <Settings2 className="w-4 h-4" />
               </Button>
             </div>
-            <h1 className="mx-auto flex items-center gap-2 px-20 text-center text-base font-bold text-foreground sm:text-lg md:absolute md:left-1/2 md:mx-0 md:-translate-x-1/2 md:px-0 md:text-2xl">
+            <h1 className="mx-auto hidden items-center gap-2 text-center text-base font-bold text-foreground sm:text-lg md:absolute md:left-1/2 md:flex md:mx-0 md:-translate-x-1/2 md:px-0 md:text-2xl">
               <Wallet className="w-5 h-5 md:w-6 md:h-6 text-emerald-500" />
               الميزانيّة الشهرية
             </h1>
             <div className="absolute right-0 flex items-center justify-end gap-2 md:hidden">
-              <Button variant="ghost" size="icon" asChild>
+              <div className="flex items-center gap-2 rounded-2xl border border-border/60 bg-background/80 px-3 py-2 shadow-sm backdrop-blur">
+                <Wallet className="h-4 w-4 text-emerald-500" />
+                <span className="text-sm font-semibold text-foreground whitespace-nowrap">الميزانيّة الشهرية</span>
+              </div>
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-2xl border border-border/60 bg-background/75 shadow-sm backdrop-blur" asChild>
                 <Link href="/">
                   <ArrowRight className="w-5 h-5" />
                 </Link>
@@ -1791,8 +1993,7 @@ export default function BudgetPlanner() {
                       <div key={goal.id} className="group rounded-3xl border border-slate-200/80 bg-white/95 p-4 shadow-[0_14px_40px_-24px_rgba(15,23,42,0.24)] transition hover:border-slate-300/70 dark:border-border dark:bg-muted/40 dark:shadow-none">
                         <div className="rtl-row items-start gap-3">
                           <div className="min-w-0 flex-1 text-right">
-                            <div className="flex items-start justify-between gap-2">
-                              <p className="truncate text-base font-semibold text-foreground">{goal.displayTitle}</p>
+                            <div className="flex items-center justify-end gap-2">
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -1801,9 +2002,10 @@ export default function BudgetPlanner() {
                               >
                                 حذف
                               </Button>
+                              <p className="max-w-full truncate text-base font-semibold text-foreground">{goal.displayTitle}</p>
                             </div>
                             <div className="mt-3 flex flex-wrap justify-end gap-2">
-                              <Badge variant="outline" className="rounded-full border-slate-200 bg-slate-50/90 text-slate-700 dark:border-border dark:bg-background/60 dark:text-foreground">
+                              <Badge variant="outline" className="whitespace-nowrap rounded-full border-slate-200 bg-slate-50/90 text-slate-700 dark:border-border dark:bg-background/60 dark:text-foreground">
                                 {`${SAVINGS_GOAL_META[goal.category].emoji} ${getSavingsGoalCategoryLabel(goal.category)}`}
                               </Badge>
                             </div>
@@ -1902,7 +2104,11 @@ export default function BudgetPlanner() {
                   )}
                 </div>
 
-                <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-center sm:gap-6" onMouseLeave={() => setHoveredOverviewSegment(null)}>
+                <div
+                  ref={overviewInteractionRef}
+                  className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-center sm:gap-6"
+                  onMouseLeave={() => setHoveredOverviewSegment(null)}
+                >
                   <div className="flex justify-center">
                     <div className="budget-overview-donut relative h-60 w-60">
                       <svg viewBox="0 0 180 180" className="w-full h-full drop-shadow-sm">
@@ -1919,6 +2125,10 @@ export default function BudgetPlanner() {
                               onPointerEnter={() => setHoveredOverviewSegment(segment.id)}
                               onPointerMove={() => setHoveredOverviewSegment(segment.id)}
                               onPointerLeave={() => setHoveredOverviewSegment(null)}
+                              onPointerDown={() => {
+                                setSelectedOverviewSegment(segment.id);
+                                setHoveredOverviewSegment(segment.id);
+                              }}
                             />
                             <path
                               d={describeArcPath(90, 90, 56, segment.startAngle, segment.endAngle)}
@@ -1962,7 +2172,7 @@ export default function BudgetPlanner() {
                 <div className="space-y-2.5">
                   {overviewSegments.length === 0 && <p className="text-sm text-muted-foreground">لا توجد بيانات في هذا الشهر.</p>}
                   {overviewSegments.map((segment) => {
-                    const isActive = hoveredOverviewSegment === segment.id;
+                    const isActive = hoveredOverviewSegment === segment.id || selectedOverviewSegment === segment.id;
                     return (
                       <div
                         key={segment.id}
