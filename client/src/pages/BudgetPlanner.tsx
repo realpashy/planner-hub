@@ -941,9 +941,29 @@ export default function BudgetPlanner() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <Input value={transactionCategoryText} onChange={(e) => setTransactionCategoryText(e.target.value)} placeholder="اكتب الفئة (مثال: راتب, كهرباء)" />
-                    <Input type="text" inputMode="decimal" value={transactionForm.amount} onChange={(e) => setTransactionForm((prev) => ({ ...prev, amount: e.target.value }))} placeholder={`المبلغ (${symbol})`} className="tabular-nums" />
-                    <Input value={transactionForm.note} onChange={(e) => setTransactionForm((prev) => ({ ...prev, note: e.target.value }))} placeholder="ملاحظة (اختياري)" />
+                    <Input
+                      dir="rtl"
+                      className="text-right"
+                      value={transactionCategoryText}
+                      onChange={(e) => setTransactionCategoryText(e.target.value)}
+                      placeholder="اكتب الفئة (مثال: راتب, كهرباء)"
+                    />
+                    <Input
+                      dir="rtl"
+                      type="text"
+                      inputMode="decimal"
+                      value={transactionForm.amount}
+                      onChange={(e) => setTransactionForm((prev) => ({ ...prev, amount: e.target.value }))}
+                      placeholder={`المبلغ (${symbol})`}
+                      className="tabular-nums text-right"
+                    />
+                    <Input
+                      dir="rtl"
+                      className="text-right"
+                      value={transactionForm.note}
+                      onChange={(e) => setTransactionForm((prev) => ({ ...prev, note: e.target.value }))}
+                      placeholder="ملاحظة (اختياري)"
+                    />
                   </div>
                   {RECURRING_ELIGIBLE_TYPES.includes(transactionForm.type as Exclude<BudgetTransactionType, "saving">) && (
                     <div className="flex items-center gap-2">
@@ -962,8 +982,22 @@ export default function BudgetPlanner() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  <Input value={goalTitle} onChange={(e) => setGoalTitle(e.target.value)} placeholder="اسم الهدف" />
-                  <Input type="text" inputMode="decimal" value={goalTargetAmount} onChange={(e) => setGoalTargetAmount(e.target.value)} placeholder={`المبلغ المستهدف (${symbol})`} className="tabular-nums" />
+                  <Input
+                    dir="rtl"
+                    className="text-right"
+                    value={goalTitle}
+                    onChange={(e) => setGoalTitle(e.target.value)}
+                    placeholder="اسم الهدف"
+                  />
+                  <Input
+                    dir="rtl"
+                    type="text"
+                    inputMode="decimal"
+                    value={goalTargetAmount}
+                    onChange={(e) => setGoalTargetAmount(e.target.value)}
+                    placeholder={`المبلغ المستهدف (${symbol})`}
+                    className="tabular-nums text-right"
+                  />
                   <Button onClick={addSavingGoal}>إضافة الهدف</Button>
                 </CardContent>
               </Card>
@@ -1184,7 +1218,13 @@ export default function BudgetPlanner() {
                   ))}
                 </SelectContent>
               </Select>
-              <Input value={categoryName} onChange={(e) => setCategoryName(e.target.value)} placeholder="أضف خيار مخصص" />
+              <Input
+                dir="rtl"
+                className="text-right"
+                value={categoryName}
+                onChange={(e) => setCategoryName(e.target.value)}
+                placeholder="أضف خيار مخصص"
+              />
               <Button onClick={addCategory}>إضافة فئة</Button>
             </div>
             </CardContent>
@@ -1200,7 +1240,12 @@ export default function BudgetPlanner() {
                 {categoriesByType[type].map((cat) => (
                   <div key={cat.id} className="group rounded-xl bg-muted/50 p-2.5 flex items-center justify-between gap-2">
                     {editingCategoryId === cat.id ? (
-                      <Input value={editingCategoryName} onChange={(e) => setEditingCategoryName(e.target.value)} className="flex-1 h-8" />
+                      <Input
+                        dir="rtl"
+                        className="flex-1 h-8 text-right"
+                        value={editingCategoryName}
+                        onChange={(e) => setEditingCategoryName(e.target.value)}
+                      />
                     ) : (
                       <p className="font-medium text-foreground">{`${categoryEmoji(cat.name, cat.type)} ${cat.name}`}</p>
                     )}
@@ -1227,7 +1272,15 @@ export default function BudgetPlanner() {
               <DialogTitle>{amountDialog.title}</DialogTitle>
               <DialogDescription>{amountDialog.subtitle}</DialogDescription>
             </DialogHeader>
-            <Input type="text" inputMode="decimal" value={amountDialog.amount} onChange={(e) => setAmountDialog((prev) => ({ ...prev, amount: e.target.value }))} placeholder={`المبلغ (${symbol})`} className="tabular-nums mt-2" />
+            <Input
+              dir="rtl"
+              type="text"
+              inputMode="decimal"
+              value={amountDialog.amount}
+              onChange={(e) => setAmountDialog((prev) => ({ ...prev, amount: e.target.value }))}
+              placeholder={`المبلغ (${symbol})`}
+              className="tabular-nums mt-2 text-right"
+            />
             <DialogFooter>
               <Button variant="secondary" onClick={closeAmountDialog}>إلغاء</Button>
               <Button onClick={confirmAmountDialog}>تأكيد</Button>
@@ -1253,14 +1306,27 @@ export default function BudgetPlanner() {
         </DialogContent>
       </Dialog>
       <Dialog open={editDialog.open && !!editDialog.tx} onOpenChange={(open) => { if (!open) setEditDialog({ open: false, tx: null, amount: "", date: todayISO(), note: "", categoryId: "" }); }}>
-        <DialogContent className="max-w-md" dir="rtl">
+          <DialogContent className="max-w-md" dir="rtl">
           <DialogHeader>
             <DialogTitle>تعديل العملية</DialogTitle>
           </DialogHeader>
           {editDialog.tx && (
             <div className="grid grid-cols-1 gap-3">
-              <Input type="text" inputMode="decimal" value={editDialog.amount} onChange={(e) => setEditDialog((prev) => ({ ...prev, amount: e.target.value }))} className="tabular-nums" />
-              <Input type="date" value={editDialog.date} onChange={(e) => setEditDialog((prev) => ({ ...prev, date: e.target.value }))} className="tabular-nums" />
+              <Input
+                dir="rtl"
+                type="text"
+                inputMode="decimal"
+                value={editDialog.amount}
+                onChange={(e) => setEditDialog((prev) => ({ ...prev, amount: e.target.value }))}
+                className="tabular-nums text-right"
+              />
+              <Input
+                dir="rtl"
+                type="date"
+                value={editDialog.date}
+                onChange={(e) => setEditDialog((prev) => ({ ...prev, date: e.target.value }))}
+                className="tabular-nums text-right"
+              />
               {isRecurringTransaction(editDialog.tx) && (
                 <div className="rounded-lg border bg-muted/50 p-2 space-y-2">
                   <p className="text-xs text-muted-foreground">تطبيق التعديل على</p>
@@ -1278,7 +1344,13 @@ export default function BudgetPlanner() {
                   ))}
                 </SelectContent>
               </Select>
-              <Input value={editDialog.note} onChange={(e) => setEditDialog((prev) => ({ ...prev, note: e.target.value }))} placeholder="ملاحظة" />
+              <Input
+                dir="rtl"
+                className="text-right"
+                value={editDialog.note}
+                onChange={(e) => setEditDialog((prev) => ({ ...prev, note: e.target.value }))}
+                placeholder="ملاحظة"
+              />
             </div>
           )}
           <DialogFooter>
