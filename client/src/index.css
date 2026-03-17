@@ -156,14 +156,27 @@
   input[type="search"]::-webkit-search-cancel-button {
     @apply hidden;
   }
-
-  input[type="date"] {
-    direction: ltr;
-    text-align: left;
+  .rtl-row {
+    @apply flex items-center justify-between gap-2;
   }
 
-  .dark input[type="date"]::-webkit-calendar-picker-indicator {
-    filter: invert(1);
+  [dir="rtl"] .rtl-row {
+    flex-direction: row-reverse;
+    text-align: right;
+  }
+
+  .rtl-header {
+    @apply flex items-center justify-between gap-2;
+  }
+
+  [dir="rtl"] .rtl-header {
+    flex-direction: row-reverse;
+    text-align: right;
+  }
+
+  .rtl-number {
+    direction: ltr;
+    unicode-bidi: bidi-override;
   }
 
   [contenteditable][data-placeholder]:empty::before {

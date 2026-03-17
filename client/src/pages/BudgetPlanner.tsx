@@ -919,7 +919,7 @@ export default function BudgetPlanner() {
             <div className="lg:col-span-5 space-y-6 lg:order-2">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base flex flex-row-reverse items-center gap-2 justify-between">
+                  <CardTitle className="text-base rtl-header">
                     <Plus className="w-4 h-4 text-primary" />
                     إضافة معاملة جديدة
                   </CardTitle>
@@ -971,7 +971,7 @@ export default function BudgetPlanner() {
               </Card>
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base flex flex-row-reverse items-center gap-2 justify-between">
+                  <CardTitle className="text-base rtl-header">
                     <PiggyBank className="w-4 h-4 text-emerald-500" />
                     إضافة هدف ادخار
                   </CardTitle>
@@ -1016,11 +1016,11 @@ export default function BudgetPlanner() {
                           </div>
                           <Button variant="destructive" size="sm" className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition text-xs h-7" onClick={() => deleteSavingGoal(goal.id)}>حذف</Button>
                         </div>
-                        <div className="mt-2 flex items-center justify-between text-xs">
+                        <div className="mt-2 rtl-row text-xs">
                           <span className="text-muted-foreground">تم ادخار</span>
-                          <bdi dir="ltr" className="text-foreground tabular-nums whitespace-nowrap">
+                          <span className="rtl-number text-foreground tabular-nums whitespace-nowrap">
                             {`${formatAmount(saved, data.settings.currency)} / ${formatAmount(goal.targetAmount, data.settings.currency)}`}
-                          </bdi>
+                          </span>
                         </div>
                         <div className="mt-1.5 w-full h-2.5 bg-muted rounded-lg overflow-hidden">
                           <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }} transition={{ duration: 0.35 }} className="h-full bg-emerald-500" />
@@ -1044,9 +1044,9 @@ export default function BudgetPlanner() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                 <div className="mb-3 rounded-xl border bg-muted/50 p-3">
-                  <div className="flex items-center justify-between text-xs mb-1"><span>الدخل</span><span dir="ltr" className="tabular-nums">{formatAmount(monthlyTotals.income, data.settings.currency)}</span></div>
+                  <div className="rtl-row text-xs mb-1"><span>الدخل</span><span className="rtl-number tabular-nums">{formatAmount(monthlyTotals.income, data.settings.currency)}</span></div>
                   <div className="w-full h-2.5 rounded-lg bg-muted overflow-hidden mb-2"><motion.div initial={{ width: 0 }} animate={{ width: "100%" }} className="h-full bg-emerald-500" /></div>
-                  <div className="flex items-center justify-between text-xs mb-1"><span>المصروف الكلي</span><span dir="ltr" className="tabular-nums">{formatAmount(monthlyTotals.totalOutflow, data.settings.currency)}</span></div>
+                  <div className="rtl-row text-xs mb-1"><span>المصروف الكلي</span><span className="rtl-number tabular-nums">{formatAmount(monthlyTotals.totalOutflow, data.settings.currency)}</span></div>
                   <div className="w-full h-2.5 rounded-lg bg-muted overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: `${monthlyTotals.income > 0 ? Math.min((monthlyTotals.totalOutflow / monthlyTotals.income) * 100, 100) : 0}%` }} className="h-full bg-rose-500" /></div>
                 </div>
 
@@ -1106,9 +1106,9 @@ export default function BudgetPlanner() {
                         onMouseLeave={() => setHoveredOverviewSegment(null)}
                         className={cn("rounded-xl border p-2.5 transition", isActive ? "border-primary/40 bg-primary/5" : "bg-muted/50")}
                       >
-                        <div className="flex flex-row-reverse items-center justify-between text-sm mb-1 gap-2">
+                        <div className="rtl-row text-sm mb-1">
                           <p className="font-medium text-foreground">{`${segment.emoji} ${segment.name}`}</p>
-                          <p className="text-muted-foreground tabular-nums"><span className="inline-block tabular-nums whitespace-nowrap" style={{ direction: "ltr", unicodeBidi: "bidi-override" }}>{formatAmount(segment.total, data.settings.currency)}</span> • {segment.percent}%</p>
+                          <p className="text-muted-foreground tabular-nums"><span className="inline-block rtl-number tabular-nums whitespace-nowrap">{formatAmount(segment.total, data.settings.currency)}</span> • {segment.percent}%</p>
                         </div>
                         <div className="w-full h-2.5 bg-muted rounded-lg overflow-hidden">
                           <motion.div initial={{ width: 0 }} animate={{ width: `${segment.percent}%` }} transition={{ duration: 0.35 }} className="h-full" style={{ backgroundColor: segment.color }} />
@@ -1122,7 +1122,7 @@ export default function BudgetPlanner() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base flex flex-row-reverse items-center gap-2 justify-between">
+                  <CardTitle className="text-base rtl-header">
                     <CalendarClock className="w-4 h-4 text-primary" />
                     آخر عمليات هذا الشهر
                   </CardTitle>
@@ -1161,14 +1161,14 @@ export default function BudgetPlanner() {
 
                     return (
                       <Button key={tx.id} variant="outline" className="w-full h-auto justify-between p-3 text-right font-normal" onClick={() => setOperationActionsTx(tx)}>
-                        <div className="flex flex-row-reverse items-start justify-between gap-3 w-full">
+                        <div className="rtl-row items-start w-full">
                           <div>
                             <p className="font-semibold text-foreground">{rowTitle}</p>
                             <p className="text-xs text-muted-foreground mt-1">{metaLine}</p>
                             {tx.note && <p className="text-xs text-muted-foreground mt-1">{tx.note}</p>}
                           </div>
                           <p className={cn("font-bold tabular-nums shrink-0", tx.type === "income" ? "text-emerald-600 dark:text-emerald-400" : "text-destructive")}>
-                            <span className="inline-block tabular-nums whitespace-nowrap" style={{ direction: "ltr", unicodeBidi: "bidi-override" }}>{formatAmount(tx.amount, data.settings.currency)}</span>
+                            <span className="inline-block rtl-number tabular-nums whitespace-nowrap">{formatAmount(tx.amount, data.settings.currency)}</span>
                           </p>
                         </div>
                       </Button>
