@@ -1,4 +1,4 @@
-export type CurrencyCode = "ILS" | "USD" | "AED" | "SAR" | "JOD" | "KWD" | "QAR" | "EGP";
+export type CurrencyCode = "ILS" | "USD" | "GBP" | "EUR";
 
 export type BudgetTransactionType =
   | "income"
@@ -93,13 +93,13 @@ const LEGACY_STORAGE_KEY = "planner_hub_budget_v1";
 export const CURRENCY_OPTIONS: Array<{ code: CurrencyCode; symbol: string; label: string }> = [
   { code: "ILS", symbol: "₪", label: "₪ شيكل إسرائيلي (ILS)" },
   { code: "USD", symbol: "$", label: "$ دولار أمريكي (USD)" },
-  { code: "AED", symbol: "د.إ", label: "د.إ درهم إماراتي (AED)" },
-  { code: "SAR", symbol: "ر.س", label: "ر.س ريال سعودي (SAR)" },
-  { code: "JOD", symbol: "د.أ", label: "د.أ دينار أردني (JOD)" },
-  { code: "KWD", symbol: "د.ك", label: "د.ك دينار كويتي (KWD)" },
-  { code: "QAR", symbol: "ر.ق", label: "ر.ق ريال قطري (QAR)" },
-  { code: "EGP", symbol: "ج.م", label: "ج.م جنيه مصري (EGP)" },
+  { code: "GBP", symbol: "£", label: "£ جنيه إسترليني (GBP)" },
+  { code: "EUR", symbol: "€", label: "€ يورو (EUR)" },
 ];
+
+function normalizeCurrency(currency: string | undefined): CurrencyCode {
+  return CURRENCY_OPTIONS.some((item) => item.code === currency) ? (currency as CurrencyCode) : "ILS";
+}
 
 export const TRANSACTION_TYPE_LABEL: Record<BudgetTransactionType, string> = {
   income: "دخل",
@@ -218,6 +218,7 @@ export function loadBudgetData(): BudgetData {
         if (!Array.isArray(parsed.recurringTemplates)) {
           parsed.recurringTemplates = [];
         }
+        parsed.settings.currency = normalizeCurrency(parsed.settings.currency);
         return parsed;
       }
     }

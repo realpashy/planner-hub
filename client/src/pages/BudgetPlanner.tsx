@@ -895,9 +895,9 @@ export default function BudgetPlanner() {
                 <SelectTrigger className="budget-rtl-select-trigger flex-1 border-0 bg-transparent shadow-none focus:ring-0 w-auto min-w-0">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent dir="rtl" className="budget-rtl-select-content">
+                <SelectContent dir="rtl" className="budget-rtl-select-content budget-roomy-select-content">
                   {CURRENCY_OPTIONS.map((option) => (
-                    <SelectItem key={option.code} value={option.code}>{option.label}</SelectItem>
+                    <SelectItem key={option.code} value={option.code} className="budget-select-item">{option.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -920,8 +920,8 @@ export default function BudgetPlanner() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base budget-icon-title">
-                    <span>إضافة معاملة جديدة</span>
                     <Plus className="w-4 h-4 text-primary" />
+                    <span>إضافة معاملة جديدة</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -930,9 +930,9 @@ export default function BudgetPlanner() {
                       <SelectTrigger className="budget-rtl-select-trigger">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent dir="rtl" className="budget-rtl-select-content">
+                      <SelectContent dir="rtl" className="budget-rtl-select-content budget-roomy-select-content">
                         {ADD_TRANSACTION_TYPES.map((type) => (
-                          <SelectItem key={type} value={type}>{`${TYPE_EMOJI[type]} ${TRANSACTION_TYPE_LABEL[type]}`}</SelectItem>
+                          <SelectItem key={type} value={type} className="budget-select-item">{`${TYPE_EMOJI[type]} ${TRANSACTION_TYPE_LABEL[type]}`}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -972,8 +972,8 @@ export default function BudgetPlanner() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base budget-icon-title">
-                    <span>إضافة هدف ادخار</span>
                     <PiggyBank className="w-4 h-4 text-emerald-500" />
+                    <span>إضافة هدف ادخار</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
@@ -1000,8 +1000,8 @@ export default function BudgetPlanner() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base budget-icon-title">
-                    <span>أهداف الادخار</span>
                     <PiggyBank className="w-4 h-4 text-emerald-500" />
+                    <span>أهداف الادخار</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -1044,8 +1044,8 @@ export default function BudgetPlanner() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base budget-icon-title">
-                    <span>نظرة عامّة</span>
                     <Wallet className="w-4 h-4 text-primary" />
+                    <span>نظرة عامّة</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -1129,8 +1129,8 @@ export default function BudgetPlanner() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base budget-icon-title">
-                    <span>آخر عمليات هذا الشهر</span>
                     <CalendarClock className="w-4 h-4 text-primary" />
+                    <span>آخر عمليات هذا الشهر</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -1147,13 +1147,13 @@ export default function BudgetPlanner() {
                   </div>
                   <Select value={recentFilter} onValueChange={(v) => setRecentFilter(v as typeof recentFilter)}>
                     <SelectTrigger className="budget-rtl-select-trigger"><SelectValue /></SelectTrigger>
-                    <SelectContent dir="rtl" className="budget-rtl-select-content">
-                      <SelectItem value="all">الكل</SelectItem>
-                      <SelectItem value="income">دخل</SelectItem>
-                      <SelectItem value="expense">مصروف</SelectItem>
-                      <SelectItem value="bill_payment">فاتورة</SelectItem>
-                      <SelectItem value="debt_payment">دين</SelectItem>
-                      <SelectItem value="other">أخرى</SelectItem>
+                    <SelectContent dir="rtl" className="budget-rtl-select-content budget-roomy-select-content">
+                      <SelectItem value="all" className="budget-select-item">الكل</SelectItem>
+                      <SelectItem value="income" className="budget-select-item">دخل</SelectItem>
+                      <SelectItem value="expense" className="budget-select-item">مصروف</SelectItem>
+                      <SelectItem value="bill_payment" className="budget-select-item">فاتورة</SelectItem>
+                      <SelectItem value="debt_payment" className="budget-select-item">دين</SelectItem>
+                      <SelectItem value="other" className="budget-select-item">أخرى</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1187,8 +1187,8 @@ export default function BudgetPlanner() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base budget-icon-title">
-                    <span>تحليل مالي ذكي</span>
                     <TrendingUp className="w-4 h-4 text-primary" />
+                    <span>تحليل مالي ذكي</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -1285,9 +1285,9 @@ export default function BudgetPlanner() {
               )}
               <Select value={editDialog.categoryId} onValueChange={(v) => setEditDialog((prev) => ({ ...prev, categoryId: v }))}>
                 <SelectTrigger className="budget-rtl-select-trigger"><SelectValue /></SelectTrigger>
-                <SelectContent dir="rtl" className="budget-rtl-select-content">
+                <SelectContent dir="rtl" className="budget-rtl-select-content budget-roomy-select-content">
                   {data.categories.filter((c) => c.type === editDialog.tx?.type).map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>{`${categoryEmoji(cat.name, cat.type)} ${cat.name}`}</SelectItem>
+                    <SelectItem key={cat.id} value={cat.id} className="budget-select-item">{`${categoryEmoji(cat.name, cat.type)} ${cat.name}`}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -1320,9 +1320,9 @@ export default function BudgetPlanner() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                   <Select value={categoryType} onValueChange={(v) => setCategoryType(v as BudgetCategoryType)}>
                     <SelectTrigger className="budget-rtl-select-trigger"><SelectValue /></SelectTrigger>
-                    <SelectContent dir="rtl" className="budget-rtl-select-content">
+                    <SelectContent dir="rtl" className="budget-rtl-select-content budget-roomy-select-content">
                       {(Object.keys(TRANSACTION_TYPE_LABEL) as BudgetTransactionType[]).map((type) => (
-                        <SelectItem key={type} value={type}>{`${TYPE_EMOJI[type]} ${TRANSACTION_TYPE_LABEL[type]}`}</SelectItem>
+                        <SelectItem key={type} value={type} className="budget-select-item">{`${TYPE_EMOJI[type]} ${TRANSACTION_TYPE_LABEL[type]}`}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

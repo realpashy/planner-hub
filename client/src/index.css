@@ -187,6 +187,14 @@
     @apply text-start;
   }
 
+  .budget-select-item {
+    @apply min-h-10 py-2.5 ps-10 pe-4;
+  }
+
+  .budget-select-item[data-state="checked"] {
+    @apply bg-primary/15 text-primary dark:bg-primary/20 dark:text-primary-foreground;
+  }
+
   .budget-rtl-input {
     @apply text-start;
   }
