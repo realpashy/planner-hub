@@ -203,10 +203,6 @@
     @apply flex w-full items-center justify-end gap-2 text-right;
   }
 
-  [dir="rtl"] .budget-icon-title {
-    flex-direction: row-reverse;
-  }
-
   .budget-actions {
     @apply flex items-center gap-1;
   }
@@ -218,6 +214,19 @@
   .budget-scroll-panel {
     @apply overflow-y-auto;
     max-height: 85vh;
+  }
+
+  .budget-value-left {
+    @apply shrink-0 text-left;
+  }
+
+  .budget-roomy-select-content {
+    max-height: 25rem;
+    min-width: 18rem;
+  }
+
+  .budget-roomy-select-item {
+    @apply min-h-10 py-2.5;
   }
 
   .budget-date-input {

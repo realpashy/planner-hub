@@ -877,9 +877,9 @@ export default function BudgetPlanner() {
                 <SelectTrigger className="budget-rtl-select-trigger flex-1 border-0 bg-transparent shadow-none focus:ring-0 w-auto min-w-0">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent dir="rtl" className="budget-rtl-select-content">
+                <SelectContent dir="rtl" className="budget-rtl-select-content budget-roomy-select-content">
                   {monthOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                    <SelectItem key={option.value} value={option.value} className="budget-roomy-select-item">{option.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -920,8 +920,8 @@ export default function BudgetPlanner() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base budget-icon-title">
+                    <span>إضافة معاملة جديدة</span>
                     <Plus className="w-4 h-4 text-primary" />
-                    إضافة معاملة جديدة
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -972,8 +972,8 @@ export default function BudgetPlanner() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base budget-icon-title">
+                    <span>إضافة هدف ادخار</span>
                     <PiggyBank className="w-4 h-4 text-emerald-500" />
-                    إضافة هدف ادخار
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
@@ -999,7 +999,10 @@ export default function BudgetPlanner() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base budget-widget-title">أهداف الادخار</CardTitle>
+                  <CardTitle className="text-base budget-icon-title">
+                    <span>أهداف الادخار</span>
+                    <PiggyBank className="w-4 h-4 text-emerald-500" />
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                 <div className="space-y-2.5">
@@ -1014,11 +1017,11 @@ export default function BudgetPlanner() {
                             <p className="font-semibold text-foreground">{goal.title}</p>
                             <p className="text-xs text-muted-foreground mt-1">الاستحقاق: {goal.targetDate}</p>
                           </div>
-                          <Button variant="destructive" size="sm" className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition text-xs h-7" onClick={() => deleteSavingGoal(goal.id)}>حذف</Button>
+                          <Button variant="destructive" size="sm" className="budget-value-left opacity-100 md:opacity-0 md:group-hover:opacity-100 transition text-xs h-7" onClick={() => deleteSavingGoal(goal.id)}>حذف</Button>
                         </div>
                         <div className="mt-2 rtl-row text-xs">
                           <span className="text-muted-foreground">تم ادخار</span>
-                          <span className="rtl-number text-foreground tabular-nums whitespace-nowrap">
+                          <span className="budget-value-left rtl-number text-foreground tabular-nums whitespace-nowrap">
                             {`${formatAmount(saved, data.settings.currency)} / ${formatAmount(goal.targetAmount, data.settings.currency)}`}
                           </span>
                         </div>
@@ -1040,13 +1043,16 @@ export default function BudgetPlanner() {
             <div className="lg:col-span-7 space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base budget-widget-title">نظرة عامّة</CardTitle>
+                  <CardTitle className="text-base budget-icon-title">
+                    <span>نظرة عامّة</span>
+                    <Wallet className="w-4 h-4 text-primary" />
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                 <div className="mb-3 rounded-xl border bg-muted/50 p-3">
-                  <div className="rtl-row text-xs mb-1"><span className="text-right">الدخل</span><span className="rtl-number tabular-nums">{formatAmount(monthlyTotals.income, data.settings.currency)}</span></div>
+                  <div className="rtl-row text-xs mb-1"><span className="flex-1 text-right">الدخل</span><span className="budget-value-left rtl-number tabular-nums">{formatAmount(monthlyTotals.income, data.settings.currency)}</span></div>
                   <div className="w-full h-2.5 rounded-lg bg-muted overflow-hidden mb-2"><motion.div initial={{ width: 0 }} animate={{ width: "100%" }} className="h-full bg-emerald-500" /></div>
-                  <div className="rtl-row text-xs mb-1"><span className="text-right">المصروف الكلي</span><span className="rtl-number tabular-nums">{formatAmount(monthlyTotals.totalOutflow, data.settings.currency)}</span></div>
+                  <div className="rtl-row text-xs mb-1"><span className="flex-1 text-right">المصروف الكلي</span><span className="budget-value-left rtl-number tabular-nums">{formatAmount(monthlyTotals.totalOutflow, data.settings.currency)}</span></div>
                   <div className="w-full h-2.5 rounded-lg bg-muted overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: `${monthlyTotals.income > 0 ? Math.min((monthlyTotals.totalOutflow / monthlyTotals.income) * 100, 100) : 0}%` }} className="h-full bg-rose-500" /></div>
                 </div>
 
@@ -1108,7 +1114,7 @@ export default function BudgetPlanner() {
                       >
                         <div className="rtl-row text-sm mb-1">
                           <p className="flex-1 text-right font-medium text-foreground">{`${segment.emoji} ${segment.name}`}</p>
-                          <p className="text-muted-foreground tabular-nums"><span className="inline-block rtl-number tabular-nums whitespace-nowrap">{formatAmount(segment.total, data.settings.currency)}</span> • {segment.percent}%</p>
+                          <p className="budget-value-left text-muted-foreground tabular-nums"><span className="inline-block rtl-number tabular-nums whitespace-nowrap">{formatAmount(segment.total, data.settings.currency)}</span> • {segment.percent}%</p>
                         </div>
                         <div className="w-full h-2.5 bg-muted rounded-lg overflow-hidden">
                           <motion.div initial={{ width: 0 }} animate={{ width: `${segment.percent}%` }} transition={{ duration: 0.35 }} className="h-full" style={{ backgroundColor: segment.color }} />
@@ -1123,8 +1129,8 @@ export default function BudgetPlanner() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base budget-icon-title">
+                    <span>آخر عمليات هذا الشهر</span>
                     <CalendarClock className="w-4 h-4 text-primary" />
-                    آخر عمليات هذا الشهر
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -1167,7 +1173,7 @@ export default function BudgetPlanner() {
                             <p className="text-xs text-muted-foreground mt-1">{metaLine}</p>
                             {tx.note && <p className="text-xs text-muted-foreground mt-1">{tx.note}</p>}
                           </div>
-                          <p className={cn("font-bold tabular-nums shrink-0", tx.type === "income" ? "text-emerald-600 dark:text-emerald-400" : "text-destructive")}>
+                          <p className={cn("budget-value-left font-bold tabular-nums", tx.type === "income" ? "text-emerald-600 dark:text-emerald-400" : "text-destructive")}>
                             <span className="inline-block rtl-number tabular-nums whitespace-nowrap">{formatAmount(tx.amount, data.settings.currency)}</span>
                           </p>
                         </div>
@@ -1180,7 +1186,10 @@ export default function BudgetPlanner() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base budget-widget-title">تحليل مالي ذكي</CardTitle>
+                  <CardTitle className="text-base budget-icon-title">
+                    <span>تحليل مالي ذكي</span>
+                    <TrendingUp className="w-4 h-4 text-primary" />
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                 <div className="space-y-2.5 text-right">
