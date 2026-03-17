@@ -2539,10 +2539,10 @@ export default function BudgetPlanner() {
                 dir="ltr"
                 type="date"
                 value={editDialog.date}
-                onChange={(e) => setEditDialog((prev) => ({ ...prev, date: e.target.value }))}
-                className="hidden budget-date-input tabular-nums"
-                aria-hidden="true"
-                tabIndex={-1}
+                onChange={(e) =>
+                  setEditDialog((prev) => ({ ...prev, date: e.target.value }))
+                }
+                className="budget-date-input tabular-nums"
               />
               {isRecurringTransaction(editDialog.tx) && (
                 <div className="rounded-lg border bg-muted/50 p-2 space-y-2 text-right">
