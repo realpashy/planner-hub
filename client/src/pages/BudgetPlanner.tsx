@@ -854,7 +854,7 @@ export default function BudgetPlanner() {
               </Button>
               <ThemeToggle />
               <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                <SelectTrigger className="budget-toolbar-select" aria-label="اختيار الشهر">
+                <SelectTrigger className="budget-toolbar-select budget-toolbar-select-trigger" aria-label="اختيار الشهر">
                   <CalendarClock className="w-4 h-4 text-foreground" />
                   <span className="sr-only">{localizedMonthLabel}</span>
                 </SelectTrigger>
@@ -868,7 +868,7 @@ export default function BudgetPlanner() {
                 value={data.settings.currency}
                 onValueChange={(value) => applyData((current) => ({ ...current, settings: { ...current.settings, currency: value as BudgetData["settings"]["currency"] } }))}
               >
-                <SelectTrigger className="budget-toolbar-select" aria-label="اختيار العملة">
+                <SelectTrigger className="budget-toolbar-select budget-toolbar-select-trigger" aria-label="اختيار العملة">
                   <Landmark className="w-4 h-4 text-foreground" />
                   <span className="sr-only">{data.settings.currency}</span>
                 </SelectTrigger>
@@ -1049,7 +1049,7 @@ export default function BudgetPlanner() {
 
                 <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-center sm:gap-6" onMouseLeave={() => setHoveredOverviewSegment(null)}>
                   <div className="flex justify-center">
-                    <div className="budget-overview-donut relative h-52 w-52">
+                    <div className="budget-overview-donut relative h-56 w-56">
                       <svg viewBox="0 0 180 180" className="w-full h-full drop-shadow-sm">
                         <circle cx="90" cy="90" r="56" fill="none" stroke="rgba(148, 163, 184, 0.18)" strokeWidth="18" />
                         {donutSegments.map((segment) => (
@@ -1058,10 +1058,12 @@ export default function BudgetPlanner() {
                               d={describeArcPath(90, 90, 56, segment.startAngle, segment.endAngle)}
                               fill="none"
                               stroke="transparent"
-                              strokeWidth={30}
+                              strokeWidth={34}
                               strokeLinecap="butt"
-                              onMouseEnter={() => setHoveredOverviewSegment(segment.id)}
-                              onMouseLeave={() => setHoveredOverviewSegment(null)}
+                              pointerEvents="stroke"
+                              onPointerEnter={() => setHoveredOverviewSegment(segment.id)}
+                              onPointerMove={() => setHoveredOverviewSegment(segment.id)}
+                              onPointerLeave={() => setHoveredOverviewSegment(null)}
                             />
                             <path
                               d={describeArcPath(90, 90, 56, segment.startAngle, segment.endAngle)}
@@ -1084,13 +1086,14 @@ export default function BudgetPlanner() {
                             initial={{ strokeWidth: 18, opacity: 0.85 }}
                             animate={{ strokeWidth: 24, opacity: 1 }}
                             transition={{ type: "spring", stiffness: 360, damping: 24 }}
+                            pointerEvents="none"
                           />
                         )}
                       </svg>
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                         <div className="w-20 h-20 rounded-full bg-card border border-border flex flex-col items-center justify-center text-center px-1">
-                          <p className="text-[11px] text-muted-foreground leading-tight">{activeOverviewSegment?.name || "نسبة"}</p>
-                          <p className="text-sm font-bold text-foreground tabular-nums">{activeOverviewSegment ? `${activeOverviewSegment.percent}%` : "0%"}</p>
+                          <p className="text-[11px] text-muted-foreground leading-tight">{activeOverviewSegment?.name || "إجمالي الصرف"}</p>
+                          <p className="text-sm font-bold text-foreground tabular-nums">{activeOverviewSegment ? `${activeOverviewSegment.percent}%` : formatAmount(monthlyTotals.totalOutflow, data.settings.currency)}</p>
                         </div>
                       </div>
                     </div>
