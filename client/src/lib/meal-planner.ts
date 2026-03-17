@@ -155,8 +155,12 @@ export function getDefaultPantry(): PantryItem[] {
 
 export function normalizeIngredientName(name: string): string {
   let n = name.trim();
+  // توحيد المسافات
   n = n.replace(/\s+/g, " ");
-  n = n.replace(/[إأآا]/g, "ا").replace(/[ة]/g, "ه");
+  // توحيد بعض الحروف العربية الشائعة
+  n = n.replace(/[إأآا]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي");
+  // إزالة التشكيل البسيط إن وُجد
+  n = n.replace(/[\u0610-\u061A\u064B-\u065F\u06D6-\u06ED]/g, "");
   return n.toLowerCase();
 }
 
@@ -259,5 +263,152 @@ export function getSeedRecipes(): MealRecipe[] {
   ];
 }
 
+export function generateShoppingList(params: {
+  plan: WeeklyMealPlan;
+  recipes: MealRecipe[];
+  pantry: PantryItem[];
+  existing: ShoppingListItem[];
+  options?: { excludePantryStaples?: boolean };
+}): ShoppingListItem[] {
+  const { plan, recipes, pantry, existing, options } = params;
+  const excludeStaples = options?.excludePantryStaples ?? true;
 
+  const manualItems = existing.filter((item) => item.isManual);
+  const autoItemsFromMeals = existing.filter((item) => !item.isManual);
 
+  const pantryNormalized = new Set(
+    pantry
+      .filter((p) => p.isEnabled)
+      .map((p) => normalizeIngredientName(p.name)),
+  );
+
+  const aggregated = new Map<
+    string,
+    {
+      ingredientId?: string;
+      displayName: string;
+      normalizedName: string;
+      quantity: number;
+      unit?: string;
+      category: Ingredient["category"];
+      fromMealIds: Set<string>;
+    }
+  >();
+
+  const recipeById = new Map(recipes.map((r) => [r.id, r]));
+
+  for (const meal of plan.meals) {
+    if (meal.source !== "recipe" || !meal.recipeId) continue;
+    const recipe = recipeById.get(meal.recipeId);
+    if (!recipe) continue;
+
+    for (const ing of recipe.ingredients) {
+      const key = ing.normalizedName || normalizeIngredientName(ing.displayName);
+      if (excludeStaples && pantryNormalized.has(key)) {
+        continue;
+      }
+      const existingAgg = aggregated.get(key);
+      if (existingAgg) {
+        existingAgg.quantity += ing.quantity;
+        existingAgg.fromMealIds.add(meal.id);
+      } else {
+        aggregated.set(key, {
+          ingredientId: ing.id,
+          displayName: ing.displayName,
+          normalizedName: key,
+          quantity: ing.quantity,
+          unit: ing.unit,
+          category: ing.category,
+          fromMealIds: new Set([meal.id]),
+        });
+      }
+    }
+  }
+
+  const autoItems: ShoppingListItem[] = Array.from(aggregated.values()).map(
+    (item) => {
+      // حاول إعادة استخدام عنصر أوتو موجود بنفس normalizedName للحفاظ على checked
+      const match = autoItemsFromMeals.find(
+        (existingItem) => existingItem.normalizedName === item.normalizedName,
+      );
+      return {
+        id: match?.id ?? createId(),
+        ingredientId: item.ingredientId,
+        displayName: item.displayName,
+        normalizedName: item.normalizedName,
+        quantity: item.quantity,
+        unit: item.unit,
+        category: item.category,
+        checked: match?.checked ?? false,
+        fromMealIds: Array.from(item.fromMealIds),
+        isManual: false,
+      };
+    },
+  );
+
+  return [...autoItems, ...manualItems];
+}
+
+export function suggestLeftovers(
+  plan: WeeklyMealPlan,
+  targetDateISO: string,
+  mealType: MealType,
+): PlannedMeal[] {
+  const targetDate = new Date(targetDateISO);
+  const previousMeals = plan.meals
+    .filter((meal) => new Date(meal.dateISO) < targetDate)
+    .sort((a, b) => new Date(b.dateISO).getTime() - new Date(a.dateISO).getTime());
+
+  const suggestions: PlannedMeal[] = [];
+
+  for (const meal of previousMeals) {
+    if (meal.mealType !== mealType && mealType !== "lunch") continue;
+    if (meal.source === "skipped" || meal.source === "eating_out") continue;
+
+    const hasLeftoversFlag = (meal.leftoversPortions ?? 0) > 0;
+    const isRecipeMultiServings =
+      meal.source === "recipe" &&
+      !!meal.recipeId;
+
+    if (hasLeftoversFlag || isRecipeMultiServings) {
+      suggestions.push(meal);
+    }
+
+    if (suggestions.length >= 3) break;
+  }
+
+  return suggestions;
+}
+
+export function getWeekSummary(
+  plan: WeeklyMealPlan,
+  enabledMealTypes: MealType[],
+  shoppingItems: ShoppingListItem[],
+  favorites: string[],
+): WeekSummary {
+  const totalDays = 7;
+  const totalSlots = enabledMealTypes.length * totalDays;
+  const plannedMeals = plan.meals.length;
+  const emptySlots = Math.max(totalSlots - plannedMeals, 0);
+  const shoppingItemsCount = shoppingItems.length;
+
+  const favoriteRecipesUsed = plan.meals.filter(
+    (meal) => meal.recipeId && favorites.includes(meal.recipeId),
+  ).length;
+
+  return {
+    totalSlots,
+    plannedMeals,
+    emptySlots,
+    shoppingItemsCount,
+    favoriteRecipesUsed,
+  };
+}
+
+export function getAutoFillSuggestions(_state: MealPlannerState) {
+  return [];
+}
+
+export function getShoppingOptimizationSuggestions(_state: MealPlannerState) {
+  return [];
+}
