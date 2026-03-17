@@ -28,16 +28,6 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
   Sheet,
   SheetContent,
   SheetDescription,
@@ -1677,7 +1667,7 @@ export default function BudgetPlanner() {
                   <ArrowRight className="w-5 h-5" />
                 </Link>
               </Button>
-              <div className="flex items-center gap-2 rounded-2xl bg-background/80 px-3 py-2 shadow-sm backdrop-blur">
+              <div className="flex items-center gap-2 px-1 py-2">
                 <Wallet className="h-4 w-4 text-emerald-500" />
                 <span className="text-sm font-semibold text-foreground whitespace-nowrap">الميزانيّة الشهرية</span>
               </div>
@@ -1991,18 +1981,16 @@ export default function BudgetPlanner() {
                   {savingsGoalCards.map((goal) => {
                     return (
                       <div key={goal.id} className="group rounded-3xl border border-slate-200/80 bg-white/95 p-4 shadow-[0_14px_40px_-24px_rgba(15,23,42,0.24)] transition hover:border-slate-300/70 dark:border-border dark:bg-muted/40 dark:shadow-none">
-                        <div className="rtl-row items-start gap-3">
-                          <div className="w-16 shrink-0 budget-value-left">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-full justify-center rounded-xl px-2 text-xs text-muted-foreground transition-colors hover:text-destructive"
-                              onClick={() => openDeleteConfirm("حذف هدف الادخار", "سيتم حذف الهدف وكل المساهمات المرتبطة به. هل تريد المتابعة؟", () => deleteSavingGoal(goal.id))}
-                            >
-                              حذف
-                            </Button>
+                        <div className="flex items-center gap-3">
+                          <div className="min-w-0 flex-1 text-right">
+                            <p className="w-full truncate text-right text-base font-semibold text-foreground">{goal.displayTitle}</p>
+                            <div className="mt-1.5 flex justify-end">
+                              <Badge variant="outline" className="whitespace-nowrap rounded-full border-slate-200 bg-slate-50/90 px-2.5 py-1 text-slate-700 dark:border-border dark:bg-background/60 dark:text-foreground">
+                                {`${SAVINGS_GOAL_META[goal.category].emoji} ${getSavingsGoalCategoryLabel(goal.category)}`}
+                              </Badge>
+                            </div>
                           </div>
-                          <div className="w-24 shrink-0 budget-value-left flex flex-col items-start gap-1">
+                          <div className="flex items-center gap-2 shrink-0">
                             <Select value={goal.status} onValueChange={(value) => updateSavingGoalStatus(goal.id, value as BudgetSavingGoalStatus)}>
                               <SelectTrigger className="h-8 w-[108px] budget-rtl-select-trigger border-slate-200 bg-white text-xs dark:border-border dark:bg-background/60">
                                 <SelectValue />
@@ -2013,16 +2001,14 @@ export default function BudgetPlanner() {
                                 <SelectItem value="archived" className="budget-select-item">مؤرشف</SelectItem>
                               </SelectContent>
                             </Select>
-                          </div>
-                          <div className="min-w-0 basis-[60%] flex-1 text-right">
-                            <div className="flex justify-end">
-                              <p className="w-full truncate text-right text-base font-semibold text-foreground">{goal.displayTitle}</p>
-                            </div>
-                            <div className="mt-3 flex flex-wrap justify-end gap-2">
-                              <Badge variant="outline" className="whitespace-nowrap rounded-full border-slate-200 bg-slate-50/90 text-slate-700 dark:border-border dark:bg-background/60 dark:text-foreground">
-                                {`${SAVINGS_GOAL_META[goal.category].emoji} ${getSavingsGoalCategoryLabel(goal.category)}`}
-                              </Badge>
-                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 min-w-[48px] justify-center rounded-xl px-2 text-xs text-muted-foreground transition-colors hover:text-destructive"
+                              onClick={() => openDeleteConfirm("حذف هدف الادخار", "سيتم حذف الهدف وكل المساهمات المرتبطة به. هل تريد المتابعة؟", () => deleteSavingGoal(goal.id))}
+                            >
+                              حذف
+                            </Button>
                           </div>
                         </div>
                         <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -2107,12 +2093,11 @@ export default function BudgetPlanner() {
                 </div>
 
                 <div
-                  ref={overviewInteractionRef}
                   className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-center sm:gap-6"
                   onMouseLeave={() => setHoveredOverviewSegment(null)}
                 >
                   <div className="flex justify-center">
-                    <div className="budget-overview-donut relative h-60 w-60">
+                    <div ref={overviewInteractionRef} className="budget-overview-donut relative h-60 w-60">
                       <svg viewBox="0 0 180 180" className="w-full h-full drop-shadow-sm">
                         <circle cx="90" cy="90" r="56" fill="none" stroke="rgba(148, 163, 184, 0.18)" strokeWidth="18" />
                         {donutSegments.map((segment) => (
@@ -2710,26 +2695,26 @@ export default function BudgetPlanner() {
           </div>
         </DialogContent>
       </Dialog>
-      <AlertDialog open={deleteConfirm.open} onOpenChange={(open) => { if (!open) closeDeleteConfirm(); }}>
-        <AlertDialogContent dir="rtl" className="max-w-md text-right">
-          <AlertDialogHeader className="text-right sm:text-right">
-            <AlertDialogTitle>{deleteConfirm.title}</AlertDialogTitle>
-            <AlertDialogDescription>{deleteConfirm.description}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="sm:flex-row-reverse">
-            <AlertDialogCancel>إلغاء</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+      <Dialog open={deleteConfirm.open} onOpenChange={(open) => { if (!open) closeDeleteConfirm(); }}>
+        <DialogContent dir="rtl" className="max-w-md text-right">
+          <DialogHeader className="text-right sm:text-right">
+            <DialogTitle>{deleteConfirm.title}</DialogTitle>
+            <DialogDescription>{deleteConfirm.description}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:flex-row-reverse">
+            <Button variant="secondary" onClick={closeDeleteConfirm}>إلغاء</Button>
+            <Button
+              variant="destructive"
               onClick={() => {
                 deleteConfirm.onConfirm?.();
                 closeDeleteConfirm();
               }}
             >
               {deleteConfirm.confirmLabel}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       </main>
     </div>
   );
