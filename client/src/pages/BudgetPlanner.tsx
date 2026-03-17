@@ -919,7 +919,7 @@ export default function BudgetPlanner() {
             <div className="lg:col-span-5 space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base rtl-header">
+                  <CardTitle className="text-base rtl-header budget-widget-title">
                     <Plus className="w-4 h-4 text-primary" />
                     إضافة معاملة جديدة
                   </CardTitle>
@@ -971,7 +971,7 @@ export default function BudgetPlanner() {
               </Card>
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base rtl-header">
+                  <CardTitle className="text-base rtl-header budget-widget-title">
                     <PiggyBank className="w-4 h-4 text-emerald-500" />
                     إضافة هدف ادخار
                   </CardTitle>
@@ -999,7 +999,7 @@ export default function BudgetPlanner() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base text-start">أهداف الادخار</CardTitle>
+                  <CardTitle className="text-base budget-widget-title">أهداف الادخار</CardTitle>
                 </CardHeader>
                 <CardContent>
                 <div className="space-y-2.5">
@@ -1040,7 +1040,7 @@ export default function BudgetPlanner() {
             <div className="lg:col-span-7 space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base text-start">نظرة عامّة</CardTitle>
+                  <CardTitle className="text-base budget-widget-title">نظرة عامّة</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                 <div className="mb-3 rounded-xl border bg-muted/50 p-3">
@@ -1089,7 +1089,7 @@ export default function BudgetPlanner() {
                       </div>
                     </div>
                   </div>
-                  <div className="text-sm text-start text-muted-foreground">
+                  <div className="text-sm text-right text-muted-foreground">
                     <p>حرّك المؤشر على أي فئة لرؤية نسبتها بسرعة.</p>
                     <p className="mt-1">يتم تكبير الجزء المطابق للفئة فقط لربط القائمة بالمخطط.</p>
                   </div>
@@ -1122,7 +1122,7 @@ export default function BudgetPlanner() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base rtl-header">
+                  <CardTitle className="text-base rtl-header budget-widget-title">
                     <CalendarClock className="w-4 h-4 text-primary" />
                     آخر عمليات هذا الشهر
                   </CardTitle>
@@ -1151,7 +1151,7 @@ export default function BudgetPlanner() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2 max-h-[520px] overflow-auto">
+                <div className="space-y-2 max-h-[520px] overflow-auto modern-scrollbar">
                   {recentTransactions.length === 0 && <p className="text-sm text-muted-foreground">لا توجد عمليات مطابقة.</p>}
                   {recentTransactions.map((tx) => {
                     const category = data.categories.find((c) => c.id === tx.categoryId);
@@ -1180,10 +1180,10 @@ export default function BudgetPlanner() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base text-start">تحليل مالي ذكي</CardTitle>
+                  <CardTitle className="text-base budget-widget-title">تحليل مالي ذكي</CardTitle>
                 </CardHeader>
                 <CardContent>
-                <div className="space-y-2.5 text-start">
+                <div className="space-y-2.5 text-right">
                   {upcomingWarnings.map((warning, index) => (
                     <div
                       key={`${warning.text}_${index}`}
@@ -1261,10 +1261,12 @@ export default function BudgetPlanner() {
                 type="date"
                 value={editDialog.date}
                 onChange={(e) => setEditDialog((prev) => ({ ...prev, date: e.target.value }))}
-                className="budget-date-input tabular-nums"
+                className="hidden budget-date-input tabular-nums"
+                aria-hidden="true"
+                tabIndex={-1}
               />
               {isRecurringTransaction(editDialog.tx) && (
-                <div className="rounded-lg border bg-muted/50 p-2 space-y-2">
+                <div className="rounded-lg border bg-muted/50 p-2 space-y-2 text-right">
                   <p className="text-xs text-muted-foreground">تطبيق التعديل على</p>
                   <div className="grid grid-cols-2 gap-2">
                     <Button type="button" size="sm" variant={editApplyScope === "current" ? "default" : "secondary"} onClick={() => setEditApplyScope("current")}>هذا الشهر فقط</Button>
@@ -1296,14 +1298,14 @@ export default function BudgetPlanner() {
         </DialogContent>
       </Dialog>
       <Dialog open={categoriesDialogOpen} onOpenChange={setCategoriesDialogOpen}>
-        <DialogContent className="max-w-2xl" dir="rtl">
+        <DialogContent className="max-w-2xl budget-scroll-panel modern-scrollbar" dir="rtl">
           <DialogHeader>
             <DialogTitle>إعدادات الفئات</DialogTitle>
           </DialogHeader>
           <div className="mt-2 space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base text-start">تخصيص الفئات</CardTitle>
+                <CardTitle className="text-base budget-widget-title">تخصيص الفئات</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
@@ -1330,12 +1332,12 @@ export default function BudgetPlanner() {
             {(Object.keys(TRANSACTION_TYPE_LABEL) as BudgetTransactionType[]).map((type) => (
               <Card key={type}>
                 <CardHeader>
-                  <CardTitle className="text-base text-start">{`${TYPE_EMOJI[type]} ${TRANSACTION_TYPE_LABEL[type]}`}</CardTitle>
+                  <CardTitle className="text-base budget-widget-title">{`${TYPE_EMOJI[type]} ${TRANSACTION_TYPE_LABEL[type]}`}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
                     {categoriesByType[type].map((cat) => (
-                      <div key={cat.id} className="group rounded-xl bg-muted/50 p-2.5 rtl-row">
+                      <div key={cat.id} className="group rounded-xl bg-muted/50 p-2.5 rtl-row items-center">
                         {editingCategoryId === cat.id ? (
                           <Input
                             dir="rtl"
@@ -1344,9 +1346,9 @@ export default function BudgetPlanner() {
                             onChange={(e) => setEditingCategoryName(e.target.value)}
                           />
                         ) : (
-                          <p className="font-medium text-foreground">{`${categoryEmoji(cat.name, cat.type)} ${cat.name}`}</p>
+                          <p className="font-medium text-foreground text-right">{`${categoryEmoji(cat.name, cat.type)} ${cat.name}`}</p>
                         )}
-                        <div className="flex items-center gap-1">
+                        <div className="budget-actions">
                           {editingCategoryId === cat.id ? (
                             <Button size="sm" className="h-7 text-xs" onClick={saveCategoryEdit}>حفظ</Button>
                           ) : (
@@ -1409,8 +1411,8 @@ function SummaryCard({
   return (
     <Card className="p-5 transition-all hover:shadow-md">
       <CardContent className="p-0">
-        <div className="flex items-start justify-between gap-2 mb-2">
-          <p className="text-xs font-semibold tracking-wide text-muted-foreground">{title}</p>
+        <div className="rtl-row items-start mb-2">
+          <p className="text-xs font-semibold tracking-wide text-muted-foreground text-right">{title}</p>
           <span className={cn("inline-flex items-center justify-center rounded-lg p-1.5", entry.soft)}>
             <Icon className="w-4 h-4" />
           </span>

@@ -195,6 +195,23 @@
     @apply ps-3 pe-9 text-start;
   }
 
+  .budget-widget-title {
+    @apply text-right w-full;
+  }
+
+  .budget-actions {
+    @apply flex items-center gap-1;
+  }
+
+  [dir="rtl"] .budget-actions {
+    flex-direction: row-reverse;
+  }
+
+  .budget-scroll-panel {
+    @apply overflow-y-auto;
+    max-height: 85vh;
+  }
+
   .budget-date-input {
     direction: ltr;
     text-align: left;
