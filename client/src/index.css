@@ -235,6 +235,10 @@
     @apply min-h-10 py-2.5;
   }
 
+  .budget-toolbar-select {
+    @apply h-9 w-9 rounded-full border bg-muted/50 px-0 shadow-none focus:ring-0 [&>svg]:hidden;
+  }
+
   .budget-date-input {
     direction: ltr;
     text-align: left;

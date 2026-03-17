@@ -853,6 +853,31 @@ export default function BudgetPlanner() {
                 </Link>
               </Button>
               <ThemeToggle />
+              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                <SelectTrigger className="budget-toolbar-select" aria-label="اختيار الشهر">
+                  <CalendarClock className="w-4 h-4 text-foreground" />
+                  <span className="sr-only">{localizedMonthLabel}</span>
+                </SelectTrigger>
+                <SelectContent dir="rtl" className="budget-rtl-select-content budget-roomy-select-content">
+                  {monthOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value} className="budget-select-item">{option.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={data.settings.currency}
+                onValueChange={(value) => applyData((current) => ({ ...current, settings: { ...current.settings, currency: value as BudgetData["settings"]["currency"] } }))}
+              >
+                <SelectTrigger className="budget-toolbar-select" aria-label="اختيار العملة">
+                  <Landmark className="w-4 h-4 text-foreground" />
+                  <span className="sr-only">{data.settings.currency}</span>
+                </SelectTrigger>
+                <SelectContent dir="rtl" className="budget-rtl-select-content budget-roomy-select-content">
+                  {CURRENCY_OPTIONS.map((option) => (
+                    <SelectItem key={option.code} value={option.code} className="budget-select-item">{option.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Button
                 variant="outline"
                 size="icon"
@@ -868,40 +893,6 @@ export default function BudgetPlanner() {
               الميزانيّة الشهرية
             </h1>
             <div className="w-[68px]" />
-          </div>
-
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="rtl-row rounded-lg border bg-muted/50 px-3 py-2.5">
-              <CalendarClock className="w-4 h-4 text-foreground" />
-              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                <SelectTrigger className="budget-rtl-select-trigger flex-1 border-0 bg-transparent shadow-none focus:ring-0 w-auto min-w-0">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent dir="rtl" className="budget-rtl-select-content budget-roomy-select-content">
-                  {monthOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value} className="budget-select-item">{option.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <span className="text-xs text-muted-foreground">{localizedMonthLabel}</span>
-            </div>
-
-            <div className="rtl-row rounded-lg border bg-muted/50 px-3 py-2.5">
-              <span className="text-xs text-muted-foreground">العملة</span>
-              <Select
-                value={data.settings.currency}
-                onValueChange={(value) => applyData((current) => ({ ...current, settings: { ...current.settings, currency: value as BudgetData["settings"]["currency"] } }))}
-              >
-                <SelectTrigger className="budget-rtl-select-trigger flex-1 border-0 bg-transparent shadow-none focus:ring-0 w-auto min-w-0">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent dir="rtl" className="budget-rtl-select-content budget-roomy-select-content">
-                  {CURRENCY_OPTIONS.map((option) => (
-                    <SelectItem key={option.code} value={option.code} className="budget-select-item">{option.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
           </div>
         </div>
       </header>
@@ -920,8 +911,8 @@ export default function BudgetPlanner() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base budget-icon-title">
-                    <span>إضافة معاملة جديدة</span>
                     <Plus className="w-4 h-4 text-primary" />
+                    <span>إضافة معاملة جديدة</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -972,8 +963,8 @@ export default function BudgetPlanner() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base budget-icon-title">
-                    <span>إضافة هدف ادخار</span>
                     <PiggyBank className="w-4 h-4 text-emerald-500" />
+                    <span>إضافة هدف ادخار</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
@@ -1000,8 +991,8 @@ export default function BudgetPlanner() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base budget-icon-title">
-                    <span>أهداف الادخار</span>
                     <PiggyBank className="w-4 h-4 text-emerald-500" />
+                    <span>أهداف الادخار</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -1044,8 +1035,8 @@ export default function BudgetPlanner() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base budget-icon-title">
-                    <span>نظرة عامّة</span>
                     <Wallet className="w-4 h-4 text-primary" />
+                    <span>نظرة عامّة</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -1123,14 +1114,33 @@ export default function BudgetPlanner() {
                     );
                   })}
                 </div>
+                <div className="mt-5 space-y-2.5">
+                  <div className="text-base budget-icon-title">
+                    <TrendingUp className="w-4 h-4 text-primary" />
+                    <span>تحليل مالي ذكي</span>
+                  </div>
+                  {upcomingWarnings.map((warning, index) => (
+                    <div
+                      key={`${warning.text}_${index}`}
+                      className={cn(
+                        "px-1 py-1 text-sm text-right",
+                        warning.tone === "danger" && "text-destructive",
+                        warning.tone === "warn" && "text-amber-700 dark:text-amber-300",
+                        warning.tone === "good" && "text-emerald-700 dark:text-emerald-300"
+                      )}
+                    >
+                      {warning.text}
+                    </div>
+                  ))}
+                </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base budget-icon-title">
-                    <span>آخر عمليات هذا الشهر</span>
                     <CalendarClock className="w-4 h-4 text-primary" />
+                    <span>آخر عمليات هذا الشهر</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -1180,32 +1190,6 @@ export default function BudgetPlanner() {
                       </Button>
                     );
                   })}
-                </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base budget-icon-title">
-                    <span>تحليل مالي ذكي</span>
-                    <TrendingUp className="w-4 h-4 text-primary" />
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                <div className="space-y-2.5 text-right">
-                  {upcomingWarnings.map((warning, index) => (
-                    <div
-                      key={`${warning.text}_${index}`}
-                      className={cn(
-                        "rounded-xl border px-3 py-2.5 text-sm",
-                        warning.tone === "danger" && "border-destructive/30 bg-destructive/10 text-destructive",
-                        warning.tone === "warn" && "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
-                        warning.tone === "good" && "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-                      )}
-                    >
-                      {warning.text}
-                    </div>
-                  ))}
                 </div>
                 </CardContent>
               </Card>
@@ -1422,17 +1406,19 @@ function SummaryCard({
   return (
     <Card className={cn("p-5 transition-all hover:shadow-md", className)}>
       <CardContent className="p-0">
-        <div className="rtl-row items-start mb-2">
-          <p className="text-xs font-semibold tracking-wide text-muted-foreground text-right">{title}</p>
-          <span className={cn("inline-flex items-center justify-center rounded-lg p-1.5", entry.soft)}>
+        <div className="flex items-center gap-3">
+          <div className="flex-1 flex flex-col items-end justify-center text-right">
+            <p className="text-xs font-semibold tracking-wide text-muted-foreground">{title}</p>
+            <p className={cn("text-2xl md:text-[28px] font-bold leading-tight mt-1", entry.text)}>
+              <span className="inline-block tabular-nums whitespace-nowrap" style={{ direction: "ltr", unicodeBidi: "bidi-override" }}>
+                {formatAmount(amount, currency)}
+              </span>
+            </p>
+          </div>
+          <span className={cn("inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg p-1.5", entry.soft)}>
             <Icon className="w-4 h-4" />
           </span>
         </div>
-        <p className={cn("text-2xl md:text-[28px] font-bold leading-tight", entry.text)}>
-          <span className="inline-block tabular-nums whitespace-nowrap" style={{ direction: "ltr", unicodeBidi: "bidi-override" }}>
-            {formatAmount(amount, currency)}
-          </span>
-        </p>
       </CardContent>
     </Card>
   );

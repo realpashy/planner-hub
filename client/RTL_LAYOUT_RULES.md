@@ -4,4 +4,6 @@
 - In horizontal value rows (like bar charts or lists), keep **labels on the right** and **numbers/percentages on the left**, using `flex-row-reverse` and, where needed, `direction: ltr` only on the numeric span.
 - In action rows that show a title/metadata and an amount (e.g. "آخر عمليات هذا الشهر"), render the **title/meta block on the right** and the **amount on the left**, again via `flex-row-reverse` plus an LTR wrapper for the numeric value.
 - For controls that combine text and chevrons (like selects), when `dir="rtl"` is active, the **chevron should appear on the left and the text on the right**; use `rtl:flex-row-reverse` or an equivalent approach.
+- For rows that need **title on the right and value on the left** inside an RTL container, prefer the natural `dir="rtl"` flow with `flex items-center justify-between`; keep the **text block first in the DOM** and the **value block second**. Do not add `row-reverse` unless the component truly needs it.
+- For widget titles where the icon should appear **before** the title in RTL, render the **icon first in the DOM** and the text second, while keeping the container right-aligned.
 
