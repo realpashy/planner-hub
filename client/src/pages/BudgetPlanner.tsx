@@ -1980,7 +1980,7 @@ export default function BudgetPlanner() {
                   {savingsGoalCards.length === 0 && <p className="text-sm text-right text-muted-foreground">لا توجد أهداف ادخار مطابقة حالياً.</p>}
                   {savingsGoalCards.map((goal) => {
                     return (
-                      <div key={goal.id} className="group relative rounded-3xl border border-slate-200/80 bg-white/95 p-4 pt-5 shadow-[0_14px_40px_-24px_rgba(15,23,42,0.24)] transition hover:border-slate-300/70 dark:border-border dark:bg-muted/40 dark:shadow-none">
+                      <div key={goal.id} className="group relative mt-[30px] rounded-3xl border border-slate-200/80 bg-white/95 p-4 pt-5 shadow-[0_14px_40px_-24px_rgba(15,23,42,0.24)] transition hover:border-slate-300/70 dark:border-border dark:bg-muted/40 dark:shadow-none">
                         <div className="absolute right-4 top-0 -translate-y-1/2">
                           <Badge variant="outline" className="whitespace-nowrap rounded-full border-slate-200 bg-white px-2.5 py-1 text-slate-700 shadow-sm dark:border-border dark:bg-slate-950 dark:text-foreground">
                             {`${SAVINGS_GOAL_META[goal.category].emoji} ${getSavingsGoalCategoryLabel(goal.category)}`}
