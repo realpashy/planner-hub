@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Sun, Moon } from "lucide-react";
 import { motion } from "framer-motion";
 
+const THEME_EVENT = "planner-theme-change";
+
 export function ThemeToggle() {
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -19,7 +21,32 @@ export function ThemeToggle() {
       document.documentElement.classList.remove('dark');
     }
     localStorage.setItem('planner_hub_theme', isDark ? 'dark' : 'light');
+    window.dispatchEvent(new CustomEvent(THEME_EVENT, { detail: { theme: isDark ? 'dark' : 'light' } }));
   }, [isDark]);
+
+  useEffect(() => {
+    const syncTheme = (theme?: string) => {
+      if (theme === 'dark' || theme === 'light') {
+        setIsDark(theme === 'dark');
+        return;
+      }
+      const stored = localStorage.getItem('planner_hub_theme');
+      setIsDark(stored === 'dark');
+    };
+
+    const handleStorage = () => syncTheme();
+    const handleThemeEvent = (event: Event) => {
+      const detail = (event as CustomEvent<{ theme?: string }>).detail;
+      syncTheme(detail?.theme);
+    };
+
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener(THEME_EVENT, handleThemeEvent);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener(THEME_EVENT, handleThemeEvent);
+    };
+  }, []);
 
   return (
     <button

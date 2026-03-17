@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { ArrowRight, CalendarClock, Landmark, Menu, PiggyBank, Plus, ReceiptText, Search, Settings2, TrendingUp, Wallet } from "lucide-react";
+import { ArrowRight, CalendarClock, Landmark, Menu, Moon, PiggyBank, Plus, ReceiptText, Search, Settings2, Sun, TrendingUp, Wallet } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { toast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -339,6 +339,8 @@ interface DeleteConfirmState {
   onConfirm: (() => void) | null;
 }
 
+type ThemeMode = "light" | "dark";
+
 type EditApplyScope = "current" | "all";
 type OverviewDetailKey = BudgetTransactionType | "saving";
 interface CreateSubcategoryDialogState {
@@ -404,6 +406,7 @@ export default function BudgetPlanner() {
     status: "active",
   });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [themeMode, setThemeMode] = useState<ThemeMode>("light");
   const [deleteConfirm, setDeleteConfirm] = useState<DeleteConfirmState>({
     open: false,
     title: "",
@@ -421,6 +424,17 @@ export default function BudgetPlanner() {
 
   const pushNotice = (message: string) => {
     toast({ description: message, duration: 3000 });
+  };
+  const applyThemeMode = (mode: ThemeMode) => {
+    if (typeof window === "undefined") return;
+    if (mode === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+    localStorage.setItem("planner_hub_theme", mode);
+    window.dispatchEvent(new CustomEvent("planner-theme-change", { detail: { theme: mode } }));
+    setThemeMode(mode);
   };
   const closeDeleteConfirm = () => {
     setDeleteConfirm({ open: false, title: "", description: "", confirmLabel: "حذف", onConfirm: null });
@@ -843,6 +857,31 @@ export default function BudgetPlanner() {
     applyData((current) => ensureRecurringForMonth(current, selectedMonth));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMonth]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const readThemeMode = () => {
+      const stored = localStorage.getItem("planner_hub_theme");
+      if (stored === "dark" || stored === "light") {
+        setThemeMode(stored);
+        return;
+      }
+      setThemeMode(window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    };
+
+    readThemeMode();
+    const handleThemeEvent = (event: Event) => {
+      const nextTheme = (event as CustomEvent<{ theme?: ThemeMode }>).detail?.theme;
+      if (nextTheme === "dark" || nextTheme === "light") {
+        setThemeMode(nextTheme);
+        return;
+      }
+      readThemeMode();
+    };
+
+    window.addEventListener("planner-theme-change", handleThemeEvent);
+    return () => window.removeEventListener("planner-theme-change", handleThemeEvent);
+  }, []);
 
   useEffect(() => {
     setGoalRecurringEnabled(goalBehavior.defaultRecurring);
@@ -1381,11 +1420,11 @@ export default function BudgetPlanner() {
             <div className="absolute left-0 flex items-center gap-2 md:hidden">
               <Button
                 variant="outline"
-                className="h-9 rounded-xl px-3 text-sm"
+                className="h-10 rounded-2xl px-4 text-sm font-medium shadow-sm"
                 onClick={() => setMobileMenuOpen(true)}
               >
                 <Menu className="h-4 w-4" />
-                القائمة
+                الخيارات
               </Button>
             </div>
             <div className="hidden items-center gap-2 md:flex">
@@ -1446,56 +1485,87 @@ export default function BudgetPlanner() {
       </header>
 
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-        <SheetContent side="left" className="w-[88vw] max-w-sm" dir="rtl">
-          <SheetHeader className="text-right">
-            <SheetTitle>القائمة</SheetTitle>
-            <SheetDescription>الوصول السريع إلى أدوات الميزانية من الجوال.</SheetDescription>
-          </SheetHeader>
-          <div className="mt-6 space-y-5">
-            <div className="rounded-2xl border bg-muted/20 p-3">
-              <p className="text-sm font-medium text-right text-foreground">المظهر</p>
-              <div className="mt-3 flex justify-end">
-                <ThemeToggle />
+        <SheetContent
+          side="left"
+          className="w-[92vw] max-w-[26rem] p-0 [&>button]:left-5 [&>button]:right-auto [&>button]:top-5 [&>button]:h-9 [&>button]:w-9 [&>button]:rounded-full"
+          dir="rtl"
+        >
+          <div className="flex h-full flex-col">
+            <SheetHeader className="border-b px-6 pb-4 pt-6 pe-14 text-right">
+              <SheetTitle className="text-xl">الخيارات</SheetTitle>
+              <SheetDescription className="text-sm leading-6">إعدادات الميزانية والوصول السريع من الجوال.</SheetDescription>
+            </SheetHeader>
+            <div className="flex-1 space-y-5 overflow-y-auto px-6 py-6">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-right">اختيار التاريخ</Label>
+                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                  <SelectTrigger className="budget-rtl-select-trigger h-12 rounded-2xl border-slate-200 bg-white px-4 text-sm dark:border-border dark:bg-background/70">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent dir="rtl" className="budget-rtl-select-content budget-roomy-select-content">
+                    {monthOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value} className="budget-select-item">{option.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm text-right">الشهر الحالي</Label>
-              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                <SelectTrigger className="budget-rtl-select-trigger">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent dir="rtl" className="budget-rtl-select-content budget-roomy-select-content">
-                  {monthOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value} className="budget-select-item">{option.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-right">اختيار العملة</Label>
+                <Select
+                  value={data.settings.currency}
+                  onValueChange={(value) => applyData((current) => ({ ...current, settings: { ...current.settings, currency: value as BudgetData["settings"]["currency"] } }))}
+                >
+                  <SelectTrigger className="budget-rtl-select-trigger h-12 rounded-2xl border-slate-200 bg-white px-4 text-sm dark:border-border dark:bg-background/70">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent dir="rtl" className="budget-rtl-select-content budget-roomy-select-content">
+                    {CURRENCY_OPTIONS.map((option) => (
+                      <SelectItem key={option.code} value={option.code} className="budget-select-item">{option.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm text-right">العملة</Label>
-              <Select
-                value={data.settings.currency}
-                onValueChange={(value) => applyData((current) => ({ ...current, settings: { ...current.settings, currency: value as BudgetData["settings"]["currency"] } }))}
+              <div className="rounded-3xl border border-slate-200/80 bg-slate-50/80 p-4 dark:border-border dark:bg-muted/30">
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-foreground">المظهر</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{`المظهر الحالي: ${themeMode === "dark" ? "داكن" : "فاتح"}`}</p>
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  <Button
+                    type="button"
+                    variant={themeMode === "light" ? "default" : "outline"}
+                    className="h-11 justify-center rounded-2xl text-sm"
+                    onClick={() => applyThemeMode("light")}
+                  >
+                    <Sun className="h-4 w-4" />
+                    فاتح
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={themeMode === "dark" ? "default" : "outline"}
+                    className="h-11 justify-center rounded-2xl text-sm"
+                    onClick={() => applyThemeMode("dark")}
+                  >
+                    <Moon className="h-4 w-4" />
+                    داكن
+                  </Button>
+                </div>
+              </div>
+
+              <Button
+                variant="secondary"
+                className="h-12 w-full justify-between rounded-2xl px-4 text-sm"
+                onClick={() => { setCategoriesDialogOpen(true); setMobileMenuOpen(false); }}
               >
-                <SelectTrigger className="budget-rtl-select-trigger">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent dir="rtl" className="budget-rtl-select-content budget-roomy-select-content">
-                  {CURRENCY_OPTIONS.map((option) => (
-                    <SelectItem key={option.code} value={option.code} className="budget-select-item">{option.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-1 gap-2">
-              <Button variant="secondary" className="justify-between" onClick={() => { setCategoriesDialogOpen(true); setMobileMenuOpen(false); }}>
                 <span>إعدادات الفئات</span>
                 <Settings2 className="h-4 w-4" />
               </Button>
-              <Button variant="outline" className="justify-between" asChild>
+            </div>
+
+            <div className="mt-auto border-t bg-background/95 px-6 py-5">
+              <Button variant="outline" className="h-12 w-full justify-between rounded-2xl px-4 text-sm" asChild>
                 <Link href="/">
                   <span>العودة إلى الرئيسية</span>
                   <ArrowRight className="h-4 w-4" />
@@ -1721,8 +1791,18 @@ export default function BudgetPlanner() {
                       <div key={goal.id} className="group rounded-3xl border border-slate-200/80 bg-white/95 p-4 shadow-[0_14px_40px_-24px_rgba(15,23,42,0.24)] transition hover:border-slate-300/70 dark:border-border dark:bg-muted/40 dark:shadow-none">
                         <div className="rtl-row items-start gap-3">
                           <div className="min-w-0 flex-1 text-right">
-                            <p className="truncate text-base font-semibold text-foreground">{goal.displayTitle}</p>
-                            <div className="mt-2 flex flex-wrap justify-end gap-2">
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="truncate text-base font-semibold text-foreground">{goal.displayTitle}</p>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 shrink-0 px-2 text-xs text-muted-foreground transition-colors hover:text-destructive"
+                                onClick={() => openDeleteConfirm("حذف هدف الادخار", "سيتم حذف الهدف وكل المساهمات المرتبطة به. هل تريد المتابعة؟", () => deleteSavingGoal(goal.id))}
+                              >
+                                حذف
+                              </Button>
+                            </div>
+                            <div className="mt-3 flex flex-wrap justify-end gap-2">
                               <Badge variant="outline" className="rounded-full border-slate-200 bg-slate-50/90 text-slate-700 dark:border-border dark:bg-background/60 dark:text-foreground">
                                 {`${SAVINGS_GOAL_META[goal.category].emoji} ${getSavingsGoalCategoryLabel(goal.category)}`}
                               </Badge>
@@ -1739,14 +1819,6 @@ export default function BudgetPlanner() {
                                 <SelectItem value="archived" className="budget-select-item">مؤرشف</SelectItem>
                               </SelectContent>
                             </Select>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 px-1 text-xs text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
-                              onClick={() => openDeleteConfirm("حذف هدف الادخار", "سيتم حذف الهدف وكل المساهمات المرتبطة به. هل تريد المتابعة؟", () => deleteSavingGoal(goal.id))}
-                            >
-                              حذف
-                            </Button>
                           </div>
                         </div>
                         <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
