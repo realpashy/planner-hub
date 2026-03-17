@@ -67,6 +67,8 @@ export interface BudgetSavingGoal {
   monthlyContributionAmount: number;
   excludedMonths: string[];
   status: BudgetSavingGoalStatus;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface BudgetSettings {
@@ -258,6 +260,8 @@ function normalizeSavingsGoals(rawGoals: BudgetSavingGoal[] | undefined): Budget
           monthlyContributionAmount: typeof goal.monthlyContributionAmount === "number" && goal.monthlyContributionAmount > 0 ? goal.monthlyContributionAmount : 0,
           excludedMonths: Array.isArray(goal.excludedMonths) ? goal.excludedMonths.filter(Boolean) : [],
           status: goal.status === "completed" || goal.status === "archived" ? goal.status : "active",
+        createdAt: goal.createdAt || new Date().toISOString(),
+        updatedAt: goal.updatedAt || goal.createdAt || new Date().toISOString(),
         };
       })
     : [];

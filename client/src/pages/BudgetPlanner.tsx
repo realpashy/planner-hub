@@ -179,12 +179,6 @@ function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function endOfMonthISO(monthKey: string) {
-  const [y, m] = monthKey.split("-").map(Number);
-  const date = new Date(y, m, 0);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-}
-
 function normalizeDigits(value: string) {
   return value
     .replace(/[\u0660-\u0669]/g, (d) => String(d.charCodeAt(0) - 0x0660))
@@ -273,10 +267,8 @@ function getSavingsGoalDisplayTitle(goal: Pick<BudgetSavingGoal, "category" | "c
   return SAVINGS_GOAL_META[goal.category].shortLabel;
 }
 
-function getSavingsStatusLabel(status: BudgetSavingGoalStatus) {
-  if (status === "completed") return "مكتمل";
-  if (status === "archived") return "مؤرشف";
-  return "نشط";
+function shouldShowSavingsCustomName(category: BudgetSavingGoalCategory) {
+  return getSavingsGoalBehavior(category).allowCustomName;
 }
 
 
@@ -312,6 +304,16 @@ interface EditDialogState {
   savingsGoalId: string;
 }
 
+interface SavingsGoalEditDialogState {
+  open: boolean;
+  goalId: string | null;
+  category: BudgetSavingGoalCategory;
+  customName: string;
+  targetAmount: string;
+  recurringEnabled: boolean;
+  status: BudgetSavingGoalStatus;
+}
+
 type EditApplyScope = "current" | "all";
 type OverviewDetailKey = BudgetTransactionType | "saving";
 interface CreateSubcategoryDialogState {
@@ -340,8 +342,6 @@ export default function BudgetPlanner() {
   const [goalCustomName, setGoalCustomName] = useState("");
   const [goalTargetAmount, setGoalTargetAmount] = useState("");
   const [goalCategory, setGoalCategory] = useState<BudgetSavingGoalCategory>(DEFAULT_SAVINGS_CATEGORY);
-  const [goalTargetDate, setGoalTargetDate] = useState(endOfMonthISO(getCurrentMonthKey()));
-  const [goalInitialAmount, setGoalInitialAmount] = useState("");
   const [goalRecurringEnabled, setGoalRecurringEnabled] = useState(getSavingsGoalBehavior(DEFAULT_SAVINGS_CATEGORY).defaultRecurring);
   const [goalRecurringAmount, setGoalRecurringAmount] = useState("");
   const [goalStatusFilter, setGoalStatusFilter] = useState<BudgetSavingGoalStatus | "all">("active");
@@ -368,6 +368,15 @@ export default function BudgetPlanner() {
     date: todayISO(),
     subcategoryId: "",
     savingsGoalId: "",
+  });
+  const [savingsGoalEditDialog, setSavingsGoalEditDialog] = useState<SavingsGoalEditDialogState>({
+    open: false,
+    goalId: null,
+    category: DEFAULT_SAVINGS_CATEGORY,
+    customName: "",
+    targetAmount: "",
+    recurringEnabled: getSavingsGoalBehavior(DEFAULT_SAVINGS_CATEGORY).defaultRecurring,
+    status: "active",
   });
   const [editApplyScope, setEditApplyScope] = useState<EditApplyScope>("current");
   const [categoriesDialogOpen, setCategoriesDialogOpen] = useState(false);
@@ -461,7 +470,7 @@ export default function BudgetPlanner() {
         const q = recentSearch.trim().toLowerCase();
         if (!q) return true;
         const subcategoryName = data.categories.find((c) => c.id === tx.subcategoryId)?.name || "";
-        const linkedGoal = tx.savingsGoalId ? data.savingsGoals.find((goal) => goal.id === tx.savingsGoalId)?.title || "" : "";
+        const linkedGoal = tx.savingsGoalId ? getSavingsGoalDisplayTitle(data.savingsGoals.find((goal) => goal.id === tx.savingsGoalId) || { category: "personal_goal", customName: "", title: "" }) : "";
         return `${subcategoryName} ${linkedGoal} ${tx.note} ${tx.amount}`.toLowerCase().includes(q);
       })
       .slice(0, 60);
@@ -885,6 +894,7 @@ export default function BudgetPlanner() {
                   monthlyContributionEnabled: true,
                   monthlyContributionAmount: amount,
                   excludedMonths: goal.excludedMonths.filter((month) => month !== getMonthKey(date)),
+                  updatedAt: new Date().toISOString(),
                 }
               : goal
           ),
@@ -1006,7 +1016,7 @@ export default function BudgetPlanner() {
       savingsGoals: current.savingsGoals.map((goal) => {
         if (tx.recurringTemplateId !== `goal:${goal.id}`) return goal;
         if (goal.excludedMonths.includes(selectedMonth)) return goal;
-        return { ...goal, excludedMonths: [...goal.excludedMonths, selectedMonth] };
+        return { ...goal, excludedMonths: [...goal.excludedMonths, selectedMonth], updatedAt: new Date().toISOString() };
       }),
       transactions: current.transactions.filter((item) => item.id !== tx.id),
     }));
@@ -1041,8 +1051,7 @@ export default function BudgetPlanner() {
   const addSavingGoal = () => {
     const targetAmount = parseAmountInput(goalTargetAmount);
     const recurringAmount = parseAmountInput(goalRecurringAmount);
-    const initialAmount = parseAmountInput(goalInitialAmount);
-    const resolvedCustomName = goalCustomName.trim();
+    const resolvedCustomName = goalBehavior.allowCustomName ? goalCustomName.trim() : "";
     const resolvedTitle = resolvedCustomName || SAVINGS_GOAL_META[goalCategory].shortLabel;
     const requiresName = goalBehavior.customNameRequired;
     const requiresTarget = goalBehavior.targetMode === "required";
@@ -1059,20 +1068,20 @@ export default function BudgetPlanner() {
         category: goalCategory,
         customName: resolvedCustomName,
         targetAmount: allowsTarget && Number.isFinite(targetAmount) && targetAmount > 0 ? targetAmount : 0,
-        targetDate: goalTargetDate || "",
-        initialAmount: Number.isFinite(initialAmount) && initialAmount > 0 ? initialAmount : 0,
-        monthlyContributionEnabled: goalRecurringEnabled && Number.isFinite(recurringAmount) && recurringAmount > 0,
+        targetDate: "",
+        initialAmount: 0,
+        monthlyContributionEnabled: goalRecurringEnabled,
         monthlyContributionAmount: goalRecurringEnabled && Number.isFinite(recurringAmount) && recurringAmount > 0 ? recurringAmount : 0,
         excludedMonths: [],
         status: "active",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       }, ...current.savingsGoals],
     }));
 
     setGoalCustomName("");
     setGoalTargetAmount("");
-    setGoalInitialAmount("");
     setGoalCategory(DEFAULT_SAVINGS_CATEGORY);
-    setGoalTargetDate(endOfMonthISO(selectedMonth));
     setGoalRecurringEnabled(getSavingsGoalBehavior(DEFAULT_SAVINGS_CATEGORY).defaultRecurring);
     setGoalRecurringAmount("");
   };
@@ -1204,6 +1213,7 @@ export default function BudgetPlanner() {
                 ...goal,
                 monthlyContributionAmount: amount,
                 monthlyContributionEnabled: true,
+                updatedAt: new Date().toISOString(),
               }
             : goal
         ),
@@ -1247,8 +1257,74 @@ export default function BudgetPlanner() {
   const updateSavingGoalStatus = (id: string, status: BudgetSavingGoalStatus) => {
     applyData((current) => ({
       ...current,
-      savingsGoals: current.savingsGoals.map((goal) => goal.id === id ? { ...goal, status } : goal),
+      savingsGoals: current.savingsGoals.map((goal) =>
+        goal.id === id ? { ...goal, status, updatedAt: new Date().toISOString() } : goal
+      ),
     }));
+  };
+  const updateSavingGoalInitialAmount = (id: string, rawValue: string) => {
+    const value = parseAmountInput(rawValue);
+    applyData((current) => ({
+      ...current,
+      savingsGoals: current.savingsGoals.map((goal) =>
+        goal.id === id
+          ? {
+              ...goal,
+              initialAmount: Number.isFinite(value) && value > 0 ? value : 0,
+              updatedAt: new Date().toISOString(),
+            }
+          : goal
+      ),
+    }));
+  };
+  const openEditSavingsGoalDialog = (goal: BudgetSavingGoal) => {
+    setSavingsGoalEditDialog({
+      open: true,
+      goalId: goal.id,
+      category: goal.category,
+      customName: goal.customName || "",
+      targetAmount: goal.targetAmount > 0 ? String(goal.targetAmount) : "",
+      recurringEnabled: goal.monthlyContributionEnabled,
+      status: goal.status,
+    });
+  };
+  const saveSavingsGoalEdit = () => {
+    if (!savingsGoalEditDialog.goalId) return;
+    const behavior = getSavingsGoalBehavior(savingsGoalEditDialog.category);
+    const customName = behavior.allowCustomName ? savingsGoalEditDialog.customName.trim() : "";
+    const targetAmount = parseAmountInput(savingsGoalEditDialog.targetAmount);
+    if (behavior.customNameRequired && !customName) return;
+    if (behavior.targetMode === "required" && (!Number.isFinite(targetAmount) || targetAmount <= 0)) return;
+
+    applyData((current) => ({
+      ...current,
+      savingsGoals: current.savingsGoals.map((goal) =>
+        goal.id === savingsGoalEditDialog.goalId
+          ? {
+              ...goal,
+              category: savingsGoalEditDialog.category,
+              customName,
+              title: customName || SAVINGS_GOAL_META[savingsGoalEditDialog.category].shortLabel,
+              targetAmount:
+                behavior.targetMode !== "hidden" && Number.isFinite(targetAmount) && targetAmount > 0
+                  ? targetAmount
+                  : 0,
+              monthlyContributionEnabled: savingsGoalEditDialog.recurringEnabled,
+              status: savingsGoalEditDialog.status,
+              updatedAt: new Date().toISOString(),
+            }
+          : goal
+      ),
+    }));
+    setSavingsGoalEditDialog({
+      open: false,
+      goalId: null,
+      category: DEFAULT_SAVINGS_CATEGORY,
+      customName: "",
+      targetAmount: "",
+      recurringEnabled: getSavingsGoalBehavior(DEFAULT_SAVINGS_CATEGORY).defaultRecurring,
+      status: "active",
+    });
   };
 
   return (
@@ -1333,39 +1409,48 @@ export default function BudgetPlanner() {
                       اختر نوع العملية ثم الفئة الفرعية المناسبة. ويمكنك ربط المصروف بهدف ادخار بشكل منفصل من دون خلطه مع نوع العملية.
                     </p>
                   </div>
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <Select value={transactionForm.type} onValueChange={(v) => configureTransactionType(v as BudgetTransactionType)}>
-                      <SelectTrigger className="budget-rtl-select-trigger">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent dir="rtl" className="budget-rtl-select-content budget-roomy-select-content">
-                        {ADD_TRANSACTION_TYPES.map((type) => (
-                          <SelectItem key={type} value={type} className="budget-select-item">{`${TYPE_EMOJI[type]} ${TRANSACTION_TYPE_LABEL[type]}`}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Select value={transactionForm.subcategoryId} onValueChange={(value) => handleSubcategorySelection(value, transactionForm.type)}>
-                      <SelectTrigger className="budget-rtl-select-trigger">
-                        <SelectValue placeholder="الفئة الفرعية" />
-                      </SelectTrigger>
-                      <SelectContent dir="rtl" className="budget-rtl-select-content budget-roomy-select-content">
-                        {transactionCategories.map((category) => (
-                          <SelectItem key={category.id} value={category.id} className="budget-select-item">
-                            {`${categoryEmoji(category.name, category.type)} ${category.name}`}
-                          </SelectItem>
-                        ))}
-                        <SelectItem value={NEW_SUBCATEGORY_VALUE} className="budget-select-item">+ إضافة فئة فرعية</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Input
-                      dir="rtl"
-                      type="text"
-                      inputMode="decimal"
-                      value={transactionForm.amount}
-                      onChange={(e) => setTransactionForm((prev) => ({ ...prev, amount: e.target.value }))}
-                      placeholder={`المبلغ (${symbol})`}
-                      className="tabular-nums budget-rtl-input"
-                    />
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label className="text-sm text-right">الفئة الرئيسية</Label>
+                      <Select value={transactionForm.type} onValueChange={(v) => configureTransactionType(v as BudgetTransactionType)}>
+                        <SelectTrigger className="budget-rtl-select-trigger">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent dir="rtl" className="budget-rtl-select-content budget-roomy-select-content">
+                          {ADD_TRANSACTION_TYPES.map((type) => (
+                            <SelectItem key={type} value={type} className="budget-select-item">{`${TYPE_EMOJI[type]} ${TRANSACTION_TYPE_LABEL[type]}`}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm text-right">الفئة الفرعية</Label>
+                      <Select value={transactionForm.subcategoryId} onValueChange={(value) => handleSubcategorySelection(value, transactionForm.type)}>
+                        <SelectTrigger className="budget-rtl-select-trigger">
+                          <SelectValue placeholder="اختر الفئة الفرعية" />
+                        </SelectTrigger>
+                        <SelectContent dir="rtl" className="budget-rtl-select-content budget-roomy-select-content">
+                          {transactionCategories.map((category) => (
+                            <SelectItem key={category.id} value={category.id} className="budget-select-item">
+                              {`${categoryEmoji(category.name, category.type)} ${category.name}`}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value={NEW_SUBCATEGORY_VALUE} className="budget-select-item">+ إضافة فئة فرعية</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2 md:col-span-2">
+                      <Label className="text-sm text-right">المبلغ</Label>
+                      <Input
+                        dir="rtl"
+                        type="text"
+                        inputMode="decimal"
+                        value={transactionForm.amount}
+                        onChange={(e) => setTransactionForm((prev) => ({ ...prev, amount: e.target.value }))}
+                        placeholder={`المبلغ (${symbol})`}
+                        className="tabular-nums budget-rtl-input"
+                      />
+                    </div>
                   </div>
                   {transactionForm.type === "expense" && (
                     <div className="space-y-2">
@@ -1404,7 +1489,7 @@ export default function BudgetPlanner() {
                       <p className="mt-1 text-sm font-medium text-foreground">
                         {TRANSACTION_TYPE_LABEL[transactionForm.type]}
                         {transactionForm.subcategoryId && ` • ${data.categories.find((category) => category.id === transactionForm.subcategoryId)?.name || "غير مصنف"}`}
-                        {transactionForm.savingsGoalId && ` • ${data.savingsGoals.find((goal) => goal.id === transactionForm.savingsGoalId)?.title || "هدف ادخار"}`}
+                        {transactionForm.savingsGoalId && ` • ${getSavingsGoalDisplayTitle(data.savingsGoals.find((goal) => goal.id === transactionForm.savingsGoalId) || { category: "personal_goal", customName: "", title: "" })}`}
                       </p>
                     </div>
                     <Badge variant="secondary" className="shrink-0">{TYPE_EMOJI[transactionForm.type]}</Badge>
@@ -1421,18 +1506,31 @@ export default function BudgetPlanner() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <Select value={goalCategory} onValueChange={(value) => setGoalCategory(value as BudgetSavingGoalCategory)}>
-                      <SelectTrigger className="budget-rtl-select-trigger">
-                        <SelectValue placeholder="تصنيف الادخار" />
-                      </SelectTrigger>
-                      <SelectContent dir="rtl" className="budget-rtl-select-content budget-roomy-select-content">
-                        {SAVINGS_GOAL_CATEGORY_OPTIONS.map((option) => (
-                          <SelectItem key={option.value} value={option.value} className="budget-select-item">
-                            {`${SAVINGS_GOAL_META[option.value].emoji} ${option.label}`}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="space-y-2">
+                      <Label className="text-sm text-right">الفئة الرئيسية</Label>
+                      <Select
+                        value={goalCategory}
+                        onValueChange={(value) => {
+                          const nextCategory = value as BudgetSavingGoalCategory;
+                          setGoalCategory(nextCategory);
+                          setGoalRecurringEnabled(getSavingsGoalBehavior(nextCategory).defaultRecurring);
+                          if (!getSavingsGoalBehavior(nextCategory).allowCustomName) {
+                            setGoalCustomName("");
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="budget-rtl-select-trigger">
+                          <SelectValue placeholder="تصنيف الادخار" />
+                        </SelectTrigger>
+                        <SelectContent dir="rtl" className="budget-rtl-select-content budget-roomy-select-content">
+                          {SAVINGS_GOAL_CATEGORY_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value} className="budget-select-item">
+                              {`${SAVINGS_GOAL_META[option.value].emoji} ${option.label}`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <div className="space-y-2">
                       <Label className="text-sm text-right">{goalBehavior.targetMode === "hidden" ? goalBehavior.recurringLabel : goalBehavior.targetLabel}</Label>
                       <Input
@@ -1458,30 +1556,6 @@ export default function BudgetPlanner() {
                       />
                     </div>
                   )}
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label className="text-sm text-right">الإجمالي المتراكم حتى اليوم</Label>
-                      <Input
-                        dir="rtl"
-                        type="text"
-                        inputMode="decimal"
-                        value={goalInitialAmount}
-                        onChange={(e) => setGoalInitialAmount(e.target.value)}
-                        placeholder="كم ادخرت سابقًا؟"
-                        className="tabular-nums budget-rtl-input"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm text-right">تاريخ الهدف (اختياري)</Label>
-                      <Input
-                        dir="ltr"
-                        type="date"
-                        value={goalTargetDate}
-                        onChange={(e) => setGoalTargetDate(e.target.value)}
-                        className="budget-date-input tabular-nums"
-                      />
-                    </div>
-                  </div>
                   <div className="rounded-2xl border bg-muted/30 p-3 space-y-3">
                     <div className="rtl-row items-center">
                       <div className="flex-1 text-right">
@@ -1490,17 +1564,6 @@ export default function BudgetPlanner() {
                       </div>
                       <Switch checked={goalRecurringEnabled} onCheckedChange={setGoalRecurringEnabled} />
                     </div>
-                    {goalRecurringEnabled && goalBehavior.targetMode !== "hidden" && (
-                      <Input
-                        dir="rtl"
-                        type="text"
-                        inputMode="decimal"
-                        value={goalRecurringAmount}
-                        onChange={(e) => setGoalRecurringAmount(e.target.value)}
-                        placeholder={goalBehavior.recurringPlaceholder}
-                        className="tabular-nums budget-rtl-input"
-                      />
-                    )}
                   </div>
                   <Button className="w-full" onClick={addSavingGoal}>إضافة الهدف</Button>
                 </CardContent>
@@ -1535,19 +1598,14 @@ export default function BudgetPlanner() {
                       <div key={goal.id} className="group rounded-2xl border bg-muted/50 p-3 shadow-sm">
                         <div className="rtl-row items-start">
                           <div className="flex-1 text-right">
-                            <div className="rtl-row items-center gap-2">
+                            <div className="flex flex-wrap justify-end gap-2">
                               <Badge variant="outline" className="rounded-full">{`${SAVINGS_GOAL_META[goal.category].emoji} ${getSavingsGoalCategoryLabel(goal.category)}`}</Badge>
-                              <Badge variant="secondary" className="rounded-full">{getSavingsStatusLabel(goal.status)}</Badge>
                             </div>
                             <p className="mt-2 font-semibold text-foreground">{goal.displayTitle}</p>
-                            <div className="mt-2 flex flex-wrap justify-end gap-2 text-xs">
-                              {goal.targetDate && <Badge variant="outline" className="rounded-full">{`تاريخ الهدف: ${goal.targetDate}`}</Badge>}
-                              {goal.initialAmount > 0 && <Badge variant="outline" className="rounded-full">{`الرصيد المتراكم: ${formatAmount(goal.initialAmount, data.settings.currency)}`}</Badge>}
-                            </div>
                           </div>
-                          <div className="budget-value-left flex items-center gap-2">
+                          <div className="budget-value-left flex flex-col items-start gap-1">
                             <Select value={goal.status} onValueChange={(value) => updateSavingGoalStatus(goal.id, value as BudgetSavingGoalStatus)}>
-                              <SelectTrigger className="h-7 w-[96px] budget-rtl-select-trigger text-xs">
+                              <SelectTrigger className="h-8 w-[108px] budget-rtl-select-trigger text-xs">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent dir="rtl" className="budget-rtl-select-content">
@@ -1556,7 +1614,14 @@ export default function BudgetPlanner() {
                                 <SelectItem value="archived" className="budget-select-item">مؤرشف</SelectItem>
                               </SelectContent>
                             </Select>
-                            <Button variant="destructive" size="sm" className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition text-xs h-7" onClick={() => deleteSavingGoal(goal.id)}>حذف</Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-1 text-xs text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+                              onClick={() => deleteSavingGoal(goal.id)}
+                            >
+                              حذف
+                            </Button>
                           </div>
                         </div>
                         <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -1592,7 +1657,10 @@ export default function BudgetPlanner() {
                           <div className="flex-1 text-right text-xs text-muted-foreground">
                             {goal.lastContributionDate ? `آخر مساهمة: ${goal.lastContributionDate}` : "لم يتم تسجيل أي مساهمة بعد"}
                           </div>
-                          <Button size="sm" className="h-8 rounded-xl text-xs" onClick={() => openSavingContributionDialog(goal)}>إضافة مساهمة</Button>
+                          <div className="budget-value-left flex items-center gap-2">
+                            <Button size="sm" variant="secondary" className="h-8 rounded-xl text-xs" onClick={() => openEditSavingsGoalDialog(goal)}>تعديل</Button>
+                            <Button size="sm" className="h-8 rounded-xl text-xs" onClick={() => openSavingContributionDialog(goal)}>إضافة مساهمة</Button>
+                          </div>
                         </div>
                       </div>
                     );
@@ -1938,6 +2006,105 @@ export default function BudgetPlanner() {
           )}
         </DialogContent>
       </Dialog>
+      <Dialog
+        open={savingsGoalEditDialog.open}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSavingsGoalEditDialog({
+              open: false,
+              goalId: null,
+              category: DEFAULT_SAVINGS_CATEGORY,
+              customName: "",
+              targetAmount: "",
+              recurringEnabled: getSavingsGoalBehavior(DEFAULT_SAVINGS_CATEGORY).defaultRecurring,
+              status: "active",
+            });
+          }
+        }}
+      >
+        <DialogContent className="max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>تعديل هدف الادخار</DialogTitle>
+            <DialogDescription>يتم حفظ التعديلات على الهدف نفسه بشكل دائم في كل الأشهر.</DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-1 gap-3">
+            <div className="space-y-2">
+              <Label className="text-sm text-right">الفئة الرئيسية</Label>
+              <Select
+                value={savingsGoalEditDialog.category}
+                onValueChange={(value) => {
+                  const nextCategory = value as BudgetSavingGoalCategory;
+                  setSavingsGoalEditDialog((prev) => ({
+                    ...prev,
+                    category: nextCategory,
+                    customName: getSavingsGoalBehavior(nextCategory).allowCustomName ? prev.customName : "",
+                  }));
+                }}
+              >
+                <SelectTrigger className="budget-rtl-select-trigger"><SelectValue /></SelectTrigger>
+                <SelectContent dir="rtl" className="budget-rtl-select-content budget-roomy-select-content">
+                  {SAVINGS_GOAL_CATEGORY_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value} className="budget-select-item">{`${SAVINGS_GOAL_META[option.value].emoji} ${option.label}`}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {shouldShowSavingsCustomName(savingsGoalEditDialog.category) && (
+              <div className="space-y-2">
+                <Label className="text-sm text-right">{getSavingsGoalBehavior(savingsGoalEditDialog.category).customNameRequired ? "اسم الهدف" : "اسم الهدف (اختياري)"}</Label>
+                <Input
+                  dir="rtl"
+                  className="budget-rtl-input"
+                  value={savingsGoalEditDialog.customName}
+                  onChange={(e) => setSavingsGoalEditDialog((prev) => ({ ...prev, customName: e.target.value }))}
+                  placeholder="اكتب اسمًا مخصصًا"
+                />
+              </div>
+            )}
+            {getSavingsGoalBehavior(savingsGoalEditDialog.category).targetMode !== "hidden" && (
+              <div className="space-y-2">
+                <Label className="text-sm text-right">{getSavingsGoalBehavior(savingsGoalEditDialog.category).targetLabel}</Label>
+                <Input
+                  dir="rtl"
+                  type="text"
+                  inputMode="decimal"
+                  value={savingsGoalEditDialog.targetAmount}
+                  onChange={(e) => setSavingsGoalEditDialog((prev) => ({ ...prev, targetAmount: e.target.value }))}
+                  placeholder={getSavingsGoalBehavior(savingsGoalEditDialog.category).targetPlaceholder}
+                  className="tabular-nums budget-rtl-input"
+                />
+              </div>
+            )}
+            <div className="rounded-2xl border bg-muted/30 p-3">
+              <div className="rtl-row items-center">
+                <div className="flex-1 text-right">
+                  <p className="text-sm font-medium text-foreground">مساهمة شهرية تلقائية</p>
+                  <p className="mt-1 text-xs text-muted-foreground">ويمكن استثناء أي شهر لاحقاً</p>
+                </div>
+                <Switch
+                  checked={savingsGoalEditDialog.recurringEnabled}
+                  onCheckedChange={(checked) => setSavingsGoalEditDialog((prev) => ({ ...prev, recurringEnabled: checked }))}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm text-right">الحالة</Label>
+              <Select value={savingsGoalEditDialog.status} onValueChange={(value) => setSavingsGoalEditDialog((prev) => ({ ...prev, status: value as BudgetSavingGoalStatus }))}>
+                <SelectTrigger className="budget-rtl-select-trigger"><SelectValue /></SelectTrigger>
+                <SelectContent dir="rtl" className="budget-rtl-select-content">
+                  <SelectItem value="active" className="budget-select-item">نشط</SelectItem>
+                  <SelectItem value="completed" className="budget-select-item">مكتمل</SelectItem>
+                  <SelectItem value="archived" className="budget-select-item">مؤرشف</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter className="sm:flex-row-reverse">
+            <Button variant="secondary" onClick={() => setSavingsGoalEditDialog((prev) => ({ ...prev, open: false }))}>إلغاء</Button>
+            <Button onClick={saveSavingsGoalEdit}>حفظ</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <Dialog open={editDialog.open && !!editDialog.tx} onOpenChange={(open) => { if (!open) setEditDialog({ open: false, tx: null, amount: "", date: todayISO(), subcategoryId: "", savingsGoalId: "" }); }}>
           <DialogContent className="max-w-md" dir="rtl">
           <DialogHeader>
@@ -2027,6 +2194,39 @@ export default function BudgetPlanner() {
                     placeholder="أضف خيار مخصص"
                   />
                   <Button onClick={addCategory}>إضافة فئة</Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base budget-widget-title">أرصدة الادخار الحالية</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {data.savingsGoals.length === 0 && <p className="text-sm text-right text-muted-foreground">أضف هدف ادخار أولاً ليظهر هنا الرصيد المتراكم.</p>}
+                  {data.savingsGoals.map((goal) => (
+                    <div key={goal.id} className="rounded-xl border bg-muted/40 p-3">
+                      <div className="rtl-row items-center">
+                        <div className="flex-1 text-right">
+                          <p className="font-medium text-foreground">{getSavingsGoalDisplayTitle(goal)}</p>
+                          <p className="mt-1 text-xs text-muted-foreground">{getSavingsGoalCategoryLabel(goal.category)}</p>
+                        </div>
+                        <div className="w-full max-w-[180px] space-y-2">
+                          <Label className="text-xs text-right">الإجمالي المتراكم حتى اليوم</Label>
+                          <Input
+                            dir="rtl"
+                            type="text"
+                            inputMode="decimal"
+                            defaultValue={goal.initialAmount > 0 ? String(goal.initialAmount) : ""}
+                            onBlur={(e) => updateSavingGoalInitialAmount(goal.id, e.target.value)}
+                            placeholder="كم ادخرت سابقًا؟"
+                            className="tabular-nums budget-rtl-input"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
