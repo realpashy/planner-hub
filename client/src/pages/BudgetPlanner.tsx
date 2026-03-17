@@ -1980,15 +1980,15 @@ export default function BudgetPlanner() {
                   {savingsGoalCards.length === 0 && <p className="text-sm text-right text-muted-foreground">لا توجد أهداف ادخار مطابقة حالياً.</p>}
                   {savingsGoalCards.map((goal) => {
                     return (
-                      <div key={goal.id} className="group rounded-3xl border border-slate-200/80 bg-white/95 p-4 shadow-[0_14px_40px_-24px_rgba(15,23,42,0.24)] transition hover:border-slate-300/70 dark:border-border dark:bg-muted/40 dark:shadow-none">
-                        <div className="flex items-center gap-3">
+                      <div key={goal.id} className="group relative rounded-3xl border border-slate-200/80 bg-white/95 p-4 pt-5 shadow-[0_14px_40px_-24px_rgba(15,23,42,0.24)] transition hover:border-slate-300/70 dark:border-border dark:bg-muted/40 dark:shadow-none">
+                        <div className="absolute right-4 top-0 -translate-y-1/2">
+                          <Badge variant="outline" className="whitespace-nowrap rounded-full border-slate-200 bg-white px-2.5 py-1 text-slate-700 shadow-sm dark:border-border dark:bg-slate-950 dark:text-foreground">
+                            {`${SAVINGS_GOAL_META[goal.category].emoji} ${getSavingsGoalCategoryLabel(goal.category)}`}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-3 pt-1">
                           <div className="min-w-0 flex-1 text-right">
                             <p className="w-full truncate text-right text-base font-semibold text-foreground">{goal.displayTitle}</p>
-                            <div className="mt-1.5 flex justify-end">
-                              <Badge variant="outline" className="whitespace-nowrap rounded-full border-slate-200 bg-slate-50/90 px-2.5 py-1 text-slate-700 dark:border-border dark:bg-background/60 dark:text-foreground">
-                                {`${SAVINGS_GOAL_META[goal.category].emoji} ${getSavingsGoalCategoryLabel(goal.category)}`}
-                              </Badge>
-                            </div>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
                             <Select value={goal.status} onValueChange={(value) => updateSavingGoalStatus(goal.id, value as BudgetSavingGoalStatus)}>
@@ -2011,7 +2011,7 @@ export default function BudgetPlanner() {
                             </Button>
                           </div>
                         </div>
-                        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
                           <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3 text-right dark:border-border dark:bg-background/70">
                             <p className="text-[11px] text-muted-foreground">الإجمالي</p>
                             <p className="mt-1 rtl-number text-sm font-semibold text-foreground">{formatAmount(goal.totalSaved, data.settings.currency)}</p>
@@ -2023,7 +2023,7 @@ export default function BudgetPlanner() {
                             </p>
                           </div>
                         </div>
-                        <div className="mt-3 grid grid-cols-3 gap-2 text-right text-xs">
+                        <div className="mt-4 grid grid-cols-3 gap-3 text-right text-xs">
                           <div className="rounded-2xl border border-slate-200/70 bg-slate-50/70 p-2.5 dark:border-border dark:bg-background/70">
                             <p className="text-muted-foreground">الهدف</p>
                             <p className="mt-1 font-semibold text-foreground">{goal.hasTarget ? <span className="rtl-number">{formatAmount(goal.targetAmount, data.settings.currency)}</span> : "غير محدد"}</p>
@@ -2037,10 +2037,10 @@ export default function BudgetPlanner() {
                             <p className="mt-1 font-semibold text-foreground">{goal.hasTarget ? `${goal.progress}%` : "مرن"}</p>
                           </div>
                         </div>
-                        <div className="mt-4 h-2.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-muted">
+                        <div className="mt-5 h-2.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-muted">
                           <motion.div initial={{ width: 0 }} animate={{ width: `${goal.progress}%` }} transition={{ duration: 0.35 }} className="h-full bg-emerald-500" />
                         </div>
-                        <div className="mt-4 rtl-row items-center">
+                        <div className="mt-5 rtl-row items-center">
                           <div className="flex-1 text-right text-xs text-muted-foreground">
                             {goal.lastContributionDate ? `آخر مساهمة: ${goal.lastContributionDate}` : "لم يتم تسجيل أي مساهمة بعد"}
                           </div>
