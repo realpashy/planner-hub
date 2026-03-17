@@ -17,7 +17,7 @@ const modules = [
   { id: "goals", title: "أهداف السنة", desc: "حقق أهدافك", icon: Target, color: "bg-purple-500/10 text-purple-600 dark:text-purple-400", active: false },
   { id: "tasks", title: "تتبع المهام", desc: "تابع مهامك", icon: ListTodo, color: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400", active: false },
   { id: "travel", title: "مخطط السفر", desc: "خطط رحلاتك", icon: Map, color: "bg-amber-500/10 text-amber-600 dark:text-amber-400", active: false },
-  { id: "meal", title: "وجبات الأسبوع", desc: "خطط وجباتك", icon: Utensils, color: "bg-pink-500/10 text-pink-600 dark:text-pink-400", active: false },
+  { id: "meal", title: "تخطيط الوجبات", desc: "خطّط وجباتك الأسبوعية بسهولة", icon: Utensils, color: "bg-pink-500/10 text-pink-600 dark:text-pink-400", active: true },
 ];
 
 export default function Dashboard() {
