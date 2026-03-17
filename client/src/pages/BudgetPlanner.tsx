@@ -849,7 +849,7 @@ export default function BudgetPlanner() {
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon" asChild>
                 <Link href="/">
-                  <ArrowRight className="w-5 h-5 md:w-6 md:h-6 rtl:rotate-180" />
+                  <ArrowRight className="w-5 h-5 md:w-6 md:h-6" />
                 </Link>
               </Button>
               <ThemeToggle />
@@ -879,9 +879,9 @@ export default function BudgetPlanner() {
                 </SelectContent>
               </Select>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="icon"
-                className="rounded-full"
+                className="budget-toolbar-select"
                 onClick={() => setCategoriesDialogOpen(true)}
                 aria-label="إعدادات الفئات"
               >
@@ -1047,23 +1047,32 @@ export default function BudgetPlanner() {
                   <div className="w-full h-2.5 rounded-lg bg-muted overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: `${monthlyTotals.income > 0 ? Math.min((monthlyTotals.totalOutflow / monthlyTotals.income) * 100, 100) : 0}%` }} className="h-full bg-rose-500" /></div>
                 </div>
 
-                <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-4 items-center" onMouseLeave={() => setHoveredOverviewSegment(null)}>
+                <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-center sm:gap-6" onMouseLeave={() => setHoveredOverviewSegment(null)}>
                   <div className="flex justify-center">
-                    <div className="budget-overview-donut relative w-44 h-44">
+                    <div className="budget-overview-donut relative h-52 w-52">
                       <svg viewBox="0 0 180 180" className="w-full h-full drop-shadow-sm">
                         <circle cx="90" cy="90" r="56" fill="none" stroke="rgba(148, 163, 184, 0.18)" strokeWidth="18" />
                         {donutSegments.map((segment) => (
-                          <path
-                            key={segment.id}
-                            d={describeArcPath(90, 90, 56, segment.startAngle, segment.endAngle)}
-                            fill="none"
-                            stroke={segment.color}
-                            strokeWidth={18}
-                            strokeLinecap="butt"
-                            opacity={0.84}
-                            onMouseEnter={() => setHoveredOverviewSegment(segment.id)}
-                            onMouseLeave={() => setHoveredOverviewSegment(null)}
-                          />
+                          <g key={segment.id}>
+                            <path
+                              d={describeArcPath(90, 90, 56, segment.startAngle, segment.endAngle)}
+                              fill="none"
+                              stroke="transparent"
+                              strokeWidth={30}
+                              strokeLinecap="butt"
+                              onMouseEnter={() => setHoveredOverviewSegment(segment.id)}
+                              onMouseLeave={() => setHoveredOverviewSegment(null)}
+                            />
+                            <path
+                              d={describeArcPath(90, 90, 56, segment.startAngle, segment.endAngle)}
+                              fill="none"
+                              stroke={segment.color}
+                              strokeWidth={18}
+                              strokeLinecap="butt"
+                              opacity={0.84}
+                              pointerEvents="none"
+                            />
+                          </g>
                         ))}
                         {hoveredOverviewSegment && activeOverviewSegment && (
                           <motion.path
@@ -1086,7 +1095,7 @@ export default function BudgetPlanner() {
                       </div>
                     </div>
                   </div>
-                  <div className="text-sm text-right text-muted-foreground">
+                  <div className="max-w-xs text-sm text-right text-muted-foreground">
                     <p>حرّك المؤشر على أي فئة لرؤية نسبتها بسرعة.</p>
                     <p className="mt-1">يتم تكبير الجزء المطابق للفئة فقط لربط القائمة بالمخطط.</p>
                   </div>
@@ -1406,8 +1415,8 @@ function SummaryCard({
   return (
     <Card className={cn("p-5 transition-all hover:shadow-md", className)}>
       <CardContent className="p-0">
-        <div className="flex items-center gap-3">
-          <div className="flex-1 flex flex-col items-end justify-center text-right">
+        <div className="rtl-row items-center">
+          <div className="flex-1 text-right">
             <p className="text-xs font-semibold tracking-wide text-muted-foreground">{title}</p>
             <p className={cn("text-2xl md:text-[28px] font-bold leading-tight mt-1", entry.text)}>
               <span className="inline-block tabular-nums whitespace-nowrap" style={{ direction: "ltr", unicodeBidi: "bidi-override" }}>

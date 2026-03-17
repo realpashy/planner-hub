@@ -236,7 +236,7 @@
   }
 
   .budget-toolbar-select {
-    @apply h-9 w-9 rounded-xl border-0 bg-slate-100 px-0 text-slate-600 shadow-none transition-colors hover:bg-slate-200 focus:ring-0 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 [&>svg:last-child]:hidden;
+    @apply inline-flex h-9 w-9 items-center justify-center rounded-xl border-0 bg-slate-100 px-0 text-slate-600 shadow-none transition-colors hover:bg-slate-200 focus:ring-0 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 [&>svg:last-child]:hidden;
   }
 
   .budget-date-input {
