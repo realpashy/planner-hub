@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { ArrowRight, CalendarClock, Landmark, Menu, Moon, PiggyBank, Plus, ReceiptText, Search, Settings2, Sun, TrendingUp, Wallet } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarClock, Landmark, Menu, Moon, PiggyBank, Plus, ReceiptText, Search, Settings2, Sun, TrendingUp, Wallet } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { toast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -1672,15 +1672,15 @@ export default function BudgetPlanner() {
               الميزانيّة الشهرية
             </h1>
             <div className="absolute right-0 flex items-center justify-end gap-2 md:hidden">
-              <div className="flex items-center gap-2 rounded-2xl border border-border/60 bg-background/80 px-3 py-2 shadow-sm backdrop-blur">
-                <Wallet className="h-4 w-4 text-emerald-500" />
-                <span className="text-sm font-semibold text-foreground whitespace-nowrap">الميزانيّة الشهرية</span>
-              </div>
-              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-2xl border border-border/60 bg-background/75 shadow-sm backdrop-blur" asChild>
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-2xl bg-background/75 shadow-sm backdrop-blur" asChild>
                 <Link href="/">
                   <ArrowRight className="w-5 h-5" />
                 </Link>
               </Button>
+              <div className="flex items-center gap-2 rounded-2xl bg-background/80 px-3 py-2 shadow-sm backdrop-blur">
+                <Wallet className="h-4 w-4 text-emerald-500" />
+                <span className="text-sm font-semibold text-foreground whitespace-nowrap">الميزانيّة الشهرية</span>
+              </div>
             </div>
           </div>
         </div>
@@ -1992,25 +1992,17 @@ export default function BudgetPlanner() {
                     return (
                       <div key={goal.id} className="group rounded-3xl border border-slate-200/80 bg-white/95 p-4 shadow-[0_14px_40px_-24px_rgba(15,23,42,0.24)] transition hover:border-slate-300/70 dark:border-border dark:bg-muted/40 dark:shadow-none">
                         <div className="rtl-row items-start gap-3">
-                          <div className="min-w-0 flex-1 text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-7 shrink-0 px-2 text-xs text-muted-foreground transition-colors hover:text-destructive"
-                                onClick={() => openDeleteConfirm("حذف هدف الادخار", "سيتم حذف الهدف وكل المساهمات المرتبطة به. هل تريد المتابعة؟", () => deleteSavingGoal(goal.id))}
-                              >
-                                حذف
-                              </Button>
-                              <p className="max-w-full truncate text-base font-semibold text-foreground">{goal.displayTitle}</p>
-                            </div>
-                            <div className="mt-3 flex flex-wrap justify-end gap-2">
-                              <Badge variant="outline" className="whitespace-nowrap rounded-full border-slate-200 bg-slate-50/90 text-slate-700 dark:border-border dark:bg-background/60 dark:text-foreground">
-                                {`${SAVINGS_GOAL_META[goal.category].emoji} ${getSavingsGoalCategoryLabel(goal.category)}`}
-                              </Badge>
-                            </div>
+                          <div className="w-16 shrink-0 budget-value-left">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-full justify-center rounded-xl px-2 text-xs text-muted-foreground transition-colors hover:text-destructive"
+                              onClick={() => openDeleteConfirm("حذف هدف الادخار", "سيتم حذف الهدف وكل المساهمات المرتبطة به. هل تريد المتابعة؟", () => deleteSavingGoal(goal.id))}
+                            >
+                              حذف
+                            </Button>
                           </div>
-                          <div className="budget-value-left flex flex-col items-start gap-1">
+                          <div className="w-24 shrink-0 budget-value-left flex flex-col items-start gap-1">
                             <Select value={goal.status} onValueChange={(value) => updateSavingGoalStatus(goal.id, value as BudgetSavingGoalStatus)}>
                               <SelectTrigger className="h-8 w-[108px] budget-rtl-select-trigger border-slate-200 bg-white text-xs dark:border-border dark:bg-background/60">
                                 <SelectValue />
@@ -2021,6 +2013,16 @@ export default function BudgetPlanner() {
                                 <SelectItem value="archived" className="budget-select-item">مؤرشف</SelectItem>
                               </SelectContent>
                             </Select>
+                          </div>
+                          <div className="min-w-0 basis-[60%] flex-1 text-right">
+                            <div className="flex justify-end">
+                              <p className="w-full truncate text-right text-base font-semibold text-foreground">{goal.displayTitle}</p>
+                            </div>
+                            <div className="mt-3 flex flex-wrap justify-end gap-2">
+                              <Badge variant="outline" className="whitespace-nowrap rounded-full border-slate-200 bg-slate-50/90 text-slate-700 dark:border-border dark:bg-background/60 dark:text-foreground">
+                                {`${SAVINGS_GOAL_META[goal.category].emoji} ${getSavingsGoalCategoryLabel(goal.category)}`}
+                              </Badge>
+                            </div>
                           </div>
                         </div>
                         <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -2141,7 +2143,7 @@ export default function BudgetPlanner() {
                             />
                           </g>
                         ))}
-                        {hoveredOverviewSegment && activeOverviewSegment && (
+                        {activeOverviewSegment && (
                           <motion.path
                             key={`active_${activeOverviewSegment.id}`}
                             d={describeArcPath(90, 90, 62, activeOverviewSegment.startAngle, activeOverviewSegment.endAngle)}
@@ -2201,13 +2203,16 @@ export default function BudgetPlanner() {
                     <div
                       key={`${warning.text}_${index}`}
                       className={cn(
-                        "px-1 py-1 text-sm text-right",
-                        warning.tone === "danger" && "text-destructive",
-                        warning.tone === "warn" && "text-amber-700 dark:text-amber-300",
-                        warning.tone === "good" && "text-emerald-700 dark:text-emerald-300"
+                        "rounded-2xl border px-3 py-3 text-right shadow-sm",
+                        warning.tone === "danger" && "border-rose-200/80 bg-rose-50/80 text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-300",
+                        warning.tone === "warn" && "border-amber-200/80 bg-amber-50/80 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300",
+                        warning.tone === "good" && "border-emerald-200/80 bg-emerald-50/80 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300"
                       )}
                     >
-                      {warning.text}
+                      <div className="rtl-row items-start gap-2">
+                        <ArrowLeft className="mt-0.5 h-4 w-4 shrink-0" />
+                        <p className="flex-1 text-sm leading-6">{warning.text}</p>
+                      </div>
                     </div>
                   ))}
                 </div>
