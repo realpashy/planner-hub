@@ -166,7 +166,7 @@
   }
 
   .rtl-header {
-    @apply flex items-center justify-between gap-2;
+    @apply flex items-center justify-start gap-2;
   }
 
   [dir="rtl"] .rtl-header {
@@ -177,6 +177,31 @@
   .rtl-number {
     direction: ltr;
     unicode-bidi: bidi-override;
+  }
+
+  .budget-rtl-select-trigger {
+    @apply flex-row-reverse text-start;
+  }
+
+  .budget-rtl-select-content {
+    @apply text-start;
+  }
+
+  .budget-rtl-input {
+    @apply text-start;
+  }
+
+  .budget-rtl-input-with-icon {
+    @apply ps-3 pe-9 text-start;
+  }
+
+  .budget-date-input {
+    direction: ltr;
+    text-align: left;
+  }
+
+  .dark .budget-date-input::-webkit-calendar-picker-indicator {
+    filter: invert(1);
   }
 
   [contenteditable][data-placeholder]:empty::before {

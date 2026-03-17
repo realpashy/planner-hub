@@ -871,13 +871,13 @@ export default function BudgetPlanner() {
           </div>
 
           <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2.5">
+            <div className="rtl-row rounded-lg border bg-muted/50 px-3 py-2.5">
               <CalendarClock className="w-4 h-4 text-foreground" />
               <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                <SelectTrigger className="flex-1 border-0 bg-transparent shadow-none focus:ring-0 w-auto min-w-0">
+                <SelectTrigger className="budget-rtl-select-trigger flex-1 border-0 bg-transparent shadow-none focus:ring-0 w-auto min-w-0">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent dir="rtl" className="budget-rtl-select-content">
                   {monthOptions.map((option) => (
                     <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
                   ))}
@@ -886,16 +886,16 @@ export default function BudgetPlanner() {
               <span className="text-xs text-muted-foreground">{localizedMonthLabel}</span>
             </div>
 
-            <div className="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2.5 justify-between">
+            <div className="rtl-row rounded-lg border bg-muted/50 px-3 py-2.5">
               <span className="text-xs text-muted-foreground">العملة</span>
               <Select
                 value={data.settings.currency}
                 onValueChange={(value) => applyData((current) => ({ ...current, settings: { ...current.settings, currency: value as BudgetData["settings"]["currency"] } }))}
               >
-                <SelectTrigger className="flex-1 border-0 bg-transparent shadow-none focus:ring-0 w-auto min-w-0">
+                <SelectTrigger className="budget-rtl-select-trigger flex-1 border-0 bg-transparent shadow-none focus:ring-0 w-auto min-w-0">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent dir="rtl" className="budget-rtl-select-content">
                   {CURRENCY_OPTIONS.map((option) => (
                     <SelectItem key={option.code} value={option.code}>{option.label}</SelectItem>
                   ))}
@@ -916,7 +916,7 @@ export default function BudgetPlanner() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div className="lg:col-span-5 space-y-6 lg:order-2">
+            <div className="lg:col-span-5 space-y-6">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base rtl-header">
@@ -927,10 +927,10 @@ export default function BudgetPlanner() {
                 <CardContent className="space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Select value={transactionForm.type} onValueChange={(v) => configureTransactionType(v as BudgetTransactionType)}>
-                      <SelectTrigger>
+                      <SelectTrigger className="budget-rtl-select-trigger">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent dir="rtl" className="budget-rtl-select-content">
                         {ADD_TRANSACTION_TYPES.map((type) => (
                           <SelectItem key={type} value={type}>{`${TYPE_EMOJI[type]} ${TRANSACTION_TYPE_LABEL[type]}`}</SelectItem>
                         ))}
@@ -938,7 +938,7 @@ export default function BudgetPlanner() {
                     </Select>
                     <Input
                       dir="rtl"
-                      className="text-right"
+                      className="budget-rtl-input"
                       value={transactionCategoryText}
                       onChange={(e) => setTransactionCategoryText(e.target.value)}
                       placeholder="اكتب الفئة (مثال: راتب, كهرباء)"
@@ -950,11 +950,11 @@ export default function BudgetPlanner() {
                       value={transactionForm.amount}
                       onChange={(e) => setTransactionForm((prev) => ({ ...prev, amount: e.target.value }))}
                       placeholder={`المبلغ (${symbol})`}
-                      className="tabular-nums text-right"
+                      className="tabular-nums budget-rtl-input"
                     />
                     <Input
                       dir="rtl"
-                      className="text-right"
+                      className="budget-rtl-input"
                       value={transactionForm.note}
                       onChange={(e) => setTransactionForm((prev) => ({ ...prev, note: e.target.value }))}
                       placeholder="ملاحظة (اختياري)"
@@ -979,7 +979,7 @@ export default function BudgetPlanner() {
                 <CardContent className="space-y-2">
                   <Input
                     dir="rtl"
-                    className="text-right"
+                    className="budget-rtl-input"
                     value={goalTitle}
                     onChange={(e) => setGoalTitle(e.target.value)}
                     placeholder="اسم الهدف"
@@ -991,7 +991,7 @@ export default function BudgetPlanner() {
                     value={goalTargetAmount}
                     onChange={(e) => setGoalTargetAmount(e.target.value)}
                     placeholder={`المبلغ المستهدف (${symbol})`}
-                    className="tabular-nums text-right"
+                    className="tabular-nums budget-rtl-input"
                   />
                   <Button onClick={addSavingGoal}>إضافة الهدف</Button>
                 </CardContent>
@@ -999,7 +999,7 @@ export default function BudgetPlanner() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base text-right">أهداف الادخار</CardTitle>
+                  <CardTitle className="text-base text-start">أهداف الادخار</CardTitle>
                 </CardHeader>
                 <CardContent>
                 <div className="space-y-2.5">
@@ -1009,7 +1009,7 @@ export default function BudgetPlanner() {
                     const progress = goal.targetAmount > 0 ? Math.min(Math.round((saved / goal.targetAmount) * 100), 100) : 0;
                     return (
                       <div key={goal.id} className="group rounded-xl border bg-muted/50 p-3">
-                        <div className="flex items-start justify-between gap-2">
+                        <div className="rtl-row items-start">
                           <div>
                             <p className="font-semibold text-foreground">{goal.title}</p>
                             <p className="text-xs text-muted-foreground mt-1">الاستحقاق: {goal.targetDate}</p>
@@ -1025,7 +1025,7 @@ export default function BudgetPlanner() {
                         <div className="mt-1.5 w-full h-2.5 bg-muted rounded-lg overflow-hidden">
                           <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }} transition={{ duration: 0.35 }} className="h-full bg-emerald-500" />
                         </div>
-                        <div className="mt-2 flex items-center justify-between">
+                        <div className="mt-2 rtl-row">
                           <span className="text-xs text-muted-foreground">{progress}%</span>
                           <Button size="sm" className="text-xs h-7" onClick={() => openSavingContributionDialog(goal)}>إضافة مساهمة</Button>
                         </div>
@@ -1037,10 +1037,10 @@ export default function BudgetPlanner() {
               </Card>
             </div>
 
-            <div className="lg:col-span-7 space-y-6 lg:order-1">
+            <div className="lg:col-span-7 space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base text-right">نظرة عامّة</CardTitle>
+                  <CardTitle className="text-base text-start">نظرة عامّة</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                 <div className="mb-3 rounded-xl border bg-muted/50 p-3">
@@ -1089,7 +1089,7 @@ export default function BudgetPlanner() {
                       </div>
                     </div>
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-sm text-start text-muted-foreground">
                     <p>حرّك المؤشر على أي فئة لرؤية نسبتها بسرعة.</p>
                     <p className="mt-1">يتم تكبير الجزء المطابق للفئة فقط لربط القائمة بالمخطط.</p>
                   </div>
@@ -1130,18 +1130,18 @@ export default function BudgetPlanner() {
                 <CardContent className="space-y-3">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                   <div className="relative md:col-span-2">
-                    <Search className="w-4 h-4 absolute left-3 rtl:left-auto rtl:right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                    <Search className="w-4 h-4 absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                     <Input
                       dir="rtl"
                       value={recentSearch}
                       onChange={(e) => setRecentSearch(e.target.value)}
                       placeholder="ابحث عن عملية محددة"
-                      className="pl-9 rtl:pl-3 rtl:pr-9 text-right"
+                      className="budget-rtl-input-with-icon"
                     />
                   </div>
                   <Select value={recentFilter} onValueChange={(v) => setRecentFilter(v as typeof recentFilter)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
+                    <SelectTrigger className="budget-rtl-select-trigger"><SelectValue /></SelectTrigger>
+                    <SelectContent dir="rtl" className="budget-rtl-select-content">
                       <SelectItem value="all">الكل</SelectItem>
                       <SelectItem value="income">دخل</SelectItem>
                       <SelectItem value="expense">مصروف</SelectItem>
@@ -1160,7 +1160,7 @@ export default function BudgetPlanner() {
                     const metaLine = `${TRANSACTION_TYPE_LABEL[tx.type]} • ${tx.date}`;
 
                     return (
-                      <Button key={tx.id} variant="outline" className="w-full h-auto justify-between p-3 text-right font-normal" onClick={() => setOperationActionsTx(tx)}>
+                      <Button key={tx.id} variant="outline" className="w-full h-auto justify-between p-3 text-start font-normal" onClick={() => setOperationActionsTx(tx)}>
                         <div className="rtl-row items-start w-full">
                           <div>
                             <p className="font-semibold text-foreground">{rowTitle}</p>
@@ -1180,10 +1180,10 @@ export default function BudgetPlanner() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base text-right">تحليل مالي ذكي</CardTitle>
+                  <CardTitle className="text-base text-start">تحليل مالي ذكي</CardTitle>
                 </CardHeader>
                 <CardContent>
-                <div className="space-y-2.5 text-right">
+                <div className="space-y-2.5 text-start">
                   {upcomingWarnings.map((warning, index) => (
                     <div
                       key={`${warning.text}_${index}`}
@@ -1215,9 +1215,9 @@ export default function BudgetPlanner() {
               value={amountDialog.amount}
               onChange={(e) => setAmountDialog((prev) => ({ ...prev, amount: e.target.value }))}
               placeholder={`المبلغ (${symbol})`}
-              className="tabular-nums mt-2 text-right"
+              className="tabular-nums mt-2 budget-rtl-input"
             />
-            <DialogFooter>
+            <DialogFooter className="sm:flex-row-reverse">
               <Button variant="secondary" onClick={closeAmountDialog}>إلغاء</Button>
               <Button onClick={confirmAmountDialog}>تأكيد</Button>
             </DialogFooter>
@@ -1254,14 +1254,14 @@ export default function BudgetPlanner() {
                 inputMode="decimal"
                 value={editDialog.amount}
                 onChange={(e) => setEditDialog((prev) => ({ ...prev, amount: e.target.value }))}
-                className="tabular-nums text-right"
+                className="tabular-nums budget-rtl-input"
               />
               <Input
                 dir="ltr"
                 type="date"
                 value={editDialog.date}
                 onChange={(e) => setEditDialog((prev) => ({ ...prev, date: e.target.value }))}
-                className="tabular-nums text-left"
+                className="budget-date-input tabular-nums"
               />
               {isRecurringTransaction(editDialog.tx) && (
                 <div className="rounded-lg border bg-muted/50 p-2 space-y-2">
@@ -1273,8 +1273,8 @@ export default function BudgetPlanner() {
                 </div>
               )}
               <Select value={editDialog.categoryId} onValueChange={(v) => setEditDialog((prev) => ({ ...prev, categoryId: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
+                <SelectTrigger className="budget-rtl-select-trigger"><SelectValue /></SelectTrigger>
+                <SelectContent dir="rtl" className="budget-rtl-select-content">
                   {data.categories.filter((c) => c.type === editDialog.tx?.type).map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>{`${categoryEmoji(cat.name, cat.type)} ${cat.name}`}</SelectItem>
                   ))}
@@ -1282,14 +1282,14 @@ export default function BudgetPlanner() {
               </Select>
               <Input
                 dir="rtl"
-                className="text-right"
+                className="budget-rtl-input"
                 value={editDialog.note}
                 onChange={(e) => setEditDialog((prev) => ({ ...prev, note: e.target.value }))}
                 placeholder="ملاحظة"
               />
             </div>
           )}
-          <DialogFooter>
+          <DialogFooter className="sm:flex-row-reverse">
             <Button variant="secondary" onClick={() => setEditDialog({ open: false, tx: null, amount: "", date: todayISO(), note: "", categoryId: "" })}>إلغاء</Button>
             <Button onClick={saveEditTransaction}>حفظ</Button>
           </DialogFooter>
@@ -1303,13 +1303,13 @@ export default function BudgetPlanner() {
           <div className="mt-2 space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base text-right">تخصيص الفئات</CardTitle>
+                <CardTitle className="text-base text-start">تخصيص الفئات</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                   <Select value={categoryType} onValueChange={(v) => setCategoryType(v as BudgetCategoryType)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
+                    <SelectTrigger className="budget-rtl-select-trigger"><SelectValue /></SelectTrigger>
+                    <SelectContent dir="rtl" className="budget-rtl-select-content">
                       {(Object.keys(TRANSACTION_TYPE_LABEL) as BudgetTransactionType[]).map((type) => (
                         <SelectItem key={type} value={type}>{`${TYPE_EMOJI[type]} ${TRANSACTION_TYPE_LABEL[type]}`}</SelectItem>
                       ))}
@@ -1317,7 +1317,7 @@ export default function BudgetPlanner() {
                   </Select>
                   <Input
                     dir="rtl"
-                    className="text-right"
+                    className="budget-rtl-input"
                     value={categoryName}
                     onChange={(e) => setCategoryName(e.target.value)}
                     placeholder="أضف خيار مخصص"
@@ -1330,16 +1330,16 @@ export default function BudgetPlanner() {
             {(Object.keys(TRANSACTION_TYPE_LABEL) as BudgetTransactionType[]).map((type) => (
               <Card key={type}>
                 <CardHeader>
-                  <CardTitle className="text-base text-right">{`${TYPE_EMOJI[type]} ${TRANSACTION_TYPE_LABEL[type]}`}</CardTitle>
+                  <CardTitle className="text-base text-start">{`${TYPE_EMOJI[type]} ${TRANSACTION_TYPE_LABEL[type]}`}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
                     {categoriesByType[type].map((cat) => (
-                      <div key={cat.id} className="group rounded-xl bg-muted/50 p-2.5 flex items-center justify-between gap-2">
+                      <div key={cat.id} className="group rounded-xl bg-muted/50 p-2.5 rtl-row">
                         {editingCategoryId === cat.id ? (
                           <Input
                             dir="rtl"
-                            className="flex-1 h-8 text-right"
+                            className="flex-1 h-8 budget-rtl-input"
                             value={editingCategoryName}
                             onChange={(e) => setEditingCategoryName(e.target.value)}
                           />
