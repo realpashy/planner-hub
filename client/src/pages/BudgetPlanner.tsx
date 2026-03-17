@@ -1111,7 +1111,7 @@ export default function BudgetPlanner() {
                         onMouseLeave={() => setHoveredOverviewSegment(null)}
                         className={cn("rounded-xl border p-2.5 transition", isActive ? "border-primary/40 bg-primary/5" : "bg-muted/50")}
                       >
-                        <div className="flex items-center justify-between text-sm mb-1">
+                        <div className="flex flex-row-reverse items-center justify-between text-sm mb-1 gap-2">
                           <p className="font-medium text-foreground">{`${segment.emoji} ${segment.name}`}</p>
                           <p className="text-muted-foreground tabular-nums"><span className="inline-block tabular-nums whitespace-nowrap" style={{ direction: "ltr", unicodeBidi: "bidi-override" }}>{formatAmount(segment.total, data.settings.currency)}</span> • {segment.percent}%</p>
                         </div>
@@ -1166,7 +1166,7 @@ export default function BudgetPlanner() {
 
                     return (
                       <Button key={tx.id} variant="outline" className="w-full h-auto justify-between p-3 text-right font-normal" onClick={() => setOperationActionsTx(tx)}>
-                        <div className="flex items-start justify-between gap-3 w-full">
+                        <div className="flex flex-row-reverse items-start justify-between gap-3 w-full">
                           <div>
                             <p className="font-semibold text-foreground">{rowTitle}</p>
                             <p className="text-xs text-muted-foreground mt-1">{metaLine}</p>
