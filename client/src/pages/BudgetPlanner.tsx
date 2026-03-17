@@ -879,7 +879,7 @@ export default function BudgetPlanner() {
                 </SelectTrigger>
                 <SelectContent dir="rtl" className="budget-rtl-select-content budget-roomy-select-content">
                   {monthOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value} className="budget-roomy-select-item">{option.label}</SelectItem>
+                    <SelectItem key={option.value} value={option.value} className="budget-select-item">{option.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -920,8 +920,8 @@ export default function BudgetPlanner() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base budget-icon-title">
-                    <Plus className="w-4 h-4 text-primary" />
                     <span>إضافة معاملة جديدة</span>
+                    <Plus className="w-4 h-4 text-primary" />
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -972,8 +972,8 @@ export default function BudgetPlanner() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base budget-icon-title">
-                    <PiggyBank className="w-4 h-4 text-emerald-500" />
                     <span>إضافة هدف ادخار</span>
+                    <PiggyBank className="w-4 h-4 text-emerald-500" />
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
@@ -1000,8 +1000,8 @@ export default function BudgetPlanner() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base budget-icon-title">
-                    <PiggyBank className="w-4 h-4 text-emerald-500" />
                     <span>أهداف الادخار</span>
+                    <PiggyBank className="w-4 h-4 text-emerald-500" />
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -1044,8 +1044,8 @@ export default function BudgetPlanner() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base budget-icon-title">
-                    <Wallet className="w-4 h-4 text-primary" />
                     <span>نظرة عامّة</span>
+                    <Wallet className="w-4 h-4 text-primary" />
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -1129,8 +1129,8 @@ export default function BudgetPlanner() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base budget-icon-title">
-                    <CalendarClock className="w-4 h-4 text-primary" />
                     <span>آخر عمليات هذا الشهر</span>
+                    <CalendarClock className="w-4 h-4 text-primary" />
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -1187,8 +1187,8 @@ export default function BudgetPlanner() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base budget-icon-title">
-                    <TrendingUp className="w-4 h-4 text-primary" />
                     <span>تحليل مالي ذكي</span>
+                    <TrendingUp className="w-4 h-4 text-primary" />
                   </CardTitle>
                 </CardHeader>
                 <CardContent>

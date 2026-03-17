@@ -161,7 +161,6 @@
   }
 
   [dir="rtl"] .rtl-row {
-    flex-direction: row-reverse;
     text-align: right;
   }
 
@@ -170,7 +169,6 @@
   }
 
   [dir="rtl"] .rtl-header {
-    flex-direction: row-reverse;
     text-align: right;
   }
 
@@ -208,7 +206,7 @@
   }
 
   .budget-icon-title {
-    @apply flex w-full items-center justify-end gap-2 text-right;
+    @apply flex w-full items-center justify-start gap-2 text-right;
   }
 
   .budget-actions {
@@ -216,7 +214,7 @@
   }
 
   [dir="rtl"] .budget-actions {
-    flex-direction: row-reverse;
+    justify-content: flex-start;
   }
 
   .budget-scroll-panel {
