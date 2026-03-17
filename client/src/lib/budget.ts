@@ -59,8 +59,10 @@ export interface BudgetSavingGoal {
   id: string;
   title: string;
   category: BudgetSavingGoalCategory;
+  customName?: string;
   targetAmount: number;
   targetDate?: string;
+  initialAmount: number;
   monthlyContributionEnabled: boolean;
   monthlyContributionAmount: number;
   excludedMonths: string[];
@@ -108,23 +110,35 @@ const STORAGE_KEY = "planner_hub_budget_v2";
 const LEGACY_STORAGE_KEY = "planner_hub_budget_v1";
 
 export const CURRENCY_OPTIONS: Array<{ code: CurrencyCode; symbol: string; label: string }> = [
-  { code: "ILS", symbol: "₪", label: "₪ شيكل إسرائيلي (ILS)" },
-  { code: "USD", symbol: "$", label: "$ دولار أمريكي (USD)" },
-  { code: "GBP", symbol: "£", label: "£ جنيه إسترليني (GBP)" },
-  { code: "EUR", symbol: "€", label: "€ يورو (EUR)" },
+  { code: "ILS", symbol: "₪", label: "₪ شيكل إسرائيلي" },
+  { code: "USD", symbol: "$", label: "$ دولار أمريكي" },
+  { code: "GBP", symbol: "£", label: "£ جنيه إسترليني" },
+  { code: "EUR", symbol: "€", label: "€ يورو" },
 ];
 
 export const SAVINGS_GOAL_CATEGORY_OPTIONS: Array<{ value: BudgetSavingGoalCategory; label: string }> = [
-  { value: "emergency_fund", label: "صندوق طوارئ / קרן חירום" },
-  { value: "personal_investments", label: "استثمارات شخصية / השקעות אישיות" },
-  { value: "retirement", label: "تقاعد / פנסיה" },
-  { value: "education_fund", label: "صندوق استكمال / קרן השתלמות" },
-  { value: "housing", label: "ادخار للسكن / חיסכון לדיור" },
-  { value: "children", label: "ادخار للأطفال / חיסכון לילדים" },
-  { value: "travel", label: "هدف سفر / יעד נסיעה" },
-  { value: "personal_goal", label: "هدف شخصي / מטרה אישية" },
-  { value: "big_purchases", label: "أهداف كبيرة / מטרות גדולות" },
+  { value: "emergency_fund", label: "صندوق طوارئ" },
+  { value: "personal_investments", label: "استثمارات شخصية" },
+  { value: "retirement", label: "تقاعد" },
+  { value: "education_fund", label: "صندوق استكمال" },
+  { value: "housing", label: "ادخار للسكن" },
+  { value: "children", label: "ادخار للأطفال" },
+  { value: "travel", label: "هدف سفر" },
+  { value: "personal_goal", label: "هدف شخصي" },
+  { value: "big_purchases", label: "أهداف كبيرة" },
 ];
+
+export const SAVINGS_GOAL_CATEGORY_LABELS: Record<BudgetSavingGoalCategory, string> = {
+  emergency_fund: "صندوق طوارئ",
+  personal_investments: "استثمارات شخصية",
+  retirement: "تقاعد",
+  education_fund: "صندوق استكمال",
+  housing: "ادخار للسكن",
+  children: "ادخار للأطفال",
+  travel: "هدف سفر",
+  personal_goal: "هدف شخصي",
+  big_purchases: "أهداف كبيرة",
+};
 
 function normalizeCurrency(currency: string | undefined): CurrencyCode {
   return CURRENCY_OPTIONS.some((item) => item.code === currency) ? (currency as CurrencyCode) : "ILS";
@@ -157,7 +171,7 @@ function getDefaultCategories(): BudgetCategory[] {
     { id: createBudgetId(), type: "bill_payment", name: "إنترنت" },
     { id: createBudgetId(), type: "bill_payment", name: "هاتف" },
     { id: createBudgetId(), type: "bill_payment", name: "تأمين سيارة" },
-    { id: createBudgetId(), type: "bill_payment", name: "أرنונה" },
+    { id: createBudgetId(), type: "bill_payment", name: "أرنونا" },
     { id: createBudgetId(), type: "debt_payment", name: "قرض" },
     { id: createBudgetId(), type: "debt_payment", name: "بطاقة ائتمان" },
     { id: createBudgetId(), type: "debt_payment", name: "تمويل سيارة" },
@@ -225,17 +239,27 @@ function pickFallbackSubcategoryId(categories: BudgetCategory[], type: BudgetTra
 
 function normalizeSavingsGoals(rawGoals: BudgetSavingGoal[] | undefined): BudgetSavingGoal[] {
   return Array.isArray(rawGoals)
-    ? rawGoals.map((goal): BudgetSavingGoal => ({
-        id: goal.id || createBudgetId(),
-        title: goal.title?.trim() || "هدف ادخار",
-        category: isValidSavingsGoalCategory(goal.category) ? goal.category : "personal_goal",
-        targetAmount: typeof goal.targetAmount === "number" && goal.targetAmount > 0 ? goal.targetAmount : 0,
-        targetDate: goal.targetDate || "",
-        monthlyContributionEnabled: Boolean(goal.monthlyContributionEnabled),
-        monthlyContributionAmount: typeof goal.monthlyContributionAmount === "number" && goal.monthlyContributionAmount > 0 ? goal.monthlyContributionAmount : 0,
-        excludedMonths: Array.isArray(goal.excludedMonths) ? goal.excludedMonths.filter(Boolean) : [],
-        status: goal.status === "completed" || goal.status === "archived" ? goal.status : "active",
-      }))
+    ? rawGoals.map((goal): BudgetSavingGoal => {
+        const category = isValidSavingsGoalCategory(goal.category) ? goal.category : "personal_goal";
+        const defaultLabel = SAVINGS_GOAL_CATEGORY_LABELS[category];
+        const trimmedTitle = goal.title?.trim() || "";
+        const inferredCustomName = trimmedTitle && trimmedTitle !== defaultLabel ? trimmedTitle.split("/")[0].trim() : "";
+        const customName = goal.customName?.trim() || inferredCustomName;
+
+        return {
+          id: goal.id || createBudgetId(),
+          title: customName || defaultLabel,
+          category,
+          customName,
+          targetAmount: typeof goal.targetAmount === "number" && goal.targetAmount > 0 ? goal.targetAmount : 0,
+          targetDate: goal.targetDate || "",
+          initialAmount: typeof goal.initialAmount === "number" && goal.initialAmount > 0 ? goal.initialAmount : 0,
+          monthlyContributionEnabled: Boolean(goal.monthlyContributionEnabled),
+          monthlyContributionAmount: typeof goal.monthlyContributionAmount === "number" && goal.monthlyContributionAmount > 0 ? goal.monthlyContributionAmount : 0,
+          excludedMonths: Array.isArray(goal.excludedMonths) ? goal.excludedMonths.filter(Boolean) : [],
+          status: goal.status === "completed" || goal.status === "archived" ? goal.status : "active",
+        };
+      })
     : [];
 }
 
