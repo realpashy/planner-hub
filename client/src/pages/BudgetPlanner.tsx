@@ -849,7 +849,7 @@ export default function BudgetPlanner() {
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon" asChild>
                 <Link href="/">
-                  <ArrowRight className="w-5 h-5 md:w-6 md:h-6" />
+                  <ArrowRight className="w-5 h-5 md:w-6 md:h-6 rtl:rotate-180" />
                 </Link>
               </Button>
               <ThemeToggle />
