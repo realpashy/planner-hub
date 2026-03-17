@@ -924,7 +924,7 @@ export default function BudgetPlanner() {
             <div className="lg:col-span-5 space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
+                  <CardTitle className="text-base flex items-center gap-2 text-red-500">
                     <Plus className="w-4 h-4 text-primary" />
                     إضافة معاملة جديدة
                   </CardTitle>
