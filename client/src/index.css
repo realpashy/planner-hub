@@ -248,6 +248,34 @@
     text-align: left;
   }
 
+  .meal-input {
+    @apply h-12 rounded-2xl border-border/80 bg-background/85 px-4 text-right shadow-sm placeholder:text-muted-foreground/80;
+  }
+
+  .meal-textarea {
+    @apply rounded-2xl border-border/80 bg-background/85 px-4 py-3 text-right shadow-sm placeholder:text-muted-foreground/80;
+  }
+
+  .meal-select-trigger {
+    @apply h-12 rounded-2xl border-border/80 bg-background/85 px-4 text-right shadow-sm;
+  }
+
+  .meal-select-content {
+    @apply rounded-2xl border-border/80 bg-popover/95 p-2 shadow-xl backdrop-blur;
+  }
+
+  .meal-select-item {
+    @apply min-h-11 rounded-xl py-3 ps-10 pe-4 text-right;
+  }
+
+  .meal-dropdown-content {
+    @apply min-w-64 rounded-2xl border-border/80 bg-popover/95 p-2 shadow-xl backdrop-blur;
+  }
+
+  .meal-dropdown-item {
+    @apply min-h-11 rounded-xl px-4 py-3 text-right text-sm font-medium;
+  }
+
   .dark .budget-date-input::-webkit-calendar-picker-indicator {
     filter: invert(1);
   }
@@ -428,4 +456,3 @@
 .dark .weekly-gantt-scroll::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.6);
 }
-

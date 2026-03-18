@@ -37,7 +37,7 @@ import {
   getMonthlyTotals,
   loadBudgetData,
 } from "@/lib/budget";
-import { getWeekSummary, loadMealPlannerState } from "@/lib/meal-planner";
+import { getMealPlannerSummary, loadMealPlannerState } from "@/lib/meal-planner";
 
 type ModuleStat = {
   label: string;
@@ -231,13 +231,7 @@ export default function Dashboard() {
     }).format(new Date(`${currentMonthKey}-01T00:00:00`));
 
     const mealState = loadMealPlannerState();
-    const mealSummary = getWeekSummary(
-      mealState.weekPlan,
-      mealState.settings.enabledMealTypes,
-      mealState.shoppingList,
-      mealState.favorites,
-    );
-    const checkedShoppingItems = mealState.shoppingList.filter((item) => item.checked).length;
+    const mealSummary = getMealPlannerSummary(mealState);
 
     const active: ActiveModule[] = [
       {
@@ -296,23 +290,23 @@ export default function Dashboard() {
         id: "meal",
         href: "/meal",
         title: "تخطيط الوجبات",
-        description: "تجربة أسبوعية أوضح لتوزيع الوجبات، تنظيم الوصفات، ومتابعة قائمة التسوق والمخزن.",
-        helper: "انتقلي مباشرة إلى نظرة عامة أسبوعك أو إلى قائمة التسوق.",
+        description: "لوحة أسبوعية أساسية لتعبئة الوجبات الرئيسية، السناك الخفيف، الماء، وملاحظات التحضير بسرعة.",
+        helper: "ادخلي مباشرة إلى خطة الأسبوع وعدّليها من نفس الشاشة.",
         icon: Utensils,
         accentClass: "from-pink-500/20 via-pink-500/8 to-transparent",
         iconClass: "border-pink-500/15 bg-pink-500/10 text-pink-600 dark:text-pink-300",
         badgeClass: "border-pink-500/20 bg-pink-500/10 text-pink-700 dark:text-pink-300",
-        highlights: ["لوحة الأسبوع", "الوصفات المفضلة", "التسوّق والمخزن"],
+        highlights: ["3 وجبات رئيسية", "سناك وماء", "نسخ سريع بين الأيام"],
         stats: [
           {
             label: "خانات مخططة",
-            value: `${formatCount(mealSummary.plannedMeals)}/${formatCount(mealSummary.totalSlots)}`,
-            note: `${formatCount(mealSummary.emptySlots)} خانات متبقية هذا الأسبوع`,
+            value: `${formatCount(mealSummary.plannedMeals)}/${formatCount(mealSummary.totalMeals)}`,
+            note: `${formatCount(mealSummary.emptyMeals)} خانات متبقية هذا الأسبوع`,
           },
           {
-            label: "عناصر التسوق",
-            value: formatCount(mealSummary.shoppingItemsCount),
-            note: `${formatCount(checkedShoppingItems)} عناصر تم تجهيزها`,
+            label: "التزام الأسبوع",
+            value: formatCount(mealSummary.completedMeals),
+            note: `${formatCount(mealSummary.daysWithWaterTarget)}/7 أيام حققت هدف الماء`,
           },
         ],
         ctaLabel: "افتح الوجبات",
@@ -329,7 +323,7 @@ export default function Dashboard() {
       },
       {
         label: "متابعة هذا الأسبوع",
-        value: formatCount(plannerOpenTasks + mealSummary.emptySlots),
+        value: formatCount(plannerOpenTasks + mealSummary.emptyMeals),
         note: "مهام مفتوحة وخانات وجبات غير مخططة",
         icon: Clock3,
         iconClass: "border-amber-500/15 bg-amber-500/10 text-amber-600 dark:text-amber-300",

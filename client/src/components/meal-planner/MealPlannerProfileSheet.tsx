@@ -1,0 +1,207 @@
+import type { ReactNode } from "react";
+import { AlertTriangle, ShieldCheck, Sparkles } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  PROFILE_ACTIVITY_OPTIONS,
+  PROFILE_GOAL_OPTIONS,
+  PROFILE_SNACK_OPTIONS,
+  type MealPlannerProfile,
+} from "@/lib/meal-planner";
+
+interface MealPlannerProfileSheetProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  profile: MealPlannerProfile;
+  guidanceItems: string[];
+  waterTargetCups: number;
+  onUpdateProfile: (partial: Partial<MealPlannerProfile>) => void;
+}
+
+export function MealPlannerProfileSheet({
+  open,
+  onOpenChange,
+  profile,
+  guidanceItems,
+  waterTargetCups,
+  onUpdateProfile,
+}: MealPlannerProfileSheetProps) {
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="left"
+        dir="rtl"
+        className="w-[96vw] max-w-[34rem] overflow-y-auto border-r border-border/70 bg-background p-0 [&>button]:left-5 [&>button]:right-auto [&>button]:top-5 [&>button]:rounded-full"
+      >
+        <div className="flex min-h-full flex-col">
+          <SheetHeader className="border-b border-border/70 px-6 pb-5 pt-6 text-right">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <Badge className="rounded-full border-primary/20 bg-primary/10 px-3 py-1 text-primary">
+                تخصيص بسيط
+              </Badge>
+              <Sparkles className="h-4 w-4 text-primary" />
+            </div>
+            <SheetTitle className="text-right text-2xl font-extrabold">الملف الشخصي والتوجيهات</SheetTitle>
+            <SheetDescription className="text-right text-sm leading-6">
+              هذه التوجيهات تعليمية عامة لمساعدتك على التخطيط اليومي، وليست نصيحة طبية أو علاجية.
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="flex-1 space-y-5 px-6 py-6">
+            <Card className="rounded-[1.5rem] border-amber-300/40 bg-amber-50/70 dark:border-amber-500/30 dark:bg-amber-500/5">
+              <CardContent className="flex items-start gap-3 p-4 text-right">
+                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-300" />
+                <div className="space-y-2">
+                  <p className="text-sm font-bold text-foreground">إشعار مهم</p>
+                  <p className="text-sm leading-6 text-muted-foreground">
+                    Planner Hub لا يقدّم تشخيصًا أو علاجًا أو توصيات صحية متخصصة. استخدم هذه الاقتراحات كإطار تنظيمي عام فقط.
+                  </p>
+                  <label className="flex items-start gap-3 rounded-2xl border border-border/70 bg-background/80 p-3">
+                    <Checkbox
+                      checked={profile.disclaimerAccepted}
+                      onCheckedChange={(checked) => onUpdateProfile({ disclaimerAccepted: Boolean(checked) })}
+                    />
+                    <span className="text-sm leading-6 text-foreground">
+                      أقرّ بأن هذه التوجيهات عامة وغير طبية، وأرغب في تفعيلها داخل مخطط الوجبات.
+                    </span>
+                  </label>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="grid gap-4">
+              <Field title="هدفك العام">
+                <Select dir="rtl" value={profile.goal} onValueChange={(value) => onUpdateProfile({ goal: value as MealPlannerProfile["goal"] })}>
+                  <SelectTrigger className="meal-select-trigger">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent dir="rtl" className="meal-select-content">
+                    {PROFILE_GOAL_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value} className="meal-select-item">
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+
+              <Field title="مستوى النشاط">
+                <Select dir="rtl" value={profile.activityLevel} onValueChange={(value) => onUpdateProfile({ activityLevel: value as MealPlannerProfile["activityLevel"] })}>
+                  <SelectTrigger className="meal-select-trigger">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent dir="rtl" className="meal-select-content">
+                    {PROFILE_ACTIVITY_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value} className="meal-select-item">
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+
+              <Field title="تفضيل السناك">
+                <Select dir="rtl" value={profile.snackPreference} onValueChange={(value) => onUpdateProfile({ snackPreference: value as MealPlannerProfile["snackPreference"] })}>
+                  <SelectTrigger className="meal-select-trigger">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent dir="rtl" className="meal-select-content">
+                    {PROFILE_SNACK_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value} className="meal-select-item">
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+
+              <Field title="هدف الماء الأساسي">
+                <div className="space-y-3">
+                  <Input
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={profile.waterTargetCups}
+                    onChange={(event) => onUpdateProfile({ waterTargetCups: Number(event.target.value) || 1 })}
+                    className="meal-input"
+                  />
+                  <p className="text-xs text-muted-foreground">الهدف اليومي المطبّق حاليًا بعد تأثير النشاط: {waterTargetCups} أكواب.</p>
+                </div>
+              </Field>
+
+              <Field title="ملاحظات غذائية">
+                <Textarea
+                  value={profile.dietaryNotes}
+                  onChange={(event) => onUpdateProfile({ dietaryNotes: event.target.value })}
+                  placeholder="مثال: أفضل وجبات خفيفة مساءً أو أحتاج خيارات أسرع في منتصف الأسبوع"
+                  className="meal-textarea min-h-[95px]"
+                />
+              </Field>
+
+              <Field title="مكونات أتجنبها">
+                <Textarea
+                  value={profile.avoidIngredients}
+                  onChange={(event) => onUpdateProfile({ avoidIngredients: event.target.value })}
+                  placeholder="مثال: المقليات الثقيلة، الأطعمة الحارة جدًا، أو مكونات لا تناسب الروتين"
+                  className="meal-textarea min-h-[90px]"
+                />
+              </Field>
+            </div>
+
+            <Card className="rounded-[1.5rem] border-border/70 bg-card/90">
+              <CardContent className="space-y-4 p-4 text-right">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-base font-bold text-foreground">التوجيهات الحالية</p>
+                    <p className="text-sm text-muted-foreground">اقتراحات بسيطة للحفاظ على أسبوع منظم وسهل المتابعة.</p>
+                  </div>
+                  <ShieldCheck className="h-5 w-5 text-primary" />
+                </div>
+
+                <div className="space-y-3">
+                  {guidanceItems.map((item) => (
+                    <div key={item} className="rounded-2xl border border-border/70 bg-background/70 px-4 py-3 text-sm leading-6 text-foreground">
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Button type="button" className="w-full rounded-2xl" onClick={() => onOpenChange(false)}>
+              حفظ والعودة إلى التخطيط
+            </Button>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+function Field({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="space-y-2 text-right">
+      <Label className="text-sm font-semibold text-foreground">{title}</Label>
+      {children}
+    </div>
+  );
+}

@@ -1,31 +1,77 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  MEAL_PLANNER_STORAGE_KEY,
-  MealPlannerSettings,
-  MealPlannerState,
-  WeekSummary,
-  RecentMeal,
-  ShoppingListItem,
-  PlannedMeal,
+  createDefaultDayMeta,
   createId,
+  getDefaultMealTitle,
+  getGuidanceItems,
+  getMealPlannerSummary,
+  getWaterTargetCups,
+  getWeekDates,
   loadMealPlannerState,
-  normalizeIngredientName,
-  generateShoppingList,
+  saveMealPlannerState,
+  type MealDayMeta,
+  type MealPlannerProfile,
+  type MealPlannerState,
+  type MealStatus,
+  type MealType,
+  type PlannedMeal,
 } from "@/lib/meal-planner";
 
-function computeSummary(state: MealPlannerState): WeekSummary {
-  const enabledTypes = state.settings.enabledMealTypes;
-  const totalDays = 7;
-  const totalSlots = enabledTypes.length * totalDays;
-  const plannedMeals = state.weekPlan.meals.length;
-  const emptySlots = Math.max(totalSlots - plannedMeals, 0);
-  const shoppingItemsCount = state.shoppingList.length;
+function pushRecentTitle(recentMeals: string[], title: string) {
+  const normalized = title.trim();
+  if (!normalized) return recentMeals;
+  return [normalized, ...recentMeals.filter((item) => item !== normalized)].slice(0, 12);
+}
 
-  const favoriteRecipesUsed = state.weekPlan.meals.filter(
-    (meal) => meal.recipeId && state.favorites.includes(meal.recipeId),
-  ).length;
+function sanitizeMeal(meal: PlannedMeal) {
+  const title = meal.title.trim();
+  const note = meal.note?.trim() || "";
 
-  return { totalSlots, plannedMeals, emptySlots, shoppingItemsCount, favoriteRecipesUsed };
+  if (!title && !note && meal.status === "planned") {
+    return null;
+  }
+
+  return {
+    ...meal,
+    title,
+    note,
+  };
+}
+
+function upsertMeal(
+  meals: PlannedMeal[],
+  dateISO: string,
+  mealType: MealType,
+  mutate: (current: PlannedMeal) => PlannedMeal,
+) {
+  const existing = meals.find((meal) => meal.dateISO === dateISO && meal.mealType === mealType);
+  const base: PlannedMeal = existing ?? {
+    id: createId(),
+    dateISO,
+    mealType,
+    title: "",
+    status: "planned",
+    note: "",
+  };
+
+  const next = sanitizeMeal(mutate(base));
+  const remaining = meals.filter((meal) => !(meal.dateISO === dateISO && meal.mealType === mealType));
+
+  return next ? [...remaining, next] : remaining;
+}
+
+function updateDayMetaEntry(dayMeta: MealDayMeta[], dateISO: string, partial: Partial<MealDayMeta>) {
+  const existing = dayMeta.find((day) => day.dateISO === dateISO) ?? createDefaultDayMeta(dateISO);
+  const next: MealDayMeta = {
+    ...existing,
+    ...partial,
+    dateISO,
+    snackNote: (partial.snackNote ?? existing.snackNote).trim(),
+    prepNote: (partial.prepNote ?? existing.prepNote).trim(),
+    waterCups: Math.max(0, Math.min(20, Math.round(partial.waterCups ?? existing.waterCups))),
+  };
+
+  return [...dayMeta.filter((day) => day.dateISO !== dateISO), next].sort((a, b) => a.dateISO.localeCompare(b.dateISO));
 }
 
 export function useMealPlanner() {
@@ -33,266 +79,191 @@ export function useMealPlanner() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    window.localStorage.setItem(MEAL_PLANNER_STORAGE_KEY, JSON.stringify(state));
+    saveMealPlannerState(state);
   }, [state]);
 
-  const summary = useMemo(() => computeSummary(state), [state]);
+  const weekDates = useMemo(() => getWeekDates(state.weekPlan.weekStartISO), [state.weekPlan.weekStartISO]);
+  const summary = useMemo(() => getMealPlannerSummary(state), [state]);
+  const recentMealTitles = useMemo(() => state.recentMeals, [state.recentMeals]);
+  const waterTargetCups = useMemo(() => getWaterTargetCups(state.profile), [state.profile]);
+  const guidanceItems = useMemo(() => getGuidanceItems(state.profile, summary), [state.profile, summary]);
 
-  const updateSettings = (partial: Partial<MealPlannerSettings>) => {
-    setState((prev) => ({
-      ...prev,
-      settings: { ...prev.settings, ...partial },
-    }));
-  };
-
-  const addToRecents = (
-    base: PlannedMeal,
-    recipes: MealPlannerState["recipes"],
-    prevRecents: RecentMeal[],
-  ): RecentMeal[] => {
-    const title =
-      base.source === "recipe"
-        ? recipes.find((r) => r.id === base.recipeId)?.title || "وجبة من وصفة"
-        : base.customTitle || "وجبة سريعة";
-
-    const recent: RecentMeal = {
-      id: base.id,
-      title,
-      mealType: base.mealType,
-      source: base.source,
-      recipeId: base.recipeId,
-      lastUsedISO: base.dateISO,
-    };
-
-    return [recent, ...prevRecents.filter((r) => r.id !== recent.id)].slice(0, 20);
-  };
-
-  const upsertMeal = (meal: Omit<PlannedMeal, "id"> & { id?: string }) => {
+  const setMealTitle = (dateISO: string, mealType: MealType, title: string) => {
     setState((prev) => {
-      const id = meal.id || createId();
-      const nextMeal: PlannedMeal = { ...meal, id };
-      const exists = prev.weekPlan.meals.some((m) => m.id === id);
-      const weekPlan: WeeklyMealPlan = {
-        ...prev.weekPlan,
-        meals: exists
-          ? prev.weekPlan.meals.map((m) => (m.id === id ? nextMeal : m))
-          : [...prev.weekPlan.meals, nextMeal],
-      };
-
-      const recentMeals = addToRecents(nextMeal, prev.recipes, prev.recentMeals);
-
-      const shoppingList = generateShoppingList({
-        plan: weekPlan,
-        recipes: prev.recipes,
-        pantry: prev.pantry,
-        existing: prev.shoppingList,
-        options: { excludePantryStaples: prev.settings.excludeStaplesByDefault },
-      });
-
-      return { ...prev, weekPlan, recentMeals, shoppingList };
-    });
-  };
-
-  const clearMeal = (mealId: string) => {
-    setState((prev) => {
-      const weekPlan: WeeklyMealPlan = {
-        ...prev.weekPlan,
-        meals: prev.weekPlan.meals.filter((m) => m.id !== mealId),
-      };
-
-      const shoppingList = generateShoppingList({
-        plan: weekPlan,
-        recipes: prev.recipes,
-        pantry: prev.pantry,
-        existing: prev.shoppingList,
-        options: { excludePantryStaples: prev.settings.excludeStaplesByDefault },
-      });
-
-      return { ...prev, weekPlan, shoppingList };
-    });
-  };
-
-  const addShoppingItem = (name: string, category: ShoppingListItem["category"] = "أخرى") => {
-    if (!name.trim()) return;
-    setState((prev) => ({
-      ...prev,
-      shoppingList: [
-        ...prev.shoppingList,
-        {
-          id: createId(),
-          displayName: name.trim(),
-          normalizedName: normalizeIngredientName(name),
-          quantity: 1,
-          category,
-          checked: false,
-          fromMealIds: [],
-          isManual: true,
+      const trimmed = title.trimStart();
+      return {
+        ...prev,
+        weekPlan: {
+          ...prev.weekPlan,
+          meals: upsertMeal(prev.weekPlan.meals, dateISO, mealType, (current) => ({
+            ...current,
+            title: trimmed,
+            status: current.status === "planned" ? "planned" : current.status,
+          })),
         },
-      ],
-    }));
+        recentMeals: title.trim() ? pushRecentTitle(prev.recentMeals, title) : prev.recentMeals,
+      };
+    });
   };
 
-  const toggleShoppingItemChecked = (id: string) => {
+  const setMealStatus = (dateISO: string, mealType: MealType, status: MealStatus) => {
     setState((prev) => ({
       ...prev,
-      shoppingList: prev.shoppingList.map((item) =>
-        item.id === id ? { ...item, checked: !item.checked } : item,
-      ),
+      weekPlan: {
+        ...prev.weekPlan,
+        meals: upsertMeal(prev.weekPlan.meals, dateISO, mealType, (current) => ({
+          ...current,
+          status,
+          title: current.title.trim() || getDefaultMealTitle(mealType, status),
+        })),
+      },
+      recentMeals: pushRecentTitle(prev.recentMeals, getDefaultMealTitle(mealType, status)),
     }));
   };
 
-  const removeShoppingItem = (id: string) => {
+  const setMealNote = (dateISO: string, mealType: MealType, note: string) => {
     setState((prev) => ({
       ...prev,
-      shoppingList: prev.shoppingList.filter((item) => item.id !== id),
+      weekPlan: {
+        ...prev.weekPlan,
+        meals: upsertMeal(prev.weekPlan.meals, dateISO, mealType, (current) => ({
+          ...current,
+          note,
+        })),
+      },
     }));
   };
 
-  const updatePantryItem = (id: string, partial: Partial<PantryItem>) => {
+  const toggleMealDone = (dateISO: string, mealType: MealType) => {
     setState((prev) => ({
       ...prev,
-      pantry: prev.pantry.map((item) =>
-        item.id === id ? { ...item, ...partial } : item,
-      ),
+      weekPlan: {
+        ...prev.weekPlan,
+        meals: upsertMeal(prev.weekPlan.meals, dateISO, mealType, (current) => {
+          const nextStatus: MealStatus = current.status === "done" ? "planned" : "done";
+          return {
+            ...current,
+            status: nextStatus,
+            title: current.title.trim() || getDefaultMealTitle(mealType, nextStatus),
+          };
+        }),
+      },
     }));
   };
 
-  const regenerateShoppingList = () => {
+  const updateDayMeta = (dateISO: string, partial: Partial<MealDayMeta>) => {
     setState((prev) => ({
       ...prev,
-      shoppingList: generateShoppingList({
-        plan: prev.weekPlan,
-        recipes: prev.recipes,
-        pantry: prev.pantry,
-        existing: prev.shoppingList,
-        options: { excludePantryStaples: prev.settings.excludeStaplesByDefault },
-      }),
+      dayMeta: updateDayMetaEntry(prev.dayMeta, dateISO, partial),
     }));
-  };
-
-  const quickAddMeal = (
-    dateISO: string,
-    mealType: MealType,
-    title: string,
-  ) => {
-    if (!title.trim()) return;
-    upsertMeal({
-      dateISO,
-      mealType,
-      source: "custom",
-      customTitle: title.trim(),
-    });
-  };
-
-  const addRecipeMeal = (
-    dateISO: string,
-    mealType: MealType,
-    recipeId: string,
-  ) => {
-    upsertMeal({
-      dateISO,
-      mealType,
-      source: "recipe",
-      recipeId,
-    });
-  };
-
-  const markMealAsLeftover = (
-    dateISO: string,
-    mealType: MealType,
-    sourceMealId?: string,
-  ) => {
-    upsertMeal({
-      dateISO,
-      mealType,
-      source: "leftover",
-      usesLeftoversFromMealId: sourceMealId,
-    });
-  };
-
-  const markMealAsEatingOut = (dateISO: string, mealType: MealType) => {
-    upsertMeal({
-      dateISO,
-      mealType,
-      source: "eating_out",
-    });
-  };
-
-  const markMealAsSkipped = (dateISO: string, mealType: MealType) => {
-    upsertMeal({
-      dateISO,
-      mealType,
-      source: "skipped",
-    });
   };
 
   const copyDay = (fromDateISO: string, toDateISO: string) => {
     if (fromDateISO === toDateISO) return;
+
     setState((prev) => {
-      const sourceMeals = prev.weekPlan.meals.filter(
-        (m) => m.dateISO === fromDateISO,
-      );
-      if (sourceMeals.length === 0) return prev;
+      const sourceMeals = prev.weekPlan.meals.filter((meal) => meal.dateISO === fromDateISO);
+      const sourceMeta = prev.dayMeta.find((day) => day.dateISO === fromDateISO) ?? createDefaultDayMeta(fromDateISO);
+      const copiedTitles = sourceMeals.map((meal) => meal.title).filter(Boolean);
 
-      const remainingMeals = prev.weekPlan.meals.filter(
-        (m) => m.dateISO !== toDateISO,
-      );
-
-      const clonedMeals: PlannedMeal[] = sourceMeals.map((meal) => ({
-        ...meal,
-        id: createId(),
-        dateISO: toDateISO,
-      }));
-
-      const weekPlan: WeeklyMealPlan = {
-        ...prev.weekPlan,
-        meals: [...remainingMeals, ...clonedMeals],
+      return {
+        ...prev,
+        weekPlan: {
+          ...prev.weekPlan,
+          meals: [
+            ...prev.weekPlan.meals.filter((meal) => meal.dateISO !== toDateISO),
+            ...sourceMeals.map((meal) => ({
+              ...meal,
+              id: createId(),
+              dateISO: toDateISO,
+            })),
+          ].sort((a, b) => a.dateISO.localeCompare(b.dateISO) || a.mealType.localeCompare(b.mealType)),
+        },
+        dayMeta: updateDayMetaEntry(prev.dayMeta, toDateISO, {
+          snackNote: sourceMeta.snackNote,
+          prepNote: sourceMeta.prepNote,
+          waterCups: sourceMeta.waterCups,
+        }),
+        recentMeals: copiedTitles.reduce((acc, title) => pushRecentTitle(acc, title), prev.recentMeals),
       };
-
-      const shoppingList = generateShoppingList({
-        plan: weekPlan,
-        recipes: prev.recipes,
-        pantry: prev.pantry,
-        existing: prev.shoppingList,
-        options: { excludePantryStaples: prev.settings.excludeStaplesByDefault },
-      });
-
-      const recentMeals = clonedMeals.reduce(
-        (acc, meal) => addToRecents(meal, prev.recipes, acc),
-        prev.recentMeals,
-      );
-
-      return { ...prev, weekPlan, shoppingList, recentMeals };
     });
   };
 
-  const toggleFavoriteRecipe = (recipeId: string) => {
+  const copyMealToDay = (fromDateISO: string, toDateISO: string, mealType: MealType) => {
+    if (fromDateISO === toDateISO) return;
+
     setState((prev) => {
-      const favorites = prev.favorites.includes(recipeId)
-        ? prev.favorites.filter((id) => id !== recipeId)
-        : [...prev.favorites, recipeId];
-      return { ...prev, favorites };
+      const sourceMeal = prev.weekPlan.meals.find((meal) => meal.dateISO === fromDateISO && meal.mealType === mealType);
+      if (!sourceMeal) return prev;
+
+      return {
+        ...prev,
+        weekPlan: {
+          ...prev.weekPlan,
+          meals: [
+            ...prev.weekPlan.meals.filter((meal) => !(meal.dateISO === toDateISO && meal.mealType === mealType)),
+            {
+              ...sourceMeal,
+              id: createId(),
+              dateISO: toDateISO,
+            },
+          ].sort((a, b) => a.dateISO.localeCompare(b.dateISO) || a.mealType.localeCompare(b.mealType)),
+        },
+        recentMeals: pushRecentTitle(prev.recentMeals, sourceMeal.title),
+      };
     });
+  };
+
+  const clearMeal = (dateISO: string, mealType: MealType) => {
+    setState((prev) => ({
+      ...prev,
+      weekPlan: {
+        ...prev.weekPlan,
+        meals: prev.weekPlan.meals.filter((meal) => !(meal.dateISO === dateISO && meal.mealType === mealType)),
+      },
+    }));
+  };
+
+  const clearDay = (dateISO: string) => {
+    setState((prev) => ({
+      ...prev,
+      weekPlan: {
+        ...prev.weekPlan,
+        meals: prev.weekPlan.meals.filter((meal) => meal.dateISO !== dateISO),
+      },
+      dayMeta: updateDayMetaEntry(prev.dayMeta, dateISO, createDefaultDayMeta(dateISO)),
+    }));
+  };
+
+  const updateProfile = (partial: Partial<MealPlannerProfile>) => {
+    setState((prev) => ({
+      ...prev,
+      profile: {
+        ...prev.profile,
+        ...partial,
+        dietaryNotes: (partial.dietaryNotes ?? prev.profile.dietaryNotes).trimStart(),
+        avoidIngredients: (partial.avoidIngredients ?? prev.profile.avoidIngredients).trimStart(),
+        waterTargetCups: Math.max(1, Math.min(20, Math.round(partial.waterTargetCups ?? prev.profile.waterTargetCups))),
+      },
+    }));
   };
 
   return {
     state,
     summary,
-    updateSettings,
-    upsertMeal,
-    clearMeal,
-    addShoppingItem,
-    toggleShoppingItemChecked,
-    removeShoppingItem,
-    updatePantryItem,
-    regenerateShoppingList,
-    quickAddMeal,
-    addRecipeMeal,
-    markMealAsLeftover,
-    markMealAsEatingOut,
-    markMealAsSkipped,
+    weekDates,
+    recentMealTitles,
+    waterTargetCups,
+    guidanceItems,
+    setMealTitle,
+    setMealStatus,
+    setMealNote,
+    toggleMealDone,
+    updateDayMeta,
     copyDay,
-    toggleFavoriteRecipe,
+    copyMealToDay,
+    clearMeal,
+    clearDay,
+    updateProfile,
   };
 }
-
