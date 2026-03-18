@@ -3,48 +3,15 @@ import {
   MEAL_PLANNER_STORAGE_KEY,
   MealPlannerSettings,
   MealPlannerState,
-  WeeklyMealPlan,
   WeekSummary,
   RecentMeal,
   ShoppingListItem,
   PlannedMeal,
-  MealType,
   createId,
-  getDefaultSettings,
-  getDefaultPantry,
-  getWeekStartISO,
+  loadMealPlannerState,
   normalizeIngredientName,
-  getSeedRecipes,
   generateShoppingList,
 } from "@/lib/meal-planner";
-
-function loadInitialState(): MealPlannerState {
-  if (typeof window !== "undefined") {
-    const raw = window.localStorage.getItem(MEAL_PLANNER_STORAGE_KEY);
-    if (raw) {
-      try {
-        const parsed = JSON.parse(raw) as MealPlannerState;
-        return parsed;
-      } catch {
-        // ignore
-      }
-    }
-  }
-
-  const settings = getDefaultSettings();
-  const weekStartISO = getWeekStartISO(settings.preferredWeekStart);
-  const emptyPlan: WeeklyMealPlan = { weekStartISO, meals: [] };
-
-  return {
-    settings,
-    weekPlan: emptyPlan,
-    recipes: getSeedRecipes(),
-    favorites: [],
-    recentMeals: [],
-    pantry: getDefaultPantry(),
-    shoppingList: [],
-  };
-}
 
 function computeSummary(state: MealPlannerState): WeekSummary {
   const enabledTypes = state.settings.enabledMealTypes;
@@ -62,7 +29,7 @@ function computeSummary(state: MealPlannerState): WeekSummary {
 }
 
 export function useMealPlanner() {
-  const [state, setState] = useState<MealPlannerState>(() => loadInitialState());
+  const [state, setState] = useState<MealPlannerState>(() => loadMealPlannerState());
 
   useEffect(() => {
     if (typeof window === "undefined") return;

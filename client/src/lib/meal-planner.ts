@@ -140,6 +140,36 @@ export function getDefaultSettings(): MealPlannerSettings {
   };
 }
 
+export function createDefaultMealPlannerState(): MealPlannerState {
+  const settings = getDefaultSettings();
+  const weekStartISO = getWeekStartISO(settings.preferredWeekStart);
+
+  return {
+    settings,
+    weekPlan: createEmptyWeek(weekStartISO),
+    recipes: getSeedRecipes(),
+    favorites: [],
+    recentMeals: [],
+    pantry: getDefaultPantry(),
+    shoppingList: [],
+  };
+}
+
+export function loadMealPlannerState(): MealPlannerState {
+  if (typeof window !== "undefined") {
+    const raw = window.localStorage.getItem(MEAL_PLANNER_STORAGE_KEY);
+    if (raw) {
+      try {
+        return JSON.parse(raw) as MealPlannerState;
+      } catch {
+        // Ignore invalid local state and rebuild from defaults.
+      }
+    }
+  }
+
+  return createDefaultMealPlannerState();
+}
+
 export function getDefaultPantry(): PantryItem[] {
   return [
     { id: createId(), name: "زيت", defaultCategory: "بهارات", isEnabled: true },

@@ -61,45 +61,61 @@ export default function MealPlanner() {
     <div className="min-h-screen bg-background pb-10" dir="rtl">
       <header className="sticky top-0 z-30 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 md:py-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" asChild>
-                <Link href="/" data-testid="link-back-dashboard">
-                  <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
-                </Link>
-              </Button>
-              <ThemeToggle />
-            </div>
-            <div className="flex items-center gap-2 text-right">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-2xl bg-pink-500/10 text-pink-600 dark:text-pink-300 flex items-center justify-center">
-                  <Utensils className="w-4 h-4" />
+                <Button variant="ghost" size="icon" asChild>
+                  <Link href="/" data-testid="link-back-dashboard">
+                    <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
+                  </Link>
+                </Button>
+                <ThemeToggle />
+              </div>
+
+              <div className="flex flex-col gap-3 rounded-[1.75rem] border border-border/80 bg-background/75 px-4 py-4 text-right shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-pink-500/10 text-pink-600 dark:text-pink-300">
+                    <Utensils className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-base font-bold text-foreground">تخطيط الوجبات</p>
+                    <p className="text-sm leading-6 text-muted-foreground">
+                      خطّطي الأسبوع، الوصفات، والتسوّق من مساحة واحدة.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-foreground">وجبات الأسبوع</p>
-                  <p className="text-xs text-muted-foreground">
+
+                <div className="flex flex-wrap justify-start gap-2">
+                  <div className="rounded-full border border-border/70 bg-background/80 px-3 py-1.5 text-xs font-semibold text-foreground">
                     {summary.plannedMeals}/{summary.totalSlots} خانة مخططة
-                  </p>
+                  </div>
+                  <div className="rounded-full border border-border/70 bg-background/80 px-3 py-1.5 text-xs font-semibold text-foreground">
+                    {summary.shoppingItemsCount} عناصر تسوّق
+                  </div>
+                  <div className="rounded-full border border-border/70 bg-background/80 px-3 py-1.5 text-xs font-semibold text-foreground">
+                    {favoritesCount} وصفات مفضلة
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-          <div className="mt-3">
-            <Tabs
-              dir="rtl"
-              value={activeTab}
-              onValueChange={(value) =>
-                setActiveTab(value as typeof activeTab)
-              }
-            >
-              <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="overview">نظرة عامة</TabsTrigger>
-                <TabsTrigger value="week">الأسبوع</TabsTrigger>
-                <TabsTrigger value="recipes">الوصفات</TabsTrigger>
-                <TabsTrigger value="shopping">التسوّق</TabsTrigger>
-                <TabsTrigger value="pantry">المخزن</TabsTrigger>
-              </TabsList>
-            </Tabs>
+
+            <div>
+              <Tabs
+                dir="rtl"
+                value={activeTab}
+                onValueChange={(value) =>
+                  setActiveTab(value as typeof activeTab)
+                }
+              >
+                <TabsList className="grid w-full grid-cols-5 rounded-[1.5rem] bg-muted/80 p-1.5">
+                  <TabsTrigger value="overview" className="min-h-11 rounded-xl">نظرة عامة</TabsTrigger>
+                  <TabsTrigger value="week" className="min-h-11 rounded-xl">الأسبوع</TabsTrigger>
+                  <TabsTrigger value="recipes" className="min-h-11 rounded-xl">الوصفات</TabsTrigger>
+                  <TabsTrigger value="shopping" className="min-h-11 rounded-xl">التسوّق</TabsTrigger>
+                  <TabsTrigger value="pantry" className="min-h-11 rounded-xl">المخزن</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
           </div>
         </div>
       </header>
