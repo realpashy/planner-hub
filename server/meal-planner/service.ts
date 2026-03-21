@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { estimateAiCostUsd } from "@shared/ai/ai-costs";
-import { isFullGenerationAction, isLightEditAction } from "@shared/ai/ai-limits";
+import { estimateAiCostUsd } from "../../shared/ai/ai-costs";
+import { isFullGenerationAction, isLightEditAction } from "../../shared/ai/ai-limits";
 import type {
   AiActionType,
   AiDayPlan,
@@ -9,10 +9,10 @@ import type {
   AiQuotaDecision,
   GenerateWeekAiInput,
   MealPlannerUserContext,
-} from "@shared/ai/ai-types";
-import { getModuleEntitlements } from "@shared/modules/module-entitlements";
-import { getPlanTierConfig, resolvePlanTier } from "@shared/plans/feature-access";
-import { DEFAULT_AI_FEATURE_FLAGS } from "@shared/ai/ai-feature-flags";
+} from "../../shared/ai/ai-types";
+import { getModuleEntitlements } from "../../shared/modules/module-entitlements";
+import { getPlanTierConfig, resolvePlanTier } from "../../shared/plans/feature-access";
+import { DEFAULT_AI_FEATURE_FLAGS } from "../../shared/ai/ai-feature-flags";
 import {
   consumeAiCreditPack,
   getCloudData,

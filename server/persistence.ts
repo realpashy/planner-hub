@@ -1,9 +1,9 @@
 import { dbPool } from "./db";
-import { isFullGenerationAction, isLightEditAction } from "@shared/ai/ai-limits";
-import type { AiActionType } from "@shared/ai/ai-types";
-import { DEFAULT_AI_FEATURE_FLAGS } from "@shared/ai/ai-feature-flags";
-import { type ProductPlanTier } from "@shared/plans/plan-tiers";
-import { resolvePlanTier } from "@shared/plans/feature-access";
+import { isFullGenerationAction, isLightEditAction } from "../shared/ai/ai-limits";
+import type { AiActionType } from "../shared/ai/ai-types";
+import { DEFAULT_AI_FEATURE_FLAGS } from "../shared/ai/ai-feature-flags";
+import { type ProductPlanTier } from "../shared/plans/plan-tiers";
+import { resolvePlanTier } from "../shared/plans/feature-access";
 
 export interface CloudDataPayload {
   plannerData?: unknown;

@@ -7,7 +7,7 @@ import type {
   EditMealAiInput,
   GenerateWeekAiInput,
   RegenerateDayAiInput,
-} from "@shared/ai/ai-types";
+} from "../../shared/ai/ai-types";
 import { getMealDataset, type DatasetMeal } from "./catalog";
 
 function normalizeExclusions(input: unknown) {

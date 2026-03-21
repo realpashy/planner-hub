@@ -1,5 +1,5 @@
-import type { FeatureAccessMap } from "@shared/plans/plan-tiers";
-import type { MealPlannerUserContext } from "@shared/ai/ai-types";
+import type { FeatureAccessMap } from "../../shared/plans/plan-tiers";
+import type { MealPlannerUserContext } from "../../shared/ai/ai-types";
 
 export function buildWeeklyGenerationPrompt(
   userContext: MealPlannerUserContext,

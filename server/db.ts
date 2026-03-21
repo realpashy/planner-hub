@@ -2,7 +2,7 @@ import { Pool } from "pg";
 import crypto from "crypto";
 import { readFile } from "fs/promises";
 import path from "path";
-import { DEFAULT_AI_FEATURE_FLAGS } from "@shared/ai/ai-feature-flags";
+import { DEFAULT_AI_FEATURE_FLAGS } from "../shared/ai/ai-feature-flags";
 
 const DEFAULT_SUPABASE_URL = "https://bachcdysktiyjewwrpmr.supabase.co";
 

@@ -3,7 +3,7 @@ import type { Server } from "http";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import { storage } from "./storage";
-import { api } from "@shared/routes";
+import { api } from "../shared/routes";
 import { dbPool, initializeDatabase } from "./db";
 import { doesUserExistByEmail, getSessionUserId, getUserById, loginUser, registerUser } from "./auth";
 import {
