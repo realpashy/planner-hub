@@ -3,14 +3,27 @@ import crypto from "crypto";
 import { readFile } from "fs/promises";
 import path from "path";
 
+const DEFAULT_SUPABASE_URL = "https://bachcdysktiyjewwrpmr.supabase.co";
+
+function getSupabaseProjectHost() {
+  const supabaseUrl = process.env.SUPABASE_URL || DEFAULT_SUPABASE_URL;
+  try {
+    const url = new URL(supabaseUrl);
+    const projectRef = url.hostname.split(".")[0];
+    return `db.${projectRef}.supabase.co`;
+  } catch {
+    return "";
+  }
+}
+
 function toConnectionString() {
   if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
 
-  const host = process.env.PGHOST;
+  const host = process.env.PGHOST || getSupabaseProjectHost();
   const port = process.env.PGPORT || "5432";
   const database = process.env.PGDATABASE || "postgres";
-  const user = process.env.PGUSER || "postgres";
-  const password = process.env.PGPASSWORD;
+  const user = process.env.PGUSER || process.env.SUPABASE_DB_USER || "postgres";
+  const password = process.env.PGPASSWORD || process.env.SUPABASE_DB_PASSWORD;
 
   if (!host || !password) return "";
 
@@ -21,7 +34,7 @@ const connectionString = toConnectionString();
 const connectionStringForPool = connectionString.replace(/([?&])sslmode=require(&|$)/i, (_m, p1, p2) => (p1 === "?" && p2 ? "?" : ""));
 
 if (!connectionString) {
-  throw new Error("Missing database configuration: set DATABASE_URL (or PGHOST/PGPORT/PGDATABASE/PGUSER/PGPASSWORD)");
+  throw new Error("Missing database configuration: set DATABASE_URL or SUPABASE_DB_PASSWORD (with optional SUPABASE_URL / PGHOST overrides)");
 }
 
 export const dbPool = new Pool({
