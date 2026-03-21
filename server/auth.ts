@@ -43,6 +43,11 @@ export async function registerUser(input: { email: string; password: string; dis
     [id],
   );
 
+  await dbPool.query(
+    "INSERT INTO profiles (id, role, plan_tier, ai_enabled, timezone) VALUES ($1, 'user', 'free', TRUE, 'Asia/Jerusalem')",
+    [id],
+  );
+
   return getUserById(id);
 }
 

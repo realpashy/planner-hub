@@ -24,6 +24,17 @@ import {
   type MealStatus,
   type MealType,
 } from "@/lib/meal-planner";
+import {
+  aiMealToMealSlot,
+  applyAiDayToPlan,
+  applyAiWeekToState,
+  deleteMealPlanRemote,
+  editMealWithAi,
+  fetchMealPlannerQuota,
+  generateWeekWithAi,
+  regenerateDayWithAi,
+  type MealPlannerQuotaResponse,
+} from "@/lib/ai/meal-planner-ai";
 
 function pushRecentTitle(recentMeals: string[], title: string) {
   const normalized = title.trim();
@@ -33,11 +44,29 @@ function pushRecentTitle(recentMeals: string[], title: string) {
 
 export function useMealPlanner() {
   const [state, setState] = useState<MealPlannerState>(() => loadMealPlannerState());
+  const [quota, setQuota] = useState<MealPlannerQuotaResponse | null>(null);
+  const [quotaLoading, setQuotaLoading] = useState(true);
+  const [limitReached, setLimitReached] = useState(false);
   const todayISO = useMemo(() => getTodayISO(), []);
 
   useEffect(() => {
     saveMealPlannerState(state);
   }, [state]);
+
+  useEffect(() => {
+    let mounted = true;
+    fetchMealPlannerQuota()
+      .then((result) => {
+        if (mounted) setQuota(result);
+      })
+      .catch(() => null)
+      .finally(() => {
+        if (mounted) setQuotaLoading(false);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const weekDays = useMemo(() => getWeekDates(todayISO), [todayISO]);
   const weekSummary = useMemo(() => getMealPlannerSummary(state, todayISO), [state, todayISO]);
@@ -47,6 +76,16 @@ export function useMealPlanner() {
   const waterTargetCups = useMemo(() => getWaterTargetCups(state.profile), [state.profile]);
   const waterTargetLiters = useMemo(() => getWaterTargetLiters(state.profile), [state.profile]);
   const hasActivePlan = state.hasGeneratedPlan && weekSummary.plannedMeals > 0;
+
+  const refreshQuota = async () => {
+    try {
+      const next = await fetchMealPlannerQuota();
+      setQuota(next);
+      return next;
+    } finally {
+      setQuotaLoading(false);
+    }
+  };
 
   const patchDay = (dateISO: string, mutate: (current: MealDayPlan) => MealDayPlan) => {
     setState((prev) => {
@@ -65,15 +104,29 @@ export function useMealPlanner() {
     });
   };
 
-  const generateWeeklyPlan = () => {
-    setState((prev) => ({
-      ...prev,
-      hasGeneratedPlan: true,
-      plansByDate: {
-        ...prev.plansByDate,
-        ...buildGeneratedWeekPlans(prev, todayISO),
-      },
-    }));
+  const generateWeeklyPlan = async () => {
+    try {
+      const result = await generateWeekWithAi(state.preferences, state.plansByDate);
+      setState((prev) => applyAiWeekToState(prev, result.plan.days, state.preferences));
+      await refreshQuota();
+      setLimitReached(false);
+      return { provider: result.quota.provider, quota: result.quota };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      if (message.includes("429")) {
+        setLimitReached(true);
+        await refreshQuota().catch(() => null);
+      }
+      setState((prev) => ({
+        ...prev,
+        hasGeneratedPlan: true,
+        plansByDate: {
+          ...prev.plansByDate,
+          ...buildGeneratedWeekPlans(prev, todayISO),
+        },
+      }));
+      return { provider: "local" as const };
+    }
   };
 
   const updatePreferences = (patch: Partial<MealPlannerPreferences>) => {
@@ -153,25 +206,99 @@ export function useMealPlanner() {
     updateMeal(dateISO, mealType, { status, title: status === "eating_out" ? "خارج المنزل" : undefined });
   };
 
-  const regenerateMeal = (dateISO: string, mealType: MealType) => {
-    setState((prev) => {
-      const allTitles = weekDays.flatMap((day) => getDayPlan(prev, day.dateISO).meals.map((meal) => meal.title).filter(Boolean));
-      const currentMeal = getDayPlan(prev, dateISO).meals.find((meal) => meal.mealType === mealType);
-      const nextMeal = buildReplacementMeal(prev, mealType, currentMeal?.title, allTitles);
-      const currentPlan = getDayPlan(prev, dateISO);
-      return {
+  const regenerateMeal = async (dateISO: string, mealType: MealType) => {
+    const currentMeal = getDayPlan(state, dateISO).meals.find((meal) => meal.mealType === mealType);
+    if (!currentMeal) return { provider: "local" as const };
+    try {
+      const result = await editMealWithAi({
+        dateISO,
+        mealType,
+        existingMeal: currentMeal as unknown as Record<string, unknown>,
+        editRequest: "Replace this meal with a suitable alternative.",
+      });
+      const nextMeal = aiMealToMealSlot(result.meal, currentMeal.active);
+      setState((prev) => {
+        const currentPlan = getDayPlan(prev, dateISO);
+        return {
+          ...prev,
+          plansByDate: {
+            ...prev.plansByDate,
+            [dateISO]: {
+              ...currentPlan,
+              meals: currentPlan.meals.map((meal) => (meal.mealType === mealType ? nextMeal : meal)),
+              updatedAt: new Date().toISOString(),
+            },
+          },
+          recentMeals: pushRecentTitle(prev.recentMeals, nextMeal.title),
+        };
+      });
+      await refreshQuota();
+      setLimitReached(false);
+      return { provider: result.quota.provider, quota: result.quota };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      if (message.includes("429")) {
+        setLimitReached(true);
+        await refreshQuota().catch(() => null);
+      }
+      setState((prev) => {
+        const allTitles = weekDays.flatMap((day) => getDayPlan(prev, day.dateISO).meals.map((meal) => meal.title).filter(Boolean));
+        const current = getDayPlan(prev, dateISO).meals.find((meal) => meal.mealType === mealType);
+        const nextMeal = buildReplacementMeal(prev, mealType, current?.title, allTitles);
+        const currentPlan = getDayPlan(prev, dateISO);
+        return {
+          ...prev,
+          plansByDate: {
+            ...prev.plansByDate,
+            [dateISO]: {
+              ...currentPlan,
+              meals: currentPlan.meals.map((meal) => (meal.mealType === mealType ? nextMeal : meal)),
+              updatedAt: new Date().toISOString(),
+            },
+          },
+          recentMeals: pushRecentTitle(prev.recentMeals, nextMeal.title),
+        };
+      });
+      return { provider: "local" as const };
+    }
+  };
+
+  const regenerateDay = async (dateISO: string) => {
+    const currentPlan = getDayPlan(state, dateISO);
+    try {
+      const result = await regenerateDayWithAi({
+        dateISO,
+        existingDay: currentPlan as unknown as Record<string, unknown>,
+        preferences: state.preferences,
+      });
+      setState((prev) => {
+        const basePlan = getDayPlan(prev, dateISO);
+        return {
+          ...prev,
+          plansByDate: {
+            ...prev.plansByDate,
+            [dateISO]: applyAiDayToPlan(basePlan, result.day, prev.preferences),
+          },
+        };
+      });
+      await refreshQuota();
+      setLimitReached(false);
+      return { provider: result.quota.provider, quota: result.quota };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      if (message.includes("429")) {
+        setLimitReached(true);
+        await refreshQuota().catch(() => null);
+      }
+      setState((prev) => ({
         ...prev,
         plansByDate: {
           ...prev.plansByDate,
-          [dateISO]: {
-            ...currentPlan,
-            meals: currentPlan.meals.map((meal) => (meal.mealType === mealType ? nextMeal : meal)),
-            updatedAt: new Date().toISOString(),
-          },
+          [dateISO]: buildGeneratedWeekPlans(prev, dateISO)[dateISO],
         },
-        recentMeals: pushRecentTitle(prev.recentMeals, nextMeal.title),
-      };
-    });
+      }));
+      return { provider: "local" as const };
+    }
   };
 
   const applyMealToDays = (fromDateISO: string, mealType: MealType, targetDateISOs: string[]) => {
@@ -271,7 +398,8 @@ export function useMealPlanner() {
     });
   };
 
-  const resetPlan = (mode: "meals" | "all") => {
+  const resetPlan = async (mode: "meals" | "all") => {
+    await deleteMealPlanRemote(mode).catch(() => null);
     setState((prev) => {
       if (mode === "all") return createDefaultMealPlannerState();
       return {
@@ -280,6 +408,7 @@ export function useMealPlanner() {
         hasGeneratedPlan: false,
       };
     });
+    await refreshQuota().catch(() => null);
   };
 
   return {
@@ -293,6 +422,10 @@ export function useMealPlanner() {
     waterTargetCups,
     waterTargetLiters,
     hasActivePlan,
+    quota,
+    quotaLoading,
+    limitReached,
+    setLimitReached,
     getPlan: (dateISO: string) => getDayPlan(state, dateISO),
     getSuggestions: (mealType: MealType) => getMealSuggestions(state, mealType),
     updatePreferences,
@@ -301,11 +434,13 @@ export function useMealPlanner() {
     updateMeal,
     setMealStatus,
     regenerateMeal,
+    regenerateDay,
     applyMealToDays,
     copyDayToDays,
     updateDay,
     saveMealAsFavorite,
     applyFavoriteToMeal,
     resetPlan,
+    refreshQuota,
   };
 }

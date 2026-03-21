@@ -48,9 +48,9 @@ export function MealPlannerProfileSheet({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
-        side="left"
+        side="right"
         dir="rtl"
-        className="w-[96vw] max-w-[34rem] overflow-y-auto border-r border-border/70 bg-background p-0 [&>button]:left-5 [&>button]:right-auto [&>button]:top-5 [&>button]:rounded-full"
+        className="w-[96vw] max-w-[34rem] overflow-y-auto border-l border-border/70 bg-background p-0 [&>button]:right-5 [&>button]:left-auto [&>button]:top-5 [&>button]:rounded-full"
       >
         <div className="flex min-h-full flex-col">
           <SheetHeader className="border-b border-border/70 px-6 pb-5 pt-6 text-right">

@@ -193,15 +193,15 @@ export const PREP_EFFORT_LABELS: Record<PrepEffort, string> = {
 };
 
 export const DIET_TYPE_LABELS: Record<DietType, string> = {
-  any: "Any",
-  balanced: "Balanced",
-  high_protein: "High Protein",
+  any: "أي نظام",
+  balanced: "متوازن",
+  high_protein: "عالي البروتين",
   keto: "Keto",
-  mediterranean: "Mediterranean",
-  vegetarian: "Vegetarian",
-  vegan: "Vegan",
-  low_carb: "Low Carb",
-  budget: "Budget",
+  mediterranean: "متوسطي",
+  vegetarian: "نباتي",
+  vegan: "نباتي صرف",
+  low_carb: "منخفض الكربوهيدرات",
+  budget: "اقتصادي",
 };
 
 export const PROFILE_GOAL_OPTIONS = [

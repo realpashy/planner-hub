@@ -2,6 +2,7 @@ import { Pool } from "pg";
 import crypto from "crypto";
 import { readFile } from "fs/promises";
 import path from "path";
+import { DEFAULT_AI_FEATURE_FLAGS } from "@shared/ai/ai-feature-flags";
 
 const DEFAULT_SUPABASE_URL = "https://bachcdysktiyjewwrpmr.supabase.co";
 
@@ -86,6 +87,85 @@ export async function initializeDatabase() {
   `);
 
   await dbPool.query(`
+    CREATE TABLE IF NOT EXISTS profiles (
+      id TEXT PRIMARY KEY REFERENCES app_users(id) ON DELETE CASCADE,
+      role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'super_admin', 'user')),
+      plan_tier TEXT NOT NULL DEFAULT 'free' CHECK (plan_tier IN ('free', 'pro', 'admin')),
+      ai_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+      timezone TEXT NOT NULL DEFAULT 'Asia/Jerusalem',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+
+  await dbPool.query(`
+    CREATE TABLE IF NOT EXISTS ai_usage_daily (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+      date_key TEXT NOT NULL,
+      full_generations_used INT NOT NULL DEFAULT 0,
+      light_edits_used INT NOT NULL DEFAULT 0,
+      estimated_input_tokens BIGINT NOT NULL DEFAULT 0,
+      estimated_output_tokens BIGINT NOT NULL DEFAULT 0,
+      estimated_cost_usd NUMERIC NOT NULL DEFAULT 0,
+      over_limit_attempts INT NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(user_id, date_key)
+    );
+  `);
+
+  await dbPool.query(`
+    CREATE TABLE IF NOT EXISTS ai_usage_monthly (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+      month_key TEXT NOT NULL,
+      full_generations_used INT NOT NULL DEFAULT 0,
+      light_edits_used INT NOT NULL DEFAULT 0,
+      estimated_input_tokens BIGINT NOT NULL DEFAULT 0,
+      estimated_output_tokens BIGINT NOT NULL DEFAULT 0,
+      estimated_cost_usd NUMERIC NOT NULL DEFAULT 0,
+      over_limit_attempts INT NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(user_id, month_key)
+    );
+  `);
+
+  await dbPool.query(`
+    CREATE TABLE IF NOT EXISTS ai_credit_packs (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+      extra_full_generations INT NOT NULL DEFAULT 0,
+      extra_light_edits INT NOT NULL DEFAULT 0,
+      expires_at TIMESTAMPTZ NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+
+  await dbPool.query(`
+    CREATE TABLE IF NOT EXISTS feature_flags (
+      key TEXT PRIMARY KEY,
+      value JSONB NOT NULL DEFAULT 'null'::jsonb,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+
+  await dbPool.query(`
+    CREATE TABLE IF NOT EXISTS saved_meal_plans (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+      week_key TEXT NOT NULL,
+      preferences JSONB NOT NULL DEFAULT '{}'::jsonb,
+      plan_data JSONB NOT NULL DEFAULT '{}'::jsonb,
+      source TEXT NOT NULL DEFAULT 'local',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+
+  await dbPool.query(`
     CREATE TABLE IF NOT EXISTS app_user_data (
       user_id TEXT PRIMARY KEY REFERENCES app_users(id) ON DELETE CASCADE,
       planner_json JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -129,6 +209,41 @@ export async function initializeDatabase() {
   const adminEmail = normalizeEmail(process.env.SUPER_ADMIN_EMAIL || "realpashy@gmail.com");
   const adminPassword = process.env.SUPER_ADMIN_PASSWORD || "@Adidas2026...";
 
+  for (const [key, value] of Object.entries(DEFAULT_AI_FEATURE_FLAGS)) {
+    await dbPool.query(
+      `
+      INSERT INTO feature_flags (key, value, updated_at)
+      VALUES ($1, $2::jsonb, NOW())
+      ON CONFLICT (key)
+      DO NOTHING;
+      `,
+      [key, JSON.stringify(value)],
+    );
+  }
+
+  await dbPool.query(`
+    INSERT INTO profiles (id, role, plan_tier, ai_enabled, timezone, updated_at)
+    SELECT
+      app_users.id,
+      CASE
+        WHEN app_users.role IN ('super_admin', 'admin') THEN app_users.role
+        ELSE 'user'
+      END,
+      CASE
+        WHEN app_users.role IN ('super_admin', 'admin') THEN 'admin'
+        ELSE 'free'
+      END,
+      TRUE,
+      'Asia/Jerusalem',
+      NOW()
+    FROM app_users
+    ON CONFLICT (id)
+    DO UPDATE SET
+      role = EXCLUDED.role,
+      plan_tier = CASE WHEN profiles.plan_tier = 'pro' THEN profiles.plan_tier ELSE EXCLUDED.plan_tier END,
+      updated_at = NOW();
+  `);
+
   const existing = await dbPool.query("SELECT id FROM app_users WHERE email = $1 LIMIT 1", [adminEmail]);
   if (existing.rowCount === 0) {
     const id = `u_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -141,6 +256,11 @@ export async function initializeDatabase() {
 
     await dbPool.query(
       "INSERT INTO app_user_data (user_id, planner_json, budget_json, meal_json) VALUES ($1, '{}'::jsonb, '{}'::jsonb, '{}'::jsonb)",
+      [id],
+    );
+
+    await dbPool.query(
+      "INSERT INTO profiles (id, role, plan_tier, ai_enabled, timezone) VALUES ($1, 'super_admin', 'admin', TRUE, 'Asia/Jerusalem') ON CONFLICT (id) DO NOTHING",
       [id],
     );
   }
