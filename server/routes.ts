@@ -135,9 +135,21 @@ export async function registerRoutes(
     await saveCloudData(userId, {
       plannerData: req.body?.plannerData,
       budgetData: req.body?.budgetData,
+      mealData: req.body?.mealData,
     });
 
     return res.json({ ok: true });
+  });
+
+  app.get("/api/meal/catalog", async (req, res) => {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
+
+    const result = await dbPool.query(
+      "SELECT meal_json FROM meal_catalog ORDER BY id ASC",
+    );
+
+    return res.json({ meals: result.rows.map((row) => row.meal_json) });
   });
 
   app.post("/api/ai/receipt", async (req, res) => {

@@ -1,0 +1,5304 @@
+[
+  {
+    "id": "b_001",
+    "title": "Scrambled Eggs with Sourdough Toast",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "balanced"
+    ],
+    "calories": 350,
+    "protein": 21,
+    "carbs": 37,
+    "fat": 13,
+    "effort": "low",
+    "budget": "low",
+    "ingredients": [
+      "eggs",
+      "sourdough bread",
+      "butter",
+      "parsley"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "quick",
+      "classic",
+      "savory"
+    ],
+    "image": "breakfast_eggs_toast.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_eggs_toast.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_002",
+    "title": "Greek Yogurt with Honey and Walnuts",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "balanced",
+      "high_protein"
+    ],
+    "calories": 320,
+    "protein": 19,
+    "carbs": 34,
+    "fat": 12,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "greek yogurt",
+      "honey",
+      "walnuts",
+      "cinnamon"
+    ],
+    "exclusions": [
+      "vegan",
+      "dairy_free"
+    ],
+    "tags": [
+      "quick",
+      "sweet",
+      "protein"
+    ],
+    "image": "breakfast_yogurt_honey.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_yogurt_honey.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_003",
+    "title": "Overnight Oats with Banana",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "balanced",
+      "budget"
+    ],
+    "calories": 340,
+    "protein": 20,
+    "carbs": 36,
+    "fat": 13,
+    "effort": "low",
+    "budget": "low",
+    "ingredients": [
+      "oats",
+      "banana",
+      "milk",
+      "chia seeds"
+    ],
+    "exclusions": [],
+    "tags": [
+      "make_ahead",
+      "fiber",
+      "sweet"
+    ],
+    "image": "breakfast_overnight_oats.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_overnight_oats.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_004",
+    "title": "Avocado Toast with Tomato",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "mediterranean",
+      "vegan"
+    ],
+    "calories": 360,
+    "protein": 21,
+    "carbs": 37,
+    "fat": 14,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "whole grain bread",
+      "avocado",
+      "tomato",
+      "olive oil"
+    ],
+    "exclusions": [],
+    "tags": [
+      "quick",
+      "healthy",
+      "savory"
+    ],
+    "image": "breakfast_avocado_toast.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_avocado_toast.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_005",
+    "title": "Protein Smoothie with Banana",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "high_protein"
+    ],
+    "calories": 390,
+    "protein": 29,
+    "carbs": 37,
+    "fat": 14,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "protein powder",
+      "banana",
+      "milk",
+      "peanut butter"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "gym",
+      "quick",
+      "blender"
+    ],
+    "image": "breakfast_protein_smoothie.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_protein_smoothie.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_006",
+    "title": "Spinach Feta Omelette",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "mediterranean",
+      "vegetarian"
+    ],
+    "calories": 330,
+    "protein": 19,
+    "carbs": 34,
+    "fat": 13,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "eggs",
+      "spinach",
+      "feta",
+      "olive oil"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "protein",
+      "savory"
+    ],
+    "image": "breakfast_spinach_omelette.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_spinach_omelette.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_007",
+    "title": "Cottage Cheese Bowl with Berries",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "high_protein",
+      "low_carb"
+    ],
+    "calories": 300,
+    "protein": 22,
+    "carbs": 28,
+    "fat": 11,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "cottage cheese",
+      "berries",
+      "chia seeds"
+    ],
+    "exclusions": [
+      "vegan",
+      "dairy_free"
+    ],
+    "tags": [
+      "protein",
+      "quick"
+    ],
+    "image": "breakfast_cottage_berries.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_cottage_berries.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_008",
+    "title": "Peanut Butter Banana Toast",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "budget",
+      "balanced",
+      "vegan"
+    ],
+    "calories": 370,
+    "protein": 21,
+    "carbs": 41,
+    "fat": 13,
+    "effort": "low",
+    "budget": "low",
+    "ingredients": [
+      "bread",
+      "peanut butter",
+      "banana"
+    ],
+    "exclusions": [],
+    "tags": [
+      "quick",
+      "budget",
+      "sweet"
+    ],
+    "image": "breakfast_pb_toast.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_pb_toast.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_009",
+    "title": "Shakshuka Mini Pan",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "mediterranean",
+      "vegetarian"
+    ],
+    "calories": 380,
+    "protein": 22,
+    "carbs": 39,
+    "fat": 15,
+    "effort": "medium",
+    "budget": "low",
+    "ingredients": [
+      "eggs",
+      "tomato sauce",
+      "bell pepper",
+      "olive oil"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "savory",
+      "one_pan"
+    ],
+    "image": "breakfast_shakshuka.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_shakshuka.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_010",
+    "title": "Chia Pudding with Mango",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "vegan"
+    ],
+    "calories": 310,
+    "protein": 17,
+    "carbs": 34,
+    "fat": 12,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "chia seeds",
+      "plant milk",
+      "mango"
+    ],
+    "exclusions": [],
+    "tags": [
+      "make_ahead",
+      "sweet"
+    ],
+    "image": "breakfast_chia_mango.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_chia_mango.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_011",
+    "title": "Tofu Scramble Wrap",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "vegan",
+      "high_protein"
+    ],
+    "calories": 360,
+    "protein": 20,
+    "carbs": 39,
+    "fat": 13,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "tofu",
+      "tortilla",
+      "spinach",
+      "turmeric"
+    ],
+    "exclusions": [],
+    "tags": [
+      "savory",
+      "protein",
+      "portable"
+    ],
+    "image": "breakfast_tofu_wrap.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_tofu_wrap.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_012",
+    "title": "Keto Egg Muffins",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "keto",
+      "low_carb"
+    ],
+    "calories": 320,
+    "protein": 23,
+    "carbs": 11,
+    "fat": 21,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "eggs",
+      "cheddar",
+      "mushrooms",
+      "spinach"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "meal_prep",
+      "low_carb"
+    ],
+    "image": "breakfast_keto_egg_muffins.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_keto_egg_muffins.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_013",
+    "title": "Smoked Salmon Cucumber Plate",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "keto",
+      "low_carb"
+    ],
+    "calories": 340,
+    "protein": 24,
+    "carbs": 12,
+    "fat": 22,
+    "effort": "low",
+    "budget": "high",
+    "ingredients": [
+      "smoked salmon",
+      "cucumber",
+      "cream cheese"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "low_carb",
+      "premium"
+    ],
+    "image": "breakfast_salmon_plate.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_salmon_plate.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_014",
+    "title": "Almond Flour Pancakes",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "keto"
+    ],
+    "calories": 370,
+    "protein": 26,
+    "carbs": 13,
+    "fat": 24,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "almond flour",
+      "eggs",
+      "cream",
+      "vanilla"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "weekend",
+      "sweet"
+    ],
+    "image": "breakfast_almond_pancakes.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_almond_pancakes.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_015",
+    "title": "Labneh Za'atar Toast",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "mediterranean",
+      "vegetarian"
+    ],
+    "calories": 330,
+    "protein": 19,
+    "carbs": 34,
+    "fat": 13,
+    "effort": "low",
+    "budget": "low",
+    "ingredients": [
+      "labneh",
+      "bread",
+      "zaatar",
+      "olive oil"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "middle_eastern",
+      "quick"
+    ],
+    "image": "breakfast_labneh_toast.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_labneh_toast.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_016",
+    "title": "Hummus Veggie Toast",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "vegan",
+      "budget"
+    ],
+    "calories": 300,
+    "protein": 17,
+    "carbs": 33,
+    "fat": 11,
+    "effort": "low",
+    "budget": "low",
+    "ingredients": [
+      "bread",
+      "hummus",
+      "cucumber",
+      "tomato"
+    ],
+    "exclusions": [],
+    "tags": [
+      "budget",
+      "savory"
+    ],
+    "image": "breakfast_hummus_toast.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_hummus_toast.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_017",
+    "title": "Apple Cinnamon Oatmeal",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "budget",
+      "balanced",
+      "vegan"
+    ],
+    "calories": 290,
+    "protein": 17,
+    "carbs": 32,
+    "fat": 10,
+    "effort": "low",
+    "budget": "low",
+    "ingredients": [
+      "oats",
+      "apple",
+      "cinnamon",
+      "milk"
+    ],
+    "exclusions": [],
+    "tags": [
+      "warm",
+      "fiber"
+    ],
+    "image": "breakfast_apple_oatmeal.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_apple_oatmeal.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_018",
+    "title": "Egg White Turkey Bagel",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "high_protein"
+    ],
+    "calories": 410,
+    "protein": 31,
+    "carbs": 39,
+    "fat": 15,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "egg whites",
+      "turkey slices",
+      "bagel"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "gym",
+      "portable"
+    ],
+    "image": "breakfast_turkey_bagel.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_turkey_bagel.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_019",
+    "title": "Yogurt Parfait with Granola",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "balanced"
+    ],
+    "calories": 350,
+    "protein": 21,
+    "carbs": 37,
+    "fat": 13,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "yogurt",
+      "granola",
+      "berries"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "quick",
+      "sweet"
+    ],
+    "image": "breakfast_parfait.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_parfait.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_020",
+    "title": "Halloumi Tomato Pita",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "mediterranean",
+      "vegetarian"
+    ],
+    "calories": 400,
+    "protein": 24,
+    "carbs": 41,
+    "fat": 16,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "halloumi",
+      "pita",
+      "tomato",
+      "mint"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "savory",
+      "filling"
+    ],
+    "image": "breakfast_halloumi_pita.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_halloumi_pita.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_021",
+    "title": "Veggie Breakfast Burrito",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "vegetarian",
+      "balanced"
+    ],
+    "calories": 420,
+    "protein": 24,
+    "carbs": 45,
+    "fat": 16,
+    "effort": "medium",
+    "budget": "low",
+    "ingredients": [
+      "eggs",
+      "beans",
+      "tortilla",
+      "salsa"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "portable",
+      "fiber"
+    ],
+    "image": "breakfast_burrito.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_burrito.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_022",
+    "title": "Berry Protein Oats",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "high_protein",
+      "balanced"
+    ],
+    "calories": 360,
+    "protein": 27,
+    "carbs": 34,
+    "fat": 13,
+    "effort": "low",
+    "budget": "low",
+    "ingredients": [
+      "oats",
+      "protein powder",
+      "berries",
+      "milk"
+    ],
+    "exclusions": [],
+    "tags": [
+      "gym",
+      "make_ahead"
+    ],
+    "image": "breakfast_protein_oats.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_protein_oats.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_023",
+    "title": "Tahini Date Toast",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "vegan",
+      "budget"
+    ],
+    "calories": 330,
+    "protein": 19,
+    "carbs": 36,
+    "fat": 12,
+    "effort": "low",
+    "budget": "low",
+    "ingredients": [
+      "bread",
+      "tahini",
+      "dates"
+    ],
+    "exclusions": [],
+    "tags": [
+      "middle_eastern",
+      "sweet"
+    ],
+    "image": "breakfast_tahini_dates.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_tahini_dates.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_024",
+    "title": "Zucchini Cheese Frittata",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "vegetarian"
+    ],
+    "calories": 340,
+    "protein": 20,
+    "carbs": 36,
+    "fat": 13,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "eggs",
+      "zucchini",
+      "cheese"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "meal_prep",
+      "savory"
+    ],
+    "image": "breakfast_zucchini_frittata.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_zucchini_frittata.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_025",
+    "title": "Kefir Banana Bowl",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "balanced"
+    ],
+    "calories": 300,
+    "protein": 18,
+    "carbs": 32,
+    "fat": 11,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "kefir",
+      "banana",
+      "oats"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "gut_friendly",
+      "quick"
+    ],
+    "image": "breakfast_kefir_bowl.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_kefir_bowl.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_026",
+    "title": "Low Carb Yogurt Nut Bowl",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "low_carb"
+    ],
+    "calories": 310,
+    "protein": 22,
+    "carbs": 20,
+    "fat": 15,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "greek yogurt",
+      "nuts",
+      "cinnamon"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "low_carb",
+      "quick"
+    ],
+    "image": "breakfast_lowcarb_yogurt.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_lowcarb_yogurt.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_027",
+    "title": "Cheese Omelette with Olives",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "keto",
+      "low_carb",
+      "vegetarian"
+    ],
+    "calories": 350,
+    "protein": 25,
+    "carbs": 12,
+    "fat": 23,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "eggs",
+      "cheese",
+      "olives"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "savory",
+      "low_carb"
+    ],
+    "image": "breakfast_cheese_omelette.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_cheese_omelette.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_028",
+    "title": "Baked Oatmeal Squares",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "budget",
+      "balanced"
+    ],
+    "calories": 320,
+    "protein": 18,
+    "carbs": 36,
+    "fat": 12,
+    "effort": "medium",
+    "budget": "low",
+    "ingredients": [
+      "oats",
+      "egg",
+      "banana",
+      "cinnamon"
+    ],
+    "exclusions": [],
+    "tags": [
+      "meal_prep",
+      "budget"
+    ],
+    "image": "breakfast_baked_oatmeal.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_baked_oatmeal.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_029",
+    "title": "Tomato Basil Cottage Toast",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "high_protein"
+    ],
+    "calories": 340,
+    "protein": 25,
+    "carbs": 32,
+    "fat": 12,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "cottage cheese",
+      "bread",
+      "tomato",
+      "basil"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "quick",
+      "savory"
+    ],
+    "image": "breakfast_cottage_toast.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_cottage_toast.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_030",
+    "title": "Vegan Peanut Overnight Oats",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "vegan",
+      "budget"
+    ],
+    "calories": 360,
+    "protein": 20,
+    "carbs": 39,
+    "fat": 13,
+    "effort": "low",
+    "budget": "low",
+    "ingredients": [
+      "oats",
+      "plant milk",
+      "peanut butter",
+      "banana"
+    ],
+    "exclusions": [],
+    "tags": [
+      "make_ahead",
+      "budget"
+    ],
+    "image": "breakfast_vegan_peanut_oats.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_vegan_peanut_oats.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_031",
+    "title": "Mushroom Herb Omelette",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "balanced",
+      "vegetarian"
+    ],
+    "calories": 310,
+    "protein": 19,
+    "carbs": 33,
+    "fat": 12,
+    "effort": "medium",
+    "budget": "low",
+    "ingredients": [
+      "eggs",
+      "mushrooms",
+      "herbs"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "savory",
+      "protein"
+    ],
+    "image": "breakfast_mushroom_omelette.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_mushroom_omelette.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_032",
+    "title": "Coconut Yogurt Fruit Bowl",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "vegan"
+    ],
+    "calories": 290,
+    "protein": 16,
+    "carbs": 32,
+    "fat": 11,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "coconut yogurt",
+      "berries",
+      "pumpkin seeds"
+    ],
+    "exclusions": [],
+    "tags": [
+      "dairy_free",
+      "light"
+    ],
+    "image": "breakfast_coconut_bowl.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_coconut_bowl.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_033",
+    "title": "Keto Sausage Egg Plate",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "keto"
+    ],
+    "calories": 410,
+    "protein": 29,
+    "carbs": 14,
+    "fat": 26,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "eggs",
+      "beef sausage",
+      "spinach"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "low_carb",
+      "filling"
+    ],
+    "image": "breakfast_keto_sausage.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_keto_sausage.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_034",
+    "title": "Granola Milk and Pear",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "budget",
+      "balanced"
+    ],
+    "calories": 300,
+    "protein": 17,
+    "carbs": 33,
+    "fat": 11,
+    "effort": "low",
+    "budget": "low",
+    "ingredients": [
+      "granola",
+      "milk",
+      "pear"
+    ],
+    "exclusions": [],
+    "tags": [
+      "simple",
+      "sweet"
+    ],
+    "image": "breakfast_granola_pear.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_granola_pear.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_035",
+    "title": "Falafel Breakfast Bowl",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "vegan",
+      "budget"
+    ],
+    "calories": 390,
+    "protein": 22,
+    "carbs": 43,
+    "fat": 15,
+    "effort": "medium",
+    "budget": "low",
+    "ingredients": [
+      "falafel",
+      "cucumber",
+      "tomato",
+      "tahini"
+    ],
+    "exclusions": [],
+    "tags": [
+      "middle_eastern",
+      "fiber"
+    ],
+    "image": "breakfast_falafel_bowl.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_falafel_bowl.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_036",
+    "title": "High Protein French Toast",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "high_protein"
+    ],
+    "calories": 420,
+    "protein": 31,
+    "carbs": 40,
+    "fat": 15,
+    "effort": "medium",
+    "budget": "low",
+    "ingredients": [
+      "bread",
+      "eggs",
+      "protein yogurt",
+      "berries"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "weekend",
+      "gym"
+    ],
+    "image": "breakfast_french_toast.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_french_toast.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_037",
+    "title": "Low Carb Egg Avocado Bowl",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "low_carb",
+      "keto"
+    ],
+    "calories": 330,
+    "protein": 24,
+    "carbs": 22,
+    "fat": 16,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "eggs",
+      "avocado",
+      "sesame"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "quick",
+      "low_carb"
+    ],
+    "image": "breakfast_egg_avocado_bowl.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_egg_avocado_bowl.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_038",
+    "title": "Ricotta Berry Toast",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "vegetarian"
+    ],
+    "calories": 350,
+    "protein": 20,
+    "carbs": 37,
+    "fat": 13,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "ricotta",
+      "bread",
+      "berries",
+      "honey"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "sweet",
+      "quick"
+    ],
+    "image": "breakfast_ricotta_toast.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_ricotta_toast.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_039",
+    "title": "Tempeh Breakfast Hash",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "vegan",
+      "high_protein"
+    ],
+    "calories": 410,
+    "protein": 23,
+    "carbs": 45,
+    "fat": 15,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "tempeh",
+      "potato",
+      "onion",
+      "peppers"
+    ],
+    "exclusions": [],
+    "tags": [
+      "savory",
+      "protein"
+    ],
+    "image": "breakfast_tempeh_hash.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_tempeh_hash.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_040",
+    "title": "Mediterranean Egg Pita",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "mediterranean"
+    ],
+    "calories": 390,
+    "protein": 23,
+    "carbs": 40,
+    "fat": 15,
+    "effort": "medium",
+    "budget": "low",
+    "ingredients": [
+      "eggs",
+      "pita",
+      "cucumber",
+      "tomato",
+      "olive oil"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "portable",
+      "savory"
+    ],
+    "image": "breakfast_med_egg_pita.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_med_egg_pita.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_041",
+    "title": "Quark Bowl with Apple",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "high_protein"
+    ],
+    "calories": 310,
+    "protein": 23,
+    "carbs": 29,
+    "fat": 11,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "quark",
+      "apple",
+      "cinnamon",
+      "seeds"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "quick",
+      "protein"
+    ],
+    "image": "breakfast_quark_apple.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_quark_apple.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "b_042",
+    "title": "Vegan Berry Smoothie Bowl",
+    "mealType": "breakfast",
+    "dietTypes": [
+      "vegan"
+    ],
+    "calories": 340,
+    "protein": 19,
+    "carbs": 37,
+    "fat": 13,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "berries",
+      "plant milk",
+      "banana",
+      "oats"
+    ],
+    "exclusions": [],
+    "tags": [
+      "blender",
+      "colorful"
+    ],
+    "image": "breakfast_vegan_smoothie_bowl.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/breakfast_vegan_smoothie_bowl.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_043",
+    "title": "Grilled Chicken Rice Bowl",
+    "mealType": "lunch",
+    "dietTypes": [
+      "high_protein",
+      "balanced"
+    ],
+    "calories": 520,
+    "protein": 39,
+    "carbs": 49,
+    "fat": 19,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "chicken breast",
+      "rice",
+      "cucumber",
+      "yogurt sauce"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "gym",
+      "classic"
+    ],
+    "image": "lunch_chicken_rice_bowl.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_chicken_rice_bowl.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_044",
+    "title": "Turkey Pesto Sandwich",
+    "mealType": "lunch",
+    "dietTypes": [
+      "balanced"
+    ],
+    "calories": 470,
+    "protein": 28,
+    "carbs": 49,
+    "fat": 18,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "turkey",
+      "bread",
+      "pesto",
+      "lettuce"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "portable",
+      "quick"
+    ],
+    "image": "lunch_turkey_pesto.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_turkey_pesto.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_045",
+    "title": "Falafel Hummus Plate",
+    "mealType": "lunch",
+    "dietTypes": [
+      "vegan",
+      "budget"
+    ],
+    "calories": 510,
+    "protein": 29,
+    "carbs": 56,
+    "fat": 19,
+    "effort": "medium",
+    "budget": "low",
+    "ingredients": [
+      "falafel",
+      "hummus",
+      "salad",
+      "pita"
+    ],
+    "exclusions": [],
+    "tags": [
+      "middle_eastern",
+      "fiber"
+    ],
+    "image": "lunch_falafel_plate.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_falafel_plate.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_046",
+    "title": "Chicken Caesar Wrap",
+    "mealType": "lunch",
+    "dietTypes": [
+      "balanced"
+    ],
+    "calories": 490,
+    "protein": 29,
+    "carbs": 51,
+    "fat": 19,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "chicken",
+      "tortilla",
+      "romaine",
+      "parmesan"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "portable",
+      "quick"
+    ],
+    "image": "lunch_caesar_wrap.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_caesar_wrap.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_047",
+    "title": "Lentil Rice Mujadara Bowl",
+    "mealType": "lunch",
+    "dietTypes": [
+      "vegan",
+      "budget"
+    ],
+    "calories": 460,
+    "protein": 26,
+    "carbs": 50,
+    "fat": 17,
+    "effort": "medium",
+    "budget": "low",
+    "ingredients": [
+      "lentils",
+      "rice",
+      "caramelized onions"
+    ],
+    "exclusions": [],
+    "tags": [
+      "budget",
+      "fiber"
+    ],
+    "image": "lunch_mujadara.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_mujadara.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_048",
+    "title": "Salmon Quinoa Salad",
+    "mealType": "lunch",
+    "dietTypes": [
+      "mediterranean",
+      "high_protein"
+    ],
+    "calories": 530,
+    "protein": 31,
+    "carbs": 55,
+    "fat": 21,
+    "effort": "medium",
+    "budget": "high",
+    "ingredients": [
+      "salmon",
+      "quinoa",
+      "greens",
+      "olive oil"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "healthy",
+      "premium"
+    ],
+    "image": "lunch_salmon_quinoa.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_salmon_quinoa.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_049",
+    "title": "Beef Shawarma Bowl",
+    "mealType": "lunch",
+    "dietTypes": [
+      "high_protein"
+    ],
+    "calories": 560,
+    "protein": 42,
+    "carbs": 53,
+    "fat": 20,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "beef strips",
+      "rice",
+      "salad",
+      "tahini"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "middle_eastern",
+      "filling"
+    ],
+    "image": "lunch_beef_shawarma_bowl.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_beef_shawarma_bowl.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_050",
+    "title": "Chickpea Pasta Primavera",
+    "mealType": "lunch",
+    "dietTypes": [
+      "vegetarian"
+    ],
+    "calories": 500,
+    "protein": 29,
+    "carbs": 53,
+    "fat": 19,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "chickpea pasta",
+      "vegetables",
+      "olive oil"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "protein",
+      "comfort"
+    ],
+    "image": "lunch_chickpea_pasta.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_chickpea_pasta.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_051",
+    "title": "Tuna Avocado Salad",
+    "mealType": "lunch",
+    "dietTypes": [
+      "low_carb"
+    ],
+    "calories": 380,
+    "protein": 27,
+    "carbs": 25,
+    "fat": 19,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "tuna",
+      "avocado",
+      "lettuce",
+      "cucumber"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "quick",
+      "low_carb"
+    ],
+    "image": "lunch_tuna_avocado.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_tuna_avocado.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_052",
+    "title": "Keto Chicken Lettuce Cups",
+    "mealType": "lunch",
+    "dietTypes": [
+      "keto"
+    ],
+    "calories": 410,
+    "protein": 29,
+    "carbs": 14,
+    "fat": 26,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "chicken",
+      "lettuce",
+      "mayo",
+      "celery"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "low_carb",
+      "meal_prep"
+    ],
+    "image": "lunch_keto_lettuce_cups.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_keto_lettuce_cups.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_053",
+    "title": "Halloumi Couscous Bowl",
+    "mealType": "lunch",
+    "dietTypes": [
+      "vegetarian",
+      "mediterranean"
+    ],
+    "calories": 520,
+    "protein": 30,
+    "carbs": 55,
+    "fat": 20,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "halloumi",
+      "couscous",
+      "tomatoes",
+      "mint"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "mediterranean",
+      "savory"
+    ],
+    "image": "lunch_halloumi_couscous.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_halloumi_couscous.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_054",
+    "title": "Egg Salad Toast Box",
+    "mealType": "lunch",
+    "dietTypes": [
+      "budget",
+      "balanced"
+    ],
+    "calories": 430,
+    "protein": 25,
+    "carbs": 48,
+    "fat": 16,
+    "effort": "low",
+    "budget": "low",
+    "ingredients": [
+      "eggs",
+      "bread",
+      "lettuce",
+      "mustard"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "budget",
+      "portable"
+    ],
+    "image": "lunch_egg_salad_box.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_egg_salad_box.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_055",
+    "title": "Chicken Burrito Bowl",
+    "mealType": "lunch",
+    "dietTypes": [
+      "balanced"
+    ],
+    "calories": 540,
+    "protein": 32,
+    "carbs": 57,
+    "fat": 20,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "chicken",
+      "rice",
+      "beans",
+      "corn",
+      "salsa"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "meal_prep",
+      "filling"
+    ],
+    "image": "lunch_burrito_bowl.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_burrito_bowl.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_056",
+    "title": "Tofu Peanut Noodle Bowl",
+    "mealType": "lunch",
+    "dietTypes": [
+      "vegan"
+    ],
+    "calories": 520,
+    "protein": 29,
+    "carbs": 57,
+    "fat": 19,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "tofu",
+      "noodles",
+      "peanut sauce",
+      "carrot"
+    ],
+    "exclusions": [],
+    "tags": [
+      "asian",
+      "flavorful"
+    ],
+    "image": "lunch_tofu_noodle.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_tofu_noodle.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_057",
+    "title": "Turkey Veggie Pita",
+    "mealType": "lunch",
+    "dietTypes": [
+      "high_protein"
+    ],
+    "calories": 460,
+    "protein": 34,
+    "carbs": 43,
+    "fat": 16,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "turkey",
+      "pita",
+      "cucumber",
+      "tomato"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "portable",
+      "quick"
+    ],
+    "image": "lunch_turkey_pita.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_turkey_pita.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_058",
+    "title": "Keto Salmon Egg Bowl",
+    "mealType": "lunch",
+    "dietTypes": [
+      "keto"
+    ],
+    "calories": 430,
+    "protein": 30,
+    "carbs": 15,
+    "fat": 28,
+    "effort": "low",
+    "budget": "high",
+    "ingredients": [
+      "salmon",
+      "egg",
+      "greens",
+      "olive oil"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "low_carb",
+      "premium"
+    ],
+    "image": "lunch_keto_salmon_bowl.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_keto_salmon_bowl.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_059",
+    "title": "Mediterranean Bean Salad",
+    "mealType": "lunch",
+    "dietTypes": [
+      "vegan",
+      "mediterranean",
+      "budget"
+    ],
+    "calories": 440,
+    "protein": 25,
+    "carbs": 48,
+    "fat": 16,
+    "effort": "low",
+    "budget": "low",
+    "ingredients": [
+      "white beans",
+      "cucumber",
+      "tomato",
+      "olive oil"
+    ],
+    "exclusions": [],
+    "tags": [
+      "mediterranean",
+      "budget"
+    ],
+    "image": "lunch_bean_salad.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_bean_salad.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_060",
+    "title": "Steak Sweet Potato Box",
+    "mealType": "lunch",
+    "dietTypes": [
+      "high_protein"
+    ],
+    "calories": 570,
+    "protein": 43,
+    "carbs": 54,
+    "fat": 20,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "beef steak",
+      "sweet potato",
+      "green beans"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "gym",
+      "meal_prep"
+    ],
+    "image": "lunch_steak_potato.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_steak_potato.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_061",
+    "title": "Vegetable Lasagna Slice Box",
+    "mealType": "lunch",
+    "dietTypes": [
+      "vegetarian"
+    ],
+    "calories": 500,
+    "protein": 29,
+    "carbs": 53,
+    "fat": 19,
+    "effort": "high",
+    "budget": "medium",
+    "ingredients": [
+      "lasagna sheets",
+      "ricotta",
+      "spinach",
+      "tomato sauce"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "comfort",
+      "baked"
+    ],
+    "image": "lunch_veg_lasagna.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_veg_lasagna.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_062",
+    "title": "Shawarma Chickpea Salad",
+    "mealType": "lunch",
+    "dietTypes": [
+      "balanced",
+      "budget"
+    ],
+    "calories": 450,
+    "protein": 27,
+    "carbs": 47,
+    "fat": 17,
+    "effort": "medium",
+    "budget": "low",
+    "ingredients": [
+      "chickpeas",
+      "shawarma spices",
+      "greens",
+      "tahini"
+    ],
+    "exclusions": [],
+    "tags": [
+      "middle_eastern",
+      "fiber"
+    ],
+    "image": "lunch_shawarma_chickpea.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_shawarma_chickpea.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_063",
+    "title": "Cottage Cheese Potato Bowl",
+    "mealType": "lunch",
+    "dietTypes": [
+      "budget",
+      "vegetarian"
+    ],
+    "calories": 470,
+    "protein": 27,
+    "carbs": 52,
+    "fat": 17,
+    "effort": "medium",
+    "budget": "low",
+    "ingredients": [
+      "potatoes",
+      "cottage cheese",
+      "herbs"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "budget",
+      "comfort"
+    ],
+    "image": "lunch_cottage_potato.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_cottage_potato.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_064",
+    "title": "Low Carb Chicken Greek Salad",
+    "mealType": "lunch",
+    "dietTypes": [
+      "low_carb"
+    ],
+    "calories": 390,
+    "protein": 28,
+    "carbs": 26,
+    "fat": 19,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "chicken",
+      "feta",
+      "olives",
+      "greens"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "quick",
+      "low_carb"
+    ],
+    "image": "lunch_chicken_greek.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_chicken_greek.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_065",
+    "title": "Mushroom Barley Soup",
+    "mealType": "lunch",
+    "dietTypes": [
+      "vegetarian",
+      "budget"
+    ],
+    "calories": 420,
+    "protein": 24,
+    "carbs": 45,
+    "fat": 16,
+    "effort": "medium",
+    "budget": "low",
+    "ingredients": [
+      "mushrooms",
+      "barley",
+      "onion",
+      "carrot"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "warm",
+      "budget"
+    ],
+    "image": "lunch_mushroom_barley.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_mushroom_barley.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_066",
+    "title": "Vegan Burrito Salad",
+    "mealType": "lunch",
+    "dietTypes": [
+      "vegan",
+      "budget"
+    ],
+    "calories": 480,
+    "protein": 27,
+    "carbs": 53,
+    "fat": 18,
+    "effort": "medium",
+    "budget": "low",
+    "ingredients": [
+      "black beans",
+      "corn",
+      "lettuce",
+      "salsa"
+    ],
+    "exclusions": [],
+    "tags": [
+      "fiber",
+      "meal_prep"
+    ],
+    "image": "lunch_vegan_burrito.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_vegan_burrito.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_067",
+    "title": "Chicken Pesto Pasta",
+    "mealType": "lunch",
+    "dietTypes": [
+      "balanced"
+    ],
+    "calories": 560,
+    "protein": 34,
+    "carbs": 59,
+    "fat": 21,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "chicken",
+      "pasta",
+      "pesto",
+      "spinach"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "comfort",
+      "classic"
+    ],
+    "image": "lunch_chicken_pesto_pasta.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_chicken_pesto_pasta.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_068",
+    "title": "Eggplant Tahini Bowl",
+    "mealType": "lunch",
+    "dietTypes": [
+      "vegan",
+      "mediterranean"
+    ],
+    "calories": 450,
+    "protein": 25,
+    "carbs": 49,
+    "fat": 17,
+    "effort": "medium",
+    "budget": "low",
+    "ingredients": [
+      "eggplant",
+      "rice",
+      "tahini",
+      "parsley"
+    ],
+    "exclusions": [],
+    "tags": [
+      "middle_eastern",
+      "roasted"
+    ],
+    "image": "lunch_eggplant_bowl.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_eggplant_bowl.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_069",
+    "title": "Beef Taco Salad",
+    "mealType": "lunch",
+    "dietTypes": [
+      "low_carb",
+      "high_protein"
+    ],
+    "calories": 430,
+    "protein": 31,
+    "carbs": 28,
+    "fat": 21,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "ground beef",
+      "lettuce",
+      "tomato",
+      "cheese"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "low_carb",
+      "tex_mex"
+    ],
+    "image": "lunch_beef_taco_salad.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_beef_taco_salad.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_070",
+    "title": "Tuna Pasta Salad",
+    "mealType": "lunch",
+    "dietTypes": [
+      "balanced",
+      "budget"
+    ],
+    "calories": 500,
+    "protein": 30,
+    "carbs": 52,
+    "fat": 19,
+    "effort": "low",
+    "budget": "low",
+    "ingredients": [
+      "tuna",
+      "pasta",
+      "peas",
+      "yogurt dressing"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "quick",
+      "cold_lunch"
+    ],
+    "image": "lunch_tuna_pasta.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_tuna_pasta.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_071",
+    "title": "Vegan Lentil Wrap",
+    "mealType": "lunch",
+    "dietTypes": [
+      "vegan",
+      "budget"
+    ],
+    "calories": 440,
+    "protein": 25,
+    "carbs": 48,
+    "fat": 16,
+    "effort": "low",
+    "budget": "low",
+    "ingredients": [
+      "lentils",
+      "tortilla",
+      "greens",
+      "tahini"
+    ],
+    "exclusions": [],
+    "tags": [
+      "portable",
+      "budget"
+    ],
+    "image": "lunch_lentil_wrap.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_lentil_wrap.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_072",
+    "title": "Keto Beef Zucchini Bowl",
+    "mealType": "lunch",
+    "dietTypes": [
+      "keto"
+    ],
+    "calories": 420,
+    "protein": 30,
+    "carbs": 15,
+    "fat": 27,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "ground beef",
+      "zucchini",
+      "cheese"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "low_carb",
+      "one_pan"
+    ],
+    "image": "lunch_keto_beef_zucchini.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_keto_beef_zucchini.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_073",
+    "title": "Paneer Rice Bowl",
+    "mealType": "lunch",
+    "dietTypes": [
+      "vegetarian"
+    ],
+    "calories": 530,
+    "protein": 31,
+    "carbs": 56,
+    "fat": 20,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "paneer",
+      "rice",
+      "peas",
+      "spices"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "filling",
+      "protein"
+    ],
+    "image": "lunch_paneer_rice.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_paneer_rice.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_074",
+    "title": "Mediterranean Tuna Pita",
+    "mealType": "lunch",
+    "dietTypes": [
+      "mediterranean"
+    ],
+    "calories": 480,
+    "protein": 28,
+    "carbs": 50,
+    "fat": 19,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "tuna",
+      "pita",
+      "olive oil",
+      "tomatoes"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "portable",
+      "quick"
+    ],
+    "image": "lunch_tuna_pita.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_tuna_pita.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_075",
+    "title": "Chicken Hummus Protein Box",
+    "mealType": "lunch",
+    "dietTypes": [
+      "high_protein",
+      "mediterranean"
+    ],
+    "calories": 500,
+    "protein": 37,
+    "carbs": 47,
+    "fat": 18,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "chicken",
+      "hummus",
+      "cucumber",
+      "carrots"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "meal_prep",
+      "gym"
+    ],
+    "image": "lunch_chicken_hummus_box.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_chicken_hummus_box.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_076",
+    "title": "Vegetarian Chili Bowl",
+    "mealType": "lunch",
+    "dietTypes": [
+      "vegetarian",
+      "budget"
+    ],
+    "calories": 470,
+    "protein": 27,
+    "carbs": 50,
+    "fat": 18,
+    "effort": "medium",
+    "budget": "low",
+    "ingredients": [
+      "beans",
+      "tomato",
+      "corn",
+      "rice"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "budget",
+      "comfort"
+    ],
+    "image": "lunch_veg_chili.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_veg_chili.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_077",
+    "title": "Tempeh Grain Bowl",
+    "mealType": "lunch",
+    "dietTypes": [
+      "vegan",
+      "high_protein"
+    ],
+    "calories": 520,
+    "protein": 29,
+    "carbs": 57,
+    "fat": 19,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "tempeh",
+      "brown rice",
+      "broccoli",
+      "soy sauce"
+    ],
+    "exclusions": [],
+    "tags": [
+      "protein",
+      "meal_prep"
+    ],
+    "image": "lunch_tempeh_grain.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_tempeh_grain.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_078",
+    "title": "Roast Chicken Potato Salad",
+    "mealType": "lunch",
+    "dietTypes": [
+      "balanced"
+    ],
+    "calories": 510,
+    "protein": 31,
+    "carbs": 54,
+    "fat": 19,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "roast chicken",
+      "potato",
+      "greens",
+      "mustard"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "classic",
+      "comfort"
+    ],
+    "image": "lunch_roast_chicken_potato.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_roast_chicken_potato.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_079",
+    "title": "Labneh Chicken Flatbread",
+    "mealType": "lunch",
+    "dietTypes": [
+      "mediterranean"
+    ],
+    "calories": 540,
+    "protein": 32,
+    "carbs": 56,
+    "fat": 21,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "flatbread",
+      "chicken",
+      "labneh",
+      "cucumber"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "middle_eastern",
+      "filling"
+    ],
+    "image": "lunch_labneh_flatbread.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_labneh_flatbread.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_080",
+    "title": "Low Carb Turkey Plate",
+    "mealType": "lunch",
+    "dietTypes": [
+      "low_carb"
+    ],
+    "calories": 360,
+    "protein": 26,
+    "carbs": 24,
+    "fat": 18,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "turkey slices",
+      "avocado",
+      "tomato",
+      "olives"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "quick",
+      "plate"
+    ],
+    "image": "lunch_lowcarb_turkey_plate.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_lowcarb_turkey_plate.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_081",
+    "title": "Keto Tuna Stuffed Avocado",
+    "mealType": "lunch",
+    "dietTypes": [
+      "keto",
+      "low_carb"
+    ],
+    "calories": 390,
+    "protein": 28,
+    "carbs": 13,
+    "fat": 25,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "tuna",
+      "avocado",
+      "mayo",
+      "lime"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "quick",
+      "low_carb"
+    ],
+    "image": "lunch_tuna_avocado_keto.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_tuna_avocado_keto.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_082",
+    "title": "Chickpea Halloumi Wrap",
+    "mealType": "lunch",
+    "dietTypes": [
+      "vegetarian",
+      "mediterranean"
+    ],
+    "calories": 510,
+    "protein": 29,
+    "carbs": 54,
+    "fat": 20,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "halloumi",
+      "chickpeas",
+      "tortilla",
+      "greens"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "portable",
+      "mediterranean"
+    ],
+    "image": "lunch_halloumi_wrap.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_halloumi_wrap.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_083",
+    "title": "Red Lentil Pasta Bowl",
+    "mealType": "lunch",
+    "dietTypes": [
+      "vegan",
+      "high_protein"
+    ],
+    "calories": 500,
+    "protein": 28,
+    "carbs": 55,
+    "fat": 19,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "red lentil pasta",
+      "tomato sauce",
+      "spinach"
+    ],
+    "exclusions": [],
+    "tags": [
+      "protein",
+      "vegan"
+    ],
+    "image": "lunch_red_lentil_pasta.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_red_lentil_pasta.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "l_084",
+    "title": "Chicken Freekeh Bowl",
+    "mealType": "lunch",
+    "dietTypes": [
+      "mediterranean",
+      "high_protein"
+    ],
+    "calories": 530,
+    "protein": 31,
+    "carbs": 55,
+    "fat": 21,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "chicken",
+      "freekeh",
+      "cucumber",
+      "herbs"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "middle_eastern",
+      "whole_grain"
+    ],
+    "image": "lunch_chicken_freekeh.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/lunch_chicken_freekeh.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_085",
+    "title": "Baked Salmon with Potatoes",
+    "mealType": "dinner",
+    "dietTypes": [
+      "mediterranean"
+    ],
+    "calories": 620,
+    "protein": 37,
+    "carbs": 64,
+    "fat": 24,
+    "effort": "medium",
+    "budget": "high",
+    "ingredients": [
+      "salmon",
+      "potatoes",
+      "lemon",
+      "olive oil"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "family",
+      "roasted"
+    ],
+    "image": "dinner_salmon_potatoes.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_salmon_potatoes.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_086",
+    "title": "Chicken Stir Fry with Rice",
+    "mealType": "dinner",
+    "dietTypes": [
+      "balanced"
+    ],
+    "calories": 560,
+    "protein": 34,
+    "carbs": 59,
+    "fat": 21,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "chicken",
+      "rice",
+      "broccoli",
+      "soy sauce"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "quick",
+      "one_pan"
+    ],
+    "image": "dinner_chicken_stirfry.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_chicken_stirfry.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_087",
+    "title": "Beef Kofta with Tahini",
+    "mealType": "dinner",
+    "dietTypes": [
+      "high_protein",
+      "mediterranean"
+    ],
+    "calories": 580,
+    "protein": 43,
+    "carbs": 55,
+    "fat": 21,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "ground beef",
+      "parsley",
+      "tahini",
+      "salad"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "middle_eastern",
+      "protein"
+    ],
+    "image": "dinner_beef_kofta.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_beef_kofta.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_088",
+    "title": "Creamy Mushroom Pasta",
+    "mealType": "dinner",
+    "dietTypes": [
+      "vegetarian"
+    ],
+    "calories": 590,
+    "protein": 34,
+    "carbs": 63,
+    "fat": 23,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "pasta",
+      "mushrooms",
+      "cream",
+      "parmesan"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "comfort"
+    ],
+    "image": "dinner_mushroom_pasta.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_mushroom_pasta.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_089",
+    "title": "Lentil Vegetable Soup",
+    "mealType": "dinner",
+    "dietTypes": [
+      "vegan",
+      "budget"
+    ],
+    "calories": 420,
+    "protein": 24,
+    "carbs": 46,
+    "fat": 16,
+    "effort": "medium",
+    "budget": "low",
+    "ingredients": [
+      "lentils",
+      "carrots",
+      "celery",
+      "tomato"
+    ],
+    "exclusions": [],
+    "tags": [
+      "budget",
+      "warm"
+    ],
+    "image": "dinner_lentil_soup.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_lentil_soup.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_090",
+    "title": "Keto Chicken Alfredo Zoodles",
+    "mealType": "dinner",
+    "dietTypes": [
+      "keto"
+    ],
+    "calories": 480,
+    "protein": 34,
+    "carbs": 17,
+    "fat": 31,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "chicken",
+      "zucchini",
+      "cream",
+      "parmesan"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "low_carb",
+      "comfort"
+    ],
+    "image": "dinner_keto_alfredo.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_keto_alfredo.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_091",
+    "title": "Turkey Meatballs with Couscous",
+    "mealType": "dinner",
+    "dietTypes": [
+      "balanced"
+    ],
+    "calories": 570,
+    "protein": 34,
+    "carbs": 60,
+    "fat": 22,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "turkey meatballs",
+      "couscous",
+      "tomato sauce"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "family",
+      "classic"
+    ],
+    "image": "dinner_turkey_meatballs.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_turkey_meatballs.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_092",
+    "title": "Tofu Teriyaki Bowl",
+    "mealType": "dinner",
+    "dietTypes": [
+      "vegan"
+    ],
+    "calories": 530,
+    "protein": 30,
+    "carbs": 58,
+    "fat": 20,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "tofu",
+      "rice",
+      "broccoli",
+      "teriyaki sauce"
+    ],
+    "exclusions": [],
+    "tags": [
+      "asian",
+      "meal_prep"
+    ],
+    "image": "dinner_tofu_teriyaki.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_tofu_teriyaki.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_093",
+    "title": "Low Carb Steak and Greens",
+    "mealType": "dinner",
+    "dietTypes": [
+      "low_carb"
+    ],
+    "calories": 470,
+    "protein": 34,
+    "carbs": 31,
+    "fat": 23,
+    "effort": "medium",
+    "budget": "high",
+    "ingredients": [
+      "steak",
+      "greens",
+      "olive oil"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "low_carb",
+      "simple"
+    ],
+    "image": "dinner_steak_greens.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_steak_greens.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_094",
+    "title": "Baked Chicken and Sweet Potato",
+    "mealType": "dinner",
+    "dietTypes": [
+      "high_protein"
+    ],
+    "calories": 560,
+    "protein": 42,
+    "carbs": 53,
+    "fat": 20,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "chicken thighs",
+      "sweet potato",
+      "green beans"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "meal_prep",
+      "gym"
+    ],
+    "image": "dinner_chicken_sweet_potato.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_chicken_sweet_potato.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_095",
+    "title": "Stuffed Bell Peppers",
+    "mealType": "dinner",
+    "dietTypes": [
+      "balanced"
+    ],
+    "calories": 540,
+    "protein": 32,
+    "carbs": 57,
+    "fat": 20,
+    "effort": "high",
+    "budget": "medium",
+    "ingredients": [
+      "ground beef",
+      "rice",
+      "pepper",
+      "tomato"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "baked",
+      "family"
+    ],
+    "image": "dinner_stuffed_peppers.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_stuffed_peppers.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_096",
+    "title": "Eggplant Chickpea Stew",
+    "mealType": "dinner",
+    "dietTypes": [
+      "vegan",
+      "budget"
+    ],
+    "calories": 470,
+    "protein": 26,
+    "carbs": 51,
+    "fat": 18,
+    "effort": "medium",
+    "budget": "low",
+    "ingredients": [
+      "eggplant",
+      "chickpeas",
+      "tomato",
+      "garlic"
+    ],
+    "exclusions": [],
+    "tags": [
+      "middle_eastern",
+      "budget"
+    ],
+    "image": "dinner_eggplant_stew.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_eggplant_stew.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_097",
+    "title": "Halloumi Veggie Tray Bake",
+    "mealType": "dinner",
+    "dietTypes": [
+      "vegetarian",
+      "mediterranean"
+    ],
+    "calories": 520,
+    "protein": 30,
+    "carbs": 55,
+    "fat": 20,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "halloumi",
+      "zucchini",
+      "pepper",
+      "olive oil"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "roasted",
+      "mediterranean"
+    ],
+    "image": "dinner_halloumi_tray.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_halloumi_tray.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_098",
+    "title": "Keto Beef Burger Plate",
+    "mealType": "dinner",
+    "dietTypes": [
+      "keto"
+    ],
+    "calories": 500,
+    "protein": 35,
+    "carbs": 17,
+    "fat": 32,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "beef patty",
+      "lettuce",
+      "cheese",
+      "tomato"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "low_carb",
+      "grill"
+    ],
+    "image": "dinner_keto_burger.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_keto_burger.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_099",
+    "title": "Chicken Shawarma Plate",
+    "mealType": "dinner",
+    "dietTypes": [
+      "mediterranean",
+      "high_protein"
+    ],
+    "calories": 610,
+    "protein": 36,
+    "carbs": 63,
+    "fat": 24,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "chicken",
+      "rice",
+      "salad",
+      "garlic sauce"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "middle_eastern",
+      "favorite"
+    ],
+    "image": "dinner_chicken_shawarma.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_chicken_shawarma.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_100",
+    "title": "Pesto Shrimp Pasta",
+    "mealType": "dinner",
+    "dietTypes": [
+      "balanced"
+    ],
+    "calories": 600,
+    "protein": 36,
+    "carbs": 63,
+    "fat": 23,
+    "effort": "medium",
+    "budget": "high",
+    "ingredients": [
+      "shrimp",
+      "pasta",
+      "pesto",
+      "spinach"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "seafood",
+      "comfort"
+    ],
+    "image": "dinner_shrimp_pasta.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_shrimp_pasta.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_101",
+    "title": "Vegetarian Chili with Rice",
+    "mealType": "dinner",
+    "dietTypes": [
+      "vegetarian",
+      "budget"
+    ],
+    "calories": 510,
+    "protein": 29,
+    "carbs": 54,
+    "fat": 20,
+    "effort": "medium",
+    "budget": "low",
+    "ingredients": [
+      "beans",
+      "rice",
+      "tomato",
+      "corn"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "budget",
+      "comfort"
+    ],
+    "image": "dinner_veg_chili_rice.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_veg_chili_rice.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_102",
+    "title": "Roasted Cod with Vegetables",
+    "mealType": "dinner",
+    "dietTypes": [
+      "low_carb"
+    ],
+    "calories": 450,
+    "protein": 32,
+    "carbs": 30,
+    "fat": 22,
+    "effort": "medium",
+    "budget": "high",
+    "ingredients": [
+      "cod",
+      "zucchini",
+      "tomato",
+      "olive oil"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "light",
+      "protein"
+    ],
+    "image": "dinner_cod_veg.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_cod_veg.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_103",
+    "title": "Turkey Bolognese Pasta",
+    "mealType": "dinner",
+    "dietTypes": [
+      "high_protein"
+    ],
+    "calories": 590,
+    "protein": 44,
+    "carbs": 56,
+    "fat": 21,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "turkey mince",
+      "pasta",
+      "tomato sauce"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "family",
+      "protein"
+    ],
+    "image": "dinner_turkey_bolognese.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_turkey_bolognese.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_104",
+    "title": "Paneer Spinach Curry",
+    "mealType": "dinner",
+    "dietTypes": [
+      "vegetarian"
+    ],
+    "calories": 540,
+    "protein": 31,
+    "carbs": 57,
+    "fat": 21,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "paneer",
+      "spinach",
+      "tomato",
+      "cream"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "comfort",
+      "spiced"
+    ],
+    "image": "dinner_paneer_spinach.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_paneer_spinach.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_105",
+    "title": "Chicken Fajita Bowl",
+    "mealType": "dinner",
+    "dietTypes": [
+      "balanced"
+    ],
+    "calories": 570,
+    "protein": 34,
+    "carbs": 60,
+    "fat": 22,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "chicken",
+      "rice",
+      "peppers",
+      "corn"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "tex_mex",
+      "meal_prep"
+    ],
+    "image": "dinner_chicken_fajita.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_chicken_fajita.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_106",
+    "title": "Keto Salmon Spinach Plate",
+    "mealType": "dinner",
+    "dietTypes": [
+      "keto"
+    ],
+    "calories": 490,
+    "protein": 35,
+    "carbs": 17,
+    "fat": 32,
+    "effort": "medium",
+    "budget": "high",
+    "ingredients": [
+      "salmon",
+      "spinach",
+      "butter",
+      "lemon"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "premium",
+      "low_carb"
+    ],
+    "image": "dinner_keto_salmon_spinach.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_keto_salmon_spinach.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_107",
+    "title": "Mujadara with Yogurt",
+    "mealType": "dinner",
+    "dietTypes": [
+      "vegetarian",
+      "mediterranean",
+      "budget"
+    ],
+    "calories": 500,
+    "protein": 29,
+    "carbs": 53,
+    "fat": 19,
+    "effort": "medium",
+    "budget": "low",
+    "ingredients": [
+      "lentils",
+      "rice",
+      "onions",
+      "yogurt"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "middle_eastern",
+      "budget"
+    ],
+    "image": "dinner_mujadara_yogurt.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_mujadara_yogurt.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_108",
+    "title": "Tofu Coconut Curry",
+    "mealType": "dinner",
+    "dietTypes": [
+      "vegan"
+    ],
+    "calories": 550,
+    "protein": 31,
+    "carbs": 60,
+    "fat": 21,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "tofu",
+      "coconut milk",
+      "rice",
+      "broccoli"
+    ],
+    "exclusions": [],
+    "tags": [
+      "creamy",
+      "asian"
+    ],
+    "image": "dinner_tofu_curry.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_tofu_curry.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_109",
+    "title": "Low Carb Chicken Mushroom Skillet",
+    "mealType": "dinner",
+    "dietTypes": [
+      "low_carb"
+    ],
+    "calories": 460,
+    "protein": 33,
+    "carbs": 30,
+    "fat": 23,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "chicken",
+      "mushrooms",
+      "cream",
+      "thyme"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "one_pan",
+      "simple"
+    ],
+    "image": "dinner_chicken_mushroom.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_chicken_mushroom.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_110",
+    "title": "Beef Rice Stuffed Zucchini",
+    "mealType": "dinner",
+    "dietTypes": [
+      "balanced"
+    ],
+    "calories": 560,
+    "protein": 34,
+    "carbs": 59,
+    "fat": 21,
+    "effort": "high",
+    "budget": "medium",
+    "ingredients": [
+      "zucchini",
+      "ground beef",
+      "rice",
+      "tomato"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "baked",
+      "family"
+    ],
+    "image": "dinner_stuffed_zucchini.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_stuffed_zucchini.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_111",
+    "title": "Chickpea Spinach Coconut Stew",
+    "mealType": "dinner",
+    "dietTypes": [
+      "vegan",
+      "budget"
+    ],
+    "calories": 500,
+    "protein": 28,
+    "carbs": 55,
+    "fat": 19,
+    "effort": "medium",
+    "budget": "low",
+    "ingredients": [
+      "chickpeas",
+      "spinach",
+      "coconut milk"
+    ],
+    "exclusions": [],
+    "tags": [
+      "budget",
+      "comfort"
+    ],
+    "image": "dinner_chickpea_stew.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_chickpea_stew.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_112",
+    "title": "Chicken Parmesan with Greens",
+    "mealType": "dinner",
+    "dietTypes": [
+      "high_protein"
+    ],
+    "calories": 580,
+    "protein": 43,
+    "carbs": 55,
+    "fat": 21,
+    "effort": "high",
+    "budget": "medium",
+    "ingredients": [
+      "chicken",
+      "parmesan",
+      "tomato sauce",
+      "greens"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "protein",
+      "comfort"
+    ],
+    "image": "dinner_chicken_parmesan.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_chicken_parmesan.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_113",
+    "title": "Vegetable Couscous Bowl",
+    "mealType": "dinner",
+    "dietTypes": [
+      "vegan",
+      "mediterranean",
+      "budget"
+    ],
+    "calories": 480,
+    "protein": 27,
+    "carbs": 53,
+    "fat": 18,
+    "effort": "medium",
+    "budget": "low",
+    "ingredients": [
+      "couscous",
+      "zucchini",
+      "carrot",
+      "chickpeas"
+    ],
+    "exclusions": [],
+    "tags": [
+      "mediterranean",
+      "budget"
+    ],
+    "image": "dinner_veg_couscous.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_veg_couscous.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_114",
+    "title": "Keto Meatballs with Cauliflower Mash",
+    "mealType": "dinner",
+    "dietTypes": [
+      "keto"
+    ],
+    "calories": 510,
+    "protein": 36,
+    "carbs": 18,
+    "fat": 33,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "beef meatballs",
+      "cauliflower",
+      "cream"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "low_carb",
+      "hearty"
+    ],
+    "image": "dinner_keto_meatballs.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_keto_meatballs.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_115",
+    "title": "Baked Chicken Freekeh Tray",
+    "mealType": "dinner",
+    "dietTypes": [
+      "mediterranean"
+    ],
+    "calories": 590,
+    "protein": 35,
+    "carbs": 61,
+    "fat": 23,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "chicken",
+      "freekeh",
+      "onion",
+      "spices"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "whole_grain",
+      "tray_bake"
+    ],
+    "image": "dinner_chicken_freekeh.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_chicken_freekeh.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_116",
+    "title": "Tempeh Peanut Stir Fry",
+    "mealType": "dinner",
+    "dietTypes": [
+      "vegan",
+      "high_protein"
+    ],
+    "calories": 560,
+    "protein": 32,
+    "carbs": 61,
+    "fat": 21,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "tempeh",
+      "rice noodles",
+      "peanut sauce"
+    ],
+    "exclusions": [],
+    "tags": [
+      "protein",
+      "asian"
+    ],
+    "image": "dinner_tempeh_stirfry.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_tempeh_stirfry.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_117",
+    "title": "Steak Potato Wedges Plate",
+    "mealType": "dinner",
+    "dietTypes": [
+      "balanced"
+    ],
+    "calories": 620,
+    "protein": 37,
+    "carbs": 65,
+    "fat": 23,
+    "effort": "medium",
+    "budget": "high",
+    "ingredients": [
+      "steak",
+      "potato wedges",
+      "salad"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "classic",
+      "weekend"
+    ],
+    "image": "dinner_steak_wedges.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_steak_wedges.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_118",
+    "title": "Shakshuka Dinner Plate",
+    "mealType": "dinner",
+    "dietTypes": [
+      "vegetarian",
+      "mediterranean"
+    ],
+    "calories": 470,
+    "protein": 27,
+    "carbs": 50,
+    "fat": 18,
+    "effort": "medium",
+    "budget": "low",
+    "ingredients": [
+      "eggs",
+      "tomato sauce",
+      "pepper",
+      "bread"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "middle_eastern",
+      "simple"
+    ],
+    "image": "dinner_shakshuka_plate.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_shakshuka_plate.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_119",
+    "title": "Low Carb Tuna Veg Bake",
+    "mealType": "dinner",
+    "dietTypes": [
+      "low_carb"
+    ],
+    "calories": 430,
+    "protein": 31,
+    "carbs": 28,
+    "fat": 21,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "tuna",
+      "zucchini",
+      "cheese",
+      "tomato"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "baked",
+      "protein"
+    ],
+    "image": "dinner_tuna_bake.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_tuna_bake.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_120",
+    "title": "Herby Chicken Quinoa Plate",
+    "mealType": "dinner",
+    "dietTypes": [
+      "high_protein"
+    ],
+    "calories": 570,
+    "protein": 43,
+    "carbs": 54,
+    "fat": 20,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "chicken",
+      "quinoa",
+      "herbs",
+      "greens"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "clean",
+      "gym"
+    ],
+    "image": "dinner_chicken_quinoa.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_chicken_quinoa.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_121",
+    "title": "Vegan Lentil Shepherd Pie",
+    "mealType": "dinner",
+    "dietTypes": [
+      "vegan",
+      "budget"
+    ],
+    "calories": 540,
+    "protein": 30,
+    "carbs": 59,
+    "fat": 20,
+    "effort": "high",
+    "budget": "low",
+    "ingredients": [
+      "lentils",
+      "potato",
+      "peas",
+      "carrot"
+    ],
+    "exclusions": [],
+    "tags": [
+      "comfort",
+      "baked"
+    ],
+    "image": "dinner_lentil_shepherd.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_lentil_shepherd.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_122",
+    "title": "Halloumi Tomato Pasta",
+    "mealType": "dinner",
+    "dietTypes": [
+      "vegetarian"
+    ],
+    "calories": 560,
+    "protein": 32,
+    "carbs": 60,
+    "fat": 21,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "halloumi",
+      "pasta",
+      "tomato",
+      "basil"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "comfort",
+      "cheesy"
+    ],
+    "image": "dinner_halloumi_pasta.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_halloumi_pasta.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_123",
+    "title": "Keto Chicken Broccoli Bake",
+    "mealType": "dinner",
+    "dietTypes": [
+      "keto"
+    ],
+    "calories": 500,
+    "protein": 35,
+    "carbs": 17,
+    "fat": 32,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "chicken",
+      "broccoli",
+      "cheese",
+      "cream"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "low_carb",
+      "bake"
+    ],
+    "image": "dinner_keto_broccoli_bake.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_keto_broccoli_bake.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_124",
+    "title": "Mediterranean Tuna Potato Salad",
+    "mealType": "dinner",
+    "dietTypes": [
+      "mediterranean"
+    ],
+    "calories": 520,
+    "protein": 31,
+    "carbs": 54,
+    "fat": 20,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "tuna",
+      "potato",
+      "olive oil",
+      "beans"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "cold_plate",
+      "easy"
+    ],
+    "image": "dinner_tuna_potato.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_tuna_potato.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_125",
+    "title": "Turkey Rice Stuffed Eggplant",
+    "mealType": "dinner",
+    "dietTypes": [
+      "balanced"
+    ],
+    "calories": 570,
+    "protein": 34,
+    "carbs": 60,
+    "fat": 22,
+    "effort": "high",
+    "budget": "medium",
+    "ingredients": [
+      "eggplant",
+      "turkey mince",
+      "rice",
+      "tomato"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "baked",
+      "family"
+    ],
+    "image": "dinner_turkey_eggplant.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_turkey_eggplant.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "d_126",
+    "title": "Vegan Black Bean Burrito Bowl",
+    "mealType": "dinner",
+    "dietTypes": [
+      "vegan",
+      "budget"
+    ],
+    "calories": 530,
+    "protein": 30,
+    "carbs": 58,
+    "fat": 20,
+    "effort": "medium",
+    "budget": "low",
+    "ingredients": [
+      "black beans",
+      "rice",
+      "corn",
+      "avocado"
+    ],
+    "exclusions": [],
+    "tags": [
+      "tex_mex",
+      "fiber"
+    ],
+    "image": "dinner_blackbean_burrito.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/dinner_blackbean_burrito.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_127",
+    "title": "Apple with Peanut Butter",
+    "mealType": "snack",
+    "dietTypes": [
+      "balanced",
+      "budget",
+      "vegan"
+    ],
+    "calories": 210,
+    "protein": 13,
+    "carbs": 22,
+    "fat": 8,
+    "effort": "low",
+    "budget": "low",
+    "ingredients": [
+      "apple",
+      "peanut butter"
+    ],
+    "exclusions": [],
+    "tags": [
+      "quick",
+      "sweet"
+    ],
+    "image": "snack_apple_pb.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_apple_pb.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_128",
+    "title": "Greek Yogurt Cup",
+    "mealType": "snack",
+    "dietTypes": [
+      "high_protein"
+    ],
+    "calories": 160,
+    "protein": 12,
+    "carbs": 15,
+    "fat": 6,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "greek yogurt"
+    ],
+    "exclusions": [
+      "vegan",
+      "dairy_free"
+    ],
+    "tags": [
+      "protein",
+      "quick"
+    ],
+    "image": "snack_yogurt.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_yogurt.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_129",
+    "title": "Hummus with Carrot Sticks",
+    "mealType": "snack",
+    "dietTypes": [
+      "vegan",
+      "budget",
+      "mediterranean"
+    ],
+    "calories": 190,
+    "protein": 11,
+    "carbs": 21,
+    "fat": 7,
+    "effort": "low",
+    "budget": "low",
+    "ingredients": [
+      "hummus",
+      "carrots"
+    ],
+    "exclusions": [],
+    "tags": [
+      "budget",
+      "savory"
+    ],
+    "image": "snack_hummus_carrots.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_hummus_carrots.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_130",
+    "title": "Protein Bar",
+    "mealType": "snack",
+    "dietTypes": [
+      "high_protein"
+    ],
+    "calories": 220,
+    "protein": 16,
+    "carbs": 21,
+    "fat": 8,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "protein bar"
+    ],
+    "exclusions": [],
+    "tags": [
+      "portable",
+      "gym"
+    ],
+    "image": "snack_protein_bar.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_protein_bar.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_131",
+    "title": "Mixed Nuts",
+    "mealType": "snack",
+    "dietTypes": [
+      "keto",
+      "low_carb"
+    ],
+    "calories": 210,
+    "protein": 15,
+    "carbs": 7,
+    "fat": 14,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "almonds",
+      "walnuts",
+      "cashews"
+    ],
+    "exclusions": [],
+    "tags": [
+      "low_carb",
+      "portable"
+    ],
+    "image": "snack_mixed_nuts.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_mixed_nuts.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_132",
+    "title": "Boiled Eggs",
+    "mealType": "snack",
+    "dietTypes": [
+      "keto",
+      "low_carb",
+      "high_protein"
+    ],
+    "calories": 155,
+    "protein": 11,
+    "carbs": 5,
+    "fat": 10,
+    "effort": "low",
+    "budget": "low",
+    "ingredients": [
+      "eggs",
+      "salt"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "protein",
+      "simple"
+    ],
+    "image": "snack_boiled_eggs.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_boiled_eggs.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_133",
+    "title": "Banana Oat Energy Bites",
+    "mealType": "snack",
+    "dietTypes": [
+      "budget",
+      "balanced",
+      "vegan"
+    ],
+    "calories": 180,
+    "protein": 10,
+    "carbs": 20,
+    "fat": 7,
+    "effort": "low",
+    "budget": "low",
+    "ingredients": [
+      "banana",
+      "oats",
+      "dates"
+    ],
+    "exclusions": [],
+    "tags": [
+      "sweet",
+      "budget"
+    ],
+    "image": "snack_energy_bites.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_energy_bites.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_134",
+    "title": "Cottage Cheese with Cucumber",
+    "mealType": "snack",
+    "dietTypes": [
+      "low_carb",
+      "high_protein"
+    ],
+    "calories": 170,
+    "protein": 12,
+    "carbs": 11,
+    "fat": 8,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "cottage cheese",
+      "cucumber"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "protein",
+      "light"
+    ],
+    "image": "snack_cottage_cucumber.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_cottage_cucumber.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_135",
+    "title": "Date Tahini Bites",
+    "mealType": "snack",
+    "dietTypes": [
+      "vegan",
+      "budget"
+    ],
+    "calories": 200,
+    "protein": 11,
+    "carbs": 22,
+    "fat": 7,
+    "effort": "low",
+    "budget": "low",
+    "ingredients": [
+      "dates",
+      "tahini",
+      "sesame"
+    ],
+    "exclusions": [],
+    "tags": [
+      "middle_eastern",
+      "sweet"
+    ],
+    "image": "snack_date_tahini.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_date_tahini.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_136",
+    "title": "Cheese Cubes and Olives",
+    "mealType": "snack",
+    "dietTypes": [
+      "keto",
+      "low_carb"
+    ],
+    "calories": 190,
+    "protein": 13,
+    "carbs": 7,
+    "fat": 12,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "cheese",
+      "olives"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "low_carb",
+      "savory"
+    ],
+    "image": "snack_cheese_olives.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_cheese_olives.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_137",
+    "title": "Berry Smoothie Mini",
+    "mealType": "snack",
+    "dietTypes": [
+      "balanced"
+    ],
+    "calories": 180,
+    "protein": 11,
+    "carbs": 19,
+    "fat": 7,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "berries",
+      "milk",
+      "banana"
+    ],
+    "exclusions": [],
+    "tags": [
+      "blender",
+      "sweet"
+    ],
+    "image": "snack_berry_smoothie.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_berry_smoothie.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_138",
+    "title": "Roasted Chickpeas",
+    "mealType": "snack",
+    "dietTypes": [
+      "vegan",
+      "budget"
+    ],
+    "calories": 170,
+    "protein": 10,
+    "carbs": 19,
+    "fat": 6,
+    "effort": "medium",
+    "budget": "low",
+    "ingredients": [
+      "chickpeas",
+      "spices"
+    ],
+    "exclusions": [],
+    "tags": [
+      "crunchy",
+      "budget"
+    ],
+    "image": "snack_roasted_chickpeas.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_roasted_chickpeas.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_139",
+    "title": "Rice Cakes with Turkey",
+    "mealType": "snack",
+    "dietTypes": [
+      "high_protein"
+    ],
+    "calories": 200,
+    "protein": 15,
+    "carbs": 19,
+    "fat": 7,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "rice cakes",
+      "turkey slices"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "portable",
+      "gym"
+    ],
+    "image": "snack_ricecake_turkey.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_ricecake_turkey.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_140",
+    "title": "Dark Chocolate Almonds",
+    "mealType": "snack",
+    "dietTypes": [
+      "balanced"
+    ],
+    "calories": 190,
+    "protein": 11,
+    "carbs": 20,
+    "fat": 7,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "dark chocolate",
+      "almonds"
+    ],
+    "exclusions": [],
+    "tags": [
+      "sweet",
+      "treat"
+    ],
+    "image": "snack_choco_almonds.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_choco_almonds.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_141",
+    "title": "Avocado Half with Lemon",
+    "mealType": "snack",
+    "dietTypes": [
+      "low_carb",
+      "vegan"
+    ],
+    "calories": 180,
+    "protein": 13,
+    "carbs": 12,
+    "fat": 9,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "avocado",
+      "lemon"
+    ],
+    "exclusions": [],
+    "tags": [
+      "healthy",
+      "simple"
+    ],
+    "image": "snack_avocado_half.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_avocado_half.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_142",
+    "title": "Labneh Cucumber Cup",
+    "mealType": "snack",
+    "dietTypes": [
+      "mediterranean"
+    ],
+    "calories": 160,
+    "protein": 9,
+    "carbs": 17,
+    "fat": 6,
+    "effort": "low",
+    "budget": "low",
+    "ingredients": [
+      "labneh",
+      "cucumber",
+      "mint"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "middle_eastern",
+      "cooling"
+    ],
+    "image": "snack_labneh_cucumber.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_labneh_cucumber.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_143",
+    "title": "Tofu Bites",
+    "mealType": "snack",
+    "dietTypes": [
+      "vegan",
+      "high_protein"
+    ],
+    "calories": 180,
+    "protein": 10,
+    "carbs": 20,
+    "fat": 7,
+    "effort": "medium",
+    "budget": "medium",
+    "ingredients": [
+      "tofu",
+      "soy sauce"
+    ],
+    "exclusions": [],
+    "tags": [
+      "protein",
+      "savory"
+    ],
+    "image": "snack_tofu_bites.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_tofu_bites.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_144",
+    "title": "Mini Tuna Crackers",
+    "mealType": "snack",
+    "dietTypes": [
+      "balanced"
+    ],
+    "calories": 210,
+    "protein": 13,
+    "carbs": 22,
+    "fat": 8,
+    "effort": "low",
+    "budget": "low",
+    "ingredients": [
+      "tuna",
+      "crackers",
+      "yogurt"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "portable",
+      "savory"
+    ],
+    "image": "snack_tuna_crackers.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_tuna_crackers.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_145",
+    "title": "Trail Mix",
+    "mealType": "snack",
+    "dietTypes": [
+      "budget",
+      "balanced",
+      "vegan"
+    ],
+    "calories": 220,
+    "protein": 13,
+    "carbs": 24,
+    "fat": 8,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "nuts",
+      "raisins",
+      "seeds"
+    ],
+    "exclusions": [],
+    "tags": [
+      "portable",
+      "energy"
+    ],
+    "image": "snack_trail_mix.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_trail_mix.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_146",
+    "title": "Protein Pudding",
+    "mealType": "snack",
+    "dietTypes": [
+      "high_protein"
+    ],
+    "calories": 190,
+    "protein": 14,
+    "carbs": 18,
+    "fat": 7,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "protein pudding"
+    ],
+    "exclusions": [],
+    "tags": [
+      "dessert",
+      "gym"
+    ],
+    "image": "snack_protein_pudding.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_protein_pudding.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_147",
+    "title": "Celery with Peanut Butter",
+    "mealType": "snack",
+    "dietTypes": [
+      "low_carb",
+      "vegan"
+    ],
+    "calories": 170,
+    "protein": 12,
+    "carbs": 11,
+    "fat": 8,
+    "effort": "low",
+    "budget": "low",
+    "ingredients": [
+      "celery",
+      "peanut butter"
+    ],
+    "exclusions": [],
+    "tags": [
+      "crunchy",
+      "quick"
+    ],
+    "image": "snack_celery_pb.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_celery_pb.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_148",
+    "title": "Fruit Salad Cup",
+    "mealType": "snack",
+    "dietTypes": [
+      "vegan",
+      "budget"
+    ],
+    "calories": 160,
+    "protein": 9,
+    "carbs": 18,
+    "fat": 6,
+    "effort": "low",
+    "budget": "low",
+    "ingredients": [
+      "melon",
+      "grapes",
+      "berries"
+    ],
+    "exclusions": [],
+    "tags": [
+      "fresh",
+      "light"
+    ],
+    "image": "snack_fruit_cup.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_fruit_cup.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_149",
+    "title": "Mozzarella Tomato Skewers",
+    "mealType": "snack",
+    "dietTypes": [
+      "mediterranean",
+      "vegetarian"
+    ],
+    "calories": 180,
+    "protein": 11,
+    "carbs": 19,
+    "fat": 7,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "mozzarella",
+      "tomato",
+      "basil"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "fresh",
+      "savory"
+    ],
+    "image": "snack_caprese_skewers.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_caprese_skewers.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_150",
+    "title": "Edamame Cup",
+    "mealType": "snack",
+    "dietTypes": [
+      "vegan",
+      "high_protein"
+    ],
+    "calories": 170,
+    "protein": 10,
+    "carbs": 19,
+    "fat": 6,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "edamame",
+      "sea salt"
+    ],
+    "exclusions": [],
+    "tags": [
+      "protein",
+      "quick"
+    ],
+    "image": "snack_edamame.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_edamame.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_151",
+    "title": "Keto Pepperoni Rollups",
+    "mealType": "snack",
+    "dietTypes": [
+      "keto"
+    ],
+    "calories": 200,
+    "protein": 14,
+    "carbs": 7,
+    "fat": 13,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "pepperoni",
+      "cheese"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "low_carb",
+      "portable"
+    ],
+    "image": "snack_pepperoni_rollups.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_pepperoni_rollups.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_152",
+    "title": "Banana with Yogurt",
+    "mealType": "snack",
+    "dietTypes": [
+      "balanced"
+    ],
+    "calories": 180,
+    "protein": 11,
+    "carbs": 19,
+    "fat": 7,
+    "effort": "low",
+    "budget": "low",
+    "ingredients": [
+      "banana",
+      "yogurt"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "quick",
+      "sweet"
+    ],
+    "image": "snack_banana_yogurt.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_banana_yogurt.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_153",
+    "title": "Pumpkin Seeds",
+    "mealType": "snack",
+    "dietTypes": [
+      "keto",
+      "low_carb",
+      "vegan"
+    ],
+    "calories": 180,
+    "protein": 13,
+    "carbs": 6,
+    "fat": 12,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "pumpkin seeds"
+    ],
+    "exclusions": [],
+    "tags": [
+      "portable",
+      "crunchy"
+    ],
+    "image": "snack_pumpkin_seeds.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_pumpkin_seeds.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_154",
+    "title": "Mini Falafel Bites",
+    "mealType": "snack",
+    "dietTypes": [
+      "vegan",
+      "budget"
+    ],
+    "calories": 210,
+    "protein": 12,
+    "carbs": 23,
+    "fat": 8,
+    "effort": "medium",
+    "budget": "low",
+    "ingredients": [
+      "falafel",
+      "tahini"
+    ],
+    "exclusions": [],
+    "tags": [
+      "middle_eastern",
+      "savory"
+    ],
+    "image": "snack_falafel_bites.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_falafel_bites.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_155",
+    "title": "Turkey Cheese Rollups",
+    "mealType": "snack",
+    "dietTypes": [
+      "high_protein",
+      "low_carb"
+    ],
+    "calories": 190,
+    "protein": 14,
+    "carbs": 18,
+    "fat": 7,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "turkey",
+      "cheese"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "portable",
+      "protein"
+    ],
+    "image": "snack_turkey_rollups.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_turkey_rollups.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_156",
+    "title": "Pear and Walnuts",
+    "mealType": "snack",
+    "dietTypes": [
+      "balanced",
+      "budget",
+      "vegan"
+    ],
+    "calories": 175,
+    "protein": 10,
+    "carbs": 18,
+    "fat": 7,
+    "effort": "low",
+    "budget": "low",
+    "ingredients": [
+      "pear",
+      "walnuts"
+    ],
+    "exclusions": [],
+    "tags": [
+      "simple",
+      "fiber"
+    ],
+    "image": "snack_pear_walnuts.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_pear_walnuts.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_157",
+    "title": "Seaweed Egg Snack Box",
+    "mealType": "snack",
+    "dietTypes": [
+      "low_carb",
+      "high_protein"
+    ],
+    "calories": 165,
+    "protein": 12,
+    "carbs": 11,
+    "fat": 8,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "boiled egg",
+      "seaweed"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "light",
+      "protein"
+    ],
+    "image": "snack_seaweed_egg.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_seaweed_egg.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_158",
+    "title": "Granola Bar",
+    "mealType": "snack",
+    "dietTypes": [
+      "budget",
+      "balanced"
+    ],
+    "calories": 190,
+    "protein": 11,
+    "carbs": 21,
+    "fat": 7,
+    "effort": "low",
+    "budget": "low",
+    "ingredients": [
+      "granola bar"
+    ],
+    "exclusions": [],
+    "tags": [
+      "portable",
+      "budget"
+    ],
+    "image": "snack_granola_bar.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_granola_bar.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_159",
+    "title": "Tahini Yogurt Dip",
+    "mealType": "snack",
+    "dietTypes": [
+      "mediterranean"
+    ],
+    "calories": 180,
+    "protein": 11,
+    "carbs": 19,
+    "fat": 7,
+    "effort": "low",
+    "budget": "low",
+    "ingredients": [
+      "yogurt",
+      "tahini",
+      "carrot sticks"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "middle_eastern",
+      "dip"
+    ],
+    "image": "snack_tahini_yogurt.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_tahini_yogurt.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_160",
+    "title": "Almond Butter Rice Cake",
+    "mealType": "snack",
+    "dietTypes": [
+      "balanced"
+    ],
+    "calories": 185,
+    "protein": 11,
+    "carbs": 19,
+    "fat": 7,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "rice cake",
+      "almond butter"
+    ],
+    "exclusions": [],
+    "tags": [
+      "quick",
+      "sweet"
+    ],
+    "image": "snack_almond_ricecake.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_almond_ricecake.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_161",
+    "title": "Chia Berry Cup",
+    "mealType": "snack",
+    "dietTypes": [
+      "vegan"
+    ],
+    "calories": 170,
+    "protein": 10,
+    "carbs": 19,
+    "fat": 6,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "chia pudding",
+      "berries"
+    ],
+    "exclusions": [],
+    "tags": [
+      "make_ahead",
+      "light"
+    ],
+    "image": "snack_chia_cup.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_chia_cup.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_162",
+    "title": "Jerky Pack",
+    "mealType": "snack",
+    "dietTypes": [
+      "high_protein",
+      "low_carb"
+    ],
+    "calories": 150,
+    "protein": 11,
+    "carbs": 14,
+    "fat": 5,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "beef jerky"
+    ],
+    "exclusions": [
+      "vegetarian",
+      "vegan"
+    ],
+    "tags": [
+      "protein",
+      "portable"
+    ],
+    "image": "snack_jerky.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_jerky.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_163",
+    "title": "Keto Cucumber Cream Cheese Bites",
+    "mealType": "snack",
+    "dietTypes": [
+      "keto"
+    ],
+    "calories": 175,
+    "protein": 12,
+    "carbs": 6,
+    "fat": 11,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "cucumber",
+      "cream cheese"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "low_carb",
+      "fresh"
+    ],
+    "image": "snack_cucumber_bites.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_cucumber_bites.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_164",
+    "title": "Mini Smoothie Bottle",
+    "mealType": "snack",
+    "dietTypes": [
+      "balanced"
+    ],
+    "calories": 190,
+    "protein": 11,
+    "carbs": 20,
+    "fat": 7,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "milk",
+      "banana",
+      "berries"
+    ],
+    "exclusions": [],
+    "tags": [
+      "drink",
+      "quick"
+    ],
+    "image": "snack_mini_smoothie.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_mini_smoothie.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_165",
+    "title": "Pita Chips with Hummus",
+    "mealType": "snack",
+    "dietTypes": [
+      "vegetarian",
+      "mediterranean"
+    ],
+    "calories": 220,
+    "protein": 13,
+    "carbs": 23,
+    "fat": 8,
+    "effort": "low",
+    "budget": "low",
+    "ingredients": [
+      "pita chips",
+      "hummus"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "crunchy",
+      "classic"
+    ],
+    "image": "snack_pita_hummus.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_pita_hummus.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_166",
+    "title": "Vegan Protein Cookie",
+    "mealType": "snack",
+    "dietTypes": [
+      "vegan",
+      "high_protein"
+    ],
+    "calories": 210,
+    "protein": 12,
+    "carbs": 23,
+    "fat": 8,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "protein cookie"
+    ],
+    "exclusions": [],
+    "tags": [
+      "portable",
+      "sweet"
+    ],
+    "image": "snack_protein_cookie.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_protein_cookie.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_167",
+    "title": "Cottage Pineapple Cup",
+    "mealType": "snack",
+    "dietTypes": [
+      "high_protein"
+    ],
+    "calories": 180,
+    "protein": 13,
+    "carbs": 17,
+    "fat": 6,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "cottage cheese",
+      "pineapple"
+    ],
+    "exclusions": [
+      "vegan"
+    ],
+    "tags": [
+      "protein",
+      "sweet"
+    ],
+    "image": "snack_cottage_pineapple.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_cottage_pineapple.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  },
+  {
+    "id": "s_168",
+    "title": "Olive Tapenade Crackers",
+    "mealType": "snack",
+    "dietTypes": [
+      "mediterranean"
+    ],
+    "calories": 190,
+    "protein": 11,
+    "carbs": 20,
+    "fat": 7,
+    "effort": "low",
+    "budget": "medium",
+    "ingredients": [
+      "crackers",
+      "olive tapenade"
+    ],
+    "exclusions": [],
+    "tags": [
+      "savory",
+      "snack_box"
+    ],
+    "image": "snack_tapenade_crackers.jpg",
+    "imageType": "local",
+    "imageSource": "/images/meals/snack_tapenade_crackers.jpg",
+    "isFavorite": false,
+    "isTemplate": false
+  }
+]

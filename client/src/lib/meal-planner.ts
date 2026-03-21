@@ -1,15 +1,16 @@
 import { addDays, format, startOfWeek } from "date-fns";
+import { mealDataset } from "@/lib/meal-dataset";
 
 export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
 export type MealStatus = "planned" | "done" | "skipped" | "eating_out";
 export type MealSource = "generated" | "favorite" | "manual" | "copied";
 export type PrepEffort = "low" | "medium" | "high";
 export type BudgetLevel = "low" | "medium" | "high";
-export type DietType = "any" | "high_protein" | "keto" | "mediterranean" | "vegetarian" | "vegan";
+export type DietType = "any" | "balanced" | "high_protein" | "keto" | "mediterranean" | "vegetarian" | "vegan" | "low_carb" | "budget";
 export type MealGoal = "balanced" | "weight_loss" | "muscle_gain" | "family_routine";
 export type MealActivityLevel = "low" | "moderate" | "high";
 export type MealSnackPreference = "none" | "flexible" | "daily";
-export type MealImageType = "emoji" | "static" | "generated" | "upload";
+export type MealImageType = "emoji" | "static" | "generated" | "upload" | "local";
 
 export interface MealCatalogItem {
   id: string;
@@ -28,6 +29,8 @@ export interface MealCatalogItem {
   image: string;
   imageType: MealImageType;
   imageSource: string;
+  isFavorite?: boolean;
+  isTemplate?: boolean;
 }
 
 export interface MealSlot {
@@ -191,11 +194,14 @@ export const PREP_EFFORT_LABELS: Record<PrepEffort, string> = {
 
 export const DIET_TYPE_LABELS: Record<DietType, string> = {
   any: "Any",
+  balanced: "Balanced",
   high_protein: "High Protein",
   keto: "Keto",
   mediterranean: "Mediterranean",
   vegetarian: "Vegetarian",
   vegan: "Vegan",
+  low_carb: "Low Carb",
+  budget: "Budget",
 };
 
 export const PROFILE_GOAL_OPTIONS = [
@@ -217,7 +223,7 @@ export const PROFILE_SNACK_OPTIONS = [
   { value: "daily", label: "يومي" },
 ] satisfies Array<{ value: MealSnackPreference; label: string }>;
 
-const MEAL_CATALOG: MealCatalogItem[] = [
+const MEAL_CATALOG_LEGACY_UNUSED: MealCatalogItem[] = [
   { id: "b1", title: "بيض مع أفوكادو وتوست", mealType: "breakfast", dietTypes: ["any", "high_protein", "mediterranean", "keto"], calories: 420, protein: 24, carbs: 26, fat: 24, effortLevel: "low", budgetLevel: "medium", ingredients: ["بيض", "أفوكادو", "توست"], exclusions: [], tags: ["protein", "quick", "morning"], image: "🍳", imageType: "emoji", imageSource: "local-catalog" },
   { id: "b2", title: "زبادي يوناني مع توت", mealType: "breakfast", dietTypes: ["any", "high_protein", "vegetarian"], calories: 340, protein: 22, carbs: 28, fat: 12, effortLevel: "low", budgetLevel: "medium", ingredients: ["زبادي", "توت", "جرانولا"], exclusions: [], tags: ["quick", "protein"], image: "🥣", imageType: "emoji", imageSource: "local-catalog" },
   { id: "b3", title: "شوفان بالفواكه", mealType: "breakfast", dietTypes: ["any", "mediterranean", "vegetarian", "vegan"], calories: 360, protein: 12, carbs: 50, fat: 10, effortLevel: "low", budgetLevel: "low", ingredients: ["شوفان", "موز", "حليب نباتي"], exclusions: ["dairy"], tags: ["budget", "fiber"], image: "🥛", imageType: "emoji", imageSource: "local-catalog" },
@@ -240,6 +246,27 @@ const MEAL_CATALOG: MealCatalogItem[] = [
   { id: "s2", title: "مكسرات وتمور", mealType: "snack", dietTypes: ["any", "mediterranean", "vegetarian", "vegan", "keto"], calories: 180, protein: 5, carbs: 16, fat: 11, effortLevel: "low", budgetLevel: "medium", ingredients: ["مكسرات", "تمر"], exclusions: ["nuts"], tags: ["snack", "energy"], image: "🥜", imageType: "emoji", imageSource: "local-catalog" },
   { id: "s3", title: "مخفوق بروتين", mealType: "snack", dietTypes: ["any", "high_protein", "vegetarian"], calories: 220, protein: 24, carbs: 12, fat: 8, effortLevel: "low", budgetLevel: "medium", ingredients: ["حليب", "بروتين", "موز"], exclusions: ["dairy"], tags: ["protein", "snack"], image: "🥤", imageType: "emoji", imageSource: "local-catalog" },
 ];
+
+const MEAL_CATALOG: MealCatalogItem[] = mealDataset.map((item) => ({
+  id: item.id,
+  title: item.title,
+  mealType: item.mealType,
+  dietTypes: [...item.dietTypes],
+  calories: item.calories,
+  protein: item.protein,
+  carbs: item.carbs,
+  fat: item.fat,
+  effortLevel: item.effort,
+  budgetLevel: item.budget,
+  ingredients: [...item.ingredients],
+  exclusions: [...item.exclusions],
+  tags: [...item.tags],
+  image: item.image,
+  imageType: item.imageType === "local" ? "local" : item.imageType,
+  imageSource: item.imageSource,
+  isFavorite: item.isFavorite,
+  isTemplate: item.isTemplate,
+}));
 
 export function createId() {
   return `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
@@ -338,7 +365,7 @@ function sanitizeStringArray(value: unknown) {
 }
 
 function normalizeDietType(value: unknown): DietType {
-  return value === "any" || value === "high_protein" || value === "keto" || value === "mediterranean" || value === "vegetarian" || value === "vegan" ? value : "any";
+  return value === "any" || value === "balanced" || value === "high_protein" || value === "keto" || value === "mediterranean" || value === "vegetarian" || value === "vegan" || value === "low_carb" || value === "budget" ? value : "any";
 }
 function normalizeMealType(value: unknown): MealType { return value === "breakfast" || value === "lunch" || value === "dinner" || value === "snack" ? value : "lunch"; }
 function normalizeMealStatus(value: unknown): MealStatus { return value === "planned" || value === "done" || value === "skipped" || value === "eating_out" ? value : "planned"; }
@@ -394,7 +421,7 @@ function normalizeMealSlot(raw: unknown, fallback: MealSlot): MealSlot {
     status: normalizeMealStatus(data.status),
     source: normalizeMealSource(data.source),
     image: typeof data.image === "string" ? data.image : fallback.image,
-    imageType: data.imageType === "emoji" || data.imageType === "static" || data.imageType === "generated" || data.imageType === "upload" ? data.imageType : fallback.imageType,
+    imageType: data.imageType === "emoji" || data.imageType === "static" || data.imageType === "generated" || data.imageType === "upload" || data.imageType === "local" ? data.imageType : fallback.imageType,
     imageSource: typeof data.imageSource === "string" ? data.imageSource : fallback.imageSource,
     catalogItemId: typeof data.catalogItemId === "string" ? data.catalogItemId : undefined,
     active: typeof data.active === "boolean" ? data.active : fallback.active,
@@ -435,7 +462,7 @@ function normalizeFavorite(raw: unknown): MealFavorite | null {
     calories: typeof data.calories === "number" ? Math.max(0, Math.round(data.calories)) : 0,
     tags: sanitizeStringArray(data.tags),
     image: typeof data.image === "string" ? data.image : "🍽️",
-    imageType: data.imageType === "emoji" || data.imageType === "static" || data.imageType === "generated" || data.imageType === "upload" ? data.imageType : "emoji",
+    imageType: data.imageType === "emoji" || data.imageType === "static" || data.imageType === "generated" || data.imageType === "upload" || data.imageType === "local" ? data.imageType : "emoji",
     imageSource: typeof data.imageSource === "string" ? data.imageSource : "local-catalog",
     ingredients: sanitizeStringArray(data.ingredients),
   };

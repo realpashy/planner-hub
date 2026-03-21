@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import {
   BarChart3,
@@ -10,7 +9,6 @@ import {
   MoreHorizontal,
   RefreshCcw,
   Sparkles,
-  Trash2,
   Wand2,
 } from "lucide-react";
 import { Bar, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from "recharts";
@@ -53,6 +51,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useMealPlanner } from "@/hooks/use-meal-planner";
+import { toast } from "@/hooks/use-toast";
 import {
   DIET_TYPE_LABELS,
   MEAL_SOURCE_LABELS,
@@ -72,9 +71,9 @@ import { cn } from "@/lib/utils";
 const TAB_SETUP = "setup";
 const TAB_DASHBOARD = "dashboard";
 const CHART_CONFIG = {
-  calories: { label: "Calories", color: "#14b8a6" },
-  water: { label: "Water", color: "#38bdf8" },
-  completion: { label: "Completion", color: "#8b5cf6" },
+  calories: { label: "السعرات", color: "#14b8a6" },
+  water: { label: "الماء", color: "#38bdf8" },
+  completion: { label: "الاكتمال", color: "#8b5cf6" },
 };
 
 type TabValue = typeof TAB_SETUP | typeof TAB_DASHBOARD;
@@ -206,7 +205,6 @@ function MealCard({
 }
 
 export default function MealPlanner() {
-  const [, setLocation] = useLocation();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [selectedDayMobile, setSelectedDayMobile] = useState<string | null>(null);
@@ -262,6 +260,11 @@ export default function MealPlanner() {
 
   const handleGenerate = () => {
     generateWeeklyPlan();
+    toast({ description: "تم توليد خطة الأسبوع بنجاح", duration: 2500 });
+  };
+
+  const handleResetPlan = () => {
+    setResetMode("all");
   };
 
   return (
@@ -274,12 +277,6 @@ export default function MealPlanner() {
               <TabsTrigger value={TAB_SETUP} className="rounded-[1rem] px-5 text-sm font-bold">الإعداد</TabsTrigger>
               <TabsTrigger value={TAB_DASHBOARD} className="rounded-[1rem] px-5 text-sm font-bold" disabled={!hasActivePlan}>لوحة التحكم</TabsTrigger>
             </TabsList>
-            {hasActivePlan ? (
-              <div className="hidden items-center gap-2 md:flex">
-                <Button variant="outline" className="rounded-2xl" onClick={() => setTab(TAB_SETUP)}>تعديل التفضيلات</Button>
-                <Button className="rounded-2xl" onClick={() => setLocation("/meal")}>عرض الأسبوع</Button>
-              </div>
-            ) : null}
           </div>
 
           <TabsContent value={TAB_SETUP} className="space-y-5">
@@ -316,42 +313,42 @@ export default function MealPlanner() {
 
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
-                        <p className="text-sm font-bold text-foreground">Calories target</p>
+                        <p className="text-sm font-bold text-foreground">السعرات المستهدفة</p>
                         <Input type="number" value={state.preferences.caloriesTarget} onChange={(event) => updatePreferences({ caloriesTarget: Number(event.target.value) || 1900 })} className="h-11 rounded-2xl border-border/70 bg-background/80 text-right" />
                       </div>
                       <div className="space-y-2">
-                        <p className="text-sm font-bold text-foreground">Meals per day</p>
+                        <p className="text-sm font-bold text-foreground">عدد الوجبات يوميًا</p>
                         <Select dir="rtl" value={String(state.preferences.mealsPerDay)} onValueChange={(value) => updatePreferences({ mealsPerDay: Number(value) as 2 | 3 | 4 })}>
                           <SelectTrigger className="h-11 rounded-2xl border-border/70 bg-background/80"><SelectValue /></SelectTrigger>
                           <SelectContent dir="rtl">
-                            <SelectItem value="2">2 meals</SelectItem>
-                            <SelectItem value="3">3 meals</SelectItem>
-                            <SelectItem value="4">4 meals</SelectItem>
+                            <SelectItem value="2">وجبتان</SelectItem>
+                            <SelectItem value="3">3 وجبات</SelectItem>
+                            <SelectItem value="4">4 وجبات</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <p className="text-sm font-bold text-foreground">Exclusions</p>
+                      <p className="text-sm font-bold text-foreground">مكونات مستبعدة</p>
                       <SplitTags value={state.preferences.exclusions} onChange={(value) => updatePreferences({ exclusions: value })} placeholder="مثال: nuts، fish، dairy" />
                     </div>
 
                     <div className="grid gap-3 sm:grid-cols-2">
-                      <ToggleRow label="budget friendly" checked={state.preferences.budgetFriendly} onCheckedChange={(checked) => updatePreferences({ budgetFriendly: checked })} />
-                      <ToggleRow label="low effort" checked={state.preferences.lowEffort} onCheckedChange={(checked) => updatePreferences({ lowEffort: checked })} />
-                      <ToggleRow label="prefer variety" checked={state.preferences.preferVariety} onCheckedChange={(checked) => updatePreferences({ preferVariety: checked })} />
-                      <ToggleRow label="allow repetition" checked={state.preferences.allowRepetition} onCheckedChange={(checked) => updatePreferences({ allowRepetition: checked })} />
-                      <ToggleRow label="same breakfast daily" checked={state.preferences.sameBreakfastDaily} onCheckedChange={(checked) => updatePreferences({ sameBreakfastDaily: checked })} />
+                      <ToggleRow label="اقتصادي" checked={state.preferences.budgetFriendly} onCheckedChange={(checked) => updatePreferences({ budgetFriendly: checked })} />
+                      <ToggleRow label="تحضير منخفض" checked={state.preferences.lowEffort} onCheckedChange={(checked) => updatePreferences({ lowEffort: checked })} />
+                      <ToggleRow label="تنويع أعلى" checked={state.preferences.preferVariety} onCheckedChange={(checked) => updatePreferences({ preferVariety: checked })} />
+                      <ToggleRow label="السماح بالتكرار" checked={state.preferences.allowRepetition} onCheckedChange={(checked) => updatePreferences({ allowRepetition: checked })} />
+                      <ToggleRow label="فطور ثابت يوميًا" checked={state.preferences.sameBreakfastDaily} onCheckedChange={(checked) => updatePreferences({ sameBreakfastDaily: checked })} />
                     </div>
 
                     <div className="flex flex-col gap-3 sm:flex-row">
                       <Button className="h-12 flex-1 rounded-2xl text-base font-bold" onClick={handleGenerate}>
                         <Wand2 className="me-2 h-4 w-4" />
-                        Generate Weekly Plan
+                        توليد خطة أسبوعية
                       </Button>
                       <Button variant="outline" className="h-12 rounded-2xl" onClick={() => setTab(TAB_DASHBOARD)} disabled={!hasActivePlan}>
-                        Save Plan & Go to Dashboard
+                        حفظ والانتقال للوحة التحكم
                       </Button>
                     </div>
                   </div>
@@ -385,9 +382,9 @@ export default function MealPlanner() {
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                               <DropdownMenuContent align="start">
-                                <DropdownMenuItem onClick={() => regenerateMeal(day.dateISO, meal.mealType)}>regenerate</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setSelectedDay(day.dateISO)}>manual edit</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => saveMealAsFavorite(day.dateISO, meal.mealType)}>save to favorites</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => { regenerateMeal(day.dateISO, meal.mealType); toast({ description: "تم تحديث الوجبة", duration: 2200 }); }}>إعادة توليد</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setSelectedDay(day.dateISO)}>تعديل يدوي</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => { saveMealAsFavorite(day.dateISO, meal.mealType); toast({ description: "تم حفظ الوجبة في المفضلة", duration: 2200 }); }}>حفظ في المفضلة</DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
@@ -413,16 +410,15 @@ export default function MealPlanner() {
                     <div className="hidden h-14 w-14 items-center justify-center rounded-2xl bg-white/10 md:flex"><CalendarRange className="h-7 w-7" /></div>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    <StatCard label="Weekly calories" value={weekSummary.totalWeeklyCalories.toLocaleString("en-US")} note={`${weekSummary.averageCaloriesPerDay.toLocaleString("en-US")} avg/day`} icon={BarChart3} accent="border-white/15 bg-white/10 text-white" />
-                    <StatCard label="Meals planned" value={`${weekSummary.plannedMeals}/${weekSummary.totalMeals}`} note={`${weekSummary.emptyMeals} empty slots left`} icon={Sparkles} accent="border-white/15 bg-white/10 text-white" />
-                    <StatCard label="Water total" value={`${weekSummary.weeklyWaterTotal} cups`} note={`${formatLiters(weekSummary.weeklyWaterTotal)} this week`} icon={Droplets} accent="border-white/15 bg-white/10 text-white" />
-                    <StatCard label="Completion" value={`${weekSummary.completionPercent}%`} note={`${weekSummary.daysFullyPlanned} fully planned days`} icon={Heart} accent="border-white/15 bg-white/10 text-white" />
+                    <StatCard label="سعرات الأسبوع" value={weekSummary.totalWeeklyCalories.toLocaleString("en-US")} note={`${weekSummary.averageCaloriesPerDay.toLocaleString("en-US")} يوميًا بالمعدل`} icon={BarChart3} accent="border-white/15 bg-white/10 text-white" />
+                    <StatCard label="الوجبات المخططة" value={`${weekSummary.plannedMeals}/${weekSummary.totalMeals}`} note={`${weekSummary.emptyMeals} خانات غير مكتملة`} icon={Sparkles} accent="border-white/15 bg-white/10 text-white" />
+                    <StatCard label="ماء الأسبوع" value={`${weekSummary.weeklyWaterTotal} كوب`} note={`${formatLiters(weekSummary.weeklyWaterTotal)} خلال الأسبوع`} icon={Droplets} accent="border-white/15 bg-white/10 text-white" />
+                    <StatCard label="نسبة الاكتمال" value={`${weekSummary.completionPercent}%`} note={`${weekSummary.daysFullyPlanned} أيام مكتملة`} icon={Heart} accent="border-white/15 bg-white/10 text-white" />
                   </div>
                   <div className="flex flex-wrap justify-start gap-2">
-                    <Button variant="secondary" className="rounded-2xl" onClick={generateWeeklyPlan}><RefreshCcw className="me-2 h-4 w-4" />regenerate week</Button>
-                    <Button variant="secondary" className="rounded-2xl" onClick={() => setTab(TAB_SETUP)}>update preferences</Button>
-                    <Button variant="secondary" className="rounded-2xl" onClick={() => setResetMode("meals")}>start over</Button>
-                    <Button variant="secondary" className="rounded-2xl" onClick={() => setResetMode("all")}>delete plan</Button>
+                    <Button variant="secondary" className="rounded-2xl" onClick={() => { generateWeeklyPlan(); toast({ description: "تمت إعادة توليد الأسبوع", duration: 2200 }); }}><RefreshCcw className="me-2 h-4 w-4" />إعادة توليد الأسبوع</Button>
+                    <Button variant="secondary" className="rounded-2xl" onClick={() => setTab(TAB_SETUP)}>تعديل التفضيلات</Button>
+                    <Button variant="secondary" className="rounded-2xl" onClick={handleResetPlan}>إعادة تعيين الخطة</Button>
                   </div>
                 </CardContent>
               </Card>
@@ -437,7 +433,7 @@ export default function MealPlanner() {
               </div>
             </section>
 
-            <section className="grid gap-5 xl:grid-cols-[1.22fr,0.78fr]">
+            <section className="space-y-5">
               <Card className="rounded-[2rem] border-border/70 bg-card/95 shadow-xl">
                 <CardHeader className="pb-3 text-right">
                   <CardTitle className="text-xl font-extrabold">الأسبوع المرئي</CardTitle>
@@ -451,15 +447,19 @@ export default function MealPlanner() {
                     </div>
                     {mobileDayPlan && selectedDayMobile ? <DayBoard day={weekDays.find((item) => item.dateISO === selectedDayMobile)!} plan={mobileDayPlan} weekDays={weekDays} onOpenDay={setSelectedDay} onCopyDay={copyDayToDays} onCopyMeal={applyMealToDays} /> : null}
                   </div>
-                  <div className="hidden grid-cols-7 gap-3 md:grid">
-                    {weekDays.map((day) => (
-                      <DayColumn key={day.dateISO} day={day} plan={getPlan(day.dateISO)} weekDays={weekDays} onOpenDay={setSelectedDay} onCopyDay={copyDayToDays} onCopyMeal={applyMealToDays} />
-                    ))}
+                  <div className="hidden overflow-hidden rounded-[1.8rem] border border-border/70 bg-background/50 md:block">
+                    <div className="grid grid-cols-7 gap-0">
+                      {weekDays.map((day, index) => (
+                        <motion.div key={day.dateISO} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.03 }}>
+                          <DayColumn day={day} plan={getPlan(day.dateISO)} weekDays={weekDays} onOpenDay={setSelectedDay} onCopyDay={copyDayToDays} onCopyMeal={applyMealToDays} />
+                        </motion.div>
+                      ))}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <div className="grid gap-5">
+              <div className="grid gap-5 xl:grid-cols-[1.1fr,0.9fr]">
                 <Card className="rounded-[2rem] border-border/70 bg-card/95 shadow-xl">
                   <CardHeader className="text-right">
                     <CardTitle className="text-xl font-extrabold">تحليلات الأسبوع</CardTitle>
@@ -478,18 +478,20 @@ export default function MealPlanner() {
                   </CardContent>
                 </Card>
 
-                <Card className="rounded-[2rem] border-border/70 bg-card/95 shadow-xl">
-                  <CardHeader className="text-right"><CardTitle className="text-xl font-extrabold">التسوق السريع</CardTitle></CardHeader>
-                  <CardContent className="space-y-2">
-                    {shoppingItems.slice(0, 8).map((item) => (
-                      <div key={item.id} className="flex items-center justify-between rounded-2xl border border-border/70 bg-background/70 px-3 py-2 text-sm">
-                        <span className="font-semibold text-foreground">{item.label}</span>
-                        <span className="text-muted-foreground">{item.count}x</span>
-                      </div>
-                    ))}
-                    {!shoppingItems.length ? <p className="rounded-2xl border border-dashed border-border/70 p-4 text-sm text-muted-foreground">ولّد خطة أولاً لتظهر قائمة شراء مبدئية.</p> : null}
-                  </CardContent>
-                </Card>
+                <div className="grid gap-5">
+                  <Card className="rounded-[2rem] border-border/70 bg-card/95 shadow-xl">
+                    <CardHeader className="text-right"><CardTitle className="text-xl font-extrabold">التسوق السريع</CardTitle></CardHeader>
+                    <CardContent className="space-y-2">
+                      {shoppingItems.slice(0, 8).map((item) => (
+                        <div key={item.id} className="flex items-center justify-between rounded-2xl border border-border/70 bg-background/70 px-3 py-2 text-sm">
+                          <span className="font-semibold text-foreground">{item.label}</span>
+                          <span className="text-muted-foreground">{item.count}x</span>
+                        </div>
+                      ))}
+                      {!shoppingItems.length ? <p className="rounded-2xl border border-dashed border-border/70 p-4 text-sm text-muted-foreground">ولّد خطة أولاً لتظهر قائمة شراء مبدئية.</p> : null}
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
             </section>
           </TabsContent>
@@ -581,7 +583,7 @@ function DayBoard({
                   <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                   <DropdownMenuContent align="start">
                     <DropdownMenuLabel>{meal.title || MEAL_TYPE_LABELS[meal.mealType]}</DropdownMenuLabel>
-                    <CopyPopover days={weekDays} exclude={day.dateISO} onApply={(targets) => onCopyMeal(day.dateISO, meal.mealType, targets)} trigger={<DropdownMenuItem onSelect={(event) => event.preventDefault()}>apply to other days</DropdownMenuItem>} />
+                    <CopyPopover days={weekDays} exclude={day.dateISO} onApply={(targets) => { onCopyMeal(day.dateISO, meal.mealType, targets); toast({ description: "تم نسخ الوجبة", duration: 2200 }); }} trigger={<DropdownMenuItem onSelect={(event) => event.preventDefault()}>تطبيق على أيام أخرى</DropdownMenuItem>} />
                   </DropdownMenuContent>
                 </DropdownMenu>
               }
@@ -594,7 +596,7 @@ function DayBoard({
             <p className="text-xs text-muted-foreground">{cupsToLiters(plan.waterActualCups).toLocaleString("en-US")} لتر</p>
           </div>
           <Progress value={(plan.waterActualCups / Math.max(plan.waterTargetCups, 1)) * 100} className="h-2 flex-1" />
-          <CopyPopover days={weekDays} exclude={day.dateISO} onApply={(targets) => onCopyDay(day.dateISO, targets)} trigger={<Button variant="outline" className="rounded-2xl"><Copy className="me-2 h-4 w-4" />copy day</Button>} />
+          <CopyPopover days={weekDays} exclude={day.dateISO} onApply={(targets) => { onCopyDay(day.dateISO, targets); toast({ description: "تم نسخ اليوم المحدد", duration: 2200 }); }} trigger={<Button variant="outline" className="rounded-2xl"><Copy className="me-2 h-4 w-4" />نسخ اليوم</Button>} />
         </div>
       </CardContent>
     </Card>
@@ -604,29 +606,47 @@ function DayBoard({
 function DayColumn(props: Parameters<typeof DayBoard>[0]) {
   const { day, plan } = props;
   return (
-    <div className="rounded-[1.6rem] border border-border/70 bg-card/90 p-3 shadow-sm">
-      <div className="mb-3 flex items-center justify-between gap-2">
+    <div className="h-full border-s border-border/70 p-3 first:border-s-0">
+      <div className="mb-3 flex items-start justify-between gap-2">
         <div className="text-right">
-          <p className="font-bold text-foreground">{day.weekdayLabel}</p>
+          <p className="font-bold text-foreground">{day.weekdayLong}</p>
           <p className="text-[11px] text-muted-foreground">{day.dayLabel}</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">{plan.meals.filter((meal) => meal.active).reduce((sum, meal) => sum + meal.calories, 0)} kcal</p>
         </div>
-        <Badge className="rounded-full bg-primary/10 text-primary">{getMealCompletionPercent(plan)}%</Badge>
+        <div className="space-y-1 text-left">
+          <Badge className="rounded-full bg-primary/10 text-primary">{getMealCompletionPercent(plan)}%</Badge>
+          <p className="text-[11px] text-muted-foreground">{plan.waterActualCups}/{plan.waterTargetCups} كوب</p>
+        </div>
       </div>
       <div className="space-y-2">
         {plan.meals.filter((meal) => meal.active).map((meal) => (
-          <MealCard
-            key={meal.id}
-            meal={meal}
-            onOpen={() => props.onOpenDay(day.dateISO)}
-            menu={
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 rounded-xl"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
-                  <CopyPopover days={props.weekDays} exclude={day.dateISO} onApply={(targets) => props.onCopyMeal(day.dateISO, meal.mealType, targets)} trigger={<DropdownMenuItem onSelect={(event) => event.preventDefault()}>copy meal to...</DropdownMenuItem>} />
-                </DropdownMenuContent>
-              </DropdownMenu>
-            }
-          />
+          <button key={meal.id} type="button" onClick={() => props.onOpenDay(day.dateISO)} className="w-full rounded-[1.15rem] border border-border/70 bg-card/80 p-2.5 text-right transition hover:border-primary/30 hover:bg-background">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex items-start gap-2">
+                <MealThumb emoji={meal.image} small />
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <Badge variant="secondary" className="rounded-full px-2 py-0 text-[9px]">{MEAL_TYPE_LABELS[meal.mealType]}</Badge>
+                    <p className="truncate text-xs font-bold text-foreground">{meal.title || `أضف ${MEAL_TYPE_LABELS[meal.mealType]}`}</p>
+                  </div>
+                  <p className="mt-1 text-[11px] text-muted-foreground">{meal.calories ? `${meal.calories} kcal` : "بدون تفاصيل بعد"}</p>
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {meal.tags.slice(0, 2).map((tag) => (
+                      <span key={tag} className="rounded-full border border-border/70 px-1.5 py-0.5 text-[9px] text-muted-foreground">{tag}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div onClick={(event) => event.stopPropagation()}>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 rounded-xl"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    <CopyPopover days={props.weekDays} exclude={day.dateISO} onApply={(targets) => { props.onCopyMeal(day.dateISO, meal.mealType, targets); toast({ description: "تم نسخ الوجبة إلى الأيام المحددة", duration: 2200 }); }} trigger={<DropdownMenuItem onSelect={(event) => event.preventDefault()}>نسخ الوجبة إلى...</DropdownMenuItem>} />
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+          </button>
         ))}
       </div>
     </div>
@@ -674,8 +694,8 @@ function DayDetailSheet({
             <SheetDescription>تفاصيل اليوم مع تعديل سريع ونسخ ذكي عبر الأسبوع.</SheetDescription>
           </SheetHeader>
           <div className="grid gap-3 sm:grid-cols-2">
-            <StatCard label="Calories" value={plan.meals.filter((meal) => meal.active).reduce((sum, meal) => sum + meal.calories, 0).toLocaleString("en-US")} note="إجمالي اليوم" icon={BarChart3} accent="border-primary/15 bg-primary/10 text-primary" />
-            <StatCard label="Water" value={`${plan.waterActualCups}/${plan.waterTargetCups}`} note={`${formatLiters(plan.waterActualCups)}`} icon={Droplets} accent="border-sky-500/15 bg-sky-500/10 text-sky-600 dark:text-sky-300" />
+            <StatCard label="سعرات اليوم" value={plan.meals.filter((meal) => meal.active).reduce((sum, meal) => sum + meal.calories, 0).toLocaleString("en-US")} note="إجمالي اليوم" icon={BarChart3} accent="border-primary/15 bg-primary/10 text-primary" />
+            <StatCard label="ماء اليوم" value={`${plan.waterActualCups}/${plan.waterTargetCups}`} note={`${formatLiters(plan.waterActualCups)}`} icon={Droplets} accent="border-sky-500/15 bg-sky-500/10 text-sky-600 dark:text-sky-300" />
           </div>
 
           <div className="space-y-3">
@@ -690,12 +710,12 @@ function DayDetailSheet({
                         <p className="text-xs text-muted-foreground">{MEAL_SOURCE_LABELS[meal.source]}</p>
                       </div>
                     </div>
-                    <CopyPopover days={weekDays} exclude={day.dateISO} onApply={(targets) => onCopyMeal(day.dateISO, meal.mealType, targets)} trigger={<Button variant="outline" className="rounded-2xl"><Copy className="me-2 h-4 w-4" />copy</Button>} />
+                    <CopyPopover days={weekDays} exclude={day.dateISO} onApply={(targets) => { onCopyMeal(day.dateISO, meal.mealType, targets); toast({ description: "تم نسخ الوجبة إلى الأيام المحددة", duration: 2200 }); }} trigger={<Button variant="outline" className="rounded-2xl"><Copy className="me-2 h-4 w-4" />نسخ</Button>} />
                   </div>
                   <Input value={meal.title} onChange={(event) => onUpdateMeal(day.dateISO, meal.mealType, { title: event.target.value })} placeholder={`اكتب ${MEAL_TYPE_LABELS[meal.mealType]}`} className="h-11 rounded-2xl border-border/70 bg-background/80 text-right" />
                   <Textarea value={meal.note} onChange={(event) => onUpdateMeal(day.dateISO, meal.mealType, { note: event.target.value })} placeholder="ملاحظة سريعة أو تعديل خفيف" className="min-h-[84px] rounded-2xl border-border/70 bg-background/80 text-right" />
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <Select dir="rtl" value={meal.status} onValueChange={(value) => onSetMealStatus(day.dateISO, meal.mealType, value as MealStatus)}>
+                    <Select dir="rtl" value={meal.status} onValueChange={(value) => { onSetMealStatus(day.dateISO, meal.mealType, value as MealStatus); toast({ description: "تم تحديث حالة الوجبة", duration: 1800 }); }}>
                       <SelectTrigger className="h-11 rounded-2xl border-border/70 bg-background/80"><SelectValue /></SelectTrigger>
                       <SelectContent dir="rtl">
                         {Object.entries(MEAL_STATUS_LABELS).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}
@@ -716,8 +736,8 @@ function DayDetailSheet({
                     ))}
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <Button variant="outline" className="rounded-2xl" onClick={() => onRegenerateMeal(day.dateISO, meal.mealType)}><RefreshCcw className="me-2 h-4 w-4" />regenerate</Button>
-                    <Button variant="outline" className="rounded-2xl" onClick={() => onSaveFavorite(day.dateISO, meal.mealType)}><Heart className="me-2 h-4 w-4" />favorite</Button>
+                    <Button variant="outline" className="rounded-2xl" onClick={() => { onRegenerateMeal(day.dateISO, meal.mealType); toast({ description: "تمت إعادة توليد الوجبة", duration: 2200 }); }}><RefreshCcw className="me-2 h-4 w-4" />إعادة توليد</Button>
+                    <Button variant="outline" className="rounded-2xl" onClick={() => { onSaveFavorite(day.dateISO, meal.mealType); toast({ description: "تمت إضافة الوجبة إلى المفضلة", duration: 2200 }); }}><Heart className="me-2 h-4 w-4" />مفضلة</Button>
                     {favorites.filter((favorite) => favorite.mealType === meal.mealType).length ? (
                       <Select dir="rtl" onValueChange={(value) => onApplyFavorite(day.dateISO, meal.mealType, value)}>
                         <SelectTrigger className="h-10 w-[12rem] rounded-2xl border-border/70 bg-background/80"><SelectValue placeholder="من المفضلة" /></SelectTrigger>

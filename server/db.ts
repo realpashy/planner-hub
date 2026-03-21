@@ -1,5 +1,7 @@
 import { Pool } from "pg";
 import crypto from "crypto";
+import { readFile } from "fs/promises";
+import path from "path";
 
 function toConnectionString() {
   if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
@@ -75,9 +77,41 @@ export async function initializeDatabase() {
       user_id TEXT PRIMARY KEY REFERENCES app_users(id) ON DELETE CASCADE,
       planner_json JSONB NOT NULL DEFAULT '{}'::jsonb,
       budget_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+      meal_json JSONB NOT NULL DEFAULT '{}'::jsonb,
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
+
+  await dbPool.query(`
+    ALTER TABLE app_user_data
+    ADD COLUMN IF NOT EXISTS meal_json JSONB NOT NULL DEFAULT '{}'::jsonb;
+  `);
+
+  await dbPool.query(`
+    CREATE TABLE IF NOT EXISTS meal_catalog (
+      id TEXT PRIMARY KEY,
+      meal_json JSONB NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+
+  const catalogCount = await dbPool.query("SELECT COUNT(*)::int AS count FROM meal_catalog");
+  if ((catalogCount.rows[0]?.count ?? 0) === 0) {
+    const raw = await readFile(path.resolve(process.cwd(), "data", "meal-dataset.json"), "utf8");
+    const meals = JSON.parse(raw) as Array<{ id: string }>;
+    for (const meal of meals) {
+      await dbPool.query(
+        `
+        INSERT INTO meal_catalog (id, meal_json, updated_at)
+        VALUES ($1, $2::jsonb, NOW())
+        ON CONFLICT (id)
+        DO UPDATE SET meal_json = EXCLUDED.meal_json, updated_at = NOW();
+        `,
+        [meal.id, JSON.stringify(meal)],
+      );
+    }
+  }
 
   const adminEmail = normalizeEmail(process.env.SUPER_ADMIN_EMAIL || "realpashy@gmail.com");
   const adminPassword = process.env.SUPER_ADMIN_PASSWORD || "@Adidas2026...";
@@ -93,7 +127,7 @@ export async function initializeDatabase() {
     );
 
     await dbPool.query(
-      "INSERT INTO app_user_data (user_id, planner_json, budget_json) VALUES ($1, '{}'::jsonb, '{}'::jsonb)",
+      "INSERT INTO app_user_data (user_id, planner_json, budget_json, meal_json) VALUES ($1, '{}'::jsonb, '{}'::jsonb, '{}'::jsonb)",
       [id],
     );
   }
