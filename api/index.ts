@@ -3,6 +3,8 @@ import express from "express";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import { Pool } from "pg";
+import { readFile } from "fs/promises";
+import path from "path";
 
 declare module "http" {
   interface IncomingMessage {
@@ -24,14 +26,27 @@ type AuthUser = {
   role: string;
 };
 
+const DEFAULT_SUPABASE_URL = "https://bachcdysktiyjewwrpmr.supabase.co";
+
+function getSupabaseProjectHost() {
+  const supabaseUrl = process.env.SUPABASE_URL || DEFAULT_SUPABASE_URL;
+  try {
+    const url = new URL(supabaseUrl);
+    const projectRef = url.hostname.split(".")[0];
+    return `db.${projectRef}.supabase.co`;
+  } catch {
+    return "";
+  }
+}
+
 function toConnectionString() {
   if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
 
-  const host = process.env.PGHOST;
+  const host = process.env.PGHOST || getSupabaseProjectHost();
   const port = process.env.PGPORT || "5432";
   const database = process.env.PGDATABASE || "postgres";
-  const user = process.env.PGUSER || "postgres";
-  const password = process.env.PGPASSWORD;
+  const user = process.env.PGUSER || process.env.SUPABASE_DB_USER || "postgres";
+  const password = process.env.PGPASSWORD || process.env.SUPABASE_DB_PASSWORD;
 
   if (!host || !password) return "";
 
@@ -40,7 +55,7 @@ function toConnectionString() {
 
 const connectionString = toConnectionString();
 if (!connectionString) {
-  throw new Error("Missing database configuration: set DATABASE_URL (or PGHOST/PGPORT/PGDATABASE/PGUSER/PGPASSWORD)");
+  throw new Error("Missing database configuration: set DATABASE_URL or SUPABASE_DB_PASSWORD (with optional SUPABASE_URL / PGHOST overrides)");
 }
 
 const connectionStringForPool = connectionString.replace(
@@ -101,9 +116,41 @@ async function initializeDatabase() {
       user_id TEXT PRIMARY KEY REFERENCES app_users(id) ON DELETE CASCADE,
       planner_json JSONB NOT NULL DEFAULT '{}'::jsonb,
       budget_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+      meal_json JSONB NOT NULL DEFAULT '{}'::jsonb,
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
+
+  await dbPool.query(`
+    ALTER TABLE app_user_data
+    ADD COLUMN IF NOT EXISTS meal_json JSONB NOT NULL DEFAULT '{}'::jsonb;
+  `);
+
+  await dbPool.query(`
+    CREATE TABLE IF NOT EXISTS meal_catalog (
+      id TEXT PRIMARY KEY,
+      meal_json JSONB NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+
+  const catalogCount = await dbPool.query("SELECT COUNT(*)::int AS count FROM meal_catalog");
+  if ((catalogCount.rows[0]?.count ?? 0) === 0) {
+    const raw = await readFile(path.resolve(process.cwd(), "data", "meal-dataset.json"), "utf8");
+    const meals = JSON.parse(raw) as Array<{ id: string }>;
+    for (const meal of meals) {
+      await dbPool.query(
+        `
+        INSERT INTO meal_catalog (id, meal_json, updated_at)
+        VALUES ($1, $2::jsonb, NOW())
+        ON CONFLICT (id)
+        DO UPDATE SET meal_json = EXCLUDED.meal_json, updated_at = NOW();
+        `,
+        [meal.id, JSON.stringify(meal)],
+      );
+    }
+  }
 
   const adminEmail = normalizeEmail(process.env.SUPER_ADMIN_EMAIL || "realpashy@gmail.com");
   const adminPassword = process.env.SUPER_ADMIN_PASSWORD || "@Adidas2026...";
@@ -119,7 +166,7 @@ async function initializeDatabase() {
     );
 
     await dbPool.query(
-      "INSERT INTO app_user_data (user_id, planner_json, budget_json) VALUES ($1, '{}'::jsonb, '{}'::jsonb)",
+      "INSERT INTO app_user_data (user_id, planner_json, budget_json, meal_json) VALUES ($1, '{}'::jsonb, '{}'::jsonb, '{}'::jsonb)",
       [id],
     );
   }
@@ -145,7 +192,7 @@ async function registerUser(input: { email: string; password: string; displayNam
   );
 
   await dbPool.query(
-    "INSERT INTO app_user_data (user_id, planner_json, budget_json) VALUES ($1, '{}'::jsonb, '{}'::jsonb)",
+    "INSERT INTO app_user_data (user_id, planner_json, budget_json, meal_json) VALUES ($1, '{}'::jsonb, '{}'::jsonb, '{}'::jsonb)",
     [id],
   );
 
@@ -188,36 +235,38 @@ async function loginUser(emailRaw: string, password: string): Promise<AuthUser |
 
 async function getCloudData(userId: string) {
   const result = await dbPool.query(
-    "SELECT planner_json as \"plannerData\", budget_json as \"budgetData\" FROM app_user_data WHERE user_id = $1 LIMIT 1",
+    "SELECT planner_json as \"plannerData\", budget_json as \"budgetData\", meal_json as \"mealData\" FROM app_user_data WHERE user_id = $1 LIMIT 1",
     [userId],
   );
 
   if (!result.rowCount) {
     await dbPool.query(
-      "INSERT INTO app_user_data (user_id, planner_json, budget_json) VALUES ($1, '{}'::jsonb, '{}'::jsonb)",
+      "INSERT INTO app_user_data (user_id, planner_json, budget_json, meal_json) VALUES ($1, '{}'::jsonb, '{}'::jsonb, '{}'::jsonb)",
       [userId],
     );
-    return { plannerData: null, budgetData: null };
+    return { plannerData: null, budgetData: null, mealData: null };
   }
 
-  return result.rows[0] as { plannerData: unknown; budgetData: unknown };
+  return result.rows[0] as { plannerData: unknown; budgetData: unknown; mealData: unknown };
 }
 
-async function saveCloudData(userId: string, payload: { plannerData?: unknown; budgetData?: unknown }) {
+async function saveCloudData(userId: string, payload: { plannerData?: unknown; budgetData?: unknown; mealData?: unknown }) {
   await dbPool.query(
     `
-    INSERT INTO app_user_data (user_id, planner_json, budget_json, updated_at)
-    VALUES ($1, COALESCE($2::jsonb, '{}'::jsonb), COALESCE($3::jsonb, '{}'::jsonb), NOW())
+    INSERT INTO app_user_data (user_id, planner_json, budget_json, meal_json, updated_at)
+    VALUES ($1, COALESCE($2::jsonb, '{}'::jsonb), COALESCE($3::jsonb, '{}'::jsonb), COALESCE($4::jsonb, '{}'::jsonb), NOW())
     ON CONFLICT (user_id)
     DO UPDATE SET
       planner_json = COALESCE($2::jsonb, app_user_data.planner_json),
       budget_json = COALESCE($3::jsonb, app_user_data.budget_json),
+      meal_json = COALESCE($4::jsonb, app_user_data.meal_json),
       updated_at = NOW();
     `,
     [
       userId,
       payload.plannerData ? JSON.stringify(payload.plannerData) : null,
       payload.budgetData ? JSON.stringify(payload.budgetData) : null,
+      payload.mealData ? JSON.stringify(payload.mealData) : null,
     ],
   );
 }
@@ -427,9 +476,18 @@ app.put("/api/data", async (req, res) => {
   await saveCloudData(userId, {
     plannerData: req.body?.plannerData,
     budgetData: req.body?.budgetData,
+    mealData: req.body?.mealData,
   });
 
   return res.json({ ok: true });
+});
+
+app.get("/api/meal/catalog", async (req, res) => {
+  const userId = req.session?.userId;
+  if (!userId) return res.status(401).json({ message: "غير مصرح" });
+
+  const result = await dbPool.query("SELECT meal_json FROM meal_catalog ORDER BY id ASC");
+  return res.json({ meals: result.rows.map((row) => row.meal_json) });
 });
 
 app.post("/api/ai/receipt", async (req, res) => {
