@@ -31,17 +31,32 @@ function toConnectionString() {
   return `postgresql://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${database}?sslmode=require`;
 }
 
-const connectionString = toConnectionString();
-const connectionStringForPool = connectionString.replace(/([?&])sslmode=require(&|$)/i, (_m, p1, p2) => (p1 === "?" && p2 ? "?" : ""));
+let dbPoolInstance: Pool | null = null;
 
-if (!connectionString) {
-  throw new Error("Missing database configuration: set DATABASE_URL or SUPABASE_DB_PASSWORD (with optional SUPABASE_URL / PGHOST overrides)");
+export function getDbPool() {
+  if (dbPoolInstance) return dbPoolInstance;
+
+  const connectionString = toConnectionString();
+  if (!connectionString) {
+    throw new Error("Missing database configuration: set DATABASE_URL or SUPABASE_DB_PASSWORD (with optional SUPABASE_URL / PGHOST overrides)");
+  }
+
+  const connectionStringForPool = connectionString.replace(/([?&])sslmode=require(&|$)/i, (_m, p1, p2) => (p1 === "?" && p2 ? "?" : ""));
+  dbPoolInstance = new Pool({
+    connectionString: connectionStringForPool,
+    ssl: connectionString.includes("supabase.co") ? { rejectUnauthorized: false } : undefined,
+  });
+
+  return dbPoolInstance;
 }
 
-export const dbPool = new Pool({
-  connectionString: connectionStringForPool,
-  ssl: connectionString.includes("supabase.co") ? { rejectUnauthorized: false } : undefined,
-});
+export const dbPool = new Proxy({} as Pool, {
+  get(_target, prop, receiver) {
+    const pool = getDbPool() as unknown as Record<PropertyKey, unknown>;
+    const value = Reflect.get(pool, prop, receiver);
+    return typeof value === "function" ? (value as Function).bind(pool) : value;
+  },
+}) as Pool;
 
 export function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
