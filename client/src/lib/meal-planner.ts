@@ -1,26 +1,55 @@
-import { addDays, format, startOfWeek, subWeeks } from "date-fns";
+import { addDays, format, startOfWeek } from "date-fns";
 
 export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
-export type MealStatus = "planned" | "done" | "leftover" | "eating_out" | "skipped";
-export type MealSource = "custom" | "favorite" | "template" | "leftover" | "eating_out" | "copied" | "autofill";
+export type MealStatus = "planned" | "done" | "skipped" | "eating_out";
+export type MealSource = "generated" | "favorite" | "manual" | "copied";
 export type PrepEffort = "low" | "medium" | "high";
-export type WeeklyPlanningStyle = "full_custom" | "copy_last_week" | "same_breakfast_daily" | "alternating_lunches" | "low_effort_week" | "autofill_empty";
-export type WeeklyPreferenceMode = "simple" | "family" | "budget" | "high_protein" | "balanced" | "low_prep";
+export type BudgetLevel = "low" | "medium" | "high";
+export type DietType = "any" | "high_protein" | "keto" | "mediterranean" | "vegetarian" | "vegan";
 export type MealGoal = "balanced" | "weight_loss" | "muscle_gain" | "family_routine";
 export type MealActivityLevel = "low" | "moderate" | "high";
 export type MealSnackPreference = "none" | "flexible" | "daily";
+export type MealImageType = "emoji" | "static" | "generated" | "upload";
+
+export interface MealCatalogItem {
+  id: string;
+  title: string;
+  mealType: MealType;
+  dietTypes: DietType[];
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  effortLevel: PrepEffort;
+  budgetLevel: BudgetLevel;
+  ingredients: string[];
+  exclusions: string[];
+  tags: string[];
+  image: string;
+  imageType: MealImageType;
+  imageSource: string;
+}
 
 export interface MealSlot {
   id: string;
   mealType: MealType;
   title: string;
   note: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  tags: string[];
+  ingredients: string[];
+  prepEffort: PrepEffort;
+  budgetLevel: BudgetLevel;
   status: MealStatus;
   source: MealSource;
-  prepEffort: PrepEffort;
-  categoryTags: string[];
-  ingredientSummary: string;
-  prepMinutes: number;
+  image: string;
+  imageType: MealImageType;
+  imageSource: string;
+  catalogItemId?: string;
+  active: boolean;
   updatedAt: string;
 }
 
@@ -30,11 +59,6 @@ export interface MealDayPlan {
   waterActualCups: number;
   waterTargetCups: number;
   notes: string;
-  prepNote: string;
-  prepLoad: PrepEffort;
-  shoppingReady: boolean;
-  leftoversAvailable: boolean;
-  copiedFromDateISO?: string;
   updatedAt: string;
 }
 
@@ -42,24 +66,12 @@ export interface MealFavorite {
   id: string;
   title: string;
   mealType: MealType;
-  note: string;
-  source: MealSource;
-  prepEffort: PrepEffort;
-  categoryTags: string[];
-  ingredientSummary: string;
-  prepMinutes: number;
-}
-
-export interface MealDayTemplate {
-  id: string;
-  name: string;
-  description: string;
-  prepLoad: PrepEffort;
-  shoppingReady: boolean;
-  leftoversAvailable: boolean;
-  notes: string;
-  prepNote: string;
-  meals: Partial<Record<MealType, Omit<MealSlot, "id" | "mealType" | "updatedAt">>>;
+  calories: number;
+  tags: string[];
+  image: string;
+  imageType: MealImageType;
+  imageSource: string;
+  ingredients: string[];
 }
 
 export interface MealPlannerProfile {
@@ -71,18 +83,31 @@ export interface MealPlannerProfile {
   avoidIngredients: string;
 }
 
+export interface MealPlannerPreferences {
+  dietType: DietType;
+  caloriesTarget: number;
+  mealsPerDay: 2 | 3 | 4;
+  exclusions: string[];
+  budgetFriendly: boolean;
+  lowEffort: boolean;
+  preferVariety: boolean;
+  allowRepetition: boolean;
+  sameBreakfastDaily: boolean;
+}
+
 export interface MealPlannerSettings {
   weekStartsOn: 0 | 1 | 6;
 }
 
 export interface MealPlannerState {
-  version: 4;
+  version: 5;
   settings: MealPlannerSettings;
-  plansByDate: Record<string, MealDayPlan>;
   profile: MealPlannerProfile;
+  preferences: MealPlannerPreferences;
+  plansByDate: Record<string, MealDayPlan>;
+  hasGeneratedPlan: boolean;
   recentMeals: string[];
   favorites: MealFavorite[];
-  templates: MealDayTemplate[];
 }
 
 export interface MealPlannerDayInfo {
@@ -99,34 +124,25 @@ export interface MealPlannerSummary {
   plannedMeals: number;
   completedMeals: number;
   emptyMeals: number;
-  repeatedMealsCount: number;
   weeklyWaterTotal: number;
   weeklyWaterTarget: number;
   daysWithWaterTarget: number;
+  completionPercent: number;
+  averageCaloriesPerDay: number;
+  totalWeeklyCalories: number;
+  repeatedMealsCount: number;
   daysFullyPlanned: number;
   daysPartiallyPlanned: number;
-  groceryLoadDays: number;
-  leftoverOpportunities: number;
-  prepHeavyDays: number;
-  copiedDays: number;
-  templateMeals: number;
-  shoppingReadyDays: number;
-  completionPercent: number;
-  adherenceStreak: number;
-  emptyDinners: number;
   completedDays: number;
-  eatingOutMeals: number;
-  skippedMeals: number;
-  busiestPrepDay: string | null;
-  mostRepeatedCategory: string | null;
+  groceryLoad: number;
+  leftoverOpportunities: number;
 }
 
 export interface ShoppingItem {
   id: string;
   label: string;
   count: number;
-  days: string[];
-  mealTitles: string[];
+  linkedDays: string[];
 }
 
 export interface WeeklyRecommendation {
@@ -136,132 +152,202 @@ export interface WeeklyRecommendation {
   tone: "info" | "success" | "warning";
 }
 
-export interface WeeklySetupOption {
-  value: WeeklyPlanningStyle | WeeklyPreferenceMode;
-  label: string;
-  description: string;
+export interface WeekChartPoint {
+  day: string;
+  calories: number;
+  water: number;
+  completion: number;
 }
 
 const WEEK_STARTS_ON: 0 = 0;
-export const MEAL_PLANNER_STORAGE_KEY = "planner_hub_meal_planner_v4_weekly";
-export const MEAL_TYPE_LABELS: Record<MealType, string> = { breakfast: "فطور", lunch: "غداء", dinner: "عشاء", snack: "سناك" };
-export const MEAL_STATUS_LABELS: Record<MealStatus, string> = { planned: "مخطط", done: "تم", leftover: "بقايا", eating_out: "خارج المنزل", skipped: "تم التخطي" };
-export const MEAL_SOURCE_LABELS: Record<MealSource, string> = { custom: "مخصص", favorite: "مفضلة", template: "قالب", leftover: "بقايا", eating_out: "خارج المنزل", copied: "منسوخ", autofill: "تعبئة ذكية" };
-export const PREP_EFFORT_LABELS: Record<PrepEffort, string> = { low: "خفيف", medium: "متوسط", high: "مرتفع" };
-export const PROFILE_GOAL_OPTIONS = [{ value: "balanced", label: "توازن عام" }, { value: "weight_loss", label: "تنظيم الوزن" }, { value: "muscle_gain", label: "دعم النشاط والكتلة" }, { value: "family_routine", label: "روتين عائلي" }] satisfies Array<{ value: MealGoal; label: string }>;
-export const PROFILE_ACTIVITY_OPTIONS = [{ value: "low", label: "نشاط منخفض" }, { value: "moderate", label: "نشاط متوسط" }, { value: "high", label: "نشاط مرتفع" }] satisfies Array<{ value: MealActivityLevel; label: string }>;
-export const PROFILE_SNACK_OPTIONS = [{ value: "none", label: "بدون سناك" }, { value: "flexible", label: "حسب الحاجة" }, { value: "daily", label: "سناك يومي" }] satisfies Array<{ value: MealSnackPreference; label: string }>;
-export const WEEKLY_STYLE_OPTIONS: WeeklySetupOption[] = [
-  { value: "full_custom", label: "تخصيص كامل", description: "ابدأ أسبوعًا فارغًا مع هيكل جاهز فقط." },
-  { value: "copy_last_week", label: "نسخ الأسبوع الماضي", description: "إعادة استخدام نفس الهيكل اليومي مع تحديثه لاحقًا." },
-  { value: "same_breakfast_daily", label: "فطور ثابت يوميًا", description: "تثبيت الفطور وتسريع بقية اليوم." },
-  { value: "alternating_lunches", label: "غداء متناوب", description: "وجبتا غداء تتبادلان على مدار الأسبوع." },
-  { value: "low_effort_week", label: "أسبوع منخفض الجهد", description: "خيارات سريعة مع تحضير أقل." },
-  { value: "autofill_empty", label: "ملء الخانات الفارغة", description: "الحفاظ على الموجود وإكمال ما ينقص فقط." },
+export const MEAL_PLANNER_STORAGE_KEY = "planner_hub_meal_planner_v5_mobile_weekly";
+
+export const MEAL_TYPE_LABELS: Record<MealType, string> = {
+  breakfast: "فطور",
+  lunch: "غداء",
+  dinner: "عشاء",
+  snack: "سناك",
+};
+
+export const MEAL_STATUS_LABELS: Record<MealStatus, string> = {
+  planned: "مخطط",
+  done: "تم",
+  skipped: "تخطي",
+  eating_out: "خارج المنزل",
+};
+
+export const MEAL_SOURCE_LABELS: Record<MealSource, string> = {
+  generated: "مولد",
+  favorite: "مفضلة",
+  manual: "مخصص",
+  copied: "منسوخ",
+};
+
+export const PREP_EFFORT_LABELS: Record<PrepEffort, string> = {
+  low: "خفيف",
+  medium: "متوسط",
+  high: "مرتفع",
+};
+
+export const DIET_TYPE_LABELS: Record<DietType, string> = {
+  any: "Any",
+  high_protein: "High Protein",
+  keto: "Keto",
+  mediterranean: "Mediterranean",
+  vegetarian: "Vegetarian",
+  vegan: "Vegan",
+};
+
+export const PROFILE_GOAL_OPTIONS = [
+  { value: "balanced", label: "توازن عام" },
+  { value: "weight_loss", label: "تنظيم الوزن" },
+  { value: "muscle_gain", label: "دعم النشاط" },
+  { value: "family_routine", label: "روتين عائلي" },
+] satisfies Array<{ value: MealGoal; label: string }>;
+
+export const PROFILE_ACTIVITY_OPTIONS = [
+  { value: "low", label: "نشاط منخفض" },
+  { value: "moderate", label: "نشاط متوسط" },
+  { value: "high", label: "نشاط مرتفع" },
+] satisfies Array<{ value: MealActivityLevel; label: string }>;
+
+export const PROFILE_SNACK_OPTIONS = [
+  { value: "none", label: "بدون سناك" },
+  { value: "flexible", label: "مرن" },
+  { value: "daily", label: "يومي" },
+] satisfies Array<{ value: MealSnackPreference; label: string }>;
+
+const MEAL_CATALOG: MealCatalogItem[] = [
+  { id: "b1", title: "بيض مع أفوكادو وتوست", mealType: "breakfast", dietTypes: ["any", "high_protein", "mediterranean", "keto"], calories: 420, protein: 24, carbs: 26, fat: 24, effortLevel: "low", budgetLevel: "medium", ingredients: ["بيض", "أفوكادو", "توست"], exclusions: [], tags: ["protein", "quick", "morning"], image: "🍳", imageType: "emoji", imageSource: "local-catalog" },
+  { id: "b2", title: "زبادي يوناني مع توت", mealType: "breakfast", dietTypes: ["any", "high_protein", "vegetarian"], calories: 340, protein: 22, carbs: 28, fat: 12, effortLevel: "low", budgetLevel: "medium", ingredients: ["زبادي", "توت", "جرانولا"], exclusions: [], tags: ["quick", "protein"], image: "🥣", imageType: "emoji", imageSource: "local-catalog" },
+  { id: "b3", title: "شوفان بالفواكه", mealType: "breakfast", dietTypes: ["any", "mediterranean", "vegetarian", "vegan"], calories: 360, protein: 12, carbs: 50, fat: 10, effortLevel: "low", budgetLevel: "low", ingredients: ["شوفان", "موز", "حليب نباتي"], exclusions: ["dairy"], tags: ["budget", "fiber"], image: "🥛", imageType: "emoji", imageSource: "local-catalog" },
+  { id: "b4", title: "لفائف تركي وجبن", mealType: "breakfast", dietTypes: ["any", "high_protein"], calories: 395, protein: 29, carbs: 24, fat: 18, effortLevel: "low", budgetLevel: "medium", ingredients: ["تورتيلا", "تركي", "جبن"], exclusions: ["gluten"], tags: ["protein", "office"], image: "🌯", imageType: "emoji", imageSource: "local-catalog" },
+  { id: "b5", title: "طبق حمص وخضار", mealType: "breakfast", dietTypes: ["any", "mediterranean", "vegetarian", "vegan"], calories: 410, protein: 15, carbs: 42, fat: 18, effortLevel: "low", budgetLevel: "low", ingredients: ["حمص", "خيار", "خبز عربي"], exclusions: ["gluten"], tags: ["budget", "family"], image: "🧆", imageType: "emoji", imageSource: "local-catalog" },
+  { id: "l1", title: "سلطة دجاج مشوي", mealType: "lunch", dietTypes: ["any", "high_protein", "keto", "mediterranean"], calories: 510, protein: 38, carbs: 16, fat: 26, effortLevel: "medium", budgetLevel: "medium", ingredients: ["دجاج", "خس", "خيار", "زيت زيتون"], exclusions: [], tags: ["protein", "quick", "salad"], image: "🥗", imageType: "emoji", imageSource: "local-catalog" },
+  { id: "l2", title: "وعاء أرز وسلمون", mealType: "lunch", dietTypes: ["any", "high_protein", "mediterranean"], calories: 630, protein: 34, carbs: 55, fat: 24, effortLevel: "medium", budgetLevel: "high", ingredients: ["أرز", "سلمون", "خضار"], exclusions: ["fish"], tags: ["protein", "omega"], image: "🍱", imageType: "emoji", imageSource: "local-catalog" },
+  { id: "l3", title: "باستا متوسطية بالخضار", mealType: "lunch", dietTypes: ["any", "mediterranean", "vegetarian"], calories: 560, protein: 18, carbs: 72, fat: 20, effortLevel: "medium", budgetLevel: "low", ingredients: ["باستا", "طماطم", "زيتون", "فلفل"], exclusions: ["gluten"], tags: ["budget", "family"], image: "🍝", imageType: "emoji", imageSource: "local-catalog" },
+  { id: "l4", title: "كاري حمص وجوز هند", mealType: "lunch", dietTypes: ["any", "vegetarian", "vegan"], calories: 540, protein: 17, carbs: 58, fat: 22, effortLevel: "medium", budgetLevel: "low", ingredients: ["حمص", "حليب جوز الهند", "أرز"], exclusions: [], tags: ["vegan", "budget"], image: "🍛", imageType: "emoji", imageSource: "local-catalog" },
+  { id: "l5", title: "لحم بقري مع بطاطا", mealType: "lunch", dietTypes: ["any", "high_protein", "keto"], calories: 640, protein: 36, carbs: 30, fat: 34, effortLevel: "high", budgetLevel: "high", ingredients: ["لحم", "بطاطا", "فاصوليا"], exclusions: ["beef"], tags: ["protein", "hearty"], image: "🥩", imageType: "emoji", imageSource: "local-catalog" },
+  { id: "l6", title: "شاورما دجاج منزلية", mealType: "lunch", dietTypes: ["any", "high_protein", "mediterranean"], calories: 590, protein: 33, carbs: 44, fat: 22, effortLevel: "medium", budgetLevel: "medium", ingredients: ["دجاج", "خبز", "لبن", "خس"], exclusions: ["gluten"], tags: ["family", "popular"], image: "🌯", imageType: "emoji", imageSource: "local-catalog" },
+  { id: "l7", title: "كوسا محشية خفيفة", mealType: "lunch", dietTypes: ["any", "mediterranean"], calories: 530, protein: 28, carbs: 34, fat: 24, effortLevel: "high", budgetLevel: "medium", ingredients: ["كوسا", "رز", "لحم"], exclusions: ["beef"], tags: ["home", "traditional"], image: "🥒", imageType: "emoji", imageSource: "local-catalog" },
+  { id: "d1", title: "شوربة عدس وخبز", mealType: "dinner", dietTypes: ["any", "mediterranean", "vegetarian", "vegan"], calories: 420, protein: 16, carbs: 50, fat: 12, effortLevel: "low", budgetLevel: "low", ingredients: ["عدس", "خبز", "جزر"], exclusions: ["gluten"], tags: ["budget", "comfort"], image: "🍲", imageType: "emoji", imageSource: "local-catalog" },
+  { id: "d2", title: "سمك مشوي وخضار", mealType: "dinner", dietTypes: ["any", "high_protein", "keto", "mediterranean"], calories: 480, protein: 34, carbs: 16, fat: 24, effortLevel: "medium", budgetLevel: "high", ingredients: ["سمك", "خضار", "ليمون"], exclusions: ["fish"], tags: ["protein", "light"], image: "🐟", imageType: "emoji", imageSource: "local-catalog" },
+  { id: "d3", title: "بيتزا خضار سريعة", mealType: "dinner", dietTypes: ["any", "vegetarian"], calories: 610, protein: 20, carbs: 68, fat: 26, effortLevel: "medium", budgetLevel: "medium", ingredients: ["عجينة", "جبن", "خضار"], exclusions: ["gluten"], tags: ["family", "comfort"], image: "🍕", imageType: "emoji", imageSource: "local-catalog" },
+  { id: "d4", title: "سلطة تونة وذرة", mealType: "dinner", dietTypes: ["any", "high_protein", "mediterranean"], calories: 430, protein: 31, carbs: 20, fat: 18, effortLevel: "low", budgetLevel: "medium", ingredients: ["تونة", "ذرة", "خس"], exclusions: ["fish"], tags: ["quick", "protein"], image: "🥬", imageType: "emoji", imageSource: "local-catalog" },
+  { id: "d5", title: "برغر ديك رومي مع بطاطا", mealType: "dinner", dietTypes: ["any", "high_protein"], calories: 580, protein: 35, carbs: 38, fat: 24, effortLevel: "medium", budgetLevel: "medium", ingredients: ["ديك رومي", "خبز", "بطاطا"], exclusions: ["gluten"], tags: ["protein", "family"], image: "🍔", imageType: "emoji", imageSource: "local-catalog" },
+  { id: "d6", title: "وعاء كينوا وخضار", mealType: "dinner", dietTypes: ["any", "mediterranean", "vegetarian", "vegan"], calories: 470, protein: 14, carbs: 52, fat: 18, effortLevel: "low", budgetLevel: "medium", ingredients: ["كينوا", "خضار", "حمص"], exclusions: [], tags: ["vegan", "light"], image: "🥙", imageType: "emoji", imageSource: "local-catalog" },
+  { id: "s1", title: "تفاح وزبدة الفول", mealType: "snack", dietTypes: ["any", "vegetarian", "vegan"], calories: 210, protein: 6, carbs: 22, fat: 11, effortLevel: "low", budgetLevel: "low", ingredients: ["تفاح", "زبدة فول سوداني"], exclusions: ["nuts"], tags: ["snack", "quick"], image: "🍎", imageType: "emoji", imageSource: "local-catalog" },
+  { id: "s2", title: "مكسرات وتمور", mealType: "snack", dietTypes: ["any", "mediterranean", "vegetarian", "vegan", "keto"], calories: 180, protein: 5, carbs: 16, fat: 11, effortLevel: "low", budgetLevel: "medium", ingredients: ["مكسرات", "تمر"], exclusions: ["nuts"], tags: ["snack", "energy"], image: "🥜", imageType: "emoji", imageSource: "local-catalog" },
+  { id: "s3", title: "مخفوق بروتين", mealType: "snack", dietTypes: ["any", "high_protein", "vegetarian"], calories: 220, protein: 24, carbs: 12, fat: 8, effortLevel: "low", budgetLevel: "medium", ingredients: ["حليب", "بروتين", "موز"], exclusions: ["dairy"], tags: ["protein", "snack"], image: "🥤", imageType: "emoji", imageSource: "local-catalog" },
 ];
-export const WEEKLY_MODE_OPTIONS: WeeklySetupOption[] = [
-  { value: "simple", label: "بسيط", description: "وجبات مباشرة بدون تعقيد." },
-  { value: "family", label: "عائلي", description: "يناسب البيت والمشاركة." },
-  { value: "budget", label: "اقتصادي", description: "تقليل الهدر والمشتريات." },
-  { value: "high_protein", label: "عالي البروتين", description: "دعم الشبع والبروتين." },
-  { value: "balanced", label: "متوازن", description: "تنويع أعلى وتوزيع أهدأ." },
-  { value: "low_prep", label: "قليل التحضير", description: "تحضير أسرع وأخف." },
-];
 
-const DEFAULT_TEMPLATE_SPECS = [
-  {
-    id: "template_low_prep",
-    name: "أسبوع خفيف التحضير",
-    description: "حل سريع لأيام الدوام أو التعب.",
-    prepLoad: "low" as PrepEffort,
-    shoppingReady: true,
-    leftoversAvailable: true,
-    notes: "يعتمد على إعادة الاستخدام والوصفات السريعة.",
-    prepNote: "حضّر الخضار والبروتين مرة واحدة في بداية الأسبوع.",
-    meals: {
-      breakfast: { title: "زبادي وفاكهة", source: "template", prepEffort: "low", categoryTags: ["خفيف"], ingredientSummary: "زبادي, فاكهة" },
-      lunch: { title: "وعاء أرز مع بروتين", source: "template", prepEffort: "medium", categoryTags: ["عملي"], ingredientSummary: "أرز, دجاج, خضار" },
-      dinner: { title: "شوربة وسندويش", source: "template", prepEffort: "low", categoryTags: ["منزلي"], ingredientSummary: "شوربة, خبز" },
-      snack: { title: "تمر أو مكسرات", source: "template", prepEffort: "low", categoryTags: ["سريع"], ingredientSummary: "تمر, مكسرات" },
-    },
-  },
-  {
-    id: "template_family",
-    name: "يوم عائلي",
-    description: "وجبات مشتركة مع ضغط شراء أوضح.",
-    prepLoad: "medium" as PrepEffort,
-    shoppingReady: false,
-    leftoversAvailable: true,
-    notes: "مناسب لليوم الذي فيه غداء مركزي للعائلة.",
-    prepNote: "اختصر التحضير بتجهيز الصوصات والمقبلات مسبقًا.",
-    meals: {
-      breakfast: { title: "بيض وخبز وخضار", source: "template", prepEffort: "medium", categoryTags: ["عائلي"], ingredientSummary: "بيض, خبز, خضار" },
-      lunch: { title: "رز ودجاج وسلطة", source: "template", prepEffort: "high", categoryTags: ["وجبة رئيسية"], ingredientSummary: "رز, دجاج, سلطة" },
-      dinner: { title: "سندويشات من بقايا الغداء", source: "leftover", prepEffort: "low", categoryTags: ["بقايا"], ingredientSummary: "خبز, دجاج" },
-      snack: { title: "فاكهة موسمية", source: "template", prepEffort: "low", categoryTags: ["خفيف"], ingredientSummary: "فاكهة" },
-    },
-  },
-] as const;
-
-export function createId() { return `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`; }
-export function getTodayISO(date = new Date()) { return format(date, "yyyy-MM-dd"); }
-export function cupsToLiters(cups: number) { return Number((cups * 0.25).toFixed(2)); }
-export function formatLiters(cups: number) { return `${cupsToLiters(cups).toLocaleString("en-US")} لتر`; }
-export function getDefaultMealPlannerProfile(): MealPlannerProfile { return { goal: "balanced", activityLevel: "moderate", snackPreference: "flexible", waterTargetCups: 8, dietaryNotes: "", avoidIngredients: "" }; }
-export function getWaterTargetCups(profile: MealPlannerProfile) { const minimum = 8 + (profile.activityLevel === "moderate" ? 1 : profile.activityLevel === "high" ? 2 : 0); return Math.max(profile.waterTargetCups, minimum); }
-export function getWaterTargetLiters(profile: MealPlannerProfile) { return cupsToLiters(getWaterTargetCups(profile)); }
-export function getDefaultMealPlannerSettings(): MealPlannerSettings { return { weekStartsOn: WEEK_STARTS_ON }; }
-export function createDefaultMealSlot(mealType: MealType): MealSlot {
-  return { id: createId(), mealType, title: "", note: "", status: "planned", source: "custom", prepEffort: "low", categoryTags: [], ingredientSummary: "", prepMinutes: mealType === "breakfast" ? 10 : mealType === "snack" ? 5 : 20, updatedAt: new Date().toISOString() };
-}
-export function createDefaultDayPlan(dateISO: string, waterTargetCups = 8): MealDayPlan {
-  const now = new Date().toISOString();
-  return { dateISO, meals: ["breakfast", "lunch", "dinner", "snack"].map((mealType) => createDefaultMealSlot(mealType as MealType)), waterActualCups: 0, waterTargetCups, notes: "", prepNote: "", prepLoad: "low", shoppingReady: false, leftoversAvailable: false, updatedAt: now };
+export function createId() {
+  return `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
-function createDefaultTemplates(): MealDayTemplate[] {
-  return DEFAULT_TEMPLATE_SPECS.map((template) => ({
-    id: template.id,
-    name: template.name,
-    description: template.description,
-    prepLoad: template.prepLoad,
-    shoppingReady: template.shoppingReady,
-    leftoversAvailable: template.leftoversAvailable,
-    notes: template.notes,
-    prepNote: template.prepNote,
-    meals: Object.fromEntries(Object.entries(template.meals).map(([mealType, meal]) => [mealType, { title: meal.title, note: "", status: "planned", source: meal.source as MealSource, prepEffort: meal.prepEffort as PrepEffort, categoryTags: [...meal.categoryTags], ingredientSummary: meal.ingredientSummary, prepMinutes: 15 }])) as MealDayTemplate["meals"],
-  }));
+export function getTodayISO(date = new Date()) {
+  return format(date, "yyyy-MM-dd");
+}
+
+export function cupsToLiters(cups: number) {
+  return Number((cups * 0.25).toFixed(2));
+}
+
+export function formatLiters(cups: number) {
+  return `${cupsToLiters(cups).toLocaleString("en-US")} لتر`;
+}
+
+export function getDefaultMealPlannerProfile(): MealPlannerProfile {
+  return { goal: "balanced", activityLevel: "moderate", snackPreference: "flexible", waterTargetCups: 8, dietaryNotes: "", avoidIngredients: "" };
+}
+
+export function getWaterTargetCups(profile: MealPlannerProfile) {
+  const minimum = 8 + (profile.activityLevel === "moderate" ? 1 : profile.activityLevel === "high" ? 2 : 0);
+  return Math.max(profile.waterTargetCups, minimum);
+}
+
+export function getWaterTargetLiters(profile: MealPlannerProfile) {
+  return cupsToLiters(getWaterTargetCups(profile));
+}
+
+export function getDefaultMealPlannerPreferences(): MealPlannerPreferences {
+  return { dietType: "any", caloriesTarget: 1900, mealsPerDay: 3, exclusions: [], budgetFriendly: false, lowEffort: false, preferVariety: true, allowRepetition: true, sameBreakfastDaily: false };
+}
+
+export function getDefaultMealPlannerSettings(): MealPlannerSettings {
+  return { weekStartsOn: WEEK_STARTS_ON };
+}
+
+export function createEmptyMealSlot(mealType: MealType, active = true): MealSlot {
+  return {
+    id: createId(),
+    mealType,
+    title: "",
+    note: "",
+    calories: 0,
+    protein: 0,
+    carbs: 0,
+    fat: 0,
+    tags: [],
+    ingredients: [],
+    prepEffort: "low",
+    budgetLevel: "low",
+    status: "planned",
+    source: "manual",
+    image: mealType === "breakfast" ? "🍳" : mealType === "lunch" ? "🍽️" : mealType === "dinner" ? "🍲" : "🥤",
+    imageType: "emoji",
+    imageSource: "local-placeholder",
+    active,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+function getActiveMealTypes(mealsPerDay: 2 | 3 | 4): MealType[] {
+  if (mealsPerDay === 2) return ["lunch", "dinner"];
+  if (mealsPerDay === 3) return ["breakfast", "lunch", "dinner"];
+  return ["breakfast", "lunch", "dinner", "snack"];
+}
+
+export function createDefaultDayPlan(dateISO: string, preferences = getDefaultMealPlannerPreferences(), waterTargetCups = 8): MealDayPlan {
+  const activeMealTypes = new Set(getActiveMealTypes(preferences.mealsPerDay));
+  return {
+    dateISO,
+    meals: (["breakfast", "lunch", "dinner", "snack"] as MealType[]).map((mealType) => createEmptyMealSlot(mealType, activeMealTypes.has(mealType))),
+    waterActualCups: 0,
+    waterTargetCups,
+    notes: "",
+    updatedAt: new Date().toISOString(),
+  };
 }
 
 export function createDefaultMealPlannerState(): MealPlannerState {
-  return { version: 4, settings: getDefaultMealPlannerSettings(), plansByDate: {}, profile: getDefaultMealPlannerProfile(), recentMeals: [], favorites: [], templates: createDefaultTemplates() };
+  return {
+    version: 5,
+    settings: getDefaultMealPlannerSettings(),
+    profile: getDefaultMealPlannerProfile(),
+    preferences: getDefaultMealPlannerPreferences(),
+    plansByDate: {},
+    hasGeneratedPlan: false,
+    recentMeals: [],
+    favorites: [],
+  };
 }
 
+function sanitizeStringArray(value: unknown) {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string").map((item) => item.trim()).filter(Boolean).slice(0, 8) : [];
+}
+
+function normalizeDietType(value: unknown): DietType {
+  return value === "any" || value === "high_protein" || value === "keto" || value === "mediterranean" || value === "vegetarian" || value === "vegan" ? value : "any";
+}
 function normalizeMealType(value: unknown): MealType { return value === "breakfast" || value === "lunch" || value === "dinner" || value === "snack" ? value : "lunch"; }
-function normalizeMealStatus(value: unknown): MealStatus { return value === "planned" || value === "done" || value === "leftover" || value === "eating_out" || value === "skipped" ? value : "planned"; }
-function normalizeMealSource(value: unknown): MealSource { return value === "custom" || value === "favorite" || value === "template" || value === "leftover" || value === "eating_out" || value === "copied" || value === "autofill" ? value : "custom"; }
+function normalizeMealStatus(value: unknown): MealStatus { return value === "planned" || value === "done" || value === "skipped" || value === "eating_out" ? value : "planned"; }
+function normalizeMealSource(value: unknown): MealSource { return value === "generated" || value === "favorite" || value === "manual" || value === "copied" ? value : "manual"; }
 function normalizePrepEffort(value: unknown): PrepEffort { return value === "low" || value === "medium" || value === "high" ? value : "low"; }
+function normalizeBudgetLevel(value: unknown): BudgetLevel { return value === "low" || value === "medium" || value === "high" ? value : "low"; }
 function normalizeGoal(value: unknown): MealGoal { return value === "balanced" || value === "weight_loss" || value === "muscle_gain" || value === "family_routine" ? value : "balanced"; }
 function normalizeActivity(value: unknown): MealActivityLevel { return value === "low" || value === "moderate" || value === "high" ? value : "moderate"; }
 function normalizeSnackPreference(value: unknown): MealSnackPreference { return value === "none" || value === "flexible" || value === "daily" ? value : "flexible"; }
-function sanitizeTags(value: unknown) { return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0).map((item) => item.trim()).slice(0, 5) : []; }
-
-function normalizeMealSlot(raw: unknown, mealType: MealType): MealSlot {
-  const data = (raw && typeof raw === "object" ? raw : {}) as Partial<MealSlot>;
-  return {
-    id: typeof data.id === "string" ? data.id : createId(),
-    mealType,
-    title: typeof data.title === "string" ? data.title : "",
-    note: typeof data.note === "string" ? data.note : "",
-    status: normalizeMealStatus(data.status),
-    source: normalizeMealSource(data.source),
-    prepEffort: normalizePrepEffort(data.prepEffort),
-    categoryTags: sanitizeTags(data.categoryTags),
-    ingredientSummary: typeof data.ingredientSummary === "string" ? data.ingredientSummary : "",
-    prepMinutes: typeof data.prepMinutes === "number" && Number.isFinite(data.prepMinutes) ? Math.max(0, Math.min(180, Math.round(data.prepMinutes))) : 15,
-    updatedAt: typeof data.updatedAt === "string" ? data.updatedAt : new Date().toISOString(),
-  };
-}
 
 function normalizeProfile(raw: unknown): MealPlannerProfile {
   const data = (raw && typeof raw === "object" ? raw : {}) as Partial<MealPlannerProfile>;
@@ -269,35 +355,71 @@ function normalizeProfile(raw: unknown): MealPlannerProfile {
     goal: normalizeGoal(data.goal),
     activityLevel: normalizeActivity(data.activityLevel),
     snackPreference: normalizeSnackPreference(data.snackPreference),
-    waterTargetCups: typeof data.waterTargetCups === "number" && Number.isFinite(data.waterTargetCups) ? Math.max(1, Math.min(20, Math.round(data.waterTargetCups))) : 8,
+    waterTargetCups: typeof data.waterTargetCups === "number" ? Math.max(1, Math.min(20, Math.round(data.waterTargetCups))) : 8,
     dietaryNotes: typeof data.dietaryNotes === "string" ? data.dietaryNotes : "",
     avoidIngredients: typeof data.avoidIngredients === "string" ? data.avoidIngredients : "",
   };
 }
 
-function normalizeDayPlan(dateISO: string, raw: unknown, waterTargetCups = 8): MealDayPlan {
-  const fallback = createDefaultDayPlan(dateISO, waterTargetCups);
+function normalizePreferences(raw: unknown): MealPlannerPreferences {
+  const data = (raw && typeof raw === "object" ? raw : {}) as Partial<MealPlannerPreferences>;
+  return {
+    dietType: normalizeDietType(data.dietType),
+    caloriesTarget: typeof data.caloriesTarget === "number" ? Math.max(1200, Math.min(4000, Math.round(data.caloriesTarget))) : 1900,
+    mealsPerDay: data.mealsPerDay === 2 || data.mealsPerDay === 4 ? data.mealsPerDay : 3,
+    exclusions: sanitizeStringArray(data.exclusions),
+    budgetFriendly: Boolean(data.budgetFriendly),
+    lowEffort: Boolean(data.lowEffort),
+    preferVariety: data.preferVariety !== false,
+    allowRepetition: data.allowRepetition !== false,
+    sameBreakfastDaily: Boolean(data.sameBreakfastDaily),
+  };
+}
+
+function normalizeMealSlot(raw: unknown, fallback: MealSlot): MealSlot {
+  const data = (raw && typeof raw === "object" ? raw : {}) as Partial<MealSlot>;
+  return {
+    id: typeof data.id === "string" ? data.id : fallback.id,
+    mealType: normalizeMealType(data.mealType ?? fallback.mealType),
+    title: typeof data.title === "string" ? data.title : fallback.title,
+    note: typeof data.note === "string" ? data.note : "",
+    calories: typeof data.calories === "number" ? Math.max(0, Math.round(data.calories)) : fallback.calories,
+    protein: typeof data.protein === "number" ? Math.max(0, Math.round(data.protein)) : fallback.protein,
+    carbs: typeof data.carbs === "number" ? Math.max(0, Math.round(data.carbs)) : fallback.carbs,
+    fat: typeof data.fat === "number" ? Math.max(0, Math.round(data.fat)) : fallback.fat,
+    tags: sanitizeStringArray(data.tags),
+    ingredients: sanitizeStringArray(data.ingredients),
+    prepEffort: normalizePrepEffort(data.prepEffort),
+    budgetLevel: normalizeBudgetLevel(data.budgetLevel),
+    status: normalizeMealStatus(data.status),
+    source: normalizeMealSource(data.source),
+    image: typeof data.image === "string" ? data.image : fallback.image,
+    imageType: data.imageType === "emoji" || data.imageType === "static" || data.imageType === "generated" || data.imageType === "upload" ? data.imageType : fallback.imageType,
+    imageSource: typeof data.imageSource === "string" ? data.imageSource : fallback.imageSource,
+    catalogItemId: typeof data.catalogItemId === "string" ? data.catalogItemId : undefined,
+    active: typeof data.active === "boolean" ? data.active : fallback.active,
+    updatedAt: typeof data.updatedAt === "string" ? data.updatedAt : fallback.updatedAt,
+  };
+}
+
+function normalizeDayPlan(dateISO: string, raw: unknown, preferences: MealPlannerPreferences, waterTargetCups: number): MealDayPlan {
+  const fallback = createDefaultDayPlan(dateISO, preferences, waterTargetCups);
   const data = (raw && typeof raw === "object" ? raw : {}) as Partial<MealDayPlan>;
-  const mealByType = new Map<MealType, MealSlot>();
+  const mealsByType = new Map<MealType, MealSlot>();
   if (Array.isArray(data.meals)) {
     for (const meal of data.meals) {
       if (!meal || typeof meal !== "object") continue;
-      const slot = meal as Partial<MealSlot>;
-      const mealType = normalizeMealType(slot.mealType);
-      mealByType.set(mealType, normalizeMealSlot(slot, mealType));
+      const mealType = normalizeMealType((meal as Partial<MealSlot>).mealType);
+      const base = fallback.meals.find((entry) => entry.mealType === mealType) ?? createEmptyMealSlot(mealType);
+      mealsByType.set(mealType, normalizeMealSlot(meal, base));
     }
   }
   return {
     dateISO,
-    meals: ["breakfast", "lunch", "dinner", "snack"].map((mealType) => mealByType.get(mealType as MealType) ?? createDefaultMealSlot(mealType as MealType)),
-    waterActualCups: typeof data.waterActualCups === "number" && Number.isFinite(data.waterActualCups) ? Math.max(0, Math.min(20, Math.round(data.waterActualCups))) : fallback.waterActualCups,
-    waterTargetCups: typeof data.waterTargetCups === "number" && Number.isFinite(data.waterTargetCups) ? Math.max(1, Math.min(20, Math.round(data.waterTargetCups))) : waterTargetCups,
+    meals: fallback.meals.map((slot) => mealsByType.get(slot.mealType) ?? slot),
+    waterActualCups: typeof data.waterActualCups === "number" ? Math.max(0, Math.min(20, Math.round(data.waterActualCups))) : fallback.waterActualCups,
+    waterTargetCups: typeof data.waterTargetCups === "number" ? Math.max(1, Math.min(20, Math.round(data.waterTargetCups))) : fallback.waterTargetCups,
     notes: typeof data.notes === "string" ? data.notes : "",
-    prepNote: typeof data.prepNote === "string" ? data.prepNote : "",
-    prepLoad: normalizePrepEffort(data.prepLoad),
-    shoppingReady: Boolean(data.shoppingReady),
-    leftoversAvailable: Boolean(data.leftoversAvailable),
-    copiedFromDateISO: typeof data.copiedFromDateISO === "string" ? data.copiedFromDateISO : undefined,
     updatedAt: typeof data.updatedAt === "string" ? data.updatedAt : fallback.updatedAt,
   };
 }
@@ -305,80 +427,55 @@ function normalizeDayPlan(dateISO: string, raw: unknown, waterTargetCups = 8): M
 function normalizeFavorite(raw: unknown): MealFavorite | null {
   if (!raw || typeof raw !== "object") return null;
   const data = raw as Partial<MealFavorite>;
+  if (typeof data.title !== "string" || !data.title.trim()) return null;
   return {
     id: typeof data.id === "string" ? data.id : createId(),
-    title: typeof data.title === "string" ? data.title : "",
+    title: data.title,
     mealType: normalizeMealType(data.mealType),
-    note: typeof data.note === "string" ? data.note : "",
-    source: normalizeMealSource(data.source),
-    prepEffort: normalizePrepEffort(data.prepEffort),
-    categoryTags: sanitizeTags(data.categoryTags),
-    ingredientSummary: typeof data.ingredientSummary === "string" ? data.ingredientSummary : "",
-    prepMinutes: typeof data.prepMinutes === "number" && Number.isFinite(data.prepMinutes) ? Math.max(0, Math.min(180, Math.round(data.prepMinutes))) : 15,
-  };
-}
-
-function normalizeTemplate(raw: unknown): MealDayTemplate | null {
-  if (!raw || typeof raw !== "object") return null;
-  const data = raw as Partial<MealDayTemplate>;
-  const meals: MealDayTemplate["meals"] = {};
-  if (data.meals && typeof data.meals === "object") {
-    for (const [key, value] of Object.entries(data.meals)) {
-      const mealType = normalizeMealType(key);
-      const slot = normalizeMealSlot({ ...value, mealType }, mealType);
-      meals[mealType] = { title: slot.title, note: slot.note, status: slot.status, source: slot.source, prepEffort: slot.prepEffort, categoryTags: slot.categoryTags, ingredientSummary: slot.ingredientSummary, prepMinutes: slot.prepMinutes };
-    }
-  }
-  return {
-    id: typeof data.id === "string" ? data.id : createId(),
-    name: typeof data.name === "string" ? data.name : "قالب جديد",
-    description: typeof data.description === "string" ? data.description : "",
-    prepLoad: normalizePrepEffort(data.prepLoad),
-    shoppingReady: Boolean(data.shoppingReady),
-    leftoversAvailable: Boolean(data.leftoversAvailable),
-    notes: typeof data.notes === "string" ? data.notes : "",
-    prepNote: typeof data.prepNote === "string" ? data.prepNote : "",
-    meals,
+    calories: typeof data.calories === "number" ? Math.max(0, Math.round(data.calories)) : 0,
+    tags: sanitizeStringArray(data.tags),
+    image: typeof data.image === "string" ? data.image : "🍽️",
+    imageType: data.imageType === "emoji" || data.imageType === "static" || data.imageType === "generated" || data.imageType === "upload" ? data.imageType : "emoji",
+    imageSource: typeof data.imageSource === "string" ? data.imageSource : "local-catalog",
+    ingredients: sanitizeStringArray(data.ingredients),
   };
 }
 
 function normalizeState(raw: unknown): MealPlannerState {
-  const fallback = createDefaultMealPlannerState();
   const parsed = (raw && typeof raw === "object" ? raw : {}) as Partial<MealPlannerState>;
-  if (parsed.version !== 4) return fallback;
+  if (parsed.version !== 5) return createDefaultMealPlannerState();
   const profile = normalizeProfile(parsed.profile);
+  const preferences = normalizePreferences(parsed.preferences);
   const waterTarget = getWaterTargetCups(profile);
   const plansByDate: Record<string, MealDayPlan> = {};
   if (parsed.plansByDate && typeof parsed.plansByDate === "object") {
     for (const [dateISO, plan] of Object.entries(parsed.plansByDate)) {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(dateISO)) continue;
-      plansByDate[dateISO] = normalizeDayPlan(dateISO, plan, waterTarget);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateISO)) {
+        plansByDate[dateISO] = normalizeDayPlan(dateISO, plan, preferences, waterTarget);
+      }
     }
   }
   return {
-    version: 4,
-    settings: { weekStartsOn: parsed.settings?.weekStartsOn === 1 || parsed.settings?.weekStartsOn === 6 ? parsed.settings.weekStartsOn : WEEK_STARTS_ON },
-    plansByDate,
+    version: 5,
+    settings: { weekStartsOn: parsed.settings?.weekStartsOn === 1 || parsed.settings?.weekStartsOn === 6 ? parsed.settings.weekStartsOn : 0 },
     profile,
-    recentMeals: Array.isArray(parsed.recentMeals) ? parsed.recentMeals.filter((item): item is string => typeof item === "string" && item.trim().length > 0).slice(0, 24) : [],
-    favorites: Array.isArray(parsed.favorites)
-      ? parsed.favorites
-          .map(normalizeFavorite)
-          .filter((item): item is MealFavorite => item !== null && item.title.trim().length > 0)
-          .slice(0, 36)
-      : [],
-    templates: Array.isArray(parsed.templates) ? parsed.templates.map(normalizeTemplate).filter((item): item is MealDayTemplate => Boolean(item)).slice(0, 24) : createDefaultTemplates(),
+    preferences,
+    plansByDate,
+    hasGeneratedPlan: Boolean(parsed.hasGeneratedPlan),
+    recentMeals: sanitizeStringArray(parsed.recentMeals).slice(0, 24),
+    favorites: Array.isArray(parsed.favorites) ? parsed.favorites.map(normalizeFavorite).filter((item): item is MealFavorite => item !== null).slice(0, 30) : [],
   };
 }
 
 export function loadMealPlannerState(): MealPlannerState {
-  if (typeof window !== "undefined") {
-    const raw = window.localStorage.getItem(MEAL_PLANNER_STORAGE_KEY);
-    if (raw) {
-      try { return normalizeState(JSON.parse(raw)); } catch { return createDefaultMealPlannerState(); }
-    }
+  if (typeof window === "undefined") return createDefaultMealPlannerState();
+  const raw = window.localStorage.getItem(MEAL_PLANNER_STORAGE_KEY);
+  if (!raw) return createDefaultMealPlannerState();
+  try {
+    return normalizeState(JSON.parse(raw));
+  } catch {
+    return createDefaultMealPlannerState();
   }
-  return createDefaultMealPlannerState();
 }
 
 export function saveMealPlannerState(state: MealPlannerState) {
@@ -403,205 +500,229 @@ export function getWeekDates(referenceISO = getTodayISO()): MealPlannerDayInfo[]
   });
 }
 
-export function getPreviousWeekDates(referenceISO = getTodayISO()) {
-  const start = startOfWeek(new Date(`${referenceISO}T00:00:00`), { weekStartsOn: WEEK_STARTS_ON });
-  return getWeekDates(format(subWeeks(start, 1), "yyyy-MM-dd"));
+export function getCatalog() {
+  return MEAL_CATALOG;
 }
 
-export function getDayPlan(state: MealPlannerState, dateISO: string) { return state.plansByDate[dateISO] ?? createDefaultDayPlan(dateISO, getWaterTargetCups(state.profile)); }
-export function countPlannedMeals(plan: MealDayPlan) { return plan.meals.filter((meal) => meal.title.trim().length > 0 || meal.status !== "planned" || meal.note.trim().length > 0).length; }
-export function countCompletedMeals(plan: MealDayPlan) { return plan.meals.filter((meal) => meal.status === "done").length; }
-export function getMealCompletionPercent(plan: MealDayPlan) { return Math.round((countPlannedMeals(plan) / plan.meals.length) * 100); }
-
-export function getMealSuggestions(state: MealPlannerState, dateISO: string, mealType: MealType) {
-  const currentWeek = getWeekDates(dateISO);
-  const titles = new Set<string>();
-  const suggestions: Array<{ title: string; source: MealSource; tags: string[] }> = [];
-  for (const favorite of state.favorites) {
-    if (favorite.mealType !== mealType || titles.has(favorite.title)) continue;
-    titles.add(favorite.title);
-    suggestions.push({ title: favorite.title, source: "favorite", tags: favorite.categoryTags });
-  }
-  for (const template of state.templates) {
-    const meal = template.meals[mealType];
-    if (!meal?.title || titles.has(meal.title)) continue;
-    titles.add(meal.title);
-    suggestions.push({ title: meal.title, source: "template", tags: meal.categoryTags ?? [] });
-  }
-  for (const day of currentWeek) {
-    if (day.dateISO === dateISO) continue;
-    const slot = getDayPlan(state, day.dateISO).meals.find((meal) => meal.mealType === mealType);
-    if (!slot?.title.trim() || titles.has(slot.title)) continue;
-    titles.add(slot.title);
-    suggestions.push({ title: slot.title, source: slot.source, tags: slot.categoryTags });
-  }
-  for (const title of state.recentMeals) {
-    if (titles.has(title)) continue;
-    titles.add(title);
-    suggestions.push({ title, source: "custom", tags: [] });
-  }
-  return suggestions.slice(0, 6);
+export function getDayPlan(state: MealPlannerState, dateISO: string) {
+  return state.plansByDate[dateISO] ?? createDefaultDayPlan(dateISO, state.preferences, getWaterTargetCups(state.profile));
 }
 
-function countDuplicateTitles(titles: string[]) {
-  const counts = new Map<string, number>();
-  for (const title of titles) counts.set(title, (counts.get(title) ?? 0) + 1);
-  return Array.from(counts.values()).reduce((sum, count) => sum + Math.max(0, count - 1), 0);
+function activeMeals(plan: MealDayPlan) {
+  return plan.meals.filter((meal) => meal.active);
 }
 
-function getMostRepeatedCategory(plans: MealDayPlan[]) {
-  const counts = new Map<string, number>();
-  for (const plan of plans) {
-    for (const meal of plan.meals) {
-      for (const tag of meal.categoryTags) counts.set(tag, (counts.get(tag) ?? 0) + 1);
-    }
-  }
-  let topCategory: string | null = null;
-  let topCount = 0;
-  for (const [tag, count] of Array.from(counts.entries())) {
-    if (count > topCount) { topCategory = tag; topCount = count; }
-  }
-  return topCategory;
+export function countPlannedMeals(plan: MealDayPlan) {
+  return activeMeals(plan).filter((meal) => meal.title.trim()).length;
 }
 
-export function parseIngredientSummary(value: string) {
-  return value.split(/[،,]/).map((item) => item.trim()).filter(Boolean);
+export function countCompletedMeals(plan: MealDayPlan) {
+  return activeMeals(plan).filter((meal) => meal.status === "done").length;
+}
+
+export function getMealCompletionPercent(plan: MealDayPlan) {
+  const total = activeMeals(plan).length;
+  return total === 0 ? 0 : Math.round((countPlannedMeals(plan) / total) * 100);
+}
+
+function createMealFromCatalog(item: MealCatalogItem, mealType: MealType, active: boolean, source: MealSource = "generated"): MealSlot {
+  return {
+    id: createId(),
+    mealType,
+    title: item.title,
+    note: "",
+    calories: item.calories,
+    protein: item.protein,
+    carbs: item.carbs,
+    fat: item.fat,
+    tags: item.tags,
+    ingredients: item.ingredients,
+    prepEffort: item.effortLevel,
+    budgetLevel: item.budgetLevel,
+    status: "planned",
+    source,
+    image: item.image,
+    imageType: item.imageType,
+    imageSource: item.imageSource,
+    catalogItemId: item.id,
+    active,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+function matchesDiet(item: MealCatalogItem, dietType: DietType) {
+  return dietType === "any" ? item.dietTypes.includes("any") || item.dietTypes.length > 0 : item.dietTypes.includes(dietType);
+}
+
+function normalizeExclusions(exclusions: string[]) {
+  return exclusions.map((entry) => entry.trim().toLowerCase()).filter(Boolean);
+}
+
+function matchesExclusions(item: MealCatalogItem, exclusions: string[]) {
+  if (!exclusions.length) return true;
+  const normalizedIngredients = item.ingredients.map((entry) => entry.toLowerCase());
+  const normalizedExcluded = item.exclusions.map((entry) => entry.toLowerCase());
+  return !exclusions.some((entry) => normalizedIngredients.includes(entry) || normalizedExcluded.includes(entry));
+}
+
+function matchesBudget(item: MealCatalogItem, budgetFriendly: boolean) {
+  return !budgetFriendly || item.budgetLevel !== "high";
+}
+
+function matchesEffort(item: MealCatalogItem, lowEffort: boolean) {
+  return !lowEffort || item.effortLevel !== "high";
+}
+
+function targetCaloriesForMeal(preferences: MealPlannerPreferences, mealType: MealType) {
+  if (preferences.mealsPerDay === 2) {
+    return mealType === "lunch" ? preferences.caloriesTarget * 0.45 : mealType === "dinner" ? preferences.caloriesTarget * 0.55 : 0;
+  }
+  if (preferences.mealsPerDay === 3) {
+    return mealType === "breakfast" ? preferences.caloriesTarget * 0.25 : mealType === "lunch" ? preferences.caloriesTarget * 0.4 : mealType === "dinner" ? preferences.caloriesTarget * 0.35 : 0;
+  }
+  return mealType === "breakfast" ? preferences.caloriesTarget * 0.22 : mealType === "lunch" ? preferences.caloriesTarget * 0.33 : mealType === "dinner" ? preferences.caloriesTarget * 0.3 : preferences.caloriesTarget * 0.15;
+}
+
+function sortCandidatePool(items: MealCatalogItem[], targetCalories: number, usedTitles: Set<string>, preferences: MealPlannerPreferences) {
+  return [...items].sort((a, b) => {
+    const aRepeatedPenalty = !preferences.allowRepetition && usedTitles.has(a.title) ? 2000 : 0;
+    const bRepeatedPenalty = !preferences.allowRepetition && usedTitles.has(b.title) ? 2000 : 0;
+    const aVarietyPenalty = preferences.preferVariety && usedTitles.has(a.title) ? 500 : 0;
+    const bVarietyPenalty = preferences.preferVariety && usedTitles.has(b.title) ? 500 : 0;
+    return Math.abs(a.calories - targetCalories) + aRepeatedPenalty + aVarietyPenalty - (Math.abs(b.calories - targetCalories) + bRepeatedPenalty + bVarietyPenalty);
+  });
+}
+
+export function getFilteredCatalog(preferences: MealPlannerPreferences, profile: MealPlannerProfile, mealType?: MealType) {
+  const exclusions = normalizeExclusions([...preferences.exclusions, ...profile.avoidIngredients.split(/[،,]/).map((item) => item.trim()).filter(Boolean)]);
+  return MEAL_CATALOG.filter((item) => {
+    if (mealType && item.mealType !== mealType) return false;
+    return matchesDiet(item, preferences.dietType) && matchesExclusions(item, exclusions) && matchesBudget(item, preferences.budgetFriendly) && matchesEffort(item, preferences.lowEffort);
+  });
+}
+
+function pickCatalogItem(state: MealPlannerState, mealType: MealType, usedTitles: Set<string>) {
+  const pool = getFilteredCatalog(state.preferences, state.profile, mealType);
+  const sorted = sortCandidatePool(pool, targetCaloriesForMeal(state.preferences, mealType), usedTitles, state.preferences);
+  return sorted[0] ?? MEAL_CATALOG.find((item) => item.mealType === mealType) ?? null;
+}
+
+export function buildGeneratedWeekPlans(state: MealPlannerState, referenceISO = getTodayISO()) {
+  const days = getWeekDates(referenceISO);
+  const usedTitles = new Set<string>();
+  const repeatedBreakfast = state.preferences.sameBreakfastDaily ? pickCatalogItem(state, "breakfast", usedTitles) : null;
+  return Object.fromEntries(days.map((day, index) => {
+    const emptyDay = createDefaultDayPlan(day.dateISO, state.preferences, getWaterTargetCups(state.profile));
+    const meals = emptyDay.meals.map((slot) => {
+      if (!slot.active) return slot;
+      const item = slot.mealType === "breakfast" && repeatedBreakfast ? repeatedBreakfast : pickCatalogItem(state, slot.mealType, usedTitles);
+      if (!item) return slot;
+      if (!state.preferences.allowRepetition || state.preferences.preferVariety) usedTitles.add(item.title);
+      return createMealFromCatalog(item, slot.mealType, true);
+    });
+    return [
+      day.dateISO,
+      {
+        ...emptyDay,
+        meals,
+        waterTargetCups: getWaterTargetCups(state.profile),
+        waterActualCups: Math.max(0, Math.round(getWaterTargetCups(state.profile) * 0.5)),
+        notes: index === 0 ? "ابدأ بالأطباق الأسهل هذا الأسبوع للحفاظ على الزخم." : "",
+        updatedAt: new Date().toISOString(),
+      } satisfies MealDayPlan,
+    ];
+  })) as Record<string, MealDayPlan>;
+}
+
+export function buildReplacementMeal(state: MealPlannerState, mealType: MealType, currentTitle?: string, existingTitles: string[] = []) {
+  const usedTitles = new Set(existingTitles.filter((title) => title !== currentTitle));
+  const candidate = pickCatalogItem(state, mealType, usedTitles);
+  return candidate ? createMealFromCatalog(candidate, mealType, true) : createEmptyMealSlot(mealType, true);
+}
+
+export function getMealSuggestions(state: MealPlannerState, mealType: MealType) {
+  const favorites = state.favorites.filter((favorite) => favorite.mealType === mealType).map((favorite) => ({ title: favorite.title, source: "favorite" as MealSource, tags: favorite.tags, image: favorite.image }));
+  const catalog = getFilteredCatalog(state.preferences, state.profile, mealType).slice(0, 6).map((item) => ({ title: item.title, source: "generated" as MealSource, tags: item.tags, image: item.image }));
+  return [...favorites, ...catalog].slice(0, 8);
+}
+
+export function getMealPlannerSummary(state: MealPlannerState, referenceISO = getTodayISO()): MealPlannerSummary {
+  const plans = getWeekDates(referenceISO).map((day) => getDayPlan(state, day.dateISO));
+  const totalMeals = plans.reduce((sum, plan) => sum + activeMeals(plan).length, 0);
+  const plannedMeals = plans.reduce((sum, plan) => sum + countPlannedMeals(plan), 0);
+  const completedMeals = plans.reduce((sum, plan) => sum + countCompletedMeals(plan), 0);
+  const weeklyWaterTotal = plans.reduce((sum, plan) => sum + plan.waterActualCups, 0);
+  const weeklyWaterTarget = plans.reduce((sum, plan) => sum + plan.waterTargetCups, 0);
+  const daysWithWaterTarget = plans.filter((plan) => plan.waterActualCups >= plan.waterTargetCups).length;
+  const daysFullyPlanned = plans.filter((plan) => activeMeals(plan).length > 0 && countPlannedMeals(plan) === activeMeals(plan).length).length;
+  const daysPartiallyPlanned = plans.filter((plan) => countPlannedMeals(plan) > 0 && countPlannedMeals(plan) < activeMeals(plan).length).length;
+  const totalWeeklyCalories = plans.reduce((sum, plan) => sum + activeMeals(plan).reduce((mealSum, meal) => mealSum + meal.calories, 0), 0);
+  const titles = plans.flatMap((plan) => activeMeals(plan).map((meal) => meal.title.trim()).filter(Boolean));
+  const repeats = new Map<string, number>();
+  titles.forEach((title) => repeats.set(title, (repeats.get(title) ?? 0) + 1));
+  return {
+    totalMeals,
+    plannedMeals,
+    completedMeals,
+    emptyMeals: Math.max(0, totalMeals - plannedMeals),
+    weeklyWaterTotal,
+    weeklyWaterTarget,
+    daysWithWaterTarget,
+    completionPercent: totalMeals === 0 ? 0 : Math.round((plannedMeals / totalMeals) * 100),
+    averageCaloriesPerDay: Math.round(totalWeeklyCalories / 7),
+    totalWeeklyCalories,
+    repeatedMealsCount: Array.from(repeats.values()).reduce((sum, count) => sum + Math.max(0, count - 1), 0),
+    daysFullyPlanned,
+    daysPartiallyPlanned,
+    completedDays: daysFullyPlanned,
+    groceryLoad: getWeeklyShoppingItems(state, referenceISO).length,
+    leftoverOpportunities: Array.from(repeats.values()).filter((count) => count > 1).length,
+  };
 }
 
 export function getWeeklyShoppingItems(state: MealPlannerState, referenceISO = getTodayISO()): ShoppingItem[] {
-  const dayInfos = getWeekDates(referenceISO);
-  const itemMap = new Map<string, ShoppingItem>();
-  for (const day of dayInfos) {
+  const map = new Map<string, ShoppingItem>();
+  for (const day of getWeekDates(referenceISO)) {
     const plan = getDayPlan(state, day.dateISO);
-    for (const meal of plan.meals) {
-      for (const ingredient of parseIngredientSummary(meal.ingredientSummary)) {
+    for (const meal of activeMeals(plan).filter((entry) => entry.title.trim())) {
+      for (const ingredient of meal.ingredients) {
         const key = ingredient.toLowerCase();
-        const existing = itemMap.get(key);
+        const existing = map.get(key);
         if (existing) {
           existing.count += 1;
-          if (!existing.days.includes(day.weekdayLabel)) existing.days.push(day.weekdayLabel);
-          if (meal.title && !existing.mealTitles.includes(meal.title)) existing.mealTitles.push(meal.title);
+          if (!existing.linkedDays.includes(day.weekdayLabel)) existing.linkedDays.push(day.weekdayLabel);
         } else {
-          itemMap.set(key, { id: createId(), label: ingredient, count: 1, days: [day.weekdayLabel], mealTitles: meal.title ? [meal.title] : [] });
+          map.set(key, { id: createId(), label: ingredient, count: 1, linkedDays: [day.weekdayLabel] });
         }
       }
     }
   }
-  return Array.from(itemMap.values()).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, "ar"));
-}
-
-export function getMealPlannerSummary(state: MealPlannerState, referenceISO = getTodayISO()): MealPlannerSummary {
-  const days = getWeekDates(referenceISO);
-  const plans = days.map((day) => getDayPlan(state, day.dateISO));
-  const totalMeals = plans.length * 4;
-  const plannedMeals = plans.reduce((sum, plan) => sum + countPlannedMeals(plan), 0);
-  const completedMeals = plans.reduce((sum, plan) => sum + countCompletedMeals(plan), 0);
-  const skippedMeals = plans.reduce((sum, plan) => sum + plan.meals.filter((meal) => meal.status === "skipped").length, 0);
-  const eatingOutMeals = plans.reduce((sum, plan) => sum + plan.meals.filter((meal) => meal.status === "eating_out").length, 0);
-  const weeklyWaterTotal = plans.reduce((sum, plan) => sum + plan.waterActualCups, 0);
-  const weeklyWaterTarget = plans.reduce((sum, plan) => sum + plan.waterTargetCups, 0);
-  const daysWithWaterTarget = plans.filter((plan) => plan.waterActualCups >= plan.waterTargetCups).length;
-  const daysFullyPlanned = plans.filter((plan) => countPlannedMeals(plan) === plan.meals.length).length;
-  const daysPartiallyPlanned = plans.filter((plan) => countPlannedMeals(plan) > 0 && countPlannedMeals(plan) < plan.meals.length).length;
-  const groceryLoadDays = plans.filter((plan) => parseIngredientSummary(plan.meals.map((meal) => meal.ingredientSummary).join(",")).length >= 5).length;
-  const leftoverOpportunities = plans.filter((plan) => plan.leftoversAvailable || plan.meals.some((meal) => meal.source === "leftover" || meal.status === "leftover")).length;
-  const prepHeavyDays = plans.filter((plan) => plan.prepLoad === "high").length;
-  const copiedDays = plans.filter((plan) => Boolean(plan.copiedFromDateISO)).length;
-  const templateMeals = plans.reduce((sum, plan) => sum + plan.meals.filter((meal) => meal.source === "template").length, 0);
-  const shoppingReadyDays = plans.filter((plan) => plan.shoppingReady).length;
-  const emptyMeals = totalMeals - plannedMeals;
-  const emptyDinners = plans.reduce((sum, plan) => sum + (plan.meals.find((meal) => meal.mealType === "dinner")?.title.trim() ? 0 : 1), 0);
-  const repeatedMealsCount = countDuplicateTitles(plans.flatMap((plan) => plan.meals.map((meal) => meal.title.trim()).filter(Boolean)));
-  const completionPercent = totalMeals === 0 ? 0 : Math.round((plannedMeals / totalMeals) * 100);
-  let adherenceStreak = 0;
-  for (const plan of plans) {
-    if (countPlannedMeals(plan) >= 3) adherenceStreak += 1; else break;
-  }
-  let busiestPrepDay: string | null = null;
-  let highestLoad = -1;
-  plans.forEach((plan, index) => {
-    const load = plan.meals.reduce((sum, meal) => sum + meal.prepMinutes, 0);
-    if (load > highestLoad) { highestLoad = load; busiestPrepDay = days[index]?.weekdayLabel ?? null; }
-  });
-  return {
-    totalMeals, plannedMeals, completedMeals, emptyMeals, repeatedMealsCount, weeklyWaterTotal, weeklyWaterTarget, daysWithWaterTarget,
-    daysFullyPlanned, daysPartiallyPlanned, groceryLoadDays, leftoverOpportunities, prepHeavyDays, copiedDays, templateMeals, shoppingReadyDays,
-    completionPercent, adherenceStreak, emptyDinners, completedDays: daysFullyPlanned, eatingOutMeals, skippedMeals, busiestPrepDay,
-    mostRepeatedCategory: getMostRepeatedCategory(plans),
-  };
+  return Array.from(map.values()).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, "ar"));
 }
 
 export function getWeeklyRecommendations(state: MealPlannerState, referenceISO = getTodayISO()): WeeklyRecommendation[] {
-  const days = getWeekDates(referenceISO);
-  const plans = days.map((day) => ({ day, plan: getDayPlan(state, day.dateISO) }));
   const summary = getMealPlannerSummary(state, referenceISO);
-  const recommendations: WeeklyRecommendation[] = [];
-  if (summary.emptyDinners > 0) recommendations.push({ id: "empty_dinners", title: "عشاءات ناقصة", body: `ما زال لديك ${summary.emptyDinners} خانات عشاء فارغة هذا الأسبوع. ابدأ بملئها لأنها الأكثر تأثيرًا على التسوق والتحضير.`, tone: "warning" });
-  const monday = plans.find((entry) => entry.day.weekdayLong.includes("الاثنين"));
-  const friday = plans.find((entry) => entry.day.weekdayLong.includes("الجمعة"));
-  if (monday && friday && countPlannedMeals(monday.plan) >= 3 && countPlannedMeals(friday.plan) <= 1) recommendations.push({ id: "copy_monday_to_friday", title: "إعادة استخدام يوم قوي", body: "الاثنين مضبوط بشكل جيد، ويمكن نسخه بسهولة إلى الجمعة لتقليل وقت التخطيط.", tone: "info" });
-  if (summary.repeatedMealsCount >= 4) recommendations.push({ id: "repetition_high", title: "تكرار مرتفع", body: "هناك تكرار ملحوظ في الوجبات هذا الأسبوع. جرّب تبديل وجبتين على الأقل لتوازن أفضل.", tone: "warning" });
-  if (summary.groceryLoadDays >= 2) recommendations.push({ id: "shopping_cluster", title: "ضغط مشتريات", body: "هناك أكثر من يوم يتطلب مشتريات كثيرة. دمج المكونات بين يومين سيخفف الجهد.", tone: "info" });
-  const similarDays = plans.find((entry, index) => {
-    const next = plans[index + 1];
-    if (!next) return false;
-    const currentIngredients = new Set(parseIngredientSummary(entry.plan.meals.map((meal) => meal.ingredientSummary).join(",")));
-    const nextIngredients = parseIngredientSummary(next.plan.meals.map((meal) => meal.ingredientSummary).join(","));
-    return nextIngredients.some((ingredient) => currentIngredients.has(ingredient));
+  const days = getWeekDates(referenceISO).map((day) => ({ day, plan: getDayPlan(state, day.dateISO) }));
+  const recs: WeeklyRecommendation[] = [];
+  const strongDay = days.find((entry) => countPlannedMeals(entry.plan) >= Math.max(2, activeMeals(entry.plan).length - 1));
+  const emptyDinnerDays = days.filter((entry) => !(entry.plan.meals.find((meal) => meal.mealType === "dinner" && meal.active)?.title.trim())).length;
+  if (strongDay) recs.push({ id: "reuse-strong", title: "إعادة استخدام يوم قوي", body: `${strongDay.day.weekdayLong} مرتب جيدًا ويمكن نسخه ليوم أضعف لتسريع الأسبوع.`, tone: "success" });
+  if (emptyDinnerDays > 0) recs.push({ id: "empty-dinners", title: "عشاءات ناقصة", body: `ما زالت ${emptyDinnerDays} خانات عشاء غير مكتملة هذا الأسبوع.`, tone: "warning" });
+  if (summary.repeatedMealsCount >= 4) recs.push({ id: "repeat-high", title: "تكرار أعلى من اللازم", body: "هناك تكرار ملحوظ في الوجبات. بدّل وجبة أو وجبتين للحفاظ على التنوع.", tone: "info" });
+  if (summary.weeklyWaterTotal < Math.round(summary.weeklyWaterTarget * 0.7)) recs.push({ id: "water-low", title: "الماء أقل من المستهدف", body: "إضافة تذكير بسيط بعد الفطور والغداء قد ترفع التقدم بسرعة.", tone: "warning" });
+  if (summary.groceryLoad >= 10) recs.push({ id: "grocery-load", title: "ضغط مشتريات مرتفع", body: "جرّب توحيد الغداء بين يومين لتقليل عدد المكونات المطلوبة.", tone: "info" });
+  if (!recs.length) recs.push({ id: "balanced", title: "الأسبوع متوازن", body: "الخطة واضحة ومتوازنة. ركّز الآن على التتبع اليومي وإنهاء اللمسات الصغيرة.", tone: "success" });
+  return recs.slice(0, 4);
+}
+
+export function getWeekChartData(state: MealPlannerState, referenceISO = getTodayISO()): WeekChartPoint[] {
+  return getWeekDates(referenceISO).map((day) => {
+    const plan = getDayPlan(state, day.dateISO);
+    return {
+      day: day.weekdayLabel,
+      calories: activeMeals(plan).reduce((sum, meal) => sum + meal.calories, 0),
+      water: plan.waterActualCups,
+      completion: getMealCompletionPercent(plan),
+    };
   });
-  if (similarDays) recommendations.push({ id: "ingredient_overlap", title: "تداخل ذكي في المكونات", body: `${similarDays.day.weekdayLabel} يشترك في مكونات مع اليوم التالي، وهذا مناسب لتقليل هدر التسوق.`, tone: "success" });
-  if (recommendations.length === 0) recommendations.push({ id: "good_week", title: "الأسبوع متوازن", body: "الخطة الأسبوعية تبدو متماسكة. ركّز الآن على رفع الماء وإغلاق الخانات الفارغة الصغيرة.", tone: "success" });
-  return recommendations.slice(0, 5);
-}
-
-export function getDefaultMealTitle(mealType: MealType, status: MealStatus) {
-  if (status === "leftover") return "بقايا";
-  if (status === "eating_out") return "خارج المنزل";
-  if (status === "skipped") return "تم التخطي";
-  return MEAL_TYPE_LABELS[mealType];
-}
-
-function getMealBank(mode: WeeklyPreferenceMode): Record<MealType, string[]> {
-  return {
-    breakfast: mode === "budget" ? ["فول وخبز", "بيض وتوست", "زبادي وشوفان"] : mode === "family" ? ["فطور عربي مشترك", "بيض وخبز للعائلة", "لبنة وخضار"] : mode === "high_protein" ? ["بيض وجبن قريش", "زبادي يوناني", "ساندويش ديك رومي"] : ["شوفان وفاكهة", "بيض وخبز كامل", "زبادي مع مكسرات"],
-    lunch: mode === "budget" ? ["مجدرة وسلطة", "أرز وخضار", "باستا بصلصة طماطم"] : mode === "family" ? ["رز ودجاج وسلطة", "صينية خضار مع لحم", "مقلوبة خفيفة"] : mode === "high_protein" ? ["دجاج مشوي وأرز", "تونة وسلطة", "لحم وخضار"] : ["أرز ودجاج", "سمك وخضار", "مكرونة متوازنة"],
-    dinner: mode === "low_prep" ? ["شوربة جاهزة", "ساندويش سريع", "سلطة تونة"] : mode === "budget" ? ["بقايا الغداء", "سندويش جبنة", "شوربة عدس"] : ["شوربة وسلطة", "سندويش خفيف", "بطاطا وبروتين خفيف"],
-    snack: mode === "high_protein" ? ["لبن بروتين", "بيض مسلوق", "مكسرات"] : ["فاكهة", "زبادي", "مكسرات"],
-  };
-}
-
-export function buildGeneratedWeekPlans(state: MealPlannerState, referenceISO: string, style: WeeklyPlanningStyle, mode: WeeklyPreferenceMode) {
-  const currentWeek = getWeekDates(referenceISO);
-  const previousWeek = getPreviousWeekDates(referenceISO);
-  const mealBank = getMealBank(mode);
-  const nextPlans: Record<string, MealDayPlan> = {};
-  currentWeek.forEach((day, index) => {
-    const currentPlan = getDayPlan(state, day.dateISO);
-    const basePlan = createDefaultDayPlan(day.dateISO, getWaterTargetCups(state.profile));
-    let nextPlan: MealDayPlan = { ...basePlan, notes: currentPlan.notes, prepNote: currentPlan.prepNote, shoppingReady: currentPlan.shoppingReady, leftoversAvailable: currentPlan.leftoversAvailable, prepLoad: currentPlan.prepLoad };
-    if (style === "copy_last_week") {
-      const previousPlan = getDayPlan(state, previousWeek[index]?.dateISO ?? day.dateISO);
-      nextPlan = { ...previousPlan, dateISO: day.dateISO, updatedAt: new Date().toISOString(), copiedFromDateISO: previousWeek[index]?.dateISO };
-    } else {
-      nextPlan.meals = nextPlan.meals.map((meal) => {
-        const originalMeal = currentPlan.meals.find((slot) => slot.mealType === meal.mealType) ?? meal;
-        const bankItems = mealBank[meal.mealType];
-        const fallbackTitle = bankItems[index % bankItems.length] ?? "";
-        if (style === "full_custom") return meal;
-        if (style === "autofill_empty" && (originalMeal.title.trim() || originalMeal.note.trim())) return { ...originalMeal, updatedAt: new Date().toISOString() };
-        if (style === "same_breakfast_daily" && meal.mealType === "breakfast") return { ...meal, title: bankItems[0] ?? fallbackTitle, source: "autofill", prepEffort: mode === "low_prep" ? "low" : "medium", ingredientSummary: "خبز, لبنة, فاكهة", updatedAt: new Date().toISOString() };
-        if (style === "alternating_lunches" && meal.mealType === "lunch") return { ...meal, title: bankItems[index % 2], source: "autofill", prepEffort: mode === "low_prep" ? "low" : "medium", ingredientSummary: mode === "budget" ? "أرز, عدس, خضار" : "بروتين, خضار, نشويات", updatedAt: new Date().toISOString() };
-        if (style === "low_effort_week") return { ...meal, title: getMealBank("low_prep")[meal.mealType][index % 3], source: "autofill", prepEffort: "low", ingredientSummary: meal.mealType === "dinner" ? "شوربة, خبز" : meal.mealType === "lunch" ? "وعاء جاهز, خضار" : "مكونات سريعة", updatedAt: new Date().toISOString() };
-        return { ...meal, title: originalMeal.title.trim() || fallbackTitle, note: originalMeal.note, source: originalMeal.title.trim() ? originalMeal.source : "autofill", prepEffort: mode === "low_prep" ? "low" : mode === "family" ? "medium" : originalMeal.prepEffort, ingredientSummary: originalMeal.ingredientSummary || (meal.mealType === "snack" ? "فاكهة, مكسرات" : "بروتين, خضار"), updatedAt: new Date().toISOString() };
-      });
-    }
-    if (style !== "full_custom") {
-      nextPlan.prepLoad = mode === "low_prep" || style === "low_effort_week" ? "low" : mode === "family" ? "high" : "medium";
-      nextPlan.shoppingReady = style === "copy_last_week" ? currentPlan.shoppingReady : mode !== "family";
-      nextPlan.leftoversAvailable = mode === "budget" || style === "low_effort_week";
-      nextPlan.prepNote = nextPlan.prepNote || (mode === "family" ? "حضّر المكونات الرئيسية ليلة سابقة." : "نسّق الوجبات المتشابهة لتقليل الجهد.");
-    }
-    nextPlans[day.dateISO] = { ...nextPlan, dateISO: day.dateISO, updatedAt: new Date().toISOString() };
-  });
-  return nextPlans;
 }
