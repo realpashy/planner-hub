@@ -1,4 +1,5 @@
 import express from "express";
+import { configureApiApp } from "../server/routes";
 
 declare module "http" {
   interface IncomingMessage {
@@ -29,8 +30,7 @@ function getDebugPayload() {
 async function ensureConfigured() {
   if (!configuredPromise) {
     configuredPromise = (async () => {
-      const mod = await import("../server/routes");
-      await mod.configureApiApp(app);
+      await configureApiApp(app);
       startupError = null;
     })().catch((error) => {
       startupError = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
