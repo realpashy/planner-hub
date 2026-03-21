@@ -14,6 +14,7 @@ export default function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<string>("");
 
   const [, setLocation] = useLocation();
   const auth = useAuth();
@@ -105,6 +106,21 @@ export default function AuthPage() {
       setLocation("/");
     } catch (e) {
       setError(normalizeAuthError(e, mode));
+      try {
+        const debugRes = await fetch("/api/debug/startup", { credentials: "include" });
+        const debugBody = await debugRes.json();
+        if (!debugRes.ok && debugBody?.startupError) {
+          setDebugInfo(`Debug: ${debugBody.startupError}`);
+        } else if (debugBody?.debug?.startupError) {
+          setDebugInfo(`Debug: ${debugBody.debug.startupError}`);
+        } else if (debugBody?.message) {
+          setDebugInfo(`Debug: ${debugBody.message}`);
+        } else {
+          setDebugInfo("");
+        }
+      } catch {
+        setDebugInfo("Debug: Unable to fetch backend startup diagnostics.");
+      }
     } finally {
       setLoading(false);
     }
@@ -220,6 +236,11 @@ export default function AuthPage() {
           )}
 
           {error && <p className="text-sm text-rose-600 dark:text-rose-400 text-center">{error}</p>}
+          {debugInfo ? (
+            <p className="rounded-xl border border-amber-300/50 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-200">
+              {debugInfo}
+            </p>
+          ) : null}
 
           <button
             type="submit"
