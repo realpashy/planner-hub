@@ -1,15 +1,20 @@
-import type { AiDayPlan, AiMeal, AiQuotaDecision } from "@shared/ai/ai-types";
+import type { AiDayPlan, AiMeal } from "@shared/ai/ai-types";
 import { apiRequest } from "@/lib/queryClient";
-import {
-  createDefaultDayPlan,
-  createDefaultMealPlannerState,
-  createId,
-  getWaterTargetCups,
-  type MealDayPlan,
-  type MealPlannerPreferences,
-  type MealPlannerState,
-  type MealType,
+import type {
+  MealPlanMeal,
+  PlannerLimits,
+  PlannerPreferences,
+  PlannerServerState,
+  WeeklyPlanRecord,
+  MealType,
 } from "@/lib/meal-planner";
+
+export interface PlannerUsageResponse {
+  activePlan: WeeklyPlanRecord | null;
+  limits: PlannerLimits;
+  role: string;
+  tier: "free" | "pro" | "admin";
+}
 
 export interface MealPlannerQuotaResponse {
   tier: "free" | "pro" | "admin";
@@ -32,88 +37,59 @@ export interface MealPlannerQuotaResponse {
   remainingLightEditsMonth: number | null;
 }
 
-export function aiMealToMealSlot(meal: AiMeal, active = true) {
+export function aiMealToPlannerMeal(meal: AiMeal): MealPlanMeal {
   return {
-    id: createId(),
+    id: `${meal.mealType}_${meal.title}_${Math.random().toString(36).slice(2, 8)}`,
     mealType: meal.mealType,
     title: meal.title,
-    note: meal.shortNote || "",
+    icon: meal.imageType === "emoji" ? meal.image : meal.mealType === "breakfast" ? "🍳" : meal.mealType === "lunch" ? "🥗" : meal.mealType === "dinner" ? "🍲" : "🥤",
+    ingredients: meal.ingredients,
+    steps: meal.steps,
     calories: meal.calories,
     protein: meal.protein,
     carbs: meal.carbs,
     fat: meal.fat,
+    waterCups: 2,
     tags: meal.tags,
-    ingredients: meal.ingredients,
-    prepEffort: "medium" as const,
-    budgetLevel: "medium" as const,
-    status: "planned" as const,
-    source: "generated" as const,
+    reason: meal.reason,
+    shortTip: meal.shortTip,
+    source: "ai",
     image: meal.image,
     imageType: meal.imageType,
     imageSource: meal.imageSource,
-    active,
-    updatedAt: new Date().toISOString(),
+    repeated: false,
+    reusedIngredient: false,
   };
 }
 
-export function applyAiDayToPlan(
-  basePlan: MealDayPlan,
-  day: AiDayPlan,
-  preferences: MealPlannerPreferences,
-): MealDayPlan {
-  const activeMealTypes = new Set(basePlan.meals.filter((meal) => meal.active).map((meal) => meal.mealType));
-  const aiMealsByType = new Map(day.meals.map((meal) => [meal.mealType, meal]));
-  return {
-    ...basePlan,
-    dateISO: day.dateISO,
-    meals: basePlan.meals.map((meal) => {
-      const next = aiMealsByType.get(meal.mealType);
-      if (!next) {
-        return {
-          ...meal,
-          active: activeMealTypes.has(meal.mealType),
-          updatedAt: new Date().toISOString(),
-        };
-      }
-      return aiMealToMealSlot(next, activeMealTypes.has(next.mealType));
-    }),
-    waterTargetCups: day.waterTargetCups || getWaterTargetCups(createDefaultMealPlannerState().profile),
-    notes: day.notes || "",
-    updatedAt: new Date().toISOString(),
-  };
-}
-
-export function applyAiWeekToState(
-  prev: MealPlannerState,
-  days: AiDayPlan[],
-  preferences: MealPlannerPreferences,
-) {
-  const nextPlansByDate = { ...prev.plansByDate };
-  for (const day of days) {
-    const basePlan = prev.plansByDate[day.dateISO] ?? createDefaultDayPlan(day.dateISO, preferences, getWaterTargetCups(prev.profile));
-    nextPlansByDate[day.dateISO] = applyAiDayToPlan(basePlan, day, preferences);
+export async function fetchMealPlannerState() {
+  const response = await fetch("/api/meal-planner/state", { credentials: "include" });
+  if (!response.ok) {
+    throw new Error((await response.text()) || "Failed to load meal planner state");
   }
-  return {
-    ...prev,
-    preferences,
-    plansByDate: nextPlansByDate,
-    hasGeneratedPlan: true,
-    recentMeals: days.flatMap((day) => day.meals.map((meal) => meal.title)).slice(0, 24),
-  };
+  return (await response.json()) as PlannerServerState;
 }
 
 export async function fetchMealPlannerQuota() {
   const response = await fetch("/api/meal-planner/quota", { credentials: "include" });
-  if (!response.ok) throw new Error("Failed to fetch meal planner quota");
+  if (!response.ok) {
+    throw new Error((await response.text()) || "Failed to load meal planner quota");
+  }
   return (await response.json()) as MealPlannerQuotaResponse;
 }
 
-export async function generateWeekWithAi(preferences: MealPlannerPreferences, existingPlan?: unknown) {
-  const response = await apiRequest("POST", "/api/meal-planner/generate-week", { preferences, existingPlan });
+export async function saveMealPlannerPreferences(preferences: PlannerPreferences) {
+  const response = await apiRequest("POST", "/api/meal-planner/preferences", { preferences });
+  return (await response.json()) as { ok: true; preferences: PlannerPreferences };
+}
+
+export async function generateWeekWithAi(preferences: PlannerPreferences, replaceCurrent = false) {
+  const response = await apiRequest("POST", "/api/meal-planner/generate-week", { preferences, replaceCurrent });
   return (await response.json()) as {
-    plan: { summary: string; days: AiDayPlan[] };
-    usage: { inputTokens: number; outputTokens: number };
-    quota: AiQuotaDecision;
+    state: PlannerServerState;
+    provider: "openai" | "local";
+    source: "ai" | "basic";
+    debug?: string | null;
   };
 }
 
@@ -126,25 +102,29 @@ export async function editMealWithAi(payload: {
   const response = await apiRequest("POST", "/api/meal-planner/edit-meal", payload);
   return (await response.json()) as {
     meal: AiMeal;
-    usage: { inputTokens: number; outputTokens: number };
-    quota: AiQuotaDecision;
+    activePlan: WeeklyPlanRecord;
+    provider: "openai" | "local";
+    source: "ai" | "basic";
+    debug?: string | null;
   };
 }
 
 export async function regenerateDayWithAi(payload: {
   dateISO: string;
   existingDay: Record<string, unknown>;
-  preferences: MealPlannerPreferences;
+  preferences: PlannerPreferences;
 }) {
   const response = await apiRequest("POST", "/api/meal-planner/regenerate-day", payload);
   return (await response.json()) as {
     day: AiDayPlan;
-    usage: { inputTokens: number; outputTokens: number };
-    quota: AiQuotaDecision;
+    activePlan: WeeklyPlanRecord;
+    provider: "openai" | "local";
+    source: "ai" | "basic";
+    debug?: string | null;
   };
 }
 
 export async function deleteMealPlanRemote(mode: "meals" | "all") {
   const response = await apiRequest("POST", "/api/meal-planner/delete-plan", { mode });
-  return response.json();
+  return (await response.json()) as { ok: true; state: PlannerServerState };
 }

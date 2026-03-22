@@ -181,6 +181,23 @@ export async function initializeDatabase() {
   `);
 
   await dbPool.query(`
+    CREATE TABLE IF NOT EXISTS meal_plans (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+      week_start TEXT NOT NULL,
+      version INT NOT NULL,
+      is_active BOOLEAN NOT NULL DEFAULT TRUE,
+      preferences JSONB NOT NULL DEFAULT '{}'::jsonb,
+      plan_data JSONB NOT NULL DEFAULT '{}'::jsonb,
+      usage_data JSONB NOT NULL DEFAULT '{}'::jsonb,
+      source TEXT NOT NULL DEFAULT 'basic',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(user_id, week_start, version)
+    );
+  `);
+
+  await dbPool.query(`
     CREATE TABLE IF NOT EXISTS app_user_data (
       user_id TEXT PRIMARY KEY REFERENCES app_users(id) ON DELETE CASCADE,
       planner_json JSONB NOT NULL DEFAULT '{}'::jsonb,

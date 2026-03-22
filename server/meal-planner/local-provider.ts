@@ -1,4 +1,3 @@
-import { addDays, format, startOfWeek } from "date-fns";
 import type {
   AiDayPlan,
   AiMeal,
@@ -10,113 +9,174 @@ import type {
 } from "../../shared/ai/ai-types";
 import { getMealDataset, type DatasetMeal } from "./catalog";
 
-function normalizeExclusions(input: unknown) {
+function normalizeList(input: unknown) {
   return Array.isArray(input)
     ? input.map((item) => String(item).trim().toLowerCase()).filter(Boolean)
     : [];
 }
 
 function getMealsPerDay(preferences: Record<string, unknown>) {
-  const value = Number(preferences.mealsPerDay ?? 3);
-  return value === 2 || value === 3 || value === 4 ? value : 3;
+  const base = Number(preferences.mealsPerDay ?? 3);
+  const snacks = Boolean(preferences.snacks);
+  if (base <= 2) return ["breakfast", "dinner"] as const;
+  if (base === 3 && !snacks) return ["breakfast", "lunch", "dinner"] as const;
+  return ["breakfast", "lunch", "dinner", "snack"] as const;
 }
 
-function getTargetCalories(preferences: Record<string, unknown>, mealType: AiMeal["mealType"]) {
+function getMealTargetCalories(preferences: Record<string, unknown>, mealType: AiMeal["mealType"]) {
   const total = Math.max(1200, Math.min(4000, Number(preferences.caloriesTarget ?? 1900)));
-  const mealsPerDay = getMealsPerDay(preferences);
-  if (mealsPerDay === 2) {
-    return mealType === "lunch" ? total * 0.45 : mealType === "dinner" ? total * 0.55 : 0;
-  }
-  if (mealsPerDay === 3) {
-    return mealType === "breakfast" ? total * 0.25 : mealType === "lunch" ? total * 0.4 : mealType === "dinner" ? total * 0.35 : 0;
-  }
-  return mealType === "breakfast" ? total * 0.22 : mealType === "lunch" ? total * 0.33 : mealType === "dinner" ? total * 0.3 : total * 0.15;
+  const split = getMealsPerDay(preferences);
+  const portion =
+    split.length === 2
+      ? mealType === "breakfast"
+        ? 0.45
+        : 0.55
+      : split.length === 3
+        ? mealType === "breakfast"
+          ? 0.25
+          : mealType === "lunch"
+            ? 0.4
+            : 0.35
+        : mealType === "breakfast"
+          ? 0.22
+          : mealType === "lunch"
+            ? 0.32
+            : mealType === "dinner"
+              ? 0.28
+              : 0.18;
+  return Math.round(total * portion);
 }
 
 function matchesDiet(item: DatasetMeal, dietType: string) {
   return dietType === "any" ? true : item.dietTypes.includes(dietType);
 }
 
-function filterCatalog(dataset: DatasetMeal[], preferences: Record<string, unknown>, mealType?: DatasetMeal["mealType"]) {
-  const exclusions = normalizeExclusions(preferences.exclusions);
+function matchesRestrictions(item: DatasetMeal, restrictions: string[]) {
+  if (!restrictions.length) return true;
+  const haystack = [...item.ingredients, ...item.exclusions, ...item.tags, item.title]
+    .join(" ")
+    .toLowerCase();
+  return !restrictions.some((entry) => haystack.includes(entry));
+}
+
+function getPool(dataset: DatasetMeal[], preferences: Record<string, unknown>, mealType: DatasetMeal["mealType"]) {
+  const restrictions = [
+    ...normalizeList(preferences.allergies),
+    ...normalizeList(preferences.dislikedIngredients),
+    ...normalizeList(preferences.dislikedMeals),
+    ...normalizeList(preferences.exclusions),
+  ];
   const dietType = String(preferences.dietType ?? "any");
-  const budgetFriendly = Boolean(preferences.budgetFriendly);
-  const lowEffort = Boolean(preferences.lowEffort);
+  const lowEffort = Boolean(preferences.lowEffort) || preferences.cookingTime === "short";
   return dataset.filter((item) => {
-    if (mealType && item.mealType !== mealType) return false;
+    if (item.mealType !== mealType) return false;
     if (!matchesDiet(item, dietType)) return false;
-    if (budgetFriendly && item.budget === "high") return false;
+    if (!matchesRestrictions(item, restrictions)) return false;
     if (lowEffort && item.effort === "high") return false;
-    return !exclusions.some((entry) => item.ingredients.some((ingredient) => ingredient.toLowerCase().includes(entry)) || item.exclusions.some((x) => x.toLowerCase().includes(entry)));
+    if (Boolean(preferences.budgetFriendly) && item.budget === "high") return false;
+    return true;
   });
 }
 
-function sortPool(pool: DatasetMeal[], targetCalories: number, usedTitles: Set<string>, preferVariety: boolean, allowRepetition: boolean) {
-  return [...pool].sort((a, b) => {
-    const aPenalty = (!allowRepetition && usedTitles.has(a.title) ? 2000 : 0) + (preferVariety && usedTitles.has(a.title) ? 400 : 0);
-    const bPenalty = (!allowRepetition && usedTitles.has(b.title) ? 2000 : 0) + (preferVariety && usedTitles.has(b.title) ? 400 : 0);
-    return Math.abs(a.calories - targetCalories) + aPenalty - (Math.abs(b.calories - targetCalories) + bPenalty);
-  });
+function scoreMeal(item: DatasetMeal, targetCalories: number, mode: string, busyDay: boolean, usedTitles: Set<string>) {
+  let score = Math.abs(item.calories - targetCalories);
+  if (busyDay && item.effort === "high") score += 180;
+  if (mode === "high_protein") score -= item.protein * 3;
+  if (mode === "vegetarian" && item.dietTypes.includes("vegetarian")) score -= 90;
+  if (mode === "faster") score += item.effort === "high" ? 150 : item.effort === "medium" ? 35 : -50;
+  if (usedTitles.has(item.title)) score += 95;
+  return score;
 }
 
-function toAiMeal(item: DatasetMeal): AiMeal {
+function chooseMeal(
+  pool: DatasetMeal[],
+  targetCalories: number,
+  mode: "default" | "higher_protein" | "faster" | "vegetarian" | "similar",
+  busyDay: boolean,
+  usedTitles: Set<string>,
+) {
+  const ranked = [...pool].sort(
+    (a, b) => scoreMeal(a, targetCalories, mode, busyDay, usedTitles) - scoreMeal(b, targetCalories, mode, busyDay, usedTitles),
+  );
+  return ranked[0] ?? pool[0];
+}
+
+function mealReason(item: DatasetMeal, busyDay: boolean) {
+  if (busyDay && item.effort === "low") return "يناسب اليوم المزدحم ويقلل وقت التحضير.";
+  if (item.protein >= 28) return "يدعم الشبع ويعزز البروتين خلال اليوم.";
+  if (item.tags.includes("make_ahead")) return "يسهّل التخطيط ويقلل ضغط الطبخ لاحقًا.";
+  return "يحافظ على توازن يومك ويستخدم مكونات عملية.";
+}
+
+function toAiMeal(item: DatasetMeal, busyDay: boolean): AiMeal {
   return {
     mealType: item.mealType,
     title: item.title,
+    ingredients: item.ingredients.slice(0, 8),
+    steps: [
+      "جهّز المكونات الأساسية.",
+      item.effort === "low" ? "اطبخ أو قدّم مباشرة." : "اطبخ ثم قدّم الطبق دافئًا.",
+      "قدّم مع إضافة خفيفة مناسبة.",
+    ].slice(0, item.effort === "low" ? 2 : 3),
     calories: item.calories,
     protein: item.protein,
     carbs: item.carbs,
     fat: item.fat,
-    tags: item.tags.slice(0, 6),
-    ingredients: item.ingredients.slice(0, 10),
-    shortNote: item.tags.slice(0, 2).join(" • "),
+    tags: item.tags.slice(0, 4),
+    reason: mealReason(item, busyDay),
+    shortTip: busyDay ? "اليوم مزدحم، فاخترنا طبقًا سريع التحضير." : "وجبة متوازنة تناسب نسق الأسبوع.",
     image: item.image,
     imageType: item.imageType,
     imageSource: item.imageSource,
   };
 }
 
-function getWeekDays(referenceDate = new Date()) {
-  const start = startOfWeek(referenceDate, { weekStartsOn: 0 });
-  return Array.from({ length: 7 }, (_, index) => addDays(start, index));
+function getWaterTarget(preferences: Record<string, unknown>) {
+  const activity = String(preferences.activityLevel ?? "moderate");
+  const base = 8;
+  if (activity === "high") return 11;
+  if (activity === "low") return 8;
+  return 9;
+}
+
+function getDayTip(busyDay: boolean, meals: AiMeal[]) {
+  if (busyDay) return "ركّز على التحضير السريع والوجبات المباشرة اليوم.";
+  if (meals.some((meal) => meal.tags.includes("protein"))) return "في هذا اليوم تم دعم البروتين بشكل أوضح.";
+  return "وزّع الماء على اليوم لتحافظ على الإيقاع.";
 }
 
 export async function generateWeeklyPlanLocal(input: GenerateWeekAiInput): Promise<{ plan: AiWeekPlan; usage: AiProviderUsage }> {
   const dataset = await getMealDataset();
-  const mealsPerDay = getMealsPerDay(input.preferences);
-  const mealTypes: AiMeal["mealType"][] =
-    mealsPerDay === 2
-      ? ["lunch", "dinner"]
-      : mealsPerDay === 3
-        ? ["breakfast", "lunch", "dinner"]
-        : ["breakfast", "lunch", "dinner", "snack"];
+  const busyDays = new Set(normalizeList(input.preferences.busyDays));
+  const mealTypes = getMealsPerDay(input.preferences);
   const usedTitles = new Set<string>();
-  const preferVariety = input.preferences.preferVariety !== false;
-  const allowRepetition = input.preferences.allowRepetition !== false;
-  const sameBreakfastDaily = Boolean(input.preferences.sameBreakfastDaily);
-  const breakfastPool = filterCatalog(dataset, input.preferences, "breakfast");
-  const recurringBreakfast = sameBreakfastDaily ? sortPool(breakfastPool, getTargetCalories(input.preferences, "breakfast"), usedTitles, preferVariety, allowRepetition)[0] : null;
-  const days = getWeekDays().map((day, index) => {
+  const days = input.activeDates.map((dateISO) => {
+    const weekday = new Date(`${dateISO}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" }).toLowerCase();
+    const busyDay = busyDays.has(weekday);
     const meals = mealTypes.map((mealType) => {
-      const pool = filterCatalog(dataset, input.preferences, mealType);
-      const item =
-        mealType === "breakfast" && recurringBreakfast
-          ? recurringBreakfast
-          : sortPool(pool, getTargetCalories(input.preferences, mealType), usedTitles, preferVariety, allowRepetition)[0] ?? pool[0] ?? dataset.find((entry) => entry.mealType === mealType)!;
-      usedTitles.add(item.title);
-      return toAiMeal(item);
+      const pool = getPool(dataset, input.preferences, mealType);
+      const meal =
+        chooseMeal(pool, getMealTargetCalories(input.preferences, mealType), "default", busyDay, usedTitles) ??
+        dataset.find((item) => item.mealType === mealType)!;
+      usedTitles.add(meal.title);
+      return toAiMeal(meal, busyDay);
     });
     return {
-      dateISO: format(day, "yyyy-MM-dd"),
+      dateISO,
+      tip: getDayTip(busyDay, meals),
+      notes: busyDay ? "تم تبسيط اليوم لأنه يوم مزدحم." : "",
+      waterTargetCups: getWaterTarget(input.preferences),
       meals,
-      waterTargetCups: Math.max(8, Number(input.userContext.timezone ? 8 : 8)),
-      notes: index === 0 ? "ابدأ بالأطباق الأسرع هذا الأسبوع للحفاظ على الاستمرارية." : "",
     } satisfies AiDayPlan;
   });
 
   return {
     plan: {
-      summary: "خطة أسبوعية متوازنة تم توليدها محليًا مع مراعاة تفضيلاتك الحالية.",
+      summary: "خطة أساسية متوازنة مبنية محليًا وفق تفضيلاتك الحالية.",
+      insights: [
+        "ابدأ بالأيام الأبسط ثم ثبّت الإيقاع قبل التعديلات الكثيرة.",
+        "ركّز على الماء بين الوجبات لدعم الاستمرارية.",
+      ],
       days,
     },
     usage: { inputTokens: 0, outputTokens: 0 },
@@ -125,29 +185,34 @@ export async function generateWeeklyPlanLocal(input: GenerateWeekAiInput): Promi
 
 export async function editMealLocal(input: EditMealAiInput): Promise<{ meal: AiMeal; usage: AiProviderUsage }> {
   const dataset = await getMealDataset();
-  const existingMealType = String(input.existingMeal.mealType || "lunch") as AiMeal["mealType"];
-  const pool = filterCatalog(dataset, { dietType: "any", exclusions: input.userContext.avoidIngredients ?? [] }, existingMealType);
+  const mealType = String(input.existingMeal.mealType || "lunch") as AiMeal["mealType"];
   const request = input.editRequest.toLowerCase();
-  const candidate =
-    pool.find((item) => request && (item.title.toLowerCase().includes(request) || item.tags.some((tag) => tag.toLowerCase().includes(request)))) ??
-    pool[0] ??
-    dataset.find((item) => item.mealType === existingMealType)!;
+  const pool = dataset.filter((item) => item.mealType === mealType);
+  const mode =
+    request.includes("protein") ? "higher_protein" :
+    request.includes("vegetarian") ? "vegetarian" :
+    request.includes("fast") || request.includes("quick") ? "faster" :
+    request.includes("similar") ? "similar" :
+    "default";
+
+  const currentCalories = Number(input.existingMeal.calories ?? 450);
+  const choice = chooseMeal(pool, currentCalories, mode, false, new Set([String(input.existingMeal.title || "")])) ?? pool[0];
   return {
-    meal: toAiMeal(candidate),
+    meal: toAiMeal(choice, false),
     usage: { inputTokens: 0, outputTokens: 0 },
   };
 }
 
 export async function regenerateDayLocal(input: RegenerateDayAiInput): Promise<{ day: AiDayPlan; usage: AiProviderUsage }> {
-  const week = await generateWeeklyPlanLocal({
+  const result = await generateWeeklyPlanLocal({
     action: "generate_week",
     preferences: input.preferences,
+    activeDates: [String(input.existingDay.dateISO || new Date().toISOString().slice(0, 10))],
     userContext: input.userContext,
   });
-  const sameDate = String(input.existingDay.dateISO || week.plan.days[0]?.dateISO || "");
-  const day = week.plan.days.find((entry) => entry.dateISO === sameDate) ?? week.plan.days[0];
+
   return {
-    day,
-    usage: week.usage,
+    day: result.plan.days[0],
+    usage: result.usage,
   };
 }

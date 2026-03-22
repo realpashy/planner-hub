@@ -19,6 +19,20 @@ export interface ProfileRow {
   timezone: string;
 }
 
+export interface MealPlanRecordRow {
+  id: string;
+  userId: string;
+  weekStart: string;
+  version: number;
+  isActive: boolean;
+  preferences: Record<string, unknown>;
+  planData: Record<string, unknown>;
+  usageData: Record<string, unknown>;
+  source: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export async function getCloudData(userId: string) {
   const result = await dbPool.query(
     "SELECT planner_json as \"plannerData\", budget_json as \"budgetData\", meal_json as \"mealData\" FROM app_user_data WHERE user_id = $1 LIMIT 1",
@@ -268,6 +282,182 @@ export async function getSavedMealPlanContext(userId: string) {
     [userId],
   );
   return result.rows as Array<{ weekKey: string; source: string }>;
+}
+
+export async function saveMealPlannerPreferences(userId: string, preferences: unknown) {
+  const cloud = await getCloudData(userId);
+  const currentMealData =
+    cloud.mealData && typeof cloud.mealData === "object" ? { ...(cloud.mealData as Record<string, unknown>) } : {};
+
+  await saveCloudData(userId, {
+    mealData: {
+      ...currentMealData,
+      preferences,
+      updatedAt: new Date().toISOString(),
+    },
+  });
+}
+
+export async function getMealPlannerPreferences(userId: string) {
+  const cloud = await getCloudData(userId);
+  const mealData =
+    cloud.mealData && typeof cloud.mealData === "object" ? (cloud.mealData as Record<string, unknown>) : {};
+  const preferences =
+    mealData.preferences && typeof mealData.preferences === "object" ? (mealData.preferences as Record<string, unknown>) : null;
+  return preferences;
+}
+
+function mapMealPlanRow(row: Record<string, unknown>): MealPlanRecordRow {
+  return {
+    id: String(row.id),
+    userId: String(row.userId),
+    weekStart: String(row.weekStart),
+    version: Number(row.version),
+    isActive: Boolean(row.isActive),
+    preferences: (row.preferences as Record<string, unknown>) ?? {},
+    planData: (row.planData as Record<string, unknown>) ?? {},
+    usageData: (row.usageData as Record<string, unknown>) ?? {},
+    source: String(row.source ?? "basic"),
+    createdAt: String(row.createdAt),
+    updatedAt: String(row.updatedAt),
+  };
+}
+
+export async function getActiveMealPlan(userId: string, weekStart: string) {
+  const result = await dbPool.query(
+    `SELECT
+      id,
+      user_id as "userId",
+      week_start as "weekStart",
+      version,
+      is_active as "isActive",
+      preferences,
+      plan_data as "planData",
+      usage_data as "usageData",
+      source,
+      created_at as "createdAt",
+      updated_at as "updatedAt"
+    FROM meal_plans
+    WHERE user_id = $1 AND week_start = $2 AND is_active = TRUE
+    ORDER BY version DESC
+    LIMIT 1`,
+    [userId, weekStart],
+  );
+
+  return result.rowCount ? mapMealPlanRow(result.rows[0] as Record<string, unknown>) : null;
+}
+
+export async function getLatestMealPlan(userId: string) {
+  const result = await dbPool.query(
+    `SELECT
+      id,
+      user_id as "userId",
+      week_start as "weekStart",
+      version,
+      is_active as "isActive",
+      preferences,
+      plan_data as "planData",
+      usage_data as "usageData",
+      source,
+      created_at as "createdAt",
+      updated_at as "updatedAt"
+    FROM meal_plans
+    WHERE user_id = $1
+    ORDER BY updated_at DESC
+    LIMIT 1`,
+    [userId],
+  );
+
+  return result.rowCount ? mapMealPlanRow(result.rows[0] as Record<string, unknown>) : null;
+}
+
+export async function countMealPlanVersionsForWeek(userId: string, weekStart: string) {
+  const result = await dbPool.query(
+    "SELECT COUNT(*)::int AS count, COALESCE(MAX(version), 0)::int AS max_version FROM meal_plans WHERE user_id = $1 AND week_start = $2",
+    [userId, weekStart],
+  );
+  return {
+    count: Number(result.rows[0]?.count ?? 0),
+    maxVersion: Number(result.rows[0]?.max_version ?? 0),
+  };
+}
+
+export async function createMealPlanVersion(userId: string, payload: {
+  weekStart: string;
+  preferences: unknown;
+  planData: unknown;
+  usageData: unknown;
+  source: string;
+}) {
+  const client = await dbPool.connect();
+  try {
+    await client.query("BEGIN");
+    const versionInfo = await client.query(
+      "SELECT COALESCE(MAX(version), 0)::int AS max_version FROM meal_plans WHERE user_id = $1 AND week_start = $2",
+      [userId, payload.weekStart],
+    );
+    const version = Number(versionInfo.rows[0]?.max_version ?? 0) + 1;
+    await client.query("UPDATE meal_plans SET is_active = FALSE, updated_at = NOW() WHERE user_id = $1 AND week_start = $2 AND is_active = TRUE", [userId, payload.weekStart]);
+    const inserted = await client.query(
+      `INSERT INTO meal_plans (user_id, week_start, version, is_active, preferences, plan_data, usage_data, source, created_at, updated_at)
+       VALUES ($1, $2, $3, TRUE, $4::jsonb, $5::jsonb, $6::jsonb, $7, NOW(), NOW())
+       RETURNING
+         id,
+         user_id as "userId",
+         week_start as "weekStart",
+         version,
+         is_active as "isActive",
+         preferences,
+         plan_data as "planData",
+         usage_data as "usageData",
+         source,
+         created_at as "createdAt",
+         updated_at as "updatedAt"`,
+      [userId, payload.weekStart, version, JSON.stringify(payload.preferences), JSON.stringify(payload.planData), JSON.stringify(payload.usageData), payload.source],
+    );
+    await client.query("COMMIT");
+    return mapMealPlanRow(inserted.rows[0] as Record<string, unknown>);
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function updateMealPlanVersion(planId: string, payload: {
+  planData: unknown;
+  usageData: unknown;
+}) {
+  const result = await dbPool.query(
+    `UPDATE meal_plans
+     SET plan_data = $2::jsonb,
+         usage_data = $3::jsonb,
+         updated_at = NOW()
+     WHERE id = $1
+     RETURNING
+       id,
+       user_id as "userId",
+       week_start as "weekStart",
+       version,
+       is_active as "isActive",
+       preferences,
+       plan_data as "planData",
+       usage_data as "usageData",
+       source,
+       created_at as "createdAt",
+       updated_at as "updatedAt"`,
+    [planId, JSON.stringify(payload.planData), JSON.stringify(payload.usageData)],
+  );
+  return result.rowCount ? mapMealPlanRow(result.rows[0] as Record<string, unknown>) : null;
+}
+
+export async function deactivateActiveMealPlan(userId: string, weekStart?: string) {
+  if (weekStart) {
+    await dbPool.query("UPDATE meal_plans SET is_active = FALSE, updated_at = NOW() WHERE user_id = $1 AND week_start = $2 AND is_active = TRUE", [userId, weekStart]);
+    return;
+  }
+  await dbPool.query("UPDATE meal_plans SET is_active = FALSE, updated_at = NOW() WHERE user_id = $1 AND is_active = TRUE", [userId]);
 }
 
 export async function getAdminUsageSummary() {

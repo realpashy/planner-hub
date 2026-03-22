@@ -30,9 +30,12 @@ type MealPlannerRuntime = {
   getAdminUsageSummary: () => Promise<unknown>;
   recordOverLimitAttempt: (userId: string) => Promise<unknown>;
   getAiQuotaStatus: (userId: string) => Promise<unknown>;
+  getMealPlannerStateForUser: (userId: string) => Promise<unknown>;
+  saveMealPlannerPreferencesForUser: (userId: string, preferences: unknown) => Promise<unknown>;
   generateWeekForUser: (userId: string, body: unknown) => Promise<unknown>;
   editMealForUser: (userId: string, body: unknown) => Promise<unknown>;
   regenerateDayForUser: (userId: string, body: unknown) => Promise<unknown>;
+  deleteMealPlanForUser: (userId: string, mode: "meals" | "all") => Promise<unknown>;
 };
 
 let mealPlannerRuntimePromise: Promise<MealPlannerRuntime> | null = null;
@@ -262,9 +265,12 @@ async function loadMealPlannerRuntime(): Promise<MealPlannerRuntime> {
         getAdminUsageSummary: persistenceModule.getAdminUsageSummary,
         recordOverLimitAttempt: persistenceModule.recordOverLimitAttempt,
         getAiQuotaStatus: serviceModule.getAiQuotaStatus,
+        getMealPlannerStateForUser: serviceModule.getMealPlannerStateForUser,
+        saveMealPlannerPreferencesForUser: serviceModule.saveMealPlannerPreferencesForUser,
         generateWeekForUser: serviceModule.generateWeekForUser,
         editMealForUser: serviceModule.editMealForUser,
         regenerateDayForUser: serviceModule.regenerateDayForUser,
+        deleteMealPlanForUser: serviceModule.deleteMealPlanForUser,
       };
     })().catch((error) => {
       mealPlannerRuntimePromise = null;
@@ -518,6 +524,24 @@ app.get("/api/meal-planner/quota", async (req, res) => {
   return res.json(quota);
 });
 
+app.get("/api/meal-planner/state", async (req, res) => {
+  const auth = readAuthFromRequest(req);
+  if (!auth?.userId) return res.status(401).json({ message: "غير مصرح" });
+  await ensureMealPlannerInit();
+  const runtime = await loadMealPlannerRuntime();
+  const state = await runtime.getMealPlannerStateForUser(auth.userId);
+  return res.json(state);
+});
+
+app.post("/api/meal-planner/preferences", async (req, res) => {
+  const auth = readAuthFromRequest(req);
+  if (!auth?.userId) return res.status(401).json({ message: "غير مصرح" });
+  await ensureMealPlannerInit();
+  const runtime = await loadMealPlannerRuntime();
+  const state = await runtime.saveMealPlannerPreferencesForUser(auth.userId, req.body?.preferences ?? {});
+  return res.json({ ok: true, preferences: (state as any).preferences ?? {} });
+});
+
 app.post("/api/meal-planner/generate-week", async (req, res, next) => {
   const auth = readAuthFromRequest(req);
   if (!auth?.userId) return res.status(401).json({ message: "غير مصرح" });
@@ -589,21 +613,9 @@ app.post("/api/meal-planner/delete-plan", async (req, res) => {
   if (!auth?.userId) return res.status(401).json({ message: "غير مصرح" });
   await ensureMealPlannerInit();
   const mode = req.body?.mode === "all" ? "all" : "meals";
-  const cloud = await getCloudData(auth.userId);
-  const currentMealData =
-    cloud.mealData && typeof cloud.mealData === "object" ? { ...(cloud.mealData as Record<string, unknown>) } : {};
-  if (mode === "all") {
-    await saveCloudData(auth.userId, { mealData: {} });
-  } else {
-    await saveCloudData(auth.userId, {
-      mealData: {
-        ...currentMealData,
-        plansByDate: {},
-        hasGeneratedPlan: false,
-      },
-    });
-  }
-  return res.json({ ok: true, mode });
+  const runtime = await loadMealPlannerRuntime();
+  const state = await runtime.deleteMealPlanForUser(auth.userId, mode);
+  return res.json({ ok: true, mode, state });
 });
 
 app.get("/api/admin/ai-usage", async (req, res) => {

@@ -18,6 +18,25 @@ const OPENAI_MEAL_MODEL = process.env.OPENAI_MEAL_MODEL || "gpt-5-mini";
 
 type JsonSchemaName = "weekly_plan" | "single_day" | "single_meal";
 
+function getMealProperties() {
+  return {
+    mealType: { type: "string" },
+    title: { type: "string" },
+    ingredients: { type: "array", items: { type: "string" }, maxItems: 8 },
+    steps: { type: "array", items: { type: "string" }, maxItems: 3 },
+    calories: { type: "number" },
+    protein: { type: "number" },
+    carbs: { type: "number" },
+    fat: { type: "number" },
+    tags: { type: "array", items: { type: "string" }, maxItems: 4 },
+    reason: { type: "string" },
+    shortTip: { type: "string" },
+    image: { type: "string" },
+    imageType: { type: "string" },
+    imageSource: { type: "string" },
+  };
+}
+
 function getJsonSchema(name: JsonSchemaName) {
   if (name === "single_day") {
     return {
@@ -27,32 +46,22 @@ function getJsonSchema(name: JsonSchemaName) {
         additionalProperties: false,
         properties: {
           dateISO: { type: "string" },
+          tip: { type: "string" },
+          notes: { type: "string" },
+          waterTargetCups: { type: "number" },
           meals: {
             type: "array",
             items: {
               type: "object",
               additionalProperties: false,
-              properties: {
-                mealType: { type: "string" },
-                title: { type: "string" },
-                calories: { type: "number" },
-                protein: { type: "number" },
-                carbs: { type: "number" },
-                fat: { type: "number" },
-                tags: { type: "array", items: { type: "string" } },
-                ingredients: { type: "array", items: { type: "string" } },
-                shortNote: { type: "string" },
-                image: { type: "string" },
-                imageType: { type: "string" },
-                imageSource: { type: "string" },
-              },
-              required: ["mealType", "title", "calories", "protein", "carbs", "fat", "tags", "ingredients", "shortNote", "image", "imageType", "imageSource"],
+              properties: getMealProperties(),
+              required: ["mealType", "title", "ingredients", "steps", "calories", "protein", "carbs", "fat", "tags", "reason", "shortTip", "image", "imageType", "imageSource"],
             },
+            minItems: 1,
+            maxItems: 4,
           },
-          waterTargetCups: { type: "number" },
-          notes: { type: "string" },
         },
-        required: ["dateISO", "meals", "waterTargetCups", "notes"],
+        required: ["dateISO", "tip", "notes", "waterTargetCups", "meals"],
       },
     };
   }
@@ -63,21 +72,8 @@ function getJsonSchema(name: JsonSchemaName) {
       schema: {
         type: "object",
         additionalProperties: false,
-        properties: {
-          mealType: { type: "string" },
-          title: { type: "string" },
-          calories: { type: "number" },
-          protein: { type: "number" },
-          carbs: { type: "number" },
-          fat: { type: "number" },
-          tags: { type: "array", items: { type: "string" } },
-          ingredients: { type: "array", items: { type: "string" } },
-          shortNote: { type: "string" },
-          image: { type: "string" },
-          imageType: { type: "string" },
-          imageSource: { type: "string" },
-        },
-        required: ["mealType", "title", "calories", "protein", "carbs", "fat", "tags", "ingredients", "shortNote", "image", "imageType", "imageSource"],
+        properties: getMealProperties(),
+        required: ["mealType", "title", "ingredients", "steps", "calories", "protein", "carbs", "fat", "tags", "reason", "shortTip", "image", "imageType", "imageSource"],
       },
     };
   }
@@ -89,6 +85,7 @@ function getJsonSchema(name: JsonSchemaName) {
       additionalProperties: false,
       properties: {
         summary: { type: "string" },
+        insights: { type: "array", items: { type: "string" }, maxItems: 2 },
         days: {
           type: "array",
           items: {
@@ -96,36 +93,28 @@ function getJsonSchema(name: JsonSchemaName) {
             additionalProperties: false,
             properties: {
               dateISO: { type: "string" },
+              tip: { type: "string" },
+              notes: { type: "string" },
+              waterTargetCups: { type: "number" },
               meals: {
                 type: "array",
                 items: {
                   type: "object",
                   additionalProperties: false,
-                  properties: {
-                    mealType: { type: "string" },
-                    title: { type: "string" },
-                    calories: { type: "number" },
-                    protein: { type: "number" },
-                    carbs: { type: "number" },
-                    fat: { type: "number" },
-                    tags: { type: "array", items: { type: "string" } },
-                    ingredients: { type: "array", items: { type: "string" } },
-                    shortNote: { type: "string" },
-                    image: { type: "string" },
-                    imageType: { type: "string" },
-                    imageSource: { type: "string" },
-                  },
-                  required: ["mealType", "title", "calories", "protein", "carbs", "fat", "tags", "ingredients", "shortNote", "image", "imageType", "imageSource"],
+                  properties: getMealProperties(),
+                  required: ["mealType", "title", "ingredients", "steps", "calories", "protein", "carbs", "fat", "tags", "reason", "shortTip", "image", "imageType", "imageSource"],
                 },
+                minItems: 1,
+                maxItems: 4,
               },
-              waterTargetCups: { type: "number" },
-              notes: { type: "string" },
             },
-            required: ["dateISO", "meals", "waterTargetCups", "notes"],
+            required: ["dateISO", "tip", "notes", "waterTargetCups", "meals"],
           },
+          minItems: 1,
+          maxItems: 7,
         },
       },
-      required: ["summary", "days"],
+      required: ["summary", "insights", "days"],
     },
   };
 }
@@ -152,10 +141,12 @@ async function requestStructuredJson<T>({
     },
     body: JSON.stringify({
       model: OPENAI_MEAL_MODEL,
+      temperature: 0.7,
+      max_completion_tokens: schemaName === "weekly_plan" ? 2800 : schemaName === "single_day" ? 1200 : 600,
       messages: [
         {
           role: "system",
-          content: "You are Planner Hub meal planner AI. Output JSON only, compact, practical, no prose outside the schema.",
+          content: "You are Planner Hub meal planner AI. Return compact JSON only.",
         },
         {
           role: "user",
@@ -196,6 +187,7 @@ export async function generateWeeklyPlanAI(input: GenerateWeekAiInput) {
     input.userContext,
     input.preferences,
     getPlanTierConfig(input.userContext.tier).access,
+    input.activeDates,
   );
   const result = await requestStructuredJson({
     prompt,

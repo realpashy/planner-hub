@@ -1,22 +1,35 @@
 import type { FeatureAccessMap } from "../../shared/plans/plan-tiers";
 import type { MealPlannerUserContext } from "../../shared/ai/ai-types";
 
+function compactJson(value: unknown) {
+  return JSON.stringify(value);
+}
+
 export function buildWeeklyGenerationPrompt(
   userContext: MealPlannerUserContext,
   preferences: Record<string, unknown>,
   tierFeatures: FeatureAccessMap,
+  activeDates: string[],
 ) {
   return [
-    "Generate a weekly meal plan as strict JSON only.",
-    "Be concise and cost-aware.",
-    "Respect preferences, exclusions, calories, meals per day, and saved user context.",
-    "Use short notes only when helpful.",
-    `User tier: ${userContext.tier}.`,
+    "Generate a meal plan in Arabic for Planner Hub.",
+    "Return strict JSON only. No markdown. No explanation outside schema.",
+    "Be token efficient and concise.",
+    "Generate meals only for these dates:",
+    compactJson(activeDates),
+    "Rules:",
+    "- Respect preferences and saved context.",
+    "- Keep titles short and practical.",
+    "- Ingredients max 8 items.",
+    "- Steps max 3 short steps.",
+    "- Reason max 12 to 15 words.",
+    "- Keep tip and notes short.",
+    "- Keep tags short and scan-friendly.",
+    `Tier: ${userContext.tier}.`,
     `Realtime suggestions enabled: ${tierFeatures.mealPlanner.realtimeAiSuggestions}.`,
     `Smart optimization enabled: ${tierFeatures.mealPlanner.smartOptimization}.`,
-    `User context: ${JSON.stringify(userContext)}.`,
-    `Preferences: ${JSON.stringify(preferences)}.`,
-    "Return exactly 7 days with meals, calories, macros, ingredient summaries, tags, and image placeholders.",
+    `User context: ${compactJson(userContext)}.`,
+    `Preferences: ${compactJson(preferences)}.`,
   ].join("\n");
 }
 
@@ -26,11 +39,17 @@ export function buildMealEditPrompt(
   userContext: MealPlannerUserContext,
 ) {
   return [
-    "Edit one meal and return strict JSON only.",
-    "Keep the response compact and practical.",
-    `User context: ${JSON.stringify(userContext)}.`,
-    `Existing meal: ${JSON.stringify(existingMeal)}.`,
-    `Edit request: ${editRequest}.`,
+    "Edit one meal for Planner Hub in Arabic.",
+    "Return strict JSON only.",
+    "Keep it compact and practical.",
+    "Rules:",
+    "- Ingredients max 8 items.",
+    "- Steps max 3 short steps.",
+    "- Reason max 12 to 15 words.",
+    "- Keep tags short.",
+    `User context: ${compactJson(userContext)}.`,
+    `Existing meal: ${compactJson(existingMeal)}.`,
+    `Requested change: ${editRequest}.`,
   ].join("\n");
 }
 
@@ -40,9 +59,17 @@ export function buildDayRegenerationPrompt(
   preferences: Record<string, unknown>,
 ) {
   return [
-    "Regenerate one day in a weekly meal plan and return strict JSON only.",
-    `User context: ${JSON.stringify(userContext)}.`,
-    `Preferences: ${JSON.stringify(preferences)}.`,
-    `Existing day context: ${JSON.stringify(existingDay)}.`,
+    "Regenerate one day only for Planner Hub in Arabic.",
+    "Return strict JSON only.",
+    "Keep the result concise and aligned with the rest of the week.",
+    "Rules:",
+    "- Keep meals practical and varied.",
+    "- Ingredients max 8 items per meal.",
+    "- Steps max 3 short steps per meal.",
+    "- Reason max 12 to 15 words.",
+    "- Keep the day tip short.",
+    `User context: ${compactJson(userContext)}.`,
+    `Preferences: ${compactJson(preferences)}.`,
+    `Existing day context: ${compactJson(existingDay)}.`,
   ].join("\n");
 }

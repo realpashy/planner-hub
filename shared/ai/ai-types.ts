@@ -46,26 +46,29 @@ export interface MealPlannerUserContext {
   savedPlanSummaries: Array<{
     weekKey: string;
     source: string;
+    version?: number;
   }>;
 }
 
-export interface MealMacroSummary {
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-}
+export const aiReasonSchema = z
+  .string()
+  .max(120)
+  .refine((value) => value.trim().split(/\s+/).filter(Boolean).length <= 15, {
+    message: "Reason must be 15 words or fewer.",
+  });
 
 export const aiMealSchema = z.object({
   mealType: z.enum(["breakfast", "lunch", "dinner", "snack"]),
-  title: z.string().min(1),
+  title: z.string().min(1).max(80),
+  ingredients: z.array(z.string().min(1).max(40)).max(8).default([]),
+  steps: z.array(z.string().min(1).max(90)).max(3).default([]),
   calories: z.number().nonnegative(),
   protein: z.number().nonnegative(),
   carbs: z.number().nonnegative(),
   fat: z.number().nonnegative(),
-  tags: z.array(z.string()).max(6).default([]),
-  ingredients: z.array(z.string()).max(10).default([]),
-  shortNote: z.string().max(180).default(""),
+  tags: z.array(z.string().min(1).max(24)).max(4).default([]),
+  reason: aiReasonSchema,
+  shortTip: z.string().max(90).default(""),
   image: z.string().default("🍽️"),
   imageType: z.enum(["emoji", "static", "generated", "upload", "local"]).default("emoji"),
   imageSource: z.string().default("ai-generated-placeholder"),
@@ -73,14 +76,16 @@ export const aiMealSchema = z.object({
 
 export const aiDaySchema = z.object({
   dateISO: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  meals: z.array(aiMealSchema).min(1).max(4),
+  tip: z.string().max(90).default(""),
+  notes: z.string().max(120).default(""),
   waterTargetCups: z.number().int().min(1).max(20),
-  notes: z.string().max(220).default(""),
+  meals: z.array(aiMealSchema).min(1).max(4),
 });
 
 export const aiWeekPlanSchema = z.object({
   summary: z.string().max(220),
-  days: z.array(aiDaySchema).length(7),
+  insights: z.array(z.string().max(90)).max(2).default([]),
+  days: z.array(aiDaySchema).min(1).max(7),
 });
 
 export type AiMeal = z.infer<typeof aiMealSchema>;
@@ -95,6 +100,7 @@ export interface AiProviderUsage {
 export interface GenerateWeekAiInput {
   action: "generate_week" | "regenerate_week";
   preferences: Record<string, unknown>;
+  activeDates: string[];
   userContext: MealPlannerUserContext;
 }
 
