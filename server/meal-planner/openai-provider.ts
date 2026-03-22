@@ -75,19 +75,18 @@ function getMealProperties() {
   return {
     mealType: { type: "string" },
     title: { type: "string", maxLength: 56 },
-    ingredients: { type: "array", items: { type: "string" }, maxItems: 8 },
-    steps: { type: "array", items: { type: "string", maxLength: 72 }, maxItems: 3 },
+    ingredients: { type: "array", items: { type: "string", maxLength: 32 }, maxItems: 6 },
+    steps: { type: "array", items: { type: "string", maxLength: 56 }, maxItems: 2 },
     calories: { type: "number" },
     protein: { type: "number" },
     carbs: { type: "number" },
     fat: { type: "number" },
-    tags: { type: "array", items: { type: "string" }, maxItems: 4 },
     reason: { type: "string", maxLength: 120 },
-    shortTip: { type: "string", maxLength: 72 },
-    image: { type: "string" },
-    imageType: { type: "string" },
-    imageSource: { type: "string" },
   };
+}
+
+function getMealRequiredFields() {
+  return ["mealType", "title", "ingredients", "steps", "calories", "protein", "carbs", "fat", "reason"] as const;
 }
 
 function getJsonSchema(name: JsonSchemaName) {
@@ -100,7 +99,6 @@ function getJsonSchema(name: JsonSchemaName) {
         properties: {
           dateISO: { type: "string" },
           tip: { type: "string" },
-          notes: { type: "string" },
           waterTargetCups: { type: "number" },
           meals: {
             type: "array",
@@ -108,13 +106,13 @@ function getJsonSchema(name: JsonSchemaName) {
               type: "object",
               additionalProperties: false,
               properties: getMealProperties(),
-              required: ["mealType", "title", "ingredients", "steps", "calories", "protein", "carbs", "fat", "tags", "reason", "shortTip", "image", "imageType", "imageSource"],
+              required: [...getMealRequiredFields()],
             },
             minItems: 1,
             maxItems: 5,
           },
         },
-        required: ["dateISO", "tip", "notes", "waterTargetCups", "meals"],
+        required: ["dateISO", "tip", "waterTargetCups", "meals"],
       },
     };
   }
@@ -126,7 +124,7 @@ function getJsonSchema(name: JsonSchemaName) {
         type: "object",
         additionalProperties: false,
         properties: getMealProperties(),
-        required: ["mealType", "title", "ingredients", "steps", "calories", "protein", "carbs", "fat", "tags", "reason", "shortTip", "image", "imageType", "imageSource"],
+        required: [...getMealRequiredFields()],
       },
     };
   }
@@ -138,7 +136,6 @@ function getJsonSchema(name: JsonSchemaName) {
       additionalProperties: false,
       properties: {
         summary: { type: "string" },
-        insights: { type: "array", items: { type: "string" }, maxItems: 2 },
         days: {
           type: "array",
           items: {
@@ -147,7 +144,6 @@ function getJsonSchema(name: JsonSchemaName) {
             properties: {
               dateISO: { type: "string" },
               tip: { type: "string" },
-              notes: { type: "string" },
               waterTargetCups: { type: "number" },
               meals: {
                 type: "array",
@@ -155,19 +151,19 @@ function getJsonSchema(name: JsonSchemaName) {
                   type: "object",
                   additionalProperties: false,
                   properties: getMealProperties(),
-                  required: ["mealType", "title", "ingredients", "steps", "calories", "protein", "carbs", "fat", "tags", "reason", "shortTip", "image", "imageType", "imageSource"],
+                  required: [...getMealRequiredFields()],
                 },
                 minItems: 1,
                 maxItems: 5,
               },
             },
-            required: ["dateISO", "tip", "notes", "waterTargetCups", "meals"],
+            required: ["dateISO", "tip", "waterTargetCups", "meals"],
           },
           minItems: 1,
           maxItems: 7,
         },
       },
-      required: ["summary", "insights", "days"],
+      required: ["summary", "days"],
     },
   };
 }

@@ -113,7 +113,7 @@ const BUSY_DAYS = [
   { value: "saturday", label: "السبت" },
 ] as const;
 const CUISINE_OPTIONS = ["شرقي", "متوسطي", "إيطالي", "آسيوي", "خليجي", "شامي", "مكسيكي", "هندي"];
-const GENERATION_LINES = ["نراجع تفضيلاتك النهائية", "نوازن الأسبوع بشكل عملي", "نجهز الخطة ونربط الوجبات بأيامك", "نصيغ أول نسخة قابلة للتعديل"];
+const GENERATION_LINES = ["نراجع تفضيلاتك النهائية", "نوازن الأسبوع بشكل عملي", "نربط الوجبات بإيقاع أيامك", "نصيغ أول نسخة قابلة للتعديل"];
 const TAG_SUGGESTIONS = {
   allergies: ["لاكتوز", "جلوتين", "مكسرات", "بيض"],
   dislikedIngredients: ["فطر", "بصل نيء", "سمك", "فلفل حار"],
@@ -195,9 +195,17 @@ function answerButtonClass(active: boolean, fillWidth = false) {
     "inline-flex min-h-12 items-center justify-center rounded-[1.25rem] border px-4 py-3 text-sm font-bold transition text-center",
     fillWidth && "w-full",
     active
-      ? "border-primary/30 bg-primary/12 text-primary shadow-[0_16px_34px_rgba(99,102,241,0.16)]"
+      ? "border-primary/35 bg-[linear-gradient(180deg,rgba(99,102,241,0.14),rgba(99,102,241,0.08))] text-primary shadow-[0_12px_26px_rgba(99,102,241,0.12)]"
       : "border-border/70 bg-white/82 text-foreground hover:border-primary/20 hover:bg-primary/5 dark:bg-slate-950/55",
   );
+}
+
+function parseFastingWindow(windowValue: string) {
+  const [start = "12:00", end = "20:00"] = windowValue
+    .split("-")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  return { start, end };
 }
 
 function answerSummary(question: QuestionConfig, preferences: PlannerPreferences) {
@@ -354,7 +362,7 @@ export function ConversationalMealOnboarding({
     if (!generating) return;
     const timer = window.setInterval(() => {
       setLoadingLineIndex((current) => (current + 1) % GENERATION_LINES.length);
-    }, 1100);
+    }, 1800);
     return () => window.clearInterval(timer);
   }, [generating]);
 
@@ -668,7 +676,7 @@ export function ConversationalMealOnboarding({
           <div className="flex flex-row-reverse items-center justify-between gap-3">
             <p className="text-xs leading-6 text-muted-foreground">{selectedValues.length ? `${selectedValues.length} اختيار` : "يمكنك المتابعة بدون اختيار إذا رغبت."}</p>
             <InteractiveButton type="button" className="rounded-full px-4" onClick={saveAndContinue}>
-              متابعة
+              {returnToReviewAfterAnswer ? "حفظ والعودة للمراجعة" : "متابعة"}
               <ChevronLeft className="h-4 w-4" />
             </InteractiveButton>
           </div>
@@ -701,7 +709,41 @@ export function ConversationalMealOnboarding({
           </div>
           <div className="flex justify-start">
             <InteractiveButton type="button" className="rounded-full px-4" onClick={commitNumber}>
-              متابعة
+              {returnToReviewAfterAnswer ? "حفظ والعودة للمراجعة" : "متابعة"}
+              <ChevronLeft className="h-4 w-4" />
+            </InteractiveButton>
+          </div>
+        </div>
+      );
+    }
+
+    if (activeQuestion.id === "fastingWindow") {
+      const parsedWindow = parseFastingWindow(rawDraft || committedPreferences.fastingWindow);
+      const updateWindowPart = (part: "start" | "end", value: string) => {
+        const next = {
+          ...parsedWindow,
+          [part]: value,
+        };
+        updateDraft(activeQuestion.id, `${next.start} - ${next.end}`);
+      };
+      return (
+        <div className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <ConversationTimeField
+              label="بداية نافذة الأكل"
+              value={parsedWindow.start}
+              onChange={(value) => updateWindowPart("start", value)}
+            />
+            <ConversationTimeField
+              label="نهاية نافذة الأكل"
+              value={parsedWindow.end}
+              onChange={(value) => updateWindowPart("end", value)}
+            />
+          </div>
+          <div className="flex flex-row-reverse items-center justify-between gap-3">
+            <p className="text-xs leading-6 text-muted-foreground">اختر وقت البداية والنهاية وسأرتب الوجبات داخل هذه النافذة تلقائيًا.</p>
+            <InteractiveButton type="button" className="rounded-full px-4" onClick={() => commitDraftAnswer(activeQuestion)}>
+              {returnToReviewAfterAnswer ? "حفظ والعودة للمراجعة" : "متابعة"}
               <ChevronLeft className="h-4 w-4" />
             </InteractiveButton>
           </div>
@@ -710,9 +752,7 @@ export function ConversationalMealOnboarding({
     }
 
     const chips = activeQuestion.id in TAG_SUGGESTIONS ? TAG_SUGGESTIONS[activeQuestion.id as keyof typeof TAG_SUGGESTIONS] : [];
-    const committedItems = activeQuestion.id === "fastingWindow"
-      ? []
-      : ((committedPreferences[activeQuestion.id as keyof PlannerPreferences] as string[]) ?? []);
+    const committedItems = (committedPreferences[activeQuestion.id as keyof PlannerPreferences] as string[]) ?? [];
 
     return (
       <div className="space-y-4">
@@ -750,7 +790,7 @@ export function ConversationalMealOnboarding({
         <div className="flex flex-row-reverse items-center justify-between gap-3">
           <p className="text-xs leading-6 text-muted-foreground">اكتب بحرية، ثم تابع عندما تنتهي.</p>
           <InteractiveButton type="button" className="rounded-full px-4" onClick={() => commitDraftAnswer(activeQuestion)}>
-            متابعة
+            {returnToReviewAfterAnswer ? "حفظ والعودة للمراجعة" : "متابعة"}
             <ChevronLeft className="h-4 w-4" />
           </InteractiveButton>
         </div>
@@ -806,7 +846,20 @@ export function ConversationalMealOnboarding({
               <Sparkles className="h-8 w-8" />
             </motion.div>
             <h2 className="mt-6 text-3xl font-black tracking-tight text-foreground">نبني الخطة الأولى الآن</h2>
-            <p className="mt-3 text-sm leading-7 text-muted-foreground">{GENERATION_LINES[loadingLineIndex]}</p>
+            <div className="mt-4 space-y-3">
+              <div className="flex flex-row-reverse items-center justify-between text-xs font-bold text-primary/80">
+                <span>{loadingLineIndex + 1}/{GENERATION_LINES.length}</span>
+                <span>{GENERATION_LINES[loadingLineIndex]}</span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-primary/10">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${((loadingLineIndex + 1) / GENERATION_LINES.length) * 100}%` }}
+                  transition={{ duration: 0.9, ease: "easeOut" }}
+                  className="h-full rounded-full bg-[linear-gradient(90deg,rgba(99,102,241,0.92),rgba(56,189,248,0.88))]"
+                />
+              </div>
+            </div>
             {errorMessage ? <p className="mt-5 rounded-full bg-rose-500/10 px-4 py-2 text-sm font-semibold text-rose-600 dark:text-rose-300">{errorMessage}</p> : null}
           </div>
         </div>
@@ -817,8 +870,8 @@ export function ConversationalMealOnboarding({
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(129,140,248,0.18),transparent_30%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_52%,#f8fafc_100%)] px-4 py-6 dark:bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.22),transparent_22%),linear-gradient(180deg,#020617_0%,#0f172a_46%,#020617_100%)]" dir="rtl">
       <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-6xl flex-col gap-6">
-        <header className="flex flex-row-reverse items-start justify-between gap-4">
-          <div className="text-right">
+        <header className="flex items-start justify-between gap-4">
+          <div className="flex-1 text-right">
             <p className="text-xs font-bold tracking-[0.24em] text-primary">MEAL PLANNER</p>
             <h1 className="mt-1 text-2xl font-black tracking-tight text-foreground md:text-3xl">{mode === "review" ? "المراجعة النهائية" : currentStepTitle}</h1>
             <p className="text-sm text-muted-foreground">الخطوة {currentStep} من 9</p>
@@ -837,7 +890,7 @@ export function ConversationalMealOnboarding({
           <motion.div animate={{ width: `${(currentStep / 9) * 100}%` }} transition={{ duration: 0.22, ease: "easeOut" }} className="h-full rounded-full bg-[linear-gradient(90deg,rgba(99,102,241,0.92),rgba(56,189,248,0.88))]" />
         </div>
 
-        <div className="flex flex-1 flex-col gap-6 xl:flex-row-reverse">
+        <div className="flex flex-1 flex-col gap-6 xl:flex-row">
           <main className="order-1 flex-1 xl:basis-[64%]">
             <div className="rounded-[2.4rem] border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.86),rgba(244,247,255,0.92))] p-6 shadow-[0_36px_120px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.84),rgba(2,6,23,0.92))] md:p-8">
               {errorMessage ? <div className="mb-5 rounded-[1.2rem] border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-right text-sm leading-7 text-rose-700 dark:text-rose-300">{errorMessage}</div> : null}
@@ -866,7 +919,7 @@ export function ConversationalMealOnboarding({
                         <p className="text-sm font-black text-foreground">{section.title}</p>
                         <div className="mt-3 space-y-3">
                           {section.rows.map((row) => (
-                            <div key={`${section.title}_${row.label}`} className="flex flex-row-reverse items-start justify-between gap-3">
+                            <div key={`${section.title}_${row.label}`} className="flex items-start justify-between gap-3">
                               <div className="flex-1 text-right">
                                 <p className="text-xs text-muted-foreground">{row.label}</p>
                                 <p className="mt-1 text-sm font-semibold text-foreground">{row.value}</p>
@@ -884,7 +937,7 @@ export function ConversationalMealOnboarding({
                     <p className="text-sm font-black text-foreground">أي شيء إضافي تحب تضيفه قبل توليد الخطة؟</p>
                     <Textarea value={committedPreferences.additionalNotes ?? ""} onChange={(event) => updateCommitted({ additionalNotes: event.target.value })} placeholder="اكتب ملاحظة أخيرة فقط إذا كانت ستؤثر فعلاً على الخطة." className="mt-3 min-h-[110px] rounded-[1.4rem] border-white/60 bg-white/78 text-right shadow-none dark:border-white/10 dark:bg-slate-950/60" dir="rtl" />
                   </div>
-                  <div className="flex flex-col gap-3 sm:flex-row-reverse sm:items-center sm:justify-between">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     {hasActivePlan ? (
                       <InteractiveButton type="button" variant="outline" className="rounded-full px-5" onClick={() => submitPlan(true)}>
                         <RefreshCcw className="h-4 w-4" />
@@ -911,8 +964,7 @@ export function ConversationalMealOnboarding({
                       </motion.div>
                     ) : null}
                   </AnimatePresence>
-                  <div className="flex flex-col gap-3 sm:flex-row-reverse sm:items-center sm:justify-between">
-                    <PlannerMetaBadge icon={SunMedium} label={`${currentStepTitle} • سؤال واحد في التركيز`} />
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex flex-wrap items-center gap-3">
                       {activeQuestion?.optional ? (
                         <button type="button" className="text-sm font-semibold text-muted-foreground transition hover:text-foreground" onClick={() => {
@@ -932,6 +984,7 @@ export function ConversationalMealOnboarding({
                         {returnToReviewAfterAnswer ? "العودة إلى المراجعة" : currentStep === 2 && activeQuestion?.id === "dietType" ? "العودة إلى الرئيسية" : "السؤال السابق"}
                       </InteractiveButton>
                     </div>
+                    <PlannerMetaBadge icon={SunMedium} label={`${currentStepTitle} • سؤال واحد في التركيز`} />
                   </div>
                 </div>
               )}
@@ -940,9 +993,9 @@ export function ConversationalMealOnboarding({
 
           <aside className="order-2 xl:w-[24rem] xl:min-w-[24rem]">
             <div className="rounded-[2rem] border border-white/60 bg-white/62 p-4 shadow-[0_20px_50px_rgba(15,23,42,0.06)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/48">
-              <div className="mb-3 flex flex-row-reverse items-center justify-between">
-                <span className="text-xs text-muted-foreground">آخر {Math.min(historyEntries.length, 10)} إجابات</span>
+              <div className="mb-3 flex items-center justify-between">
                 <PlannerMetaBadge icon={MoonStar} label="السياق الحديث" tone="accent" />
+                <span className="text-xs text-muted-foreground">آخر {Math.min(historyEntries.length, 10)} إجابات</span>
               </div>
               {historyEntries.length ? renderHistory() : <p className="text-sm leading-7 text-muted-foreground">سنحتفظ هنا بآخر الإجابات حتى تشعر أن المحادثة تتقدم فعلاً، من دون ازدحام بصري.</p>}
             </div>
@@ -965,6 +1018,29 @@ function AssistantPrompt({ title, prompt, helper }: { title: string; prompt: str
         <p className="max-w-2xl text-sm leading-8 text-muted-foreground">{prompt}</p>
         {helper ? <p className="text-xs leading-6 text-muted-foreground">{helper}</p> : null}
       </div>
+    </div>
+  );
+}
+
+function ConversationTimeField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className="rounded-[1.45rem] border border-white/60 bg-white/78 p-4 text-right shadow-[0_14px_30px_rgba(15,23,42,0.05)] dark:border-white/10 dark:bg-slate-950/55">
+      <p className="mb-3 text-sm font-black text-foreground">{label}</p>
+      <Input
+        type="time"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-12 rounded-[1.1rem] border-border/70 bg-background/85 text-right shadow-none"
+        dir="rtl"
+      />
     </div>
   );
 }

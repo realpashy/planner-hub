@@ -94,22 +94,6 @@ export default function MealPlanner() {
     }
   };
 
-  if (hydrating) {
-    return (
-      <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(129,140,248,0.12),transparent_22%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_48%,#f8fafc_100%)] px-4 py-8 dark:bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.2),transparent_18%),linear-gradient(180deg,#020617_0%,#0f172a_48%,#020617_100%)]" dir="rtl">
-        <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-3xl items-center justify-center">
-          <div className="w-full max-w-xl rounded-[2.3rem] border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.86),rgba(244,247,255,0.92))] p-8 text-center shadow-[0_36px_120px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.84),rgba(2,6,23,0.92))]">
-            <motion.div animate={{ rotate: 360 }} transition={{ duration: 6, repeat: Infinity, ease: "linear" }} className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-primary/12 text-primary shadow-[0_18px_38px_rgba(99,102,241,0.18)]">
-              <Sparkles className="h-8 w-8" />
-            </motion.div>
-            <h2 className="mt-6 text-3xl font-black tracking-tight text-foreground">نجهز مساحة التخطيط الآن</h2>
-            <p className="mt-3 text-sm leading-7 text-muted-foreground">لحظة قصيرة فقط حتى نعرف هل لديك خطة نشطة أو نبدأ الإعداد من الصفر.</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   if (!plan) {
     return (
       <ConversationalMealOnboarding
@@ -126,6 +110,7 @@ export default function MealPlanner() {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(129,140,248,0.12),transparent_22%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_48%,#f8fafc_100%)] pb-14 dark:bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.2),transparent_18%),linear-gradient(180deg,#020617_0%,#0f172a_48%,#020617_100%)]" dir="rtl">
+      {hydrating ? <div className="h-1 w-full bg-primary/10"><motion.div initial={{ width: "20%" }} animate={{ width: ["20%", "52%", "20%"] }} transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }} className="h-full bg-[linear-gradient(90deg,rgba(99,102,241,0.92),rgba(56,189,248,0.88))]" /></div> : null}
       <PlannerTopBar title="مخطط الوجبات الذكي" subtitle="نطاق الأيام الحالية حتى نهاية الأسبوع" onOpenSettings={() => setSettingsOpen(true)} />
       <main className="px-4 pt-6 md:px-6">
         <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className={shellClass} dir="rtl">
