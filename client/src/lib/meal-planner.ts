@@ -102,6 +102,7 @@ export interface PlannerPreferences {
   busyDays: string[];
   fastingEnabled: boolean;
   fastingWindow: string;
+  additionalNotes?: string;
 }
 
 export interface MealPlannerProfile {
@@ -344,6 +345,7 @@ export function getDefaultPreferences(): PlannerPreferences {
     busyDays: [],
     fastingEnabled: false,
     fastingWindow: "12:00 - 20:00",
+    additionalNotes: "",
   };
 }
 
@@ -393,6 +395,7 @@ export function normalizePreferences(preferences: PlannerPreferences): PlannerPr
     foodRules: normalizeStringList(preferences.foodRules),
     ingredientsAtHome: normalizeStringList(preferences.ingredientsAtHome),
     busyDays: normalizeStringList(preferences.busyDays),
+    additionalNotes: typeof preferences.additionalNotes === "string" ? preferences.additionalNotes.trim().slice(0, 280) : "",
     caloriesTarget: Math.max(1200, Math.min(4000, Math.round(preferences.caloriesTarget || 1900))),
     maxIngredients: Math.max(4, Math.min(12, Math.round(preferences.maxIngredients || 8))),
     age: preferences.age ? Math.max(13, Math.min(90, Math.round(preferences.age))) : null,

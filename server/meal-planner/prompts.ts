@@ -19,6 +19,7 @@ export function buildWeeklyGenerationPrompt(
     compactJson(activeDates),
     "Rules:",
     "- Respect preferences and saved context.",
+    "- Use any additional notes only if they materially improve the first plan.",
     "- Keep titles short and practical.",
     "- Generate 3 to 5 meals per day only.",
     "- Ingredients max 8 items.",

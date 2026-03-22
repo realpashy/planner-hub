@@ -106,9 +106,9 @@ export function useMealPlanner() {
     }));
   };
 
-  const persistPreferences = async () => {
-    await saveMealPlannerPreferences(state.preferences);
-    setState((prev) => ({ ...prev, savedPreferences: prev.preferences }));
+  const persistPreferences = async (preferences = state.preferences) => {
+    await saveMealPlannerPreferences(preferences);
+    setState((prev) => ({ ...prev, preferences, savedPreferences: preferences }));
   };
 
   const pushDebug = (kind: AdminDebugEntry["kind"], message: string | null | undefined) => {
@@ -122,23 +122,20 @@ export function useMealPlanner() {
     setLimits(serverState.limits);
   };
 
-  const generatePlan = async (replaceCurrent = false) => {
+  const generatePlan = async (replaceCurrent = false, preferencesOverride?: PlannerPreferences) => {
+    const preferences = normalizePreferences(preferencesOverride ?? state.preferences);
     setGenerating(true);
-    setState((prev) => ({ ...prev, viewState: "loading", lastError: null }));
+    setState((prev) => ({ ...prev, preferences, lastError: null }));
     try {
-      await persistPreferences();
-      const result = await generateWeekWithAi(state.preferences, replaceCurrent);
+      await persistPreferences(preferences);
+      const result = await generateWeekWithAi(preferences, replaceCurrent);
       setState(applyServerState(result.state));
       setLimits(result.state.limits);
       pushDebug("generate", result.debug);
       return result;
     } catch (error) {
       const message = error instanceof Error ? error.message : "تعذر توليد الخطة الآن.";
-      setState((prev) => ({
-        ...prev,
-        viewState: prev.activePlan ? "planner" : "onboarding",
-        lastError: message,
-      }));
+      setState((prev) => ({ ...prev, preferences, lastError: message }));
       pushDebug("generate", message);
       throw error;
     } finally {

@@ -104,6 +104,7 @@ function defaultPreferences() {
     busyDays: [],
     fastingEnabled: false,
     fastingWindow: "12:00 - 20:00",
+    additionalNotes: "",
   };
 }
 
@@ -203,7 +204,12 @@ async function buildUserContext(userId: string, timezoneFallback = "Asia/Jerusal
   return {
     timezone: profile.timezone || timezoneFallback,
     tier: profile.planTier,
-    dietaryNotes: typeof mealData.preferences?.foodRules?.join === "function" ? mealData.preferences.foodRules.join(", ") : "",
+    dietaryNotes: [
+      typeof mealData.preferences?.foodRules?.join === "function" ? mealData.preferences.foodRules.join(", ") : "",
+      typeof mealData.preferences?.additionalNotes === "string" ? mealData.preferences.additionalNotes : "",
+    ]
+      .filter(Boolean)
+      .join(". "),
     avoidIngredients: Array.isArray(mealData.preferences?.dislikedIngredients)
       ? mealData.preferences.dislikedIngredients.map(String)
       : [],
