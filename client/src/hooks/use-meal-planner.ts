@@ -11,10 +11,11 @@ import {
   getWaterTargetCups,
   getWaterTargetLiters,
   getWeekChartData,
-  getWeekDates,
+  getActiveWeekDates,
   getWeeklyRecommendations,
   getWeeklyShoppingItems,
   loadMealPlannerState,
+  pruneMealPlannerState,
   saveMealPlannerState,
   type MealDayPlan,
   type MealFavorite,
@@ -43,15 +44,19 @@ function pushRecentTitle(recentMeals: string[], title: string) {
 }
 
 export function useMealPlanner() {
-  const [state, setState] = useState<MealPlannerState>(() => loadMealPlannerState());
+  const [state, setState] = useState<MealPlannerState>(() => pruneMealPlannerState(loadMealPlannerState()));
   const [quota, setQuota] = useState<MealPlannerQuotaResponse | null>(null);
   const [quotaLoading, setQuotaLoading] = useState(true);
   const [limitReached, setLimitReached] = useState(false);
   const todayISO = useMemo(() => getTodayISO(), []);
 
   useEffect(() => {
-    saveMealPlannerState(state);
+    saveMealPlannerState(pruneMealPlannerState(state, todayISO));
   }, [state]);
+
+  useEffect(() => {
+    setState((prev) => pruneMealPlannerState(prev, todayISO));
+  }, [todayISO]);
 
   useEffect(() => {
     let mounted = true;
@@ -68,7 +73,7 @@ export function useMealPlanner() {
     };
   }, []);
 
-  const weekDays = useMemo(() => getWeekDates(todayISO), [todayISO]);
+  const weekDays = useMemo(() => getActiveWeekDates(todayISO), [todayISO]);
   const weekSummary = useMemo(() => getMealPlannerSummary(state, todayISO), [state, todayISO]);
   const recommendations = useMemo(() => getWeeklyRecommendations(state, todayISO), [state, todayISO]);
   const shoppingItems = useMemo(() => getWeeklyShoppingItems(state, todayISO), [state, todayISO]);
@@ -90,7 +95,7 @@ export function useMealPlanner() {
   const patchDay = (dateISO: string, mutate: (current: MealDayPlan) => MealDayPlan) => {
     setState((prev) => {
       const current = getDayPlan(prev, dateISO);
-      return {
+      return pruneMealPlannerState({
         ...prev,
         plansByDate: {
           ...prev.plansByDate,
@@ -100,14 +105,14 @@ export function useMealPlanner() {
             updatedAt: new Date().toISOString(),
           },
         },
-      };
+      }, todayISO);
     });
   };
 
   const generateWeeklyPlan = async () => {
     try {
       const result = await generateWeekWithAi(state.preferences, state.plansByDate);
-      setState((prev) => applyAiWeekToState(prev, result.plan.days, state.preferences));
+      setState((prev) => pruneMealPlannerState(applyAiWeekToState(prev, result.plan.days, state.preferences), todayISO));
       await refreshQuota();
       setLimitReached(false);
       return { provider: result.quota.provider, quota: result.quota };
@@ -117,14 +122,14 @@ export function useMealPlanner() {
         setLimitReached(true);
         await refreshQuota().catch(() => null);
       }
-      setState((prev) => ({
+      setState((prev) => pruneMealPlannerState({
         ...prev,
         hasGeneratedPlan: true,
         plansByDate: {
           ...prev.plansByDate,
           ...buildGeneratedWeekPlans(prev, todayISO),
         },
-      }));
+      }, todayISO));
       return { provider: "local" as const };
     }
   };
@@ -166,11 +171,11 @@ export function useMealPlanner() {
           },
         ]),
       );
-      return {
+      return pruneMealPlannerState({
         ...prev,
         profile,
         plansByDate,
-      };
+      }, todayISO);
     });
   };
 
@@ -219,7 +224,7 @@ export function useMealPlanner() {
       const nextMeal = aiMealToMealSlot(result.meal, currentMeal.active);
       setState((prev) => {
         const currentPlan = getDayPlan(prev, dateISO);
-        return {
+        return pruneMealPlannerState({
           ...prev,
           plansByDate: {
             ...prev.plansByDate,
@@ -230,7 +235,7 @@ export function useMealPlanner() {
             },
           },
           recentMeals: pushRecentTitle(prev.recentMeals, nextMeal.title),
-        };
+        }, todayISO);
       });
       await refreshQuota();
       setLimitReached(false);
@@ -246,7 +251,7 @@ export function useMealPlanner() {
         const current = getDayPlan(prev, dateISO).meals.find((meal) => meal.mealType === mealType);
         const nextMeal = buildReplacementMeal(prev, mealType, current?.title, allTitles);
         const currentPlan = getDayPlan(prev, dateISO);
-        return {
+        return pruneMealPlannerState({
           ...prev,
           plansByDate: {
             ...prev.plansByDate,
@@ -257,7 +262,7 @@ export function useMealPlanner() {
             },
           },
           recentMeals: pushRecentTitle(prev.recentMeals, nextMeal.title),
-        };
+        }, todayISO);
       });
       return { provider: "local" as const };
     }
@@ -273,13 +278,13 @@ export function useMealPlanner() {
       });
       setState((prev) => {
         const basePlan = getDayPlan(prev, dateISO);
-        return {
+        return pruneMealPlannerState({
           ...prev,
           plansByDate: {
             ...prev.plansByDate,
             [dateISO]: applyAiDayToPlan(basePlan, result.day, prev.preferences),
           },
-        };
+        }, todayISO);
       });
       await refreshQuota();
       setLimitReached(false);
@@ -290,13 +295,13 @@ export function useMealPlanner() {
         setLimitReached(true);
         await refreshQuota().catch(() => null);
       }
-      setState((prev) => ({
+      setState((prev) => pruneMealPlannerState({
         ...prev,
         plansByDate: {
           ...prev.plansByDate,
           [dateISO]: buildGeneratedWeekPlans(prev, dateISO)[dateISO],
         },
-      }));
+      }, todayISO));
       return { provider: "local" as const };
     }
   };
@@ -319,10 +324,10 @@ export function useMealPlanner() {
           updatedAt: new Date().toISOString(),
         };
       });
-      return {
+      return pruneMealPlannerState({
         ...prev,
         plansByDate: nextPlans,
-      };
+      }, todayISO);
     });
   };
 
@@ -339,10 +344,10 @@ export function useMealPlanner() {
           updatedAt: new Date().toISOString(),
         };
       });
-      return {
+      return pruneMealPlannerState({
         ...prev,
         plansByDate: nextPlans,
-      };
+      }, todayISO);
     });
   };
 
@@ -402,11 +407,11 @@ export function useMealPlanner() {
     await deleteMealPlanRemote(mode).catch(() => null);
     setState((prev) => {
       if (mode === "all") return createDefaultMealPlannerState();
-      return {
+      return pruneMealPlannerState({
         ...prev,
         plansByDate: {},
         hasGeneratedPlan: false,
-      };
+      }, todayISO);
     });
     await refreshQuota().catch(() => null);
   };

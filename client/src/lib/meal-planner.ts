@@ -196,7 +196,7 @@ export const DIET_TYPE_LABELS: Record<DietType, string> = {
   any: "أي نظام",
   balanced: "متوازن",
   high_protein: "عالي البروتين",
-  keto: "Keto",
+  keto: "كيتو",
   mediterranean: "متوسطي",
   vegetarian: "نباتي",
   vegan: "نباتي صرف",
@@ -499,7 +499,7 @@ export function loadMealPlannerState(): MealPlannerState {
   const raw = window.localStorage.getItem(MEAL_PLANNER_STORAGE_KEY);
   if (!raw) return createDefaultMealPlannerState();
   try {
-    return normalizeState(JSON.parse(raw));
+    return pruneMealPlannerState(normalizeState(JSON.parse(raw)));
   } catch {
     return createDefaultMealPlannerState();
   }
@@ -507,7 +507,7 @@ export function loadMealPlannerState(): MealPlannerState {
 
 export function saveMealPlannerState(state: MealPlannerState) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(MEAL_PLANNER_STORAGE_KEY, JSON.stringify(state));
+  window.localStorage.setItem(MEAL_PLANNER_STORAGE_KEY, JSON.stringify(pruneMealPlannerState(state)));
 }
 
 export function getWeekDates(referenceISO = getTodayISO()): MealPlannerDayInfo[] {
@@ -525,6 +525,27 @@ export function getWeekDates(referenceISO = getTodayISO()): MealPlannerDayInfo[]
       isToday: dateISO === todayISO,
     };
   });
+}
+
+export function getActiveWeekDates(referenceISO = getTodayISO()): MealPlannerDayInfo[] {
+  return getWeekDates(referenceISO).filter((day) => day.dateISO >= referenceISO);
+}
+
+export function pruneMealPlannerState(state: MealPlannerState, referenceISO = getTodayISO()): MealPlannerState {
+  const activeDateSet = new Set(getActiveWeekDates(referenceISO).map((day) => day.dateISO));
+  const plansByDate = Object.fromEntries(
+    Object.entries(state.plansByDate).filter(([dateISO]) => activeDateSet.has(dateISO)),
+  );
+
+  const hasGeneratedPlan =
+    state.hasGeneratedPlan &&
+    Object.values(plansByDate).some((plan) => countPlannedMeals(plan) > 0 || plan.notes.trim().length > 0);
+
+  return {
+    ...state,
+    plansByDate,
+    hasGeneratedPlan,
+  };
 }
 
 export function getCatalog() {
@@ -635,7 +656,7 @@ function pickCatalogItem(state: MealPlannerState, mealType: MealType, usedTitles
 }
 
 export function buildGeneratedWeekPlans(state: MealPlannerState, referenceISO = getTodayISO()) {
-  const days = getWeekDates(referenceISO);
+  const days = getActiveWeekDates(referenceISO);
   const usedTitles = new Set<string>();
   const repeatedBreakfast = state.preferences.sameBreakfastDaily ? pickCatalogItem(state, "breakfast", usedTitles) : null;
   return Object.fromEntries(days.map((day, index) => {
@@ -674,7 +695,8 @@ export function getMealSuggestions(state: MealPlannerState, mealType: MealType) 
 }
 
 export function getMealPlannerSummary(state: MealPlannerState, referenceISO = getTodayISO()): MealPlannerSummary {
-  const plans = getWeekDates(referenceISO).map((day) => getDayPlan(state, day.dateISO));
+  const plans = getActiveWeekDates(referenceISO).map((day) => getDayPlan(state, day.dateISO));
+  const activeDaysCount = Math.max(plans.length, 1);
   const totalMeals = plans.reduce((sum, plan) => sum + activeMeals(plan).length, 0);
   const plannedMeals = plans.reduce((sum, plan) => sum + countPlannedMeals(plan), 0);
   const completedMeals = plans.reduce((sum, plan) => sum + countCompletedMeals(plan), 0);
@@ -696,7 +718,7 @@ export function getMealPlannerSummary(state: MealPlannerState, referenceISO = ge
     weeklyWaterTarget,
     daysWithWaterTarget,
     completionPercent: totalMeals === 0 ? 0 : Math.round((plannedMeals / totalMeals) * 100),
-    averageCaloriesPerDay: Math.round(totalWeeklyCalories / 7),
+    averageCaloriesPerDay: Math.round(totalWeeklyCalories / activeDaysCount),
     totalWeeklyCalories,
     repeatedMealsCount: Array.from(repeats.values()).reduce((sum, count) => sum + Math.max(0, count - 1), 0),
     daysFullyPlanned,
@@ -709,7 +731,7 @@ export function getMealPlannerSummary(state: MealPlannerState, referenceISO = ge
 
 export function getWeeklyShoppingItems(state: MealPlannerState, referenceISO = getTodayISO()): ShoppingItem[] {
   const map = new Map<string, ShoppingItem>();
-  for (const day of getWeekDates(referenceISO)) {
+  for (const day of getActiveWeekDates(referenceISO)) {
     const plan = getDayPlan(state, day.dateISO);
     for (const meal of activeMeals(plan).filter((entry) => entry.title.trim())) {
       for (const ingredient of meal.ingredients) {
@@ -729,7 +751,7 @@ export function getWeeklyShoppingItems(state: MealPlannerState, referenceISO = g
 
 export function getWeeklyRecommendations(state: MealPlannerState, referenceISO = getTodayISO()): WeeklyRecommendation[] {
   const summary = getMealPlannerSummary(state, referenceISO);
-  const days = getWeekDates(referenceISO).map((day) => ({ day, plan: getDayPlan(state, day.dateISO) }));
+  const days = getActiveWeekDates(referenceISO).map((day) => ({ day, plan: getDayPlan(state, day.dateISO) }));
   const recs: WeeklyRecommendation[] = [];
   const strongDay = days.find((entry) => countPlannedMeals(entry.plan) >= Math.max(2, activeMeals(entry.plan).length - 1));
   const emptyDinnerDays = days.filter((entry) => !(entry.plan.meals.find((meal) => meal.mealType === "dinner" && meal.active)?.title.trim())).length;
@@ -743,7 +765,7 @@ export function getWeeklyRecommendations(state: MealPlannerState, referenceISO =
 }
 
 export function getWeekChartData(state: MealPlannerState, referenceISO = getTodayISO()): WeekChartPoint[] {
-  return getWeekDates(referenceISO).map((day) => {
+  return getActiveWeekDates(referenceISO).map((day) => {
     const plan = getDayPlan(state, day.dateISO);
     return {
       day: day.weekdayLabel,

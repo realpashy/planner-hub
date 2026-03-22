@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { ChevronRight, Settings2 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Button } from "@/components/ui/button";
+import { InteractiveButton } from "@/components/ui/interactive-button";
 
 interface MealPlannerHeaderProps {
   title: string;
@@ -22,7 +22,7 @@ export function MealPlannerHeader({
         <div className="relative flex min-h-[3.5rem] items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Button
+            <InteractiveButton
               type="button"
               variant="ghost"
               size="icon"
@@ -30,7 +30,7 @@ export function MealPlannerHeader({
               onClick={onOpenSettings}
             >
               <Settings2 className="h-5 w-5" />
-            </Button>
+            </InteractiveButton>
           </div>
 
           <div className="pointer-events-none absolute inset-x-0 flex flex-col items-center justify-center text-center">
@@ -40,11 +40,11 @@ export function MealPlannerHeader({
             ) : null}
           </div>
 
-          <Button variant="ghost" size="icon" className="h-10 w-10 rounded-2xl bg-background/70" asChild>
+          <InteractiveButton variant="ghost" size="icon" className="h-10 w-10 rounded-2xl bg-background/70" asChild>
             <Link href={backHref} data-testid="link-back-dashboard">
               <ChevronRight className="h-5 w-5 md:h-6 md:w-6" />
             </Link>
-          </Button>
+          </InteractiveButton>
         </div>
       </div>
     </header>

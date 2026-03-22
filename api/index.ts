@@ -3,6 +3,17 @@ import express from "express";
 import { Pool } from "pg";
 import { readFile } from "fs/promises";
 import path from "path";
+import { initializeDatabase as initializeSharedDatabase } from "../server/db";
+import {
+  getAdminUsageSummary,
+  recordOverLimitAttempt,
+} from "../server/persistence";
+import {
+  editMealForUser,
+  generateWeekForUser,
+  getAiQuotaStatus,
+  regenerateDayForUser,
+} from "../server/meal-planner/service";
 
 declare module "http" {
   interface IncomingMessage {
@@ -225,7 +236,7 @@ async function initializeDatabase() {
 
 async function ensureInit() {
   if (!initPromise) {
-    initPromise = initializeDatabase().then(() => {
+    initPromise = Promise.all([initializeDatabase(), initializeSharedDatabase()]).then(() => {
       startupError = null;
     }).catch((error) => {
       startupError = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
@@ -455,6 +466,101 @@ app.get("/api/meal/catalog", async (req, res) => {
   if (!userId) return res.status(401).json({ message: "غير مصرح" });
   const result = await getDbPool().query("SELECT meal_json FROM meal_catalog ORDER BY id ASC");
   return res.json({ meals: result.rows.map((row) => row.meal_json) });
+});
+
+app.get("/api/meal-planner/quota", async (req, res) => {
+  const auth = readAuthFromRequest(req);
+  if (!auth?.userId) return res.status(401).json({ message: "غير مصرح" });
+  const quota = await getAiQuotaStatus(auth.userId);
+  return res.json(quota);
+});
+
+app.post("/api/meal-planner/generate-week", async (req, res, next) => {
+  const auth = readAuthFromRequest(req);
+  if (!auth?.userId) return res.status(401).json({ message: "غير مصرح" });
+  try {
+    const result = await generateWeekForUser(auth.userId, req.body);
+    return res.json(result);
+  } catch (error) {
+    if ((error as { code?: string }).code === "AI_LIMIT_REACHED") {
+      await recordOverLimitAttempt(auth.userId);
+      return res.status(429).json({
+        message: "تم الوصول إلى حد الذكاء الاصطناعي اليومي أو الشهري",
+        code: "AI_LIMIT_REACHED",
+        quota: (error as { quota?: unknown }).quota,
+      });
+    }
+    return next(error);
+  }
+});
+
+app.post("/api/meal-planner/edit-meal", async (req, res, next) => {
+  const auth = readAuthFromRequest(req);
+  if (!auth?.userId) return res.status(401).json({ message: "غير مصرح" });
+  try {
+    const result = await editMealForUser(auth.userId, req.body);
+    return res.json(result);
+  } catch (error) {
+    if ((error as { code?: string }).code === "AI_LIMIT_REACHED") {
+      await recordOverLimitAttempt(auth.userId);
+      return res.status(429).json({
+        message: "تم الوصول إلى حد تعديلات الذكاء الاصطناعي",
+        code: "AI_LIMIT_REACHED",
+        quota: (error as { quota?: unknown }).quota,
+      });
+    }
+    return next(error);
+  }
+});
+
+app.post("/api/meal-planner/regenerate-day", async (req, res, next) => {
+  const auth = readAuthFromRequest(req);
+  if (!auth?.userId) return res.status(401).json({ message: "غير مصرح" });
+  try {
+    const result = await regenerateDayForUser(auth.userId, req.body);
+    return res.json(result);
+  } catch (error) {
+    if ((error as { code?: string }).code === "AI_LIMIT_REACHED") {
+      await recordOverLimitAttempt(auth.userId);
+      return res.status(429).json({
+        message: "تم الوصول إلى حد تعديلات الذكاء الاصطناعي",
+        code: "AI_LIMIT_REACHED",
+        quota: (error as { quota?: unknown }).quota,
+      });
+    }
+    return next(error);
+  }
+});
+
+app.post("/api/meal-planner/delete-plan", async (req, res) => {
+  const auth = readAuthFromRequest(req);
+  if (!auth?.userId) return res.status(401).json({ message: "غير مصرح" });
+  const mode = req.body?.mode === "all" ? "all" : "meals";
+  const cloud = await getCloudData(auth.userId);
+  const currentMealData =
+    cloud.mealData && typeof cloud.mealData === "object" ? { ...(cloud.mealData as Record<string, unknown>) } : {};
+  if (mode === "all") {
+    await saveCloudData(auth.userId, { mealData: {} });
+  } else {
+    await saveCloudData(auth.userId, {
+      mealData: {
+        ...currentMealData,
+        plansByDate: {},
+        hasGeneratedPlan: false,
+      },
+    });
+  }
+  return res.json({ ok: true, mode });
+});
+
+app.get("/api/admin/ai-usage", async (req, res) => {
+  const auth = readAuthFromRequest(req);
+  if (!auth?.userId) return res.status(401).json({ message: "غير مصرح" });
+  if (auth.role !== "admin" && auth.role !== "super_admin") {
+    return res.status(403).json({ message: "غير مصرح بهذه العملية" });
+  }
+  const summary = await getAdminUsageSummary();
+  return res.json(summary);
 });
 
 app.use((err: any, _req: express.Request, res: express.Response, next: express.NextFunction) => {
