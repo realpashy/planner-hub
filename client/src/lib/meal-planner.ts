@@ -1,6 +1,6 @@
 export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
 export type MealSource = "ai" | "basic" | "manual";
-export type MealSwapMode = "similar" | "higher_protein" | "faster" | "vegetarian";
+export type MealSwapMode = "similar" | "higher_protein" | "faster" | "vegetarian" | "refresh";
 export type PlanTier = "free" | "pro" | "admin";
 export type PlannerViewState = "onboarding" | "loading" | "planner";
 export type PlannerDataStatus = "idle" | "loading" | "ready" | "error";
@@ -187,18 +187,18 @@ export interface WeeklyPlanRecord {
   grocery: GroceryGroup[];
   suggestions: PlannerSuggestionBundle;
   usage: {
+    monthlyGenerationsUsed: number;
     swapsUsed: number;
     dayRegenerationsUsed: number;
-    weeklyGenerationsUsed: number;
   };
   createdAt: string;
   updatedAt: string;
 }
 
 export interface PlannerLimits {
-  generationsPerWeek: number | null;
-  dayRegenerationsPerPlan: number | null;
-  mealSwapsPerPlan: number | null;
+  generationsPerMonth: number | null;
+  dayRegenerationsPerMonth: number | null;
+  mealSwapsPerMonth: number | null;
 }
 
 export interface PlannerServerState {
@@ -661,21 +661,21 @@ export function getMealPlannerSummary(state: MealPlannerState | null | undefined
 export function getUsageSummary(plan: WeeklyPlanRecord | null, limits: PlannerLimits) {
   return {
     generationsLeft:
-      limits.generationsPerWeek === null
+      limits.generationsPerMonth === null
         ? null
-        : Math.max(0, limits.generationsPerWeek - (plan?.usage.weeklyGenerationsUsed ?? 0)),
+        : Math.max(0, limits.generationsPerMonth - (plan?.usage.monthlyGenerationsUsed ?? 0)),
     dayRegenerationsLeft:
-      limits.dayRegenerationsPerPlan === null
+      limits.dayRegenerationsPerMonth === null
         ? null
-        : Math.max(0, limits.dayRegenerationsPerPlan - (plan?.usage.dayRegenerationsUsed ?? 0)),
+        : Math.max(0, limits.dayRegenerationsPerMonth - (plan?.usage.dayRegenerationsUsed ?? 0)),
     swapsLeft:
-      limits.mealSwapsPerPlan === null ? null : Math.max(0, limits.mealSwapsPerPlan - (plan?.usage.swapsUsed ?? 0)),
+      limits.mealSwapsPerMonth === null ? null : Math.max(0, limits.mealSwapsPerMonth - (plan?.usage.swapsUsed ?? 0)),
   };
 }
 
 export function getDefaultLimitsForTier(tier: PlanTier): PlannerLimits {
   if (tier === "admin") {
-    return { generationsPerWeek: null, dayRegenerationsPerPlan: null, mealSwapsPerPlan: null };
+    return { generationsPerMonth: null, dayRegenerationsPerMonth: null, mealSwapsPerMonth: null };
   }
-  return { generationsPerWeek: 2, dayRegenerationsPerPlan: 5, mealSwapsPerPlan: 10 };
+  return { generationsPerMonth: 2, dayRegenerationsPerMonth: 5, mealSwapsPerMonth: 10 };
 }

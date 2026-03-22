@@ -61,6 +61,85 @@ Every shared or module component must support, where relevant:
 - Shared tokens for spacing, radius, color, and typography must stay consistent across modules.
 - RTL behavior must be preserved in all shared components and all module UIs.
 
+## Planner Hub visual system
+
+- Planner Hub must feel custom-designed, not assembled from default shadcn examples.
+- The Meal Planner redesign is the reference implementation for future modules.
+- Every screen should use intentional visual layers:
+  - canvas/background surface
+  - module shell
+  - elevated hero/detail surface
+  - lighter secondary utility surface
+- Different component families must look meaningfully different:
+  - hero overview
+  - planner/day cards
+  - drawer/detail meal cards
+  - grocery/utility modules
+  - suggestion/editorial modules
+- Avoid repeating the same border, shadow, radius, and background treatment across unrelated sections.
+
+## RTL-first rules
+
+- Set `dir="rtl"` at the module root for Arabic experiences.
+- Prefer logical layout patterns and avoid casual left/right hardcoding in visible UI.
+- Directional icons must be intentionally mirrored or chosen for RTL.
+- Headers, chips, actions, metadata rows, sheets, and timeline/detail flows must be visually correct in RTL.
+- Contextual controls must align to RTL reading order, not copied LTR layouts.
+
+## Hierarchy and density
+
+- The top section must establish a clear focal point before secondary content.
+- Every section must justify its height and width; oversized low-value containers are not acceptable.
+- Summary comes first; rich detail appears on interaction.
+- Dense cards should stay scanable through icons, pills, and concise metadata instead of long paragraphs.
+- Drawers/sheets are the premium detail stage and should carry richer content than the main grid.
+
+## Motion rules
+
+- Motion is part of the product feel, not decoration.
+- Use motion to guide attention, confirm interaction, and improve perceived responsiveness.
+- Preferred patterns:
+  - staggered reveals
+  - hover lift
+  - tap compression
+  - layout animations for expand/collapse
+  - drawer slide/fade
+  - skeleton-to-content transitions
+- Motion must stay fast, soft, premium, and never block usability.
+
+## Light and dark theme rules
+
+- Both themes must be art-directed intentionally.
+- Light mode should feel airy, crisp, and premium with clear separation between shell, hero, and secondary modules.
+- Dark mode should use layered charcoal/graphite surfaces with restrained glow and avoid muddy gray repetition.
+- Do not simply invert colors; tune contrast, chips, borders, and shadows per theme.
+
+## Icon and asset rules
+
+- Use Lucide React, Heroicons, or custom SVG accents for structure and scanability.
+- Prefer icons and elegant placeholders over inconsistent random thumbnails.
+- If imagery is used, it must be small, consistent, and secondary.
+- Free/open assets only.
+
+## Anti-patterns to avoid
+
+- repeated default cards everywhere
+- card-inside-card-inside-card composition
+- the same muted border on every section
+- giant empty containers
+- detached contextual actions
+- flat admin-dashboard composition
+- form-like grocery panels
+- decorative motion with no UX purpose
+
+## Contextual action rule
+
+- Contextual actions must live inside the component they affect.
+- Examples:
+  - meal swap and regenerate-meal actions live inside the meal card
+  - day regenerate action lives inside the day card or drawer header
+  - drawer-specific actions stay in the drawer, not detached at page bottom
+
 ## Scope
 
 These standards apply to:

@@ -21,16 +21,16 @@ type JsonSchemaName = "weekly_plan" | "single_day" | "single_meal";
 function getMealProperties() {
   return {
     mealType: { type: "string" },
-    title: { type: "string" },
+    title: { type: "string", maxLength: 56 },
     ingredients: { type: "array", items: { type: "string" }, maxItems: 8 },
-    steps: { type: "array", items: { type: "string" }, maxItems: 3 },
+    steps: { type: "array", items: { type: "string", maxLength: 72 }, maxItems: 3 },
     calories: { type: "number" },
     protein: { type: "number" },
     carbs: { type: "number" },
     fat: { type: "number" },
     tags: { type: "array", items: { type: "string" }, maxItems: 4 },
-    reason: { type: "string" },
-    shortTip: { type: "string" },
+    reason: { type: "string", maxLength: 120 },
+    shortTip: { type: "string", maxLength: 72 },
     image: { type: "string" },
     imageType: { type: "string" },
     imageSource: { type: "string" },
@@ -58,7 +58,7 @@ function getJsonSchema(name: JsonSchemaName) {
               required: ["mealType", "title", "ingredients", "steps", "calories", "protein", "carbs", "fat", "tags", "reason", "shortTip", "image", "imageType", "imageSource"],
             },
             minItems: 1,
-            maxItems: 4,
+            maxItems: 5,
           },
         },
         required: ["dateISO", "tip", "notes", "waterTargetCups", "meals"],
@@ -105,7 +105,7 @@ function getJsonSchema(name: JsonSchemaName) {
                   required: ["mealType", "title", "ingredients", "steps", "calories", "protein", "carbs", "fat", "tags", "reason", "shortTip", "image", "imageType", "imageSource"],
                 },
                 minItems: 1,
-                maxItems: 4,
+                maxItems: 5,
               },
             },
             required: ["dateISO", "tip", "notes", "waterTargetCups", "meals"],
@@ -141,7 +141,7 @@ async function requestStructuredJson<T>({
     },
     body: JSON.stringify({
       model: OPENAI_MEAL_MODEL,
-      temperature: 0.7,
+      temperature: 0.45,
       max_completion_tokens: schemaName === "weekly_plan" ? 2800 : schemaName === "single_day" ? 1200 : 600,
       messages: [
         {

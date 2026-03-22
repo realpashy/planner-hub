@@ -120,6 +120,8 @@ export async function initializeDatabase() {
       date_key TEXT NOT NULL,
       full_generations_used INT NOT NULL DEFAULT 0,
       light_edits_used INT NOT NULL DEFAULT 0,
+      day_regenerations_used INT NOT NULL DEFAULT 0,
+      meal_swaps_used INT NOT NULL DEFAULT 0,
       estimated_input_tokens BIGINT NOT NULL DEFAULT 0,
       estimated_output_tokens BIGINT NOT NULL DEFAULT 0,
       estimated_cost_usd NUMERIC NOT NULL DEFAULT 0,
@@ -137,6 +139,8 @@ export async function initializeDatabase() {
       month_key TEXT NOT NULL,
       full_generations_used INT NOT NULL DEFAULT 0,
       light_edits_used INT NOT NULL DEFAULT 0,
+      day_regenerations_used INT NOT NULL DEFAULT 0,
+      meal_swaps_used INT NOT NULL DEFAULT 0,
       estimated_input_tokens BIGINT NOT NULL DEFAULT 0,
       estimated_output_tokens BIGINT NOT NULL DEFAULT 0,
       estimated_cost_usd NUMERIC NOT NULL DEFAULT 0,
@@ -157,6 +161,26 @@ export async function initializeDatabase() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+  `);
+
+  await dbPool.query(`
+    ALTER TABLE ai_usage_daily
+    ADD COLUMN IF NOT EXISTS day_regenerations_used INT NOT NULL DEFAULT 0;
+  `);
+
+  await dbPool.query(`
+    ALTER TABLE ai_usage_daily
+    ADD COLUMN IF NOT EXISTS meal_swaps_used INT NOT NULL DEFAULT 0;
+  `);
+
+  await dbPool.query(`
+    ALTER TABLE ai_usage_monthly
+    ADD COLUMN IF NOT EXISTS day_regenerations_used INT NOT NULL DEFAULT 0;
+  `);
+
+  await dbPool.query(`
+    ALTER TABLE ai_usage_monthly
+    ADD COLUMN IF NOT EXISTS meal_swaps_used INT NOT NULL DEFAULT 0;
   `);
 
   await dbPool.query(`

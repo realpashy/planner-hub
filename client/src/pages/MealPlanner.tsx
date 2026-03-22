@@ -1,21 +1,31 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, RefreshCcw, Sparkles, Trash2, Wand2, Zap } from "lucide-react";
-import { MealPlannerHeader } from "@/components/meal-planner/MealPlannerHeader";
-import { DayCard } from "@/components/meal-planner/DayCard";
-import { MealCard } from "@/components/meal-planner/MealCard";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  DatabaseZap,
+  RefreshCcw,
+  Settings2,
+  Sparkles,
+  Trash2,
+  Waves,
+} from "lucide-react";
+import { PlannerDayCard } from "@/components/meal-planner/PlannerDayCard";
+import { PlannerDayDrawer } from "@/components/meal-planner/PlannerDayDrawer";
+import { PlannerGroceryModule } from "@/components/meal-planner/PlannerGroceryModule";
+import { PlannerHeroOverview } from "@/components/meal-planner/PlannerHeroOverview";
+import { PlannerMetaBadge } from "@/components/meal-planner/PlannerMetaBadge";
+import { PlannerSkeleton } from "@/components/meal-planner/PlannerSkeleton";
+import { PlannerSuggestionModule } from "@/components/meal-planner/PlannerSuggestionModule";
+import { PlannerTopBar } from "@/components/meal-planner/PlannerTopBar";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { EmptyState } from "@/components/ui/empty-state";
 import { showFeedbackToast } from "@/components/ui/feedback-toast";
 import { Input } from "@/components/ui/input";
 import { InteractiveButton } from "@/components/ui/interactive-button";
-import { InteractiveCard } from "@/components/ui/interactive-card";
 import { Label } from "@/components/ui/label";
-import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
-import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -26,20 +36,19 @@ import {
   calculateBMI,
   COOKING_TIME_LABELS,
   DIET_LABELS,
-  formatWater,
-  getBMIFeedback,
   GOAL_LABELS,
-  MEAL_TYPE_LABELS,
   SKILL_LEVEL_LABELS,
+  getBMIFeedback,
   type GoalType,
   type MealSwapMode,
   type PlannerDay,
   type PlannerPreferences,
   type SexType,
 } from "@/lib/meal-planner";
+import { cn } from "@/lib/utils";
 
 const STEPS = ["مرحبًا", "أسلوب الأكل", "القيود", "الهدف", "بيانات الجسم", "التفضيلات", "الأيام المزدحمة", "الصيام", "التأكيد"];
-const LOADING_MESSAGES = ["نحلل تفضيلاتك", "نوازن التغذية", "نكيّف الأسبوع", "نرتب التسوق"];
+const LOADING_MESSAGES = ["نحلل تفضيلاتك", "نوازن المغذيات", "نرتب أيامك النشطة", "نثبت التسوق الذكي"];
 const BUSY_DAYS = [
   ["sunday", "الأحد"],
   ["monday", "الاثنين"],
@@ -85,98 +94,64 @@ function SplitInput({ value, placeholder, onChange }: { value: string[]; placeho
   return (
     <Input
       value={value.join("، ")}
-      onChange={(e) =>
+      onChange={(event) =>
         onChange(
-          e.target.value
+          event.target.value
             .split(/[،,]/)
             .map((item) => item.trim())
             .filter(Boolean),
         )
       }
       placeholder={placeholder}
-      className="h-12 rounded-2xl text-right"
+      className="h-12 rounded-[1.15rem] border-border/60 bg-background/80 text-right dark:bg-slate-950/60"
     />
   );
 }
 
-function StepChip({
-  index,
-  current,
-  title,
-  onClick,
-  showConnector,
-}: {
-  index: number;
-  current: number;
-  title: string;
-  onClick: () => void;
-  showConnector: boolean;
-}) {
-  const state = index < current ? "done" : index === current ? "current" : "upcoming";
-  const isCurrent = state === "current";
-  const isDone = state === "done";
+function StepRail({ step, onJump }: { step: number; onJump: (index: number) => void }) {
   return (
-    <motion.div layout className="flex shrink-0 items-center gap-2">
-      {showConnector ? (
-        <div className={`h-[2px] w-8 rounded-full md:w-10 ${index < current ? "bg-primary/70" : "bg-border"}`} />
-      ) : null}
-      <InteractiveButton
-        type="button"
-        variant="ghost"
-        disabled={!isDone}
-        onClick={isDone ? onClick : undefined}
-        className="h-auto rounded-full px-0 py-0 hover:bg-transparent focus-visible:ring-2 focus-visible:ring-primary/40"
-      >
-        <motion.div layout className="flex flex-row-reverse items-center gap-2 text-right">
-          <motion.div
-            layout
-            className={`flex h-10 w-10 items-center justify-center rounded-full text-xs font-bold transition-colors ${
-              isDone
-                ? "bg-emerald-500 text-white"
-                : isCurrent
-                  ? "bg-primary text-primary-foreground shadow-[0_0_0_6px_rgba(99,91,255,0.12)]"
-                  : "bg-muted text-muted-foreground"
-            }`}
-          >
-            {isDone ? <CheckCircle2 className="h-4 w-4" /> : index + 1}
-          </motion.div>
-          <AnimatePresence initial={false}>
-            {isCurrent ? (
-              <motion.div
-                key={`step_label_${index}`}
-                layout
-                initial={{ opacity: 0, x: 12, scale: 0.96 }}
-                animate={{ opacity: 1, x: 0, scale: 1 }}
-                exit={{ opacity: 0, x: -12, scale: 0.96 }}
-                transition={{ duration: 0.22, ease: "easeOut" }}
-                className="min-w-[7.75rem] rounded-full border border-primary/20 bg-primary/10 px-3 py-2"
-              >
-                <p className="text-xs font-bold text-foreground">{title}</p>
-                <p className="text-[11px] text-muted-foreground">الخطوة {index + 1}</p>
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
-        </motion.div>
-      </InteractiveButton>
-    </motion.div>
-  );
-}
-
-function PlannerSkeleton() {
-  return (
-    <div className="space-y-4">
-      <LoadingSkeleton lines={4} />
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <LoadingSkeleton lines={5} />
-        <LoadingSkeleton lines={5} />
-        <LoadingSkeleton lines={5} />
+    <div className="overflow-x-auto pb-2" dir="rtl">
+      <div className="flex min-w-max items-center gap-2">
+        {STEPS.map((title, index) => {
+          const done = index < step;
+          const current = index === step;
+          return (
+            <div key={title} className="flex items-center gap-2">
+              {index > 0 ? <div className={cn("h-px w-8 rounded-full md:w-10", done ? "bg-primary/60" : "bg-border")} /> : null}
+              <button type="button" disabled={!done} onClick={() => done && onJump(index)} className="inline-flex items-center gap-2 rounded-full text-right">
+                {current ? (
+                  <motion.div layout className="inline-flex items-center gap-3 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 shadow-[0_10px_30px_rgba(99,102,241,0.16)]">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-black text-primary-foreground">{index + 1}</div>
+                    <div className="text-right">
+                      <p className="text-sm font-black text-foreground">{title}</p>
+                      <p className="text-[11px] text-muted-foreground">خطوة {index + 1}</p>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <div className={cn("flex h-10 w-10 items-center justify-center rounded-full text-xs font-black", done ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground")}>
+                    {done ? <CheckCircle2 className="h-4 w-4" /> : index + 1}
+                  </div>
+                )}
+              </button>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 }
 
+function SectionLead({ title, description }: { title: string; description: string }) {
+  return (
+    <div className="space-y-2 text-right">
+      <h3 className="text-2xl font-black tracking-tight text-foreground">{title}</h3>
+      <p className="text-sm leading-7 text-muted-foreground">{description}</p>
+      <Separator className="bg-border/60" />
+    </div>
+  );
+}
+
 export default function MealPlanner() {
-  const mealPlanner = useMealPlanner();
   const {
     state,
     usage,
@@ -192,7 +167,8 @@ export default function MealPlanner() {
     regenerateDay,
     swapMeal,
     deletePlan,
-  } = mealPlanner;
+  } = useMealPlanner();
+
   const [step, setStep] = useState(0);
   const [selectedDay, setSelectedDay] = useState<PlannerDay | null>(null);
   const [dayOpen, setDayOpen] = useState(false);
@@ -201,6 +177,7 @@ export default function MealPlanner() {
   const [replaceDialog, setReplaceDialog] = useState(false);
   const [deleteMode, setDeleteMode] = useState<null | "meals" | "all">(null);
   const [groceryOpen, setGroceryOpen] = useState(false);
+  const [debugOpen, setDebugOpen] = useState(false);
   const [loadingIndex, setLoadingIndex] = useState(0);
   const [caloriesInput, setCaloriesInput] = useState(String(state.preferences.caloriesTarget));
 
@@ -214,13 +191,15 @@ export default function MealPlanner() {
     setCaloriesInput(String(state.preferences.caloriesTarget));
   }, [state.preferences.caloriesTarget]);
 
-  const bmi = useMemo(() => calculateBMI(state.preferences.heightCm, state.preferences.weightKg), [state.preferences.heightCm, state.preferences.weightKg]);
   const plan = state.activePlan;
   const plannerDays = plan?.days ?? [];
+  const bmi = useMemo(() => calculateBMI(state.preferences.heightCm, state.preferences.weightKg), [state.preferences.heightCm, state.preferences.weightKg]);
   const currentDay = selectedDay ?? plannerDays[0] ?? null;
+  const canUsePreviousPreferences = useMemo(() => hasMeaningfulSavedPreferences(state.savedPreferences), [state.savedPreferences]);
   const nextStepTitle = step < STEPS.length - 1 ? STEPS[step + 1] : null;
   const previousStepTitle = step > 0 ? STEPS[step - 1] : null;
-  const canUsePreviousPreferences = useMemo(() => hasMeaningfulSavedPreferences(state.savedPreferences), [state.savedPreferences]);
+  const shellClass =
+    "mx-auto max-w-7xl space-y-6 rounded-[2.25rem] border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.86),rgba(248,250,252,0.92))] p-4 shadow-[0_36px_120px_rgba(15,23,42,0.07)] backdrop-blur-xl dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.82),rgba(15,23,42,0.94))] dark:shadow-[0_36px_120px_rgba(2,6,23,0.56)] md:p-6";
 
   const nextEnabled = useMemo(() => {
     if (step === 4) return Boolean(state.preferences.heightCm && state.preferences.weightKg);
@@ -229,7 +208,11 @@ export default function MealPlanner() {
   }, [state.preferences, step]);
 
   const toastError = (title: string, error: unknown) =>
-    showFeedbackToast({ title, description: error instanceof Error ? error.message : "حاول مرة أخرى.", tone: "error" });
+    showFeedbackToast({
+      title,
+      description: error instanceof Error ? error.message : "حاول مرة أخرى.",
+      tone: "error",
+    });
 
   const openDay = (day: PlannerDay) => {
     setSelectedDay(day);
@@ -237,45 +220,39 @@ export default function MealPlanner() {
     setDayOpen(true);
   };
 
-  async function handleGenerate(replaceCurrent = false) {
+  const handleGenerate = async (replaceCurrent = false) => {
     try {
       const result = await generatePlan(replaceCurrent);
       showFeedbackToast({
-        title: result.source === "ai" ? "تم توليد الخطة الأسبوعية" : "تم تجهيز خطة أساسية",
-        description: result.source === "ai" ? "النسخة الجديدة أصبحت نشطة." : "تعذر الذكاء الاصطناعي، فتم استخدام الخطة الأساسية.",
-        tone: result.source === "ai" ? "success" : "warning",
+        title: result.cached ? "تم استخدام الخطة الحالية" : "تم توليد الخطة الذكية",
+        description: result.cached ? "لم نستهلك طلبًا جديدًا لأن نفس التفضيلات ما زالت فعالة." : "الخطة الجديدة أصبحت جاهزة للعرض والتعديل.",
+        tone: "success",
       });
       setReplaceDialog(false);
     } catch (error) {
       toastError("تعذر توليد الخطة", error);
     }
-  }
+  };
 
-  async function handleRegenerateDay(dateISO: string) {
+  const handleRegenerateDay = async (dateISO: string) => {
     try {
-      const result = await regenerateDay(dateISO);
-      showFeedbackToast({
-        title: result?.source === "ai" ? "تم تحديث اليوم" : "تم استخدام يوم أساسي",
-        tone: result?.source === "ai" ? "success" : "warning",
-      });
+      await regenerateDay(dateISO);
+      showFeedbackToast({ title: "تم تحديث اليوم", description: "حافظنا على بقية الأسبوع كما هي.", tone: "success" });
     } catch (error) {
       toastError("تعذر إعادة توليد اليوم", error);
     }
-  }
+  };
 
-  async function handleSwapMeal(dateISO: string, mealType: string, mode: MealSwapMode) {
+  const handleSwapMeal = async (dateISO: string, mealType: string, mode: MealSwapMode) => {
     try {
-      const result = await swapMeal(dateISO, mealType, mode);
-      showFeedbackToast({
-        title: result?.source === "ai" ? "تم تبديل الوجبة" : "تم تطبيق بديل أساسي",
-        tone: result?.source === "ai" ? "success" : "warning",
-      });
+      await swapMeal(dateISO, mealType, mode);
+      showFeedbackToast({ title: mode === "refresh" ? "تم تجديد الوجبة" : "تم تبديل الوجبة", tone: "success" });
     } catch (error) {
-      toastError("تعذر تبديل الوجبة", error);
+      toastError(mode === "refresh" ? "تعذر تجديد الوجبة" : "تعذر تبديل الوجبة", error);
     }
-  }
+  };
 
-  async function handleDelete() {
+  const handleDelete = async () => {
     if (!deleteMode) return;
     try {
       await deletePlan(deleteMode);
@@ -284,34 +261,30 @@ export default function MealPlanner() {
         tone: "success",
       });
       setDeleteMode(null);
+      setSettingsOpen(false);
     } catch (error) {
       toastError("تعذر حذف الخطة", error);
     }
-  }
+  };
 
-  function renderStep() {
+  const renderStep = () => {
     if (step === 0) {
       return (
-        <div className="space-y-5 text-right">
-          <Badge className="rounded-full border-primary/20 bg-primary/10 text-primary">إعداد ذكي وسريع</Badge>
-          <h2 className="text-3xl font-black text-foreground">لنصمم أسبوعك الغذائي خلال دقائق</h2>
-          <p className="text-sm leading-7 text-muted-foreground">سننشئ خطة نشطة من اليوم وحتى السبت مع تعديلات سريعة على مستوى اليوم والوجبة.</p>
+        <div className="space-y-6 text-right">
+          <PlannerMetaBadge icon={Sparkles} label="إعداد تفاعلي سريع" tone="accent" />
+          <div className="space-y-3">
+            <h2 className="text-3xl font-black tracking-tight text-foreground md:text-5xl">لنصمم أسبوعك الغذائي كمركز قيادة شخصي</h2>
+            <p className="max-w-2xl text-sm leading-8 text-muted-foreground">من اليوم وحتى السبت، بخطة مضغوطة ومرحلة تفاصيل أعمق عند الحاجة فقط.</p>
+          </div>
           <div className="flex flex-wrap justify-end gap-3">
             {canUsePreviousPreferences ? (
-              <InteractiveButton
-                type="button"
-                variant="outline"
-                className="min-h-12 rounded-2xl px-5"
-                onClick={() => {
-                  usePreviousPreferences();
-                  setStep(8);
-                }}
-              >
+              <InteractiveButton type="button" variant="outline" className="min-h-12 rounded-[1.2rem] px-5" onClick={() => { usePreviousPreferences(); setStep(8); }}>
                 استخدام التفضيلات السابقة
               </InteractiveButton>
             ) : null}
-            <InteractiveButton type="button" className="min-h-12 rounded-2xl px-5" onClick={() => setStep(1)}>
+            <InteractiveButton type="button" className="min-h-12 rounded-[1.2rem] px-5 shadow-[0_16px_36px_rgba(99,102,241,0.24)]" onClick={() => setStep(1)}>
               ابدأ الآن
+              <ChevronLeft className="h-4 w-4" />
             </InteractiveButton>
           </div>
         </div>
@@ -320,12 +293,8 @@ export default function MealPlanner() {
 
     if (step === 1) {
       return (
-        <div className="space-y-4 text-right">
-          <h3 className="text-xl font-extrabold text-foreground">أسلوب الأكل</h3>
-          <div className="space-y-3">
-            <p className="text-sm font-bold text-foreground">نوع النظام</p>
-            <Separator className="bg-border/60" />
-          </div>
+        <div className="space-y-5 text-right">
+          <SectionLead title="أسلوب الأكل" description="حدّد النمط الأساسي حتى نختصر القرار من البداية." />
           <div className="flex flex-wrap justify-end gap-2">
             {Object.entries(DIET_LABELS).map(([value, label]) => (
               <InteractiveButton key={value} type="button" variant={state.preferences.dietType === value ? "default" : "outline"} active={state.preferences.dietType === value} className="rounded-full px-4" onClick={() => patchPreferences({ dietType: value as PlannerPreferences["dietType"] })}>
@@ -333,32 +302,24 @@ export default function MealPlanner() {
               </InteractiveButton>
             ))}
           </div>
-          <div className="space-y-3">
-            <p className="text-sm font-bold text-foreground">عدد الوجبات والسناك</p>
-            <Separator className="bg-border/60" />
-          </div>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Select dir="rtl" value={String(state.preferences.mealsPerDay)} onValueChange={(value) => patchPreferences({ mealsPerDay: Number(value) as 2 | 3 | 4 })}>
-              <SelectTrigger className="h-12 rounded-2xl bg-background/80"><SelectValue /></SelectTrigger>
-              <SelectContent dir="rtl">
-                <SelectItem value="2">وجبتان</SelectItem>
-                <SelectItem value="3">3 وجبات</SelectItem>
-                <SelectItem value="4">4 وجبات</SelectItem>
-              </SelectContent>
-            </Select>
-            <InteractiveCard className="p-4">
+            <div className="space-y-2">
+              <Label className="justify-end">عدد الوجبات</Label>
+              <Select dir="rtl" value={String(state.preferences.mealsPerDay)} onValueChange={(value) => patchPreferences({ mealsPerDay: Number(value) as 2 | 3 | 4 })}>
+                <SelectTrigger className="h-12 rounded-[1.15rem] bg-background/80"><SelectValue /></SelectTrigger>
+                <SelectContent dir="rtl">
+                  <SelectItem value="2">وجبتان</SelectItem>
+                  <SelectItem value="3">3 وجبات</SelectItem>
+                  <SelectItem value="4">4 وجبات</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="rounded-[1.35rem] border border-border/60 bg-background/70 p-4 dark:bg-slate-950/60">
               <div className="flex items-center justify-between">
-                <div className="text-right">
-                  <p className="text-sm font-bold text-foreground">سناك</p>
-                  <p className="text-xs text-muted-foreground">يُضاف عند الحاجة.</p>
-                </div>
                 <Switch checked={state.preferences.snacks} onCheckedChange={(checked) => patchPreferences({ snacks: checked })} />
+                <div className="text-right"><p className="text-sm font-bold text-foreground">سناك</p><p className="text-xs text-muted-foreground">أضفه عند الحاجة فقط.</p></div>
               </div>
-            </InteractiveCard>
-          </div>
-          <div className="space-y-3">
-            <p className="text-sm font-bold text-foreground">المطابخ المفضلة</p>
-            <Separator className="bg-border/60" />
+            </div>
           </div>
           <SplitInput value={state.preferences.cuisinePreferences} onChange={(value) => patchPreferences({ cuisinePreferences: value })} placeholder="مطابخ مفضلة" />
         </div>
@@ -367,26 +328,21 @@ export default function MealPlanner() {
 
     if (step === 2) {
       return (
-        <div className="space-y-3 text-right">
-          <h3 className="text-xl font-extrabold text-foreground">القيود</h3>
-          <Separator className="bg-border/60" />
+        <div className="space-y-4 text-right">
+          <SectionLead title="القيود والتجنب" description="اذكر ما يجب استبعاده الآن كي نقلل الضجيج لاحقًا." />
           <SplitInput value={state.preferences.allergies} onChange={(value) => patchPreferences({ allergies: value })} placeholder="الحساسيات" />
-          <SplitInput value={state.preferences.dislikedIngredients} onChange={(value) => patchPreferences({ dislikedIngredients: value })} placeholder="مكونات لا تحبها" />
-          <SplitInput value={state.preferences.dislikedMeals} onChange={(value) => patchPreferences({ dislikedMeals: value })} placeholder="وجبات لا ترغب بها" />
-          <SplitInput value={state.preferences.foodRules} onChange={(value) => patchPreferences({ foodRules: value })} placeholder="قواعد إضافية" />
-          <SplitInput value={state.preferences.ingredientsAtHome} onChange={(value) => patchPreferences({ ingredientsAtHome: value })} placeholder="ماذا يوجد في المنزل؟" />
+          <SplitInput value={state.preferences.dislikedIngredients} onChange={(value) => patchPreferences({ dislikedIngredients: value })} placeholder="مكونات لا ترغب بها" />
+          <SplitInput value={state.preferences.dislikedMeals} onChange={(value) => patchPreferences({ dislikedMeals: value })} placeholder="وجبات لا تناسبك" />
+          <SplitInput value={state.preferences.foodRules} onChange={(value) => patchPreferences({ foodRules: value })} placeholder="قواعد غذائية إضافية" />
+          <SplitInput value={state.preferences.ingredientsAtHome} onChange={(value) => patchPreferences({ ingredientsAtHome: value })} placeholder="مكونات متوفرة في المنزل" />
         </div>
       );
     }
 
     if (step === 3) {
       return (
-        <div className="space-y-4 text-right">
-          <h3 className="text-xl font-extrabold text-foreground">الهدف والسعرات</h3>
-          <div className="space-y-3">
-            <p className="text-sm font-bold text-foreground">الهدف</p>
-            <Separator className="bg-border/60" />
-          </div>
+        <div className="space-y-5 text-right">
+          <SectionLead title="الهدف والطاقة" description="حدد الهدف ثم عدّل السعرات بسرعة وبشكل مباشر." />
           <div className="flex flex-wrap justify-end gap-2">
             {Object.entries(GOAL_LABELS).map(([value, label]) => (
               <InteractiveButton key={value} type="button" variant={state.preferences.goal === value ? "default" : "outline"} active={state.preferences.goal === value} className="rounded-full px-4" onClick={() => patchPreferences({ goal: value as GoalType })}>
@@ -394,20 +350,14 @@ export default function MealPlanner() {
               </InteractiveButton>
             ))}
           </div>
-          <div className="space-y-3">
-            <p className="text-sm font-bold text-foreground">السعرات اليومية</p>
-            <Separator className="bg-border/60" />
-          </div>
           <Input
             type="text"
             inputMode="numeric"
             value={caloriesInput}
-            onChange={(e) => {
-              const nextValue = e.target.value.replace(/[^\d]/g, "");
+            onChange={(event) => {
+              const nextValue = event.target.value.replace(/[^\d]/g, "");
               setCaloriesInput(nextValue);
-              if (nextValue) {
-                patchPreferences({ caloriesTarget: Number(nextValue) });
-              }
+              if (nextValue) patchPreferences({ caloriesTarget: Number(nextValue) });
             }}
             onBlur={() => {
               if (!caloriesInput.trim()) {
@@ -415,7 +365,7 @@ export default function MealPlanner() {
                 patchPreferences({ caloriesTarget: 1900 });
               }
             }}
-            className="h-12 rounded-2xl text-right"
+            className="h-12 rounded-[1.15rem] border-border/60 bg-background/80 text-right dark:bg-slate-950/60"
             placeholder="1900"
           />
         </div>
@@ -424,74 +374,67 @@ export default function MealPlanner() {
 
     if (step === 4) {
       return (
-        <div className="space-y-4 text-right">
-          <h3 className="text-xl font-extrabold text-foreground">بيانات الجسم</h3>
-          <div className="space-y-3">
-            <p className="text-sm font-bold text-foreground">المعلومات الأساسية</p>
-            <Separator className="bg-border/60" />
-          </div>
+        <div className="space-y-5 text-right">
+          <SectionLead title="بيانات الجسم" description="هذه القيم تحسن تقريب السعرات والبروتين دون تعقيد." />
           <div className="grid gap-4 sm:grid-cols-2">
-            <Input type="number" value={state.preferences.age ?? ""} onChange={(e) => patchPreferences({ age: Number(e.target.value) || null })} className="h-12 rounded-2xl text-right" placeholder="العمر" />
+            <Input type="number" value={state.preferences.age ?? ""} onChange={(event) => patchPreferences({ age: Number(event.target.value) || null })} className="h-12 rounded-[1.15rem] text-right" placeholder="العمر" />
             <Select dir="rtl" value={state.preferences.sex} onValueChange={(value) => patchPreferences({ sex: value as SexType })}>
-              <SelectTrigger className="h-12 rounded-2xl bg-background/80"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-12 rounded-[1.15rem] bg-background/80"><SelectValue /></SelectTrigger>
               <SelectContent dir="rtl"><SelectItem value="male">ذكر</SelectItem><SelectItem value="female">أنثى</SelectItem></SelectContent>
             </Select>
-            <Input type="number" value={state.preferences.heightCm ?? ""} onChange={(e) => patchPreferences({ heightCm: Number(e.target.value) || null })} className="h-12 rounded-2xl text-right" placeholder="الطول سم" />
-            <Input type="number" value={state.preferences.weightKg ?? ""} onChange={(e) => patchPreferences({ weightKg: Number(e.target.value) || null })} className="h-12 rounded-2xl text-right" placeholder="الوزن كغ" />
-          </div>
-          <div className="space-y-3">
-            <p className="text-sm font-bold text-foreground">النشاط والتمارين</p>
-            <Separator className="bg-border/60" />
+            <Input type="number" value={state.preferences.heightCm ?? ""} onChange={(event) => patchPreferences({ heightCm: Number(event.target.value) || null })} className="h-12 rounded-[1.15rem] text-right" placeholder="الطول سم" />
+            <Input type="number" value={state.preferences.weightKg ?? ""} onChange={(event) => patchPreferences({ weightKg: Number(event.target.value) || null })} className="h-12 rounded-[1.15rem] text-right" placeholder="الوزن كغ" />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <Select dir="rtl" value={state.preferences.activityLevel} onValueChange={(value) => patchPreferences({ activityLevel: value as PlannerPreferences["activityLevel"] })}>
-              <SelectTrigger className="h-12 rounded-2xl bg-background/80"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-12 rounded-[1.15rem] bg-background/80"><SelectValue /></SelectTrigger>
               <SelectContent dir="rtl">{Object.entries(ACTIVITY_LABELS).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent>
             </Select>
-            <InteractiveCard className="p-4">
+            <div className="rounded-[1.35rem] border border-border/60 bg-background/70 p-4 dark:bg-slate-950/60">
               <div className="flex items-center justify-between">
-                <div className="text-right"><p className="text-sm font-bold">تمارين منتظمة</p><p className="text-xs text-muted-foreground">لتقريب التوقيت والبروتين.</p></div>
                 <Switch checked={state.preferences.workout} onCheckedChange={(checked) => patchPreferences({ workout: checked })} />
+                <div className="text-right"><p className="text-sm font-bold text-foreground">تمارين منتظمة</p><p className="text-xs text-muted-foreground">لتحسين توزيع البروتين والطاقة.</p></div>
               </div>
-            </InteractiveCard>
-          </div>
-          <InteractiveCard className="bg-primary/5 p-4">
-            <div className="flex items-start justify-between gap-4">
-              <div className="text-right"><p className="text-sm font-bold text-foreground">BMI</p><p className="text-xs leading-6 text-muted-foreground">{getBMIFeedback(bmi)}</p></div>
-              <div className="rounded-2xl bg-background px-4 py-3 text-xl font-black text-foreground">{bmi ?? "--"}</div>
             </div>
-          </InteractiveCard>
+          </div>
+          <div className="rounded-[1.5rem] border border-primary/15 bg-primary/8 p-4 dark:border-primary/20 dark:bg-primary/12">
+            <div className="flex items-start justify-between gap-4">
+              <div className="rounded-[1.2rem] bg-background px-4 py-3 text-2xl font-black text-foreground dark:bg-slate-950/60">{bmi ?? "--"}</div>
+              <div className="text-right"><p className="text-sm font-bold text-foreground">مؤشر BMI</p><p className="text-xs leading-6 text-muted-foreground">{getBMIFeedback(bmi)}</p></div>
+            </div>
+          </div>
         </div>
       );
     }
 
     if (step === 5) {
       return (
-        <div className="space-y-4 text-right">
-          <h3 className="text-xl font-extrabold text-foreground">تفضيلات الطبخ</h3>
-          <div className="space-y-3">
-            <p className="text-sm font-bold text-foreground">الوقت والمهارة</p>
-            <Separator className="bg-border/60" />
-          </div>
+        <div className="space-y-5 text-right">
+          <SectionLead title="أسلوب التنفيذ" description="اضبط سرعة الطبخ وتكرار المكونات حتى تبقى الخطة واقعية." />
           <div className="grid gap-4 sm:grid-cols-2">
             <Select dir="rtl" value={state.preferences.cookingTime} onValueChange={(value) => patchPreferences({ cookingTime: value as PlannerPreferences["cookingTime"] })}>
-              <SelectTrigger className="h-12 rounded-2xl bg-background/80"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-12 rounded-[1.15rem] bg-background/80"><SelectValue /></SelectTrigger>
               <SelectContent dir="rtl">{Object.entries(COOKING_TIME_LABELS).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent>
             </Select>
             <Select dir="rtl" value={state.preferences.skillLevel} onValueChange={(value) => patchPreferences({ skillLevel: value as PlannerPreferences["skillLevel"] })}>
-              <SelectTrigger className="h-12 rounded-2xl bg-background/80"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-12 rounded-[1.15rem] bg-background/80"><SelectValue /></SelectTrigger>
               <SelectContent dir="rtl">{Object.entries(SKILL_LEVEL_LABELS).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent>
             </Select>
           </div>
-          <div className="space-y-3">
-            <p className="text-sm font-bold text-foreground">تفضيلات التنفيذ</p>
-            <Separator className="bg-border/60" />
-          </div>
           <div className="grid gap-3 sm:grid-cols-2">
-            <InteractiveCard className="p-4"><div className="flex items-center justify-between"><div className="text-right"><p className="text-sm font-bold">تكرار الوجبات</p><p className="text-xs text-muted-foreground">لتقليل القرارات.</p></div><Switch checked={state.preferences.repeatMeals} onCheckedChange={(checked) => patchPreferences({ repeatMeals: checked })} /></div></InteractiveCard>
-            <InteractiveCard className="p-4"><div className="flex items-center justify-between"><div className="text-right"><p className="text-sm font-bold">إعادة استخدام البواقي</p><p className="text-xs text-muted-foreground">لتقليل الهدر.</p></div><Switch checked={state.preferences.leftovers} onCheckedChange={(checked) => patchPreferences({ leftovers: checked })} /></div></InteractiveCard>
-            <InteractiveCard className="p-4"><div className="flex items-center justify-between"><div className="text-right"><p className="text-sm font-bold">أفضلية الوجبات السريعة</p><p className="text-xs text-muted-foreground">للأيام العملية.</p></div><Switch checked={state.preferences.quickMealsPreference} onCheckedChange={(checked) => patchPreferences({ quickMealsPreference: checked })} /></div></InteractiveCard>
-            <Input type="number" value={state.preferences.maxIngredients} onChange={(e) => patchPreferences({ maxIngredients: Number(e.target.value) || 8 })} className="h-12 rounded-2xl text-right" placeholder="أقصى عدد مكونات" />
+            {[
+              { title: "تكرار الوجبات", description: "لتقليل القرارات.", checked: state.preferences.repeatMeals, key: "repeatMeals" },
+              { title: "إعادة استخدام البواقي", description: "لتقليل الهدر.", checked: state.preferences.leftovers, key: "leftovers" },
+              { title: "أفضلية الوجبات السريعة", description: "للأيام العملية.", checked: state.preferences.quickMealsPreference, key: "quickMealsPreference" },
+            ].map((item) => (
+              <div key={item.key} className="rounded-[1.35rem] border border-border/60 bg-background/70 p-4 dark:bg-slate-950/60">
+                <div className="flex items-center justify-between">
+                  <Switch checked={item.checked} onCheckedChange={(checked) => patchPreferences({ [item.key]: checked } as Partial<PlannerPreferences>)} />
+                  <div className="text-right"><p className="text-sm font-bold text-foreground">{item.title}</p><p className="text-xs text-muted-foreground">{item.description}</p></div>
+                </div>
+              </div>
+            ))}
+            <Input type="number" value={state.preferences.maxIngredients} onChange={(event) => patchPreferences({ maxIngredients: Number(event.target.value) || 8 })} className="h-12 rounded-[1.15rem] text-right" placeholder="أقصى عدد مكونات" />
           </div>
         </div>
       );
@@ -499,9 +442,8 @@ export default function MealPlanner() {
 
     if (step === 6) {
       return (
-        <div className="space-y-4 text-right">
-          <h3 className="text-xl font-extrabold text-foreground">الأيام المزدحمة</h3>
-          <Separator className="bg-border/60" />
+        <div className="space-y-5 text-right">
+          <SectionLead title="الأيام المزدحمة" description="سنخفف تعقيد الوجبات في الأيام الأعلى ضغطًا." />
           <div className="flex flex-wrap justify-end gap-2">
             {BUSY_DAYS.map(([value, label]) => (
               <InteractiveButton
@@ -510,13 +452,11 @@ export default function MealPlanner() {
                 variant={state.preferences.busyDays.includes(value) ? "default" : "outline"}
                 active={state.preferences.busyDays.includes(value)}
                 className="rounded-full px-4"
-                onClick={() =>
-                  patchPreferences({
-                    busyDays: state.preferences.busyDays.includes(value)
-                      ? state.preferences.busyDays.filter((item) => item !== value)
-                      : [...state.preferences.busyDays, value],
-                  })
-                }
+                onClick={() => patchPreferences({
+                  busyDays: state.preferences.busyDays.includes(value)
+                    ? state.preferences.busyDays.filter((item) => item !== value)
+                    : [...state.preferences.busyDays, value],
+                })}
               >
                 {label}
               </InteractiveButton>
@@ -528,391 +468,220 @@ export default function MealPlanner() {
 
     if (step === 7) {
       return (
-        <div className="space-y-4 text-right">
-          <h3 className="text-xl font-extrabold text-foreground">الصيام</h3>
-          <Separator className="bg-border/60" />
-          <InteractiveCard className="p-4">
+        <div className="space-y-5 text-right">
+          <SectionLead title="الصيام المتقطع" description="عند تفعيله سنبني الخطة داخل نافذة الأكل فقط." />
+          <div className="rounded-[1.35rem] border border-border/60 bg-background/70 p-4 dark:bg-slate-950/60">
             <div className="flex items-center justify-between">
-              <div className="text-right"><p className="text-sm font-bold">تفعيل الصيام المتقطع</p><p className="text-xs text-muted-foreground">سنتكيف مع نافذة الأكل.</p></div>
               <Switch checked={state.preferences.fastingEnabled} onCheckedChange={(checked) => patchPreferences({ fastingEnabled: checked })} />
+              <div className="text-right"><p className="text-sm font-bold text-foreground">تفعيل الصيام</p><p className="text-xs text-muted-foreground">نافذة أكل واضحة ومباشرة.</p></div>
             </div>
-          </InteractiveCard>
-          {state.preferences.fastingEnabled ? <Input value={state.preferences.fastingWindow} onChange={(e) => patchPreferences({ fastingWindow: e.target.value })} className="h-12 rounded-2xl text-right" placeholder="12:00 - 20:00" /> : null}
+          </div>
+          {state.preferences.fastingEnabled ? <Input value={state.preferences.fastingWindow} onChange={(event) => patchPreferences({ fastingWindow: event.target.value })} className="h-12 rounded-[1.15rem] text-right" placeholder="12:00 - 20:00" /> : null}
         </div>
       );
     }
 
     return (
       <div className="space-y-4 text-right">
-        <h3 className="text-xl font-extrabold text-foreground">التأكيد النهائي</h3>
-        <InteractiveCard className="p-4">
-          <div className="space-y-4 text-right">
-            <div>
-              <p className="text-xs text-muted-foreground">النظام</p>
-              <p className="mt-1 text-sm font-bold text-foreground">{DIET_LABELS[state.preferences.dietType]}</p>
-            </div>
-            <Separator className="bg-border/60" />
-            <div>
-              <p className="text-xs text-muted-foreground">السعرات</p>
-              <p className="mt-1 text-sm font-bold text-foreground">{state.preferences.caloriesTarget} kcal</p>
-            </div>
-            <Separator className="bg-border/60" />
-            <div>
-              <p className="text-xs text-muted-foreground">الهدف</p>
-              <p className="mt-1 text-sm font-bold text-foreground">{GOAL_LABELS[state.preferences.goal]}</p>
-            </div>
-            <Separator className="bg-border/60" />
-            <div>
-              <p className="text-xs text-muted-foreground">BMI</p>
-              <p className="mt-1 text-sm font-bold text-foreground">{bmi ?? "غير مكتمل"}</p>
-            </div>
-          </div>
-        </InteractiveCard>
-        {plan ? <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm leading-7 text-amber-800 dark:text-amber-200">سيتم إنشاء نسخة جديدة نشطة لهذا الأسبوع مع تصفير عدادات التبديل وإعادة توليد الأيام للنسخة الجديدة.</div> : null}
-      </div>
-    );
-  }
-
-  const plannerView = plan ? (
-    <motion.div key="planner" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-      <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-        <InteractiveCard className="p-5 md:p-6">
-          <div className="space-y-5 text-right">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="space-y-2">
-                <div className="flex flex-wrap items-center justify-end gap-2">
-                  <Badge className="rounded-full border-primary/20 bg-primary/10 text-primary">{plan.source === "ai" ? "خطة ذكية" : "خطة أساسية"}</Badge>
-                  <Badge variant="secondary" className="rounded-full">الإصدار {plan.version}</Badge>
-                </div>
-                <h2 className="text-2xl font-black text-foreground md:text-3xl">الأسبوع الجاري من اليوم وحتى السبت</h2>
-                <p className="text-sm leading-7 text-muted-foreground">{plan.summary}</p>
-              </div>
-              <InteractiveButton type="button" className="rounded-2xl px-5" loading={generating} onClick={() => setReplaceDialog(true)}>
-                <RefreshCcw className="h-4 w-4" />
-                إعادة توليد الأسبوع
-              </InteractiveButton>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              {[
-                ["السعرات", `${dashboardSummary.totalCalories} kcal`],
-                ["متوسط اليوم", `${dashboardSummary.averageCalories} kcal`],
-                ["البروتين", `${dashboardSummary.totalProtein} غ`],
-                ["الماء", formatWater(dashboardSummary.totalWater)],
-              ].map(([label, value]) => (
-                <div key={label} className="rounded-2xl border border-border/70 bg-background/75 p-4 text-right">
-                  <p className="text-xs text-muted-foreground">{label}</p>
-                  <p className="mt-1 text-lg font-extrabold text-foreground">{value}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </InteractiveCard>
-
-        <InteractiveCard className="space-y-4 p-5 text-right">
-          <div className="flex items-center justify-between">
-            <Badge className="rounded-full border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">{state.tier === "admin" ? "غير محدود" : `${usage.generationsLeft ?? "∞"} توليد متبقٍ`}</Badge>
-            <p className="text-base font-extrabold text-foreground">الاستخدام الحالي</p>
-          </div>
-          <div className="space-y-2 text-sm">
-            <div className="rounded-2xl border border-border/70 bg-background/75 p-4">إعادة توليد يوم: <span className="font-bold text-foreground">{usage.dayRegenerationsLeft ?? "∞"}</span></div>
-            <div className="rounded-2xl border border-border/70 bg-background/75 p-4">تبديل الوجبات: <span className="font-bold text-foreground">{usage.swapsLeft ?? "∞"}</span></div>
-            <div className="rounded-2xl border border-border/70 bg-background/75 p-4">اكتمال الخطة: <span className="font-bold text-foreground">{dashboardSummary.completionPercent}%</span></div>
-          </div>
-          <Separator />
-          <div className="space-y-2">
-            <p className="text-sm font-bold text-foreground">اقتراحات ذكية</p>
-            <div className="rounded-2xl border border-border/70 bg-background/75 p-3 text-sm leading-7 text-muted-foreground">{plan.suggestions.nutritionInsight}</div>
-            <div className="rounded-2xl border border-border/70 bg-background/75 p-3 text-sm leading-7 text-muted-foreground">{plan.suggestions.habitSuggestion}</div>
-          </div>
-        </InteractiveCard>
-      </div>
-
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <InteractiveButton type="button" variant="outline" className="rounded-2xl px-4" onClick={() => setSettingsOpen(true)}>إعدادات الخطة</InteractiveButton>
-          <div className="text-right">
-            <h3 className="text-xl font-extrabold text-foreground">الأسبوع النشط</h3>
-            <p className="text-sm text-muted-foreground">انقر على أي يوم لفتح التفاصيل السريعة.</p>
-          </div>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {plannerDays.map((day) => (
-            <div key={day.dateISO} className="space-y-2">
-              <DayCard day={day} selected={selectedDay?.dateISO === day.dateISO && dayOpen} onClick={() => openDay(day)} />
-              <div className="flex justify-end gap-2">
-                <InteractiveButton type="button" variant="outline" size="sm" className="rounded-xl px-3" loading={workingAction === "regenerate"} onClick={() => handleRegenerateDay(day.dateISO)}>
-                  <RefreshCcw className="h-4 w-4" />
-                  إعادة اليوم
-                </InteractiveButton>
-                <InteractiveButton type="button" variant="ghost" size="sm" className="rounded-xl px-3" onClick={() => openDay(day)}>
-                  فتح التفاصيل
-                </InteractiveButton>
-              </div>
+        <SectionLead title="مراجعة الخطة" description="هذه نظرة نهائية قبل إنشاء النسخة الذكية الجديدة." />
+        <div className="grid gap-3 sm:grid-cols-2">
+          {[
+            ["النظام", DIET_LABELS[state.preferences.dietType]],
+            ["السعرات", `${state.preferences.caloriesTarget} kcal`],
+            ["الهدف", GOAL_LABELS[state.preferences.goal]],
+            ["BMI", bmi ?? "غير مكتمل"],
+            ["الوجبات", `${state.preferences.mealsPerDay} يوميًا`],
+            ["الأيام المزدحمة", state.preferences.busyDays.length ? `${state.preferences.busyDays.length} أيام` : "غير محددة"],
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-[1.35rem] border border-border/60 bg-background/72 p-4 dark:bg-slate-950/60">
+              <p className="text-xs text-muted-foreground">{label}</p>
+              <p className="mt-1 text-base font-black text-foreground">{value}</p>
             </div>
           ))}
         </div>
+        {plan ? <div className="rounded-[1.35rem] border border-amber-500/20 bg-amber-500/10 p-4 text-sm leading-7 text-amber-800 dark:text-amber-200">سيتم إنشاء نسخة جديدة نشطة لهذا الأسبوع مع الحفاظ على النسخ السابقة داخليًا فقط.</div> : null}
       </div>
+    );
+  };
 
-      <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-        <Collapsible open={groceryOpen} onOpenChange={setGroceryOpen}>
-          <InteractiveCard className="overflow-hidden">
-            <CollapsibleTrigger className="w-full text-right">
-              <div className="flex items-center justify-between gap-3 p-5">
-                <InteractiveButton type="button" variant="ghost" size="sm" className="rounded-xl">{groceryOpen ? "إغلاق" : "فتح"}</InteractiveButton>
-                <div>
-                  <p className="text-lg font-extrabold text-foreground">قائمة التسوق</p>
-                  <p className="text-sm text-muted-foreground">{plan.grocery.reduce((sum, group) => sum + group.items.length, 0)} عنصرًا مجمعًا</p>
-                </div>
-              </div>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div className="space-y-4 border-t border-border/60 p-5">
-                {plan.grocery.map((group) => (
-                  <div key={group.key} className="space-y-3 rounded-2xl border border-border/70 bg-background/70 p-4 text-right">
-                    <p className="text-sm font-bold text-foreground">{group.title}</p>
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      {group.items.map((item) => (
-                        <div key={item.key} className="rounded-xl border border-border/60 bg-background px-3 py-2 text-sm text-muted-foreground">
-                          <span className="font-semibold text-foreground">{item.label}</span>
-                          <span className="ms-2">{item.quantity}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CollapsibleContent>
-          </InteractiveCard>
-        </Collapsible>
-
-        <InteractiveCard className="p-5 text-right">
-          <p className="text-lg font-extrabold text-foreground">إشارات سريعة</p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border border-border/70 bg-background/75 p-4"><p className="text-xs text-muted-foreground">الاكتمال</p><p className="mt-1 text-xl font-black text-foreground">{dashboardSummary.completionPercent}%</p><Progress value={dashboardSummary.completionPercent} className="mt-3 h-2" /></div>
-            <div className="rounded-2xl border border-border/70 bg-background/75 p-4"><p className="text-xs text-muted-foreground">الأيام المتبقية</p><p className="mt-1 text-xl font-black text-foreground">{dashboardSummary.remainingDays}</p><p className="mt-2 text-xs text-muted-foreground">نخفي الأيام الماضية تلقائيًا.</p></div>
-            <div className="rounded-2xl border border-border/70 bg-background/75 p-4"><p className="text-xs text-muted-foreground">نوع الخطة</p><p className="mt-1 text-xl font-black text-foreground">{plan.source === "ai" ? "AI" : "Basic"}</p><p className="mt-2 text-xs text-muted-foreground">{plan.source === "ai" ? "مولدة بالذكاء الاصطناعي" : "Fallback محلي حتمي"}</p></div>
+  const onboardingView = (
+    <motion.section key="onboarding" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className={shellClass} dir="rtl">
+      <div className="rounded-[1.85rem] border border-white/60 bg-white/72 p-5 shadow-[0_18px_60px_rgba(15,23,42,0.05)] dark:border-white/10 dark:bg-slate-950/70 md:p-6">
+        <div className="space-y-5">
+          <div className="flex items-start justify-between gap-3">
+            <PlannerMetaBadge icon={Sparkles} label="الإعداد الذكي" tone="accent" />
+            <div className="text-right"><p className="text-3xl font-black tracking-tight text-foreground">{STEPS[step]}</p><p className="text-sm text-muted-foreground">خطوة {step + 1} من {STEPS.length}</p></div>
           </div>
-        </InteractiveCard>
-      </div>
-
-      {isAdmin ? (
-        <InteractiveCard className="border-dashed border-amber-500/30 bg-amber-500/5 p-5">
-          <div className="space-y-4 text-right">
-            <div className="flex items-center justify-between">
-              <Badge className="rounded-full border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300">Admin Debug</Badge>
-              <p className="text-lg font-extrabold text-foreground">تشخيص الخلفية والذكاء الاصطناعي</p>
-            </div>
-            {adminDebug.length === 0 && !state.lastError ? (
-              <p className="text-sm text-muted-foreground">لا توجد أخطاء مرصودة حتى الآن.</p>
+          <div className="h-2 overflow-hidden rounded-full bg-border/70">
+            <motion.div initial={{ width: 0 }} animate={{ width: `${((step + 1) / STEPS.length) * 100}%` }} transition={{ duration: 0.35, ease: "easeOut" }} className="h-full rounded-full bg-[linear-gradient(90deg,rgba(99,102,241,0.92),rgba(14,165,233,0.82))]" />
+          </div>
+          <StepRail step={step} onJump={setStep} />
+          <Separator className="bg-border/60" />
+          <div className="rounded-[1.9rem] border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.74),rgba(248,250,252,0.9))] p-5 dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.68),rgba(2,6,23,0.82))] md:p-6">
+            <AnimatePresence mode="wait">
+              <motion.div key={`step_${step}`} initial={{ opacity: 0, x: 22 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -22 }} transition={{ duration: 0.22, ease: "easeOut" }} className="min-h-[22rem]">
+                {renderStep()}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {step === STEPS.length - 1 ? (
+              <InteractiveButton type="button" className="min-h-12 rounded-[1.2rem] px-5 shadow-[0_16px_36px_rgba(99,102,241,0.24)]" loading={generating} onClick={() => handleGenerate(Boolean(plan))}>
+                توليد الخطة الأسبوعية
+                <Sparkles className="h-4 w-4" />
+              </InteractiveButton>
             ) : (
-              <div className="space-y-3">
-                {state.lastError ? <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-4 text-sm text-rose-700 dark:text-rose-300">آخر خطأ: {state.lastError}</div> : null}
-                {adminDebug.map((entry) => (
-                  <div key={entry.id} className="rounded-2xl border border-border/70 bg-background/80 p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <Badge variant="secondary" className="rounded-full">{entry.kind}</Badge>
-                      <p className="text-xs text-muted-foreground">{new Date(entry.createdAt).toLocaleString("en-GB")}</p>
-                    </div>
-                    <p className="mt-2 text-sm leading-7 text-foreground">{entry.message}</p>
-                  </div>
-                ))}
-              </div>
+              <InteractiveButton type="button" className="min-h-12 rounded-[1.2rem] px-5 shadow-[0_16px_36px_rgba(99,102,241,0.24)]" disabled={!nextEnabled} onClick={() => setStep((value) => Math.min(STEPS.length - 1, value + 1))}>
+                المتابعة إلى {nextStepTitle}
+                <ChevronLeft className="h-4 w-4" />
+              </InteractiveButton>
             )}
+            {step > 0 ? (
+              <InteractiveButton type="button" variant="outline" className="min-h-12 rounded-[1.2rem] px-5" onClick={() => setStep((value) => Math.max(0, value - 1))}>
+                <ChevronRight className="h-4 w-4" />
+                العودة إلى {previousStepTitle}
+              </InteractiveButton>
+            ) : <div />}
           </div>
-        </InteractiveCard>
+        </div>
+      </div>
+    </motion.section>
+  );
+
+  const loadingView = (
+    <motion.section key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={shellClass} dir="rtl">
+      <div className="grid min-h-[24rem] place-items-center rounded-[2rem] border border-white/60 bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.18),transparent_26%),linear-gradient(180deg,rgba(255,255,255,0.78),rgba(248,250,252,0.92))] p-6 dark:border-white/10 dark:bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.22),transparent_24%),linear-gradient(180deg,rgba(15,23,42,0.78),rgba(2,6,23,0.92))]">
+        <div className="max-w-md space-y-6 text-center">
+          <motion.div animate={{ rotate: 360 }} transition={{ duration: 6, repeat: Infinity, ease: "linear" }} className="mx-auto grid h-20 w-20 place-items-center rounded-full border border-primary/20 bg-primary/10 text-primary shadow-[0_18px_38px_rgba(99,102,241,0.18)]">
+            <Waves className="h-8 w-8" />
+          </motion.div>
+          <div className="space-y-2">
+            <p className="text-2xl font-black text-foreground">نبني مخطط الأسبوع الآن</p>
+            <p className="text-sm leading-7 text-muted-foreground">{LOADING_MESSAGES[loadingIndex]}</p>
+          </div>
+        </div>
+      </div>
+    </motion.section>
+  );
+
+  const plannerView = plan ? (
+    <motion.section key="planner" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className={shellClass} dir="rtl">
+      <PlannerHeroOverview plan={plan} summary={dashboardSummary} usage={usage} generating={generating} onRegenerateWeek={() => setReplaceDialog(true)} />
+      <div className="space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <InteractiveButton type="button" variant="outline" className="rounded-[1.2rem] px-4" onClick={() => setSettingsOpen(true)}>
+            إدارة الخطة
+            <Settings2 className="h-4 w-4" />
+          </InteractiveButton>
+          <div className="text-right"><p className="text-xl font-black text-foreground">أيام الأسبوع الحالية</p><p className="text-sm text-muted-foreground">بطاقات مضغوطة للقراءة السريعة وتفاصيل أعمق داخل السحب الجانبي.</p></div>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+          {plannerDays.map((day) => (
+            <PlannerDayCard key={day.dateISO} day={day} selected={selectedDay?.dateISO === day.dateISO && dayOpen} onOpen={() => openDay(day)} onRegenerate={() => handleRegenerateDay(day.dateISO)} regenerating={workingAction === "regenerate"} />
+          ))}
+        </div>
+      </div>
+      <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+        <PlannerGroceryModule grocery={plan.grocery} open={groceryOpen} onOpenChange={setGroceryOpen} />
+        <PlannerSuggestionModule suggestions={plan.suggestions} />
+      </div>
+      {isAdmin ? (
+        <div className="rounded-[1.85rem] border border-dashed border-border/60 bg-background/55 p-5 dark:bg-slate-950/45">
+          <button type="button" className="flex w-full items-center justify-between gap-3 text-right" onClick={() => setDebugOpen((value) => !value)}>
+            <InteractiveButton type="button" variant="ghost" size="sm" className="rounded-2xl">{debugOpen ? "إخفاء" : "عرض"}</InteractiveButton>
+            <div className="text-right"><p className="text-lg font-black text-foreground">لوحة تشخيص الإدارة</p><p className="text-xs text-muted-foreground">لأخطاء الذكاء الاصطناعي أو التحميل فقط.</p></div>
+          </button>
+          <AnimatePresence initial={false}>
+            {debugOpen ? (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                <div className="mt-4 grid gap-3">
+                  {adminDebug.length ? adminDebug.map((entry) => (
+                    <div key={entry.id} className="rounded-[1.25rem] border border-border/60 bg-background/75 p-3 text-right dark:bg-slate-950/60">
+                      <div className="flex items-center justify-between gap-3">
+                        <PlannerMetaBadge icon={DatabaseZap} label={entry.kind} />
+                        <p className="text-xs text-muted-foreground">{new Date(entry.createdAt).toLocaleString("en-GB")}</p>
+                      </div>
+                      <p className="mt-2 text-sm leading-7 text-foreground">{entry.message}</p>
+                    </div>
+                  )) : <div className="rounded-[1.25rem] border border-border/60 bg-background/75 p-4 text-sm text-muted-foreground dark:bg-slate-950/60">لا توجد رسائل تشخيص حالية.</div>}
+                </div>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+        </div>
       ) : null}
-    </motion.div>
+    </motion.section>
   ) : (
-    <EmptyState icon={Sparkles} title="ابدأ أول خطة للأسبوع الجاري" description="لا توجد خطة نشطة للأيام المتبقية من هذا الأسبوع." actionLabel="بدء الإعداد" onAction={() => setStep(0)} />
+    <section className={shellClass}>
+      <EmptyState icon={Sparkles} title="لا توجد خطة نشطة بعد" description="ابدأ الإعداد السريع لننشئ خطة ذكية قابلة للتعديل طوال الأسبوع." actionLabel="بدء الإعداد" onAction={() => setStep(0)} />
+    </section>
   );
 
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
-      <MealPlannerHeader title="مخطط الوجبات" subtitle={state.viewState === "planner" ? "من اليوم وحتى السبت" : "إعداد سريع يقود إلى خطة أسبوعية ذكية"} onOpenSettings={() => setSettingsOpen(true)} backHref="/" />
-      <main className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
-        {hydrating ? (
-          <PlannerSkeleton />
-        ) : (
-          <AnimatePresence mode="wait">
-            {state.viewState === "loading" || generating ? (
-              <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mx-auto max-w-3xl">
-                <InteractiveCard className="space-y-6 p-8 text-center">
-                  <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 8, ease: "linear" }} className="mx-auto flex h-20 w-20 items-center justify-center rounded-[2rem] border border-primary/20 bg-background/80">
-                    <Wand2 className="h-8 w-8 text-primary" />
-                  </motion.div>
-                  <h2 className="text-3xl font-black text-foreground">جارٍ بناء أسبوعك الغذائي</h2>
-                  <p className="text-sm text-muted-foreground">{LOADING_MESSAGES[loadingIndex]}</p>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {LOADING_MESSAGES.map((message, index) => (
-                      <motion.div key={message} initial={false} animate={{ opacity: loadingIndex === index ? 1 : 0.4, scale: loadingIndex === index ? 1 : 0.98 }} className="rounded-2xl border border-border/70 bg-background/70 p-3 text-sm text-foreground">
-                        {message}
-                      </motion.div>
-                    ))}
-                  </div>
-                </InteractiveCard>
-              </motion.div>
-            ) : plan ? (
-              plannerView
-            ) : (
-              <motion.div key="onboarding" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mx-auto max-w-5xl space-y-6">
-                <InteractiveCard className="space-y-6 p-5 md:p-6">
-                  <div className="space-y-4">
-                    <div className="flex flex-row-reverse items-start justify-between gap-3 text-right">
-                      <Badge className="rounded-full border-primary/20 bg-primary/10 text-primary">{step === 8 ? "جاهز للتوليد" : "إعداد تفاعلي"}</Badge>
-                      <div className="text-right">
-                        <h1 className="text-2xl font-black text-foreground md:text-3xl">{STEPS[step]}</h1>
-                        <p className="text-sm text-muted-foreground">خطوة {step + 1} من {STEPS.length}</p>
-                      </div>
-                    </div>
-                    <Progress value={((step + 1) / STEPS.length) * 100} className="h-2" />
-                    <div className="flex flex-row-reverse items-center justify-start gap-2 overflow-x-auto pb-1 md:gap-3">
-                      {STEPS.map((title, index) => (
-                        <StepChip
-                          key={title}
-                          title={title}
-                          index={index}
-                          current={step}
-                          onClick={() => setStep(index)}
-                          showConnector={index < STEPS.length - 1}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  <Separator />
-                  <AnimatePresence mode="wait" initial={false}>
-                    <motion.div
-                      key={step}
-                      initial={{ opacity: 0, x: 20, scale: 0.98 }}
-                      animate={{ opacity: 1, x: 0, scale: 1 }}
-                      exit={{ opacity: 0, x: -20, scale: 0.98 }}
-                      transition={{ duration: 0.24, ease: "easeOut" }}
-                      className="min-h-[30rem]"
-                    >
-                      {renderStep()}
-                    </motion.div>
-                  </AnimatePresence>
-                  {state.lastError ? <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-4 text-right text-sm text-rose-700 dark:text-rose-300">{state.lastError}</div> : null}
-                  <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-5">
-                    <div className="text-right text-xs text-muted-foreground">{step === 8 ? "لن تظهر عملية التوليد إلا في الخطوة النهائية." : "نعرض فقط ما تحتاجه في هذه الخطوة."}</div>
-                    <div className="flex flex-wrap gap-3">
-                      {step > 0 ? (
-                        <InteractiveButton
-                          type="button"
-                          variant="outline"
-                          className="min-h-12 rounded-2xl px-5"
-                          onClick={() => setStep((current) => Math.max(0, current - 1))}
-                        >
-                          <span className="inline-flex items-center justify-center gap-2 whitespace-nowrap">
-                            <ChevronRight className="h-4 w-4" />
-                            <span>{previousStepTitle ? `العودة إلى ${previousStepTitle}` : "العودة"}</span>
-                          </span>
-                        </InteractiveButton>
-                      ) : null}
-                      {step < 8 ? (
-                        <InteractiveButton
-                          type="button"
-                          className="min-h-12 rounded-2xl px-5"
-                          disabled={!nextEnabled}
-                          onClick={() => setStep((current) => Math.min(8, current + 1))}
-                        >
-                          <span className="inline-flex items-center justify-center gap-2 whitespace-nowrap">
-                            <span>{nextStepTitle ? `المتابعة إلى ${nextStepTitle}` : "المتابعة"}</span>
-                            <ChevronLeft className="h-4 w-4" />
-                          </span>
-                        </InteractiveButton>
-                      ) : (
-                        <InteractiveButton type="button" className="min-h-12 rounded-2xl px-5" loading={generating} onClick={() => (plan ? setReplaceDialog(true) : handleGenerate(false))}>
-                          <span className="inline-flex items-center justify-center gap-2 whitespace-nowrap">
-                            <span>توليد خطة أسبوعية</span>
-                            <Wand2 className="h-4 w-4" />
-                          </span>
-                        </InteractiveButton>
-                      )}
-                    </div>
-                  </div>
-                </InteractiveCard>
-                {isAdmin ? (
-                  <InteractiveCard className="border-dashed border-amber-500/30 bg-amber-500/5 p-5">
-                    <div className="space-y-3 text-right">
-                      <p className="text-lg font-extrabold text-foreground">Admin Debug</p>
-                      {adminDebug.length === 0 && !state.lastError ? <p className="text-sm text-muted-foreground">لا توجد أخطاء حتى الآن.</p> : <div className="space-y-2">{state.lastError ? <p className="text-sm text-rose-700 dark:text-rose-300">{state.lastError}</p> : null}{adminDebug.map((entry) => <div key={entry.id} className="rounded-2xl border border-border/70 bg-background/80 p-3 text-sm text-foreground">{entry.message}</div>)}</div>}
-                    </div>
-                  </InteractiveCard>
-                ) : null}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        )}
-      </main>
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(129,140,248,0.12),transparent_22%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_48%,#f8fafc_100%)] pb-14 dark:bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.2),transparent_18%),linear-gradient(180deg,#020617_0%,#0f172a_48%,#020617_100%)]" dir="rtl">
+      <PlannerTopBar title="مخطط الوجبات الذكي" subtitle={plan ? "نطاق الأيام الحالية حتى نهاية الأسبوع" : "إعداد موجّه ثم لوحة تحكم تفاعلية"} onOpenSettings={() => setSettingsOpen(true)} />
+      <main className="px-4 pt-6 md:px-6">{hydrating ? <PlannerSkeleton /> : generating ? loadingView : plan ? plannerView : onboardingView}</main>
 
-      <Sheet open={dayOpen} onOpenChange={setDayOpen}>
-        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-2xl">
-          <SheetHeader className="text-right"><SheetTitle>{currentDay?.dayName ?? "تفاصيل اليوم"}</SheetTitle></SheetHeader>
-          {currentDay ? (
-            <div className="mt-6 space-y-5 text-right">
-              <div className="rounded-[1.6rem] border border-border/70 bg-background/80 p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div><p className="text-lg font-extrabold text-foreground">{currentDay.dateLabel}</p><p className="mt-1 text-sm text-muted-foreground">{currentDay.aiTip}</p></div>
-                  {currentDay.busyDay ? <Badge className="rounded-full border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300"><Zap className="me-1 h-3 w-3" />يوم مزدحم</Badge> : null}
-                </div>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-border/70 bg-background/80 p-3 text-sm"><p className="font-semibold text-foreground">الملخص الغذائي</p><p className="mt-2 text-muted-foreground">{currentDay.nutrition.calories} kcal • {currentDay.nutrition.protein}غ بروتين</p><p className="text-muted-foreground">{currentDay.nutrition.carbs}غ كربوهيدرات • {currentDay.nutrition.fat}غ دهون</p></div>
-                  <div className="rounded-2xl border border-border/70 bg-background/80 p-3 text-sm"><p className="font-semibold text-foreground">الماء</p><p className="mt-2 text-muted-foreground">{formatWater(currentDay.nutrition.waterCups)}</p><p className="text-muted-foreground">{currentDay.notes || "لا توجد ملاحظات إضافية لهذا اليوم."}</p></div>
-                </div>
-                <div className="mt-4 flex justify-end gap-2"><InteractiveButton type="button" variant="outline" className="rounded-xl px-4" loading={workingAction === "regenerate"} onClick={() => handleRegenerateDay(currentDay.dateISO)}><RefreshCcw className="h-4 w-4" />إعادة توليد هذا اليوم</InteractiveButton></div>
-              </div>
-              <div className="space-y-3">{currentDay.meals.map((meal) => <MealCard key={meal.id} meal={meal} expanded={expandedMealId === meal.id} onToggle={() => setExpandedMealId((current) => current === meal.id ? null : meal.id)} />)}</div>
-              <div className="space-y-3">
-                <p className="text-sm font-bold text-foreground">تبديل سريع</p>
-                {currentDay.meals.map((meal) => (
-                  <div key={`${meal.id}_actions`} className="flex items-center justify-between rounded-2xl border border-border/70 bg-background/80 p-3">
-                    <DropdownMenu dir="rtl">
-                      <DropdownMenuTrigger asChild><InteractiveButton type="button" variant="outline" size="sm" className="rounded-xl px-3"><RefreshCcw className="h-4 w-4" />تبديل</InteractiveButton></DropdownMenuTrigger>
-                      <DropdownMenuContent align="start">
-                        <DropdownMenuItem onClick={() => handleSwapMeal(currentDay.dateISO, meal.mealType, "similar")}>سعرات مشابهة</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleSwapMeal(currentDay.dateISO, meal.mealType, "higher_protein")}>بروتين أعلى</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleSwapMeal(currentDay.dateISO, meal.mealType, "faster")}>أسرع تحضيرًا</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleSwapMeal(currentDay.dateISO, meal.mealType, "vegetarian")}>بديل نباتي</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                    <div className="text-right"><p className="text-sm font-bold text-foreground">{meal.title}</p><p className="text-xs text-muted-foreground">{MEAL_TYPE_LABELS[meal.mealType]}</p></div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : null}
-        </SheetContent>
-      </Sheet>
+      <PlannerDayDrawer
+        day={currentDay}
+        open={dayOpen}
+        onOpenChange={setDayOpen}
+        expandedMealId={expandedMealId}
+        onToggleMeal={(mealId) => setExpandedMealId((current) => (current === mealId ? null : mealId))}
+        onRegenerateDay={handleRegenerateDay}
+        onSwapMeal={handleSwapMeal}
+        onRegenerateMeal={(dateISO, mealType) => handleSwapMeal(dateISO, mealType, "refresh")}
+        workingAction={workingAction}
+      />
 
       <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
-        <SheetContent side="right" className="w-full sm:max-w-lg">
-          <SheetHeader className="text-right"><SheetTitle>إعدادات المخطط</SheetTitle></SheetHeader>
-          <div className="mt-6 space-y-5 text-right">
-            <InteractiveCard className="p-4">
-              <p className="text-sm font-bold text-foreground">حدود الاستخدام</p>
-              <div className="mt-3 space-y-2 text-sm text-muted-foreground">
-                <p>توليد أسبوعي متبقٍ: {usage.generationsLeft ?? "∞"}</p>
-                <p>إعادة توليد يوم: {usage.dayRegenerationsLeft ?? "∞"}</p>
-                <p>تبديل الوجبات: {usage.swapsLeft ?? "∞"}</p>
+        <SheetContent side="right" className="w-full overflow-y-auto bg-[linear-gradient(180deg,rgba(248,250,252,0.98),rgba(255,255,255,0.96))] p-0 sm:max-w-lg dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.96),rgba(15,23,42,0.96))]" dir="rtl">
+          <div className="space-y-5 p-5">
+            <SheetHeader className="text-right"><SheetTitle className="text-right text-2xl font-black">إدارة الخطة</SheetTitle></SheetHeader>
+            <div className="rounded-[1.5rem] border border-border/60 bg-background/70 p-4 dark:bg-slate-950/60">
+              <p className="text-sm font-bold text-foreground">رصيد الشهر الحالي</p>
+              <div className="mt-3 grid gap-3">
+                <div className="flex items-center justify-between rounded-[1rem] bg-background/70 px-3 py-2 dark:bg-slate-950/60"><span className="font-black text-foreground">{usage.generationsLeft ?? "∞"}</span><span className="text-sm text-muted-foreground">توليد الأسبوع</span></div>
+                <div className="flex items-center justify-between rounded-[1rem] bg-background/70 px-3 py-2 dark:bg-slate-950/60"><span className="font-black text-foreground">{usage.dayRegenerationsLeft ?? "∞"}</span><span className="text-sm text-muted-foreground">إعادة الأيام</span></div>
+                <div className="flex items-center justify-between rounded-[1rem] bg-background/70 px-3 py-2 dark:bg-slate-950/60"><span className="font-black text-foreground">{usage.swapsLeft ?? "∞"}</span><span className="text-sm text-muted-foreground">تبديل الوجبات</span></div>
               </div>
-            </InteractiveCard>
-            <InteractiveCard className="p-4">
-              <p className="text-sm font-bold text-foreground">خيارات حساسة</p>
-              <div className="mt-4 flex flex-wrap justify-end gap-3">
-                <InteractiveButton type="button" variant="outline" className="rounded-2xl px-4" onClick={() => setDeleteMode("meals")}><Trash2 className="h-4 w-4" />حذف الخطة الحالية</InteractiveButton>
-                <InteractiveButton type="button" variant="outline" feedbackTone="warning" className="rounded-2xl px-4" onClick={() => setDeleteMode("all")}><AlertTriangle className="h-4 w-4" />إعادة الضبط كاملة</InteractiveButton>
-              </div>
-            </InteractiveCard>
+            </div>
+            <div className="grid gap-3">
+              <InteractiveButton type="button" className="min-h-12 rounded-[1.2rem]" onClick={() => { setSettingsOpen(false); setReplaceDialog(true); }}>
+                توليد نسخة جديدة
+                <RefreshCcw className="h-4 w-4" />
+              </InteractiveButton>
+              <InteractiveButton type="button" variant="outline" className="min-h-12 rounded-[1.2rem]" onClick={() => setDeleteMode("meals")}>
+                حذف الخطة الحالية فقط
+                <Trash2 className="h-4 w-4" />
+              </InteractiveButton>
+              <InteractiveButton type="button" variant="outline" className="min-h-12 rounded-[1.2rem] border-rose-500/25 text-rose-700 dark:text-rose-300" onClick={() => setDeleteMode("all")}>
+                إعادة ضبط الوجبات والتفضيلات
+                <AlertTriangle className="h-4 w-4" />
+              </InteractiveButton>
+            </div>
           </div>
         </SheetContent>
       </Sheet>
 
       <AlertDialog open={replaceDialog} onOpenChange={setReplaceDialog}>
-        <AlertDialogContent dir="rtl"><AlertDialogHeader className="text-right"><AlertDialogTitle>استبدال الخطة الحالية؟</AlertDialogTitle><AlertDialogDescription className="leading-7">سيتم إنشاء نسخة جديدة نشطة لهذا الأسبوع مع تصفير عدادات التبديل وإعادة التوليد للنسخة الجديدة.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter className="sm:justify-start"><AlertDialogCancel>إلغاء</AlertDialogCancel><AlertDialogAction onClick={() => handleGenerate(true)}>تأكيد التوليد</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader className="text-right">
+            <AlertDialogTitle className="text-right">استبدال النسخة الحالية؟</AlertDialogTitle>
+            <AlertDialogDescription className="text-right leading-7">سننشئ نسخة جديدة لهذا الأسبوع ونبقيها هي النسخة النشطة فقط.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel>إلغاء</AlertDialogCancel><AlertDialogAction onClick={() => handleGenerate(true)}>متابعة التوليد</AlertDialogAction></AlertDialogFooter>
+        </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={Boolean(deleteMode)} onOpenChange={(open) => !open && setDeleteMode(null)}>
-        <AlertDialogContent dir="rtl"><AlertDialogHeader className="text-right"><AlertDialogTitle>{deleteMode === "all" ? "إعادة ضبط كاملة" : "حذف الخطة الحالية"}</AlertDialogTitle><AlertDialogDescription className="leading-7">{deleteMode === "all" ? "سيتم حذف الخطة الحالية وإعادة التفضيلات إلى القيم الافتراضية." : "سيتم حذف النسخة النشطة الحالية فقط مع الاحتفاظ بالتفضيلات المحفوظة."}</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter className="sm:justify-start"><AlertDialogCancel>إلغاء</AlertDialogCancel><AlertDialogAction onClick={handleDelete}>تأكيد</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+      <AlertDialog open={Boolean(deleteMode)} onOpenChange={(open) => (!open ? setDeleteMode(null) : null)}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader className="text-right">
+            <AlertDialogTitle className="text-right">تأكيد الحذف</AlertDialogTitle>
+            <AlertDialogDescription className="text-right leading-7">{deleteMode === "all" ? "سيتم حذف الخطة الحالية وإعادة التفضيلات إلى الإعدادات الافتراضية." : "سيتم حذف الخطة الحالية مع الاحتفاظ بالتفضيلات المحفوظة."}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel>إلغاء</AlertDialogCancel><AlertDialogAction onClick={handleDelete}>تأكيد</AlertDialogAction></AlertDialogFooter>
+        </AlertDialogContent>
       </AlertDialog>
     </div>
   );

@@ -130,7 +130,7 @@ export function useMealPlanner() {
       const result = await generateWeekWithAi(state.preferences, replaceCurrent);
       setState(applyServerState(result.state));
       setLimits(result.state.limits);
-      pushDebug("generate", result.debug ?? (result.source === "basic" ? "AI generation fell back to the basic deterministic plan." : null));
+      pushDebug("generate", result.debug);
       return result;
     } catch (error) {
       const message = error instanceof Error ? error.message : "تعذر توليد الخطة الآن.";
@@ -157,7 +157,7 @@ export function useMealPlanner() {
         preferences: state.preferences,
       });
       await refreshFromServer();
-      pushDebug("regenerate", result.debug ?? (result.source === "basic" ? "Day regeneration used the basic local provider." : null));
+      pushDebug("regenerate", result.debug);
       return result;
     } catch (error) {
       const message = error instanceof Error ? error.message : "تعذر إعادة توليد اليوم.";
@@ -179,6 +179,7 @@ export function useMealPlanner() {
       higher_protein: "Replace this meal with a higher protein option.",
       faster: "Replace this meal with a faster preparation option.",
       vegetarian: "Replace this meal with a vegetarian option.",
+      refresh: "Regenerate this meal from scratch while keeping the day balanced.",
     };
     try {
       const result = await editMealWithAi({
@@ -188,7 +189,7 @@ export function useMealPlanner() {
         editRequest: prompts[mode],
       });
       await refreshFromServer();
-      pushDebug("swap", result.debug ?? (result.source === "basic" ? "Meal swap used the basic local provider." : null));
+      pushDebug("swap", result.debug);
       return result;
     } catch (error) {
       const message = error instanceof Error ? error.message : "تعذر تبديل الوجبة.";

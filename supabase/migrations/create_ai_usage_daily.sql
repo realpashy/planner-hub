@@ -4,6 +4,8 @@ create table if not exists ai_usage_daily (
   date_key text not null,
   full_generations_used int not null default 0,
   light_edits_used int not null default 0,
+  day_regenerations_used int not null default 0,
+  meal_swaps_used int not null default 0,
   estimated_input_tokens bigint not null default 0,
   estimated_output_tokens bigint not null default 0,
   estimated_cost_usd numeric not null default 0,
@@ -12,3 +14,9 @@ create table if not exists ai_usage_daily (
   updated_at timestamptz not null default now(),
   unique(user_id, date_key)
 );
+
+alter table if exists ai_usage_daily
+  add column if not exists day_regenerations_used int not null default 0;
+
+alter table if exists ai_usage_daily
+  add column if not exists meal_swaps_used int not null default 0;

@@ -1,11 +1,10 @@
 import { z } from "zod";
 import type { AiActionType, GenerateWeekAiInput, MealPlannerUserContext } from "../../shared/ai/ai-types.ts";
 import { estimateAiCostUsd } from "../../shared/ai/ai-costs.ts";
-import { getPlanTierConfig } from "../../shared/plans/feature-access.ts";
-import { getModuleEntitlements } from "../../shared/modules/module-entitlements.ts";
 import { DEFAULT_AI_FEATURE_FLAGS } from "../../shared/ai/ai-feature-flags.ts";
+import { getModuleEntitlements } from "../../shared/modules/module-entitlements.ts";
+import { getPlanTierConfig } from "../../shared/plans/feature-access.ts";
 import {
-  consumeAiCreditPack,
   createMealPlanVersion,
   deactivateActiveMealPlan,
   getActiveMealPlan,
@@ -18,10 +17,9 @@ import {
   incrementAiUsage,
   recordOverLimitAttempt,
   saveMealPlannerPreferences,
+  saveSavedMealPlan,
   updateMealPlanVersion,
-  countMealPlanVersionsForWeek,
 } from "../persistence.ts";
-import { editMealLocal, generateWeeklyPlanLocal, regenerateDayLocal } from "./local-provider.ts";
 import { editMealAI, generateWeeklyPlanAI, regenerateDayAI } from "./openai-provider.ts";
 
 const generateWeekInputSchema = z.object({
@@ -53,6 +51,10 @@ function todayKey() {
   const month = parts.find((part) => part.type === "month")?.value ?? "01";
   const day = parts.find((part) => part.type === "day")?.value ?? "01";
   return `${year}-${month}-${day}`;
+}
+
+function currentMonthKey(todayISO = todayKey()) {
+  return todayISO.slice(0, 7);
 }
 
 function isoToDate(dateISO: string) {
@@ -107,9 +109,9 @@ function defaultPreferences() {
 
 function getLimits(role: string) {
   if (role === "admin" || role === "super_admin") {
-    return { generationsPerWeek: null, dayRegenerationsPerPlan: null, mealSwapsPerPlan: null };
+    return { generationsPerMonth: null, dayRegenerationsPerMonth: null, mealSwapsPerMonth: null };
   }
-  return { generationsPerWeek: 2, dayRegenerationsPerPlan: 5, mealSwapsPerPlan: 10 };
+  return { generationsPerMonth: 2, dayRegenerationsPerMonth: 5, mealSwapsPerMonth: 10 };
 }
 
 function featureFlagBoolean(flags: Record<string, unknown>, key: keyof typeof DEFAULT_AI_FEATURE_FLAGS) {
@@ -117,28 +119,32 @@ function featureFlagBoolean(flags: Record<string, unknown>, key: keyof typeof DE
   return typeof value === "boolean" ? value : DEFAULT_AI_FEATURE_FLAGS[key];
 }
 
-function toUsageData(
-  usageData: Record<string, unknown> | null | undefined,
-  weeklyGenerationsUsed: number,
-  overrides?: Partial<{ swapsUsed: number; dayRegenerationsUsed: number }>,
-) {
+function toUsageData(usageData: Record<string, unknown> | null | undefined) {
   return {
-    weeklyGenerationsUsed,
-    swapsUsed: overrides?.swapsUsed ?? Number(usageData?.swapsUsed ?? 0),
-    dayRegenerationsUsed: overrides?.dayRegenerationsUsed ?? Number(usageData?.dayRegenerationsUsed ?? 0),
+    monthlyGenerationsUsed: Number(usageData?.monthlyGenerationsUsed ?? 0),
+    swapsUsed: Number(usageData?.swapsUsed ?? 0),
+    dayRegenerationsUsed: Number(usageData?.dayRegenerationsUsed ?? 0),
+    monthKey: String(usageData?.monthKey ?? currentMonthKey()),
   };
 }
 
-function planRowToClient(row: Awaited<ReturnType<typeof getActiveMealPlan>>) {
+function planRowToClient(
+  row: Awaited<ReturnType<typeof getActiveMealPlan>>,
+  monthlyUsage?: {
+    fullGenerationsUsed: number;
+    lightEditsUsed: number;
+    dayRegenerationsUsed: number;
+    mealSwapsUsed: number;
+  },
+) {
   if (!row) return null;
   const planData = row.planData ?? {};
-  const usageData = row.usageData ?? {};
   return {
     id: row.id,
     weekStart: row.weekStart,
     version: row.version,
     isActive: row.isActive,
-    source: row.source === "ai" ? "ai" : "basic",
+    source: "ai" as const,
     summary: String(planData.summary ?? ""),
     days: Array.isArray(planData.days) ? planData.days : [],
     grocery: Array.isArray(planData.grocery) ? planData.grocery : [],
@@ -150,9 +156,9 @@ function planRowToClient(row: Awaited<ReturnType<typeof getActiveMealPlan>>) {
           supplementPlaceholder: "مكان مخصص لاحقًا لاقتراحات المكملات.",
         },
     usage: {
-      weeklyGenerationsUsed: Number(usageData.weeklyGenerationsUsed ?? row.version),
-      swapsUsed: Number(usageData.swapsUsed ?? 0),
-      dayRegenerationsUsed: Number(usageData.dayRegenerationsUsed ?? 0),
+      monthlyGenerationsUsed: monthlyUsage?.fullGenerationsUsed ?? Number(row.usageData.monthlyGenerationsUsed ?? 0),
+      swapsUsed: monthlyUsage?.mealSwapsUsed ?? Number(row.usageData.swapsUsed ?? 0),
+      dayRegenerationsUsed: monthlyUsage?.dayRegenerationsUsed ?? Number(row.usageData.dayRegenerationsUsed ?? 0),
     },
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
@@ -161,6 +167,22 @@ function planRowToClient(row: Awaited<ReturnType<typeof getActiveMealPlan>>) {
 
 function normalizeSavedPreferences(raw: unknown) {
   return raw && typeof raw === "object" ? { ...defaultPreferences(), ...(raw as Record<string, unknown>) } : defaultPreferences();
+}
+
+function preferencesSignature(value: Record<string, unknown>) {
+  const stable = (input: unknown): unknown => {
+    if (Array.isArray(input)) return input.map(stable);
+    if (input && typeof input === "object") {
+      return Object.keys(input as Record<string, unknown>)
+        .sort()
+        .reduce<Record<string, unknown>>((acc, key) => {
+          acc[key] = stable((input as Record<string, unknown>)[key]);
+          return acc;
+        }, {});
+    }
+    return input;
+  };
+  return JSON.stringify(stable(value));
 }
 
 async function buildUserContext(userId: string, timezoneFallback = "Asia/Jerusalem"): Promise<MealPlannerUserContext> {
@@ -199,62 +221,60 @@ async function getProviderDecision(userId: string, action: AiActionType) {
   const profile = await getOrCreateProfile(userId, "user");
   const flags = await getPersistedFeatureFlags();
   const aiEnabled = profile.aiEnabled && featureFlagBoolean(flags, "meal_planner.ai_enabled");
-  const forceLocal = featureFlagBoolean(flags, "meal_planner.force_local_generation");
-  const provider = !aiEnabled || forceLocal || !process.env.OPENAI_API_KEY ? "local" : "openai";
   const isAdmin = profile.role === "admin" || profile.role === "super_admin" || profile.planTier === "admin";
-
   const dateKey = todayKey();
-  const monthKey = dateKey.slice(0, 7);
+  const monthKey = currentMonthKey(dateKey);
   const usageRows = await getOrCreateAiUsageRows(userId, dateKey, monthKey);
-  const limits = getPlanTierConfig(profile.planTier);
-  const remainingFullToday = limits.fullGenerationsPerDay === null ? null : Math.max(0, limits.fullGenerationsPerDay - usageRows.daily.fullGenerationsUsed);
-  const remainingLightToday = limits.lightEditsPerDay === null ? null : Math.max(0, limits.lightEditsPerDay - usageRows.daily.lightEditsUsed);
-  const remainingFullMonth = limits.fullGenerationsPerMonth === null ? null : Math.max(0, limits.fullGenerationsPerMonth - usageRows.monthly.fullGenerationsUsed);
-  const remainingLightMonth = limits.lightEditsPerMonth === null ? null : Math.max(0, limits.lightEditsPerMonth - usageRows.monthly.lightEditsUsed);
-  const creditBalance = await consumeAiCreditPack(userId, "peek");
+  const limits = getLimits(profile.role);
+  const hasOpenAiKey = Boolean(process.env.OPENAI_API_KEY);
 
   return {
     profile,
-    provider,
     isAdmin,
+    usageRows,
     quota: {
-      allowed: true,
+      allowed: aiEnabled && hasOpenAiKey,
       tier: profile.planTier,
-      provider,
+      provider: "openai" as const,
+      reason: !aiEnabled ? "ai_disabled" : !hasOpenAiKey ? "feature_disabled" : undefined,
       isAdmin,
       usesCreditPack: false,
-      remainingFullGenerationsToday: remainingFullToday,
-      remainingLightEditsToday: remainingLightToday,
-      remainingFullGenerationsMonth: remainingFullMonth,
-      remainingLightEditsMonth: remainingLightMonth,
-      creditBalance,
+      remainingFullGenerationsToday: null,
+      remainingLightEditsToday: null,
+      remainingFullGenerationsMonth: limits.generationsPerMonth === null ? null : Math.max(0, limits.generationsPerMonth - usageRows.monthly.fullGenerationsUsed),
+      remainingLightEditsMonth: limits.mealSwapsPerMonth === null ? null : Math.max(0, limits.mealSwapsPerMonth - usageRows.monthly.mealSwapsUsed),
       action,
     },
   };
 }
 
-function buildSuggestions(plan: Record<string, unknown>, source: "ai" | "basic") {
+function buildSuggestions(plan: Record<string, unknown>) {
   const insights = Array.isArray(plan.insights) ? plan.insights.map(String) : [];
   return {
-    nutritionInsight: insights[0] ?? (source === "ai" ? "حافظ على مصدر بروتين واضح في منتصف اليوم." : "الخطة الأساسية تركز على التوازن والبساطة."),
+    nutritionInsight: insights[0] ?? "حافظ على مصدر بروتين واضح في منتصف اليوم.",
     habitSuggestion: insights[1] ?? "جهّز عنصرًا واحدًا مسبقًا لتسهيل الأسبوع.",
     supplementPlaceholder: "مكان مخصص لاحقًا لاقتراحات المكملات عند تفعيلها.",
   };
 }
 
-function buildStoredPlan(plan: Record<string, unknown>, source: "ai" | "basic") {
+function buildStoredPlan(plan: Record<string, unknown>) {
   return {
     summary: String(plan.summary ?? ""),
     days: Array.isArray(plan.days) ? plan.days : [],
     grocery: [],
-    suggestions: buildSuggestions(plan, source),
+    suggestions: buildSuggestions(plan),
   };
 }
 
 async function buildPlannerStateForUser(userId: string) {
-  const [profile, cloudData] = await Promise.all([getOrCreateProfile(userId, "user"), getCloudData(userId)]);
+  const [profile, cloudData, usageRows] = await Promise.all([
+    getOrCreateProfile(userId, "user"),
+    getCloudData(userId),
+    getOrCreateAiUsageRows(userId, todayKey(), currentMonthKey()),
+  ]);
   const weekStart = currentWeekStart();
-  const activePlan = await getActiveMealPlan(userId, weekStart);
+  const rawActivePlan = await getActiveMealPlan(userId, weekStart);
+  const activePlan = rawActivePlan?.source === "ai" ? rawActivePlan : rawActivePlan;
   const mealData = cloudData.mealData && typeof cloudData.mealData === "object" ? (cloudData.mealData as Record<string, unknown>) : {};
   const savedPreferences = normalizeSavedPreferences(mealData.preferences);
   const plannerState = activePlan ? "planner" : "onboarding";
@@ -265,7 +285,7 @@ async function buildPlannerStateForUser(userId: string) {
     timezone: profile.timezone || "Asia/Jerusalem",
     preferences: activePlan?.preferences ? normalizeSavedPreferences(activePlan.preferences) : savedPreferences,
     savedPreferences,
-    activePlan: planRowToClient(activePlan),
+    activePlan: planRowToClient(activePlan, usageRows.monthly),
     limits: getLimits(profile.role),
     plannerState,
   };
@@ -281,97 +301,102 @@ export async function saveMealPlannerPreferencesForUser(userId: string, preferen
 }
 
 export async function getAiQuotaStatus(userId: string) {
-  const state = await buildPlannerStateForUser(userId);
-  const plan = state.activePlan;
-  const limits = state.limits;
+  const { profile, usageRows, quota } = await getProviderDecision(userId, "generate_week");
+  const limits = getLimits(profile.role);
   return {
-    tier: state.tier,
-    role: state.role,
-    aiEnabled: true,
-    entitlements: getModuleEntitlements(state.tier),
-    remainingFullGenerationsToday: limits.generationsPerWeek === null ? null : Math.max(0, limits.generationsPerWeek - (plan?.usage.weeklyGenerationsUsed ?? 0)),
-    remainingLightEditsToday: limits.mealSwapsPerPlan === null ? null : Math.max(0, limits.mealSwapsPerPlan - (plan?.usage.swapsUsed ?? 0)),
-    remainingFullGenerationsMonth: null,
-    remainingLightEditsMonth: limits.dayRegenerationsPerPlan === null ? null : Math.max(0, limits.dayRegenerationsPerPlan - (plan?.usage.dayRegenerationsUsed ?? 0)),
+    tier: profile.planTier,
+    role: profile.role,
+    aiEnabled: quota.allowed,
+    entitlements: getModuleEntitlements(profile.planTier),
+    remainingFullGenerationsToday: null,
+    remainingLightEditsToday: null,
+    remainingFullGenerationsMonth: limits.generationsPerMonth === null ? null : Math.max(0, limits.generationsPerMonth - usageRows.monthly.fullGenerationsUsed),
+    remainingLightEditsMonth: limits.mealSwapsPerMonth === null ? null : Math.max(0, limits.mealSwapsPerMonth - usageRows.monthly.mealSwapsUsed),
+    remainingDayRegenerationsMonth: limits.dayRegenerationsPerMonth === null ? null : Math.max(0, limits.dayRegenerationsPerMonth - usageRows.monthly.dayRegenerationsUsed),
   };
 }
 
 export async function generateWeekForUser(userId: string, body: unknown) {
   const parsed = generateWeekInputSchema.parse(body);
-  const { profile, provider, isAdmin } = await getProviderDecision(userId, "generate_week");
+  const { profile, usageRows, quota, isAdmin } = await getProviderDecision(userId, "generate_week");
   const weekStart = currentWeekStart();
-  const versionInfo = await countMealPlanVersionsForWeek(userId, weekStart);
 
-  if (!isAdmin && versionInfo.count >= 2) {
+  if (!quota.allowed) {
+    throw Object.assign(new Error("Meal planner AI is currently unavailable."), { status: 503, code: "MEAL_PLANNER_AI_UNAVAILABLE" });
+  }
+
+  if (!isAdmin && usageRows.monthly.fullGenerationsUsed >= 2) {
     await recordOverLimitAttempt(userId);
     throw Object.assign(new Error("Plan generation limit reached"), { status: 429, code: "PLAN_GENERATION_LIMIT" });
   }
 
   await saveMealPlannerPreferences(userId, parsed.preferences);
+  const currentPlan = await getActiveMealPlan(userId, weekStart);
+  const nextSignature = preferencesSignature(normalizeSavedPreferences(parsed.preferences));
+  const currentSignature = currentPlan ? preferencesSignature(normalizeSavedPreferences(currentPlan.preferences)) : null;
+  if (currentPlan && currentPlan.source === "ai" && currentSignature === nextSignature && !parsed.replaceCurrent) {
+    return {
+      state: await buildPlannerStateForUser(userId),
+      provider: "openai" as const,
+      source: "ai" as const,
+      debug: profile.role === "admin" || profile.role === "super_admin" ? "Returned cached AI plan for identical week and preferences." : null,
+      activePlan: planRowToClient(currentPlan, usageRows.monthly),
+      cached: true,
+    };
+  }
+
   const userContext = await buildUserContext(userId, profile.timezone);
-  const activeRange = activeDates();
-
-  let result: Awaited<ReturnType<typeof generateWeeklyPlanAI | typeof generateWeeklyPlanLocal>>;
-  let debug: string | null = null;
-  let source: "ai" | "basic" = provider === "openai" ? "ai" : "basic";
-
-  if (provider === "openai") {
-    try {
-      result = await generateWeeklyPlanAI({
-        action: "generate_week",
-        preferences: parsed.preferences,
-        activeDates: activeRange,
-        userContext,
-      } satisfies GenerateWeekAiInput);
-    } catch (error) {
-      debug = error instanceof Error ? error.message : String(error);
-      result = await generateWeeklyPlanLocal({
-        action: "generate_week",
-        preferences: parsed.preferences,
-        activeDates: activeRange,
-        userContext,
-      } satisfies GenerateWeekAiInput);
-      source = "basic";
-    }
-  } else {
-    result = await generateWeeklyPlanLocal({
-      action: "generate_week",
-      preferences: parsed.preferences,
-      activeDates: activeRange,
-      userContext,
-    } satisfies GenerateWeekAiInput);
-    source = "basic";
-  }
-
-  if (provider === "openai" && source === "ai") {
-    await incrementAiUsage({
-      userId,
-      actionType: "generate_week",
-      inputTokens: result.usage.inputTokens,
-      outputTokens: result.usage.outputTokens,
-      estimatedCostUsd: estimateAiCostUsd(result.usage.inputTokens, result.usage.outputTokens),
-      useCreditPack: false,
+  const result = await generateWeeklyPlanAI({
+    action: "generate_week",
+    preferences: parsed.preferences,
+    activeDates: activeDates(),
+    userContext,
+  } satisfies GenerateWeekAiInput).catch((error) => {
+    throw Object.assign(new Error(error instanceof Error ? error.message : "Meal planner AI failed to generate the week."), {
+      status: 502,
+      code: "MEAL_PLANNER_GENERATION_FAILED",
     });
-  }
+  });
 
-  const planData = buildStoredPlan(result.plan as unknown as Record<string, unknown>, source);
+  const planData = buildStoredPlan(result.plan as unknown as Record<string, unknown>);
   const created = await createMealPlanVersion(userId, {
     weekStart,
     preferences: parsed.preferences,
     planData,
-    usageData: toUsageData(undefined, versionInfo.maxVersion + 1, {
-      swapsUsed: 0,
-      dayRegenerationsUsed: 0,
+    usageData: toUsageData({
+      monthlyGenerationsUsed: usageRows.monthly.fullGenerationsUsed + 1,
+      swapsUsed: usageRows.monthly.mealSwapsUsed,
+      dayRegenerationsUsed: usageRows.monthly.dayRegenerationsUsed,
+      monthKey: currentMonthKey(),
     }),
-    source,
+    source: "ai",
+  });
+
+  await incrementAiUsage({
+    userId,
+    actionType: "generate_week",
+    inputTokens: result.usage.inputTokens,
+    outputTokens: result.usage.outputTokens,
+    estimatedCostUsd: estimateAiCostUsd(result.usage.inputTokens, result.usage.outputTokens),
+    useCreditPack: false,
+  });
+
+  await saveSavedMealPlan(userId, {
+    weekKey: `${weekStart}:${nextSignature}`,
+    preferences: parsed.preferences,
+    planData,
+    source: "ai",
   });
 
   return {
     state: await buildPlannerStateForUser(userId),
-    provider: source === "ai" ? "openai" : "local",
-    source,
-    debug: profile.role === "admin" || profile.role === "super_admin" ? debug : null,
-    activePlan: planRowToClient(created),
+    provider: "openai" as const,
+    source: "ai" as const,
+    debug: null,
+    activePlan: planRowToClient(created, {
+      ...usageRows.monthly,
+      fullGenerationsUsed: usageRows.monthly.fullGenerationsUsed + 1,
+    }),
   };
 }
 
@@ -381,46 +406,30 @@ export async function editMealForUser(userId: string, body: unknown) {
   const plan = await getActiveMealPlan(userId, weekStart);
   if (!plan) throw Object.assign(new Error("No active plan"), { status: 404 });
 
-  const { profile, provider, isAdmin } = await getProviderDecision(userId, "replace_meal");
+  const { profile, usageRows, quota, isAdmin } = await getProviderDecision(userId, "replace_meal");
   const limits = getLimits(profile.role);
-  const swapsUsed = Number(plan.usageData.swapsUsed ?? 0);
-  if (!isAdmin && limits.mealSwapsPerPlan !== null && swapsUsed >= limits.mealSwapsPerPlan) {
+
+  if (!quota.allowed) {
+    throw Object.assign(new Error("Meal planner AI is currently unavailable."), { status: 503, code: "MEAL_PLANNER_AI_UNAVAILABLE" });
+  }
+
+  if (!isAdmin && limits.mealSwapsPerMonth !== null && usageRows.monthly.mealSwapsUsed >= limits.mealSwapsPerMonth) {
     await recordOverLimitAttempt(userId);
     throw Object.assign(new Error("Meal swap limit reached"), { status: 429, code: "PLAN_SWAP_LIMIT" });
   }
 
   const userContext = await buildUserContext(userId, profile.timezone);
-  let result: Awaited<ReturnType<typeof editMealAI | typeof editMealLocal>>;
-  let debug: string | null = null;
-  let source: "ai" | "basic" = provider === "openai" ? "ai" : "basic";
-
-  if (provider === "openai") {
-    try {
-      result = await editMealAI({
-        action: "replace_meal",
-        existingMeal: parsed.existingMeal,
-        editRequest: parsed.editRequest,
-        userContext,
-      });
-    } catch (error) {
-      debug = error instanceof Error ? error.message : String(error);
-      result = await editMealLocal({
-        action: "replace_meal",
-        existingMeal: parsed.existingMeal,
-        editRequest: parsed.editRequest,
-        userContext,
-      });
-      source = "basic";
-    }
-  } else {
-    result = await editMealLocal({
-      action: "replace_meal",
-      existingMeal: parsed.existingMeal,
-      editRequest: parsed.editRequest,
-      userContext,
+  const result = await editMealAI({
+    action: "replace_meal",
+    existingMeal: parsed.existingMeal,
+    editRequest: parsed.editRequest,
+    userContext,
+  }).catch((error) => {
+    throw Object.assign(new Error(error instanceof Error ? error.message : "Meal planner AI failed to regenerate the meal."), {
+      status: 502,
+      code: "MEAL_PLANNER_MEAL_FAILED",
     });
-    source = "basic";
-  }
+  });
 
   const nextPlanData = { ...(plan.planData as Record<string, any>) };
   nextPlanData.days = Array.isArray(nextPlanData.days)
@@ -437,28 +446,32 @@ export async function editMealForUser(userId: string, body: unknown) {
 
   const updated = await updateMealPlanVersion(plan.id, {
     planData: nextPlanData,
-    usageData: toUsageData(plan.usageData, Number(plan.usageData.weeklyGenerationsUsed ?? plan.version), {
-      swapsUsed: swapsUsed + 1,
+    usageData: toUsageData({
+      monthlyGenerationsUsed: usageRows.monthly.fullGenerationsUsed,
+      swapsUsed: usageRows.monthly.mealSwapsUsed + 1,
+      dayRegenerationsUsed: usageRows.monthly.dayRegenerationsUsed,
+      monthKey: currentMonthKey(),
     }),
   });
 
-  if (provider === "openai" && source === "ai") {
-    await incrementAiUsage({
-      userId,
-      actionType: "replace_meal",
-      inputTokens: result.usage.inputTokens,
-      outputTokens: result.usage.outputTokens,
-      estimatedCostUsd: estimateAiCostUsd(result.usage.inputTokens, result.usage.outputTokens),
-      useCreditPack: false,
-    });
-  }
+  await incrementAiUsage({
+    userId,
+    actionType: "replace_meal",
+    inputTokens: result.usage.inputTokens,
+    outputTokens: result.usage.outputTokens,
+    estimatedCostUsd: estimateAiCostUsd(result.usage.inputTokens, result.usage.outputTokens),
+    useCreditPack: false,
+  });
 
   return {
     meal: result.meal,
-    activePlan: planRowToClient(updated),
-    provider: source === "ai" ? "openai" : "local",
-    source,
-    debug: profile.role === "admin" || profile.role === "super_admin" ? debug : null,
+    activePlan: planRowToClient(updated, {
+      ...usageRows.monthly,
+      mealSwapsUsed: usageRows.monthly.mealSwapsUsed + 1,
+    }),
+    provider: "openai" as const,
+    source: "ai" as const,
+    debug: null,
   };
 }
 
@@ -468,46 +481,30 @@ export async function regenerateDayForUser(userId: string, body: unknown) {
   const plan = await getActiveMealPlan(userId, weekStart);
   if (!plan) throw Object.assign(new Error("No active plan"), { status: 404 });
 
-  const { profile, provider, isAdmin } = await getProviderDecision(userId, "regenerate_day");
+  const { profile, usageRows, quota, isAdmin } = await getProviderDecision(userId, "regenerate_day");
   const limits = getLimits(profile.role);
-  const dayRegenerationsUsed = Number(plan.usageData.dayRegenerationsUsed ?? 0);
-  if (!isAdmin && limits.dayRegenerationsPerPlan !== null && dayRegenerationsUsed >= limits.dayRegenerationsPerPlan) {
+
+  if (!quota.allowed) {
+    throw Object.assign(new Error("Meal planner AI is currently unavailable."), { status: 503, code: "MEAL_PLANNER_AI_UNAVAILABLE" });
+  }
+
+  if (!isAdmin && limits.dayRegenerationsPerMonth !== null && usageRows.monthly.dayRegenerationsUsed >= limits.dayRegenerationsPerMonth) {
     await recordOverLimitAttempt(userId);
     throw Object.assign(new Error("Day regeneration limit reached"), { status: 429, code: "PLAN_DAY_LIMIT" });
   }
 
   const userContext = await buildUserContext(userId, profile.timezone);
-  let result: Awaited<ReturnType<typeof regenerateDayAI | typeof regenerateDayLocal>>;
-  let debug: string | null = null;
-  let source: "ai" | "basic" = provider === "openai" ? "ai" : "basic";
-
-  if (provider === "openai") {
-    try {
-      result = await regenerateDayAI({
-        action: "regenerate_day",
-        existingDay: parsed.existingDay,
-        preferences: parsed.preferences,
-        userContext,
-      });
-    } catch (error) {
-      debug = error instanceof Error ? error.message : String(error);
-      result = await regenerateDayLocal({
-        action: "regenerate_day",
-        existingDay: parsed.existingDay,
-        preferences: parsed.preferences,
-        userContext,
-      });
-      source = "basic";
-    }
-  } else {
-    result = await regenerateDayLocal({
-      action: "regenerate_day",
-      existingDay: parsed.existingDay,
-      preferences: parsed.preferences,
-      userContext,
+  const result = await regenerateDayAI({
+    action: "regenerate_day",
+    existingDay: parsed.existingDay,
+    preferences: parsed.preferences,
+    userContext,
+  }).catch((error) => {
+    throw Object.assign(new Error(error instanceof Error ? error.message : "Meal planner AI failed to regenerate the day."), {
+      status: 502,
+      code: "MEAL_PLANNER_DAY_FAILED",
     });
-    source = "basic";
-  }
+  });
 
   const nextPlanData = { ...(plan.planData as Record<string, any>) };
   nextPlanData.days = Array.isArray(nextPlanData.days)
@@ -516,28 +513,32 @@ export async function regenerateDayForUser(userId: string, body: unknown) {
 
   const updated = await updateMealPlanVersion(plan.id, {
     planData: nextPlanData,
-    usageData: toUsageData(plan.usageData, Number(plan.usageData.weeklyGenerationsUsed ?? plan.version), {
-      dayRegenerationsUsed: dayRegenerationsUsed + 1,
+    usageData: toUsageData({
+      monthlyGenerationsUsed: usageRows.monthly.fullGenerationsUsed,
+      swapsUsed: usageRows.monthly.mealSwapsUsed,
+      dayRegenerationsUsed: usageRows.monthly.dayRegenerationsUsed + 1,
+      monthKey: currentMonthKey(),
     }),
   });
 
-  if (provider === "openai" && source === "ai") {
-    await incrementAiUsage({
-      userId,
-      actionType: "regenerate_day",
-      inputTokens: result.usage.inputTokens,
-      outputTokens: result.usage.outputTokens,
-      estimatedCostUsd: estimateAiCostUsd(result.usage.inputTokens, result.usage.outputTokens),
-      useCreditPack: false,
-    });
-  }
+  await incrementAiUsage({
+    userId,
+    actionType: "regenerate_day",
+    inputTokens: result.usage.inputTokens,
+    outputTokens: result.usage.outputTokens,
+    estimatedCostUsd: estimateAiCostUsd(result.usage.inputTokens, result.usage.outputTokens),
+    useCreditPack: false,
+  });
 
   return {
     day: result.day,
-    activePlan: planRowToClient(updated),
-    provider: source === "ai" ? "openai" : "local",
-    source,
-    debug: profile.role === "admin" || profile.role === "super_admin" ? debug : null,
+    activePlan: planRowToClient(updated, {
+      ...usageRows.monthly,
+      dayRegenerationsUsed: usageRows.monthly.dayRegenerationsUsed + 1,
+    }),
+    provider: "openai" as const,
+    source: "ai" as const,
+    debug: null,
   };
 }
 

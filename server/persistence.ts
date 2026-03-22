@@ -33,6 +33,22 @@ export interface MealPlanRecordRow {
   updatedAt: string;
 }
 
+function getJerusalemKeys(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Jerusalem",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const year = parts.find((part) => part.type === "year")?.value ?? "2026";
+  const month = parts.find((part) => part.type === "month")?.value ?? "01";
+  const day = parts.find((part) => part.type === "day")?.value ?? "01";
+  return {
+    dateKey: `${year}-${month}-${day}`,
+    monthKey: `${year}-${month}`,
+  };
+}
+
 export async function getCloudData(userId: string) {
   const result = await dbPool.query(
     "SELECT planner_json as \"plannerData\", budget_json as \"budgetData\", meal_json as \"mealData\" FROM app_user_data WHERE user_id = $1 LIMIT 1",
@@ -120,6 +136,7 @@ export async function getOrCreateAiUsageRows(userId: string, dateKey: string, mo
   const [daily, monthly] = await Promise.all([
     dbPool.query(
       `SELECT full_generations_used as "fullGenerationsUsed", light_edits_used as "lightEditsUsed",
+        day_regenerations_used as "dayRegenerationsUsed", meal_swaps_used as "mealSwapsUsed",
         estimated_input_tokens as "estimatedInputTokens", estimated_output_tokens as "estimatedOutputTokens",
         estimated_cost_usd as "estimatedCostUsd", over_limit_attempts as "overLimitAttempts"
        FROM ai_usage_daily WHERE user_id = $1 AND date_key = $2 LIMIT 1`,
@@ -127,6 +144,7 @@ export async function getOrCreateAiUsageRows(userId: string, dateKey: string, mo
     ),
     dbPool.query(
       `SELECT full_generations_used as "fullGenerationsUsed", light_edits_used as "lightEditsUsed",
+        day_regenerations_used as "dayRegenerationsUsed", meal_swaps_used as "mealSwapsUsed",
         estimated_input_tokens as "estimatedInputTokens", estimated_output_tokens as "estimatedOutputTokens",
         estimated_cost_usd as "estimatedCostUsd", over_limit_attempts as "overLimitAttempts"
        FROM ai_usage_monthly WHERE user_id = $1 AND month_key = $2 LIMIT 1`,
@@ -138,6 +156,8 @@ export async function getOrCreateAiUsageRows(userId: string, dateKey: string, mo
     daily: daily.rows[0] as {
       fullGenerationsUsed: number;
       lightEditsUsed: number;
+      dayRegenerationsUsed: number;
+      mealSwapsUsed: number;
       estimatedInputTokens: number;
       estimatedOutputTokens: number;
       estimatedCostUsd: number;
@@ -146,6 +166,8 @@ export async function getOrCreateAiUsageRows(userId: string, dateKey: string, mo
     monthly: monthly.rows[0] as {
       fullGenerationsUsed: number;
       lightEditsUsed: number;
+      dayRegenerationsUsed: number;
+      mealSwapsUsed: number;
       estimatedInputTokens: number;
       estimatedOutputTokens: number;
       estimatedCostUsd: number;
@@ -197,8 +219,7 @@ export async function incrementAiUsage(input: {
   estimatedCostUsd: number;
   useCreditPack: boolean;
 }) {
-  const dateKey = new Date().toISOString().slice(0, 10);
-  const monthKey = new Date().toISOString().slice(0, 7);
+  const { dateKey, monthKey } = getJerusalemKeys();
   const client = await dbPool.connect();
   try {
     await client.query("BEGIN");
@@ -213,27 +234,33 @@ export async function incrementAiUsage(input: {
 
     const fullInc = isFullGenerationAction(input.actionType) ? 1 : 0;
     const lightInc = isLightEditAction(input.actionType) ? 1 : 0;
+    const dayRegenerationInc = input.actionType === "regenerate_day" ? 1 : 0;
+    const mealSwapInc = input.actionType === "replace_meal" || input.actionType === "calorie_rebalance" ? 1 : 0;
     await client.query(
       `UPDATE ai_usage_daily
        SET full_generations_used = full_generations_used + $3,
            light_edits_used = light_edits_used + $4,
-           estimated_input_tokens = estimated_input_tokens + $5,
-           estimated_output_tokens = estimated_output_tokens + $6,
-           estimated_cost_usd = estimated_cost_usd + $7,
+           day_regenerations_used = day_regenerations_used + $5,
+           meal_swaps_used = meal_swaps_used + $6,
+           estimated_input_tokens = estimated_input_tokens + $7,
+           estimated_output_tokens = estimated_output_tokens + $8,
+           estimated_cost_usd = estimated_cost_usd + $9,
            updated_at = NOW()
        WHERE user_id = $1 AND date_key = $2`,
-      [input.userId, dateKey, fullInc, lightInc, input.inputTokens, input.outputTokens, input.estimatedCostUsd],
+      [input.userId, dateKey, fullInc, lightInc, dayRegenerationInc, mealSwapInc, input.inputTokens, input.outputTokens, input.estimatedCostUsd],
     );
     await client.query(
       `UPDATE ai_usage_monthly
        SET full_generations_used = full_generations_used + $3,
            light_edits_used = light_edits_used + $4,
-           estimated_input_tokens = estimated_input_tokens + $5,
-           estimated_output_tokens = estimated_output_tokens + $6,
-           estimated_cost_usd = estimated_cost_usd + $7,
+           day_regenerations_used = day_regenerations_used + $5,
+           meal_swaps_used = meal_swaps_used + $6,
+           estimated_input_tokens = estimated_input_tokens + $7,
+           estimated_output_tokens = estimated_output_tokens + $8,
+           estimated_cost_usd = estimated_cost_usd + $9,
            updated_at = NOW()
        WHERE user_id = $1 AND month_key = $2`,
-      [input.userId, monthKey, fullInc, lightInc, input.inputTokens, input.outputTokens, input.estimatedCostUsd],
+      [input.userId, monthKey, fullInc, lightInc, dayRegenerationInc, mealSwapInc, input.inputTokens, input.outputTokens, input.estimatedCostUsd],
     );
 
     if (input.useCreditPack) {
@@ -250,8 +277,7 @@ export async function incrementAiUsage(input: {
 }
 
 export async function recordOverLimitAttempt(userId: string) {
-  const dateKey = new Date().toISOString().slice(0, 10);
-  const monthKey = new Date().toISOString().slice(0, 7);
+  const { dateKey, monthKey } = getJerusalemKeys();
   await getOrCreateAiUsageRows(userId, dateKey, monthKey);
   await Promise.all([
     dbPool.query("UPDATE ai_usage_daily SET over_limit_attempts = over_limit_attempts + 1, updated_at = NOW() WHERE user_id = $1 AND date_key = $2", [userId, dateKey]),

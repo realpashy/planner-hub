@@ -35,6 +35,7 @@ export interface MealPlannerQuotaResponse {
   remainingLightEditsToday: number | null;
   remainingFullGenerationsMonth: number | null;
   remainingLightEditsMonth: number | null;
+  remainingDayRegenerationsMonth?: number | null;
 }
 
 export function aiMealToPlannerMeal(meal: AiMeal): MealPlanMeal {
@@ -87,9 +88,10 @@ export async function generateWeekWithAi(preferences: PlannerPreferences, replac
   const response = await apiRequest("POST", "/api/meal-planner/generate-week", { preferences, replaceCurrent });
   return (await response.json()) as {
     state: PlannerServerState;
-    provider: "openai" | "local";
-    source: "ai" | "basic";
+    provider: "openai";
+    source: "ai";
     debug?: string | null;
+    cached?: boolean;
   };
 }
 
@@ -103,8 +105,8 @@ export async function editMealWithAi(payload: {
   return (await response.json()) as {
     meal: AiMeal;
     activePlan: WeeklyPlanRecord;
-    provider: "openai" | "local";
-    source: "ai" | "basic";
+    provider: "openai";
+    source: "ai";
     debug?: string | null;
   };
 }
@@ -118,8 +120,8 @@ export async function regenerateDayWithAi(payload: {
   return (await response.json()) as {
     day: AiDayPlan;
     activePlan: WeeklyPlanRecord;
-    provider: "openai" | "local";
-    source: "ai" | "basic";
+    provider: "openai";
+    source: "ai";
     debug?: string | null;
   };
 }
