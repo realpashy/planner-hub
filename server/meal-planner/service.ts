@@ -211,15 +211,15 @@ async function buildUserContext(userId: string, timezoneFallback = "Asia/Jerusal
       .filter(Boolean)
       .join(". "),
     avoidIngredients: Array.isArray(mealData.preferences?.dislikedIngredients)
-      ? mealData.preferences.dislikedIngredients.map(String)
+      ? mealData.preferences.dislikedIngredients.map(String).slice(0, 6)
       : [],
-    recentMeals,
-    favorites: favorites.slice(0, 8).map((item: any) => ({
+    recentMeals: recentMeals.slice(0, 4),
+    favorites: favorites.slice(0, 4).map((item: any) => ({
       title: String(item.title || ""),
       mealType: String(item.mealType || ""),
-      tags: Array.isArray(item.tags) ? item.tags.map(String) : [],
+      tags: Array.isArray(item.tags) ? item.tags.map(String).slice(0, 2) : [],
     })),
-    savedPlanSummaries,
+    savedPlanSummaries: savedPlanSummaries.slice(0, 3),
   };
 }
 
@@ -398,7 +398,10 @@ export async function generateWeekForUser(userId: string, body: unknown) {
     state: await buildPlannerStateForUser(userId),
     provider: "openai" as const,
     source: "ai" as const,
-    debug: null,
+    debug:
+      profile.role === "admin" || profile.role === "super_admin"
+        ? `OpenAI ${result.meta.model} in ${result.meta.elapsedMs}ms • prompt ${result.usage.inputTokens} • completion ${result.usage.outputTokens} • budget ${result.meta.completionBudget}`
+        : null,
     activePlan: planRowToClient(created, {
       ...usageRows.monthly,
       fullGenerationsUsed: usageRows.monthly.fullGenerationsUsed + 1,
@@ -477,7 +480,10 @@ export async function editMealForUser(userId: string, body: unknown) {
     }),
     provider: "openai" as const,
     source: "ai" as const,
-    debug: null,
+    debug:
+      profile.role === "admin" || profile.role === "super_admin"
+        ? `OpenAI ${result.usage.inputTokens}/${result.usage.outputTokens} tokens • ${result.meta.elapsedMs}ms`
+        : null,
   };
 }
 
@@ -544,7 +550,10 @@ export async function regenerateDayForUser(userId: string, body: unknown) {
     }),
     provider: "openai" as const,
     source: "ai" as const,
-    debug: null,
+    debug:
+      profile.role === "admin" || profile.role === "super_admin"
+        ? `OpenAI ${result.usage.inputTokens}/${result.usage.outputTokens} tokens • ${result.meta.elapsedMs}ms`
+        : null,
   };
 }
 

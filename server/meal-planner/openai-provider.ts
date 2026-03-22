@@ -15,6 +15,7 @@ import { getPlanTierConfig } from "../../shared/plans/feature-access.ts";
 
 const OPENAI_CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions";
 const OPENAI_MEAL_MODEL = process.env.OPENAI_MEAL_MODEL || "gpt-5-mini";
+const OPENAI_REQUEST_TIMEOUT_MS = 40_000;
 
 type JsonSchemaName = "weekly_plan" | "single_day" | "single_meal";
 
@@ -185,40 +186,56 @@ async function requestStructuredJson<T>({
   let lastError: Error | null = null;
   const completionBudgets =
     schemaName === "weekly_plan"
-      ? [3200, 5200]
+      ? [2200]
       : schemaName === "single_day"
-        ? [1400, 2400]
-        : [700, 1200];
+        ? [1100]
+        : [650];
 
   for (let attempt = 0; attempt < completionBudgets.length; attempt += 1) {
-    const response = await fetch(OPENAI_CHAT_COMPLETIONS_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${key}`,
-      },
-      body: JSON.stringify({
-        model: OPENAI_MEAL_MODEL,
-        max_completion_tokens: completionBudgets[attempt],
-        messages: [
-          {
-            role: "system",
-            content: "You are Planner Hub meal planner AI. Return compact JSON only.",
-          },
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
-        response_format: {
-          type: "json_schema",
-          json_schema: {
-            ...getJsonSchema(schemaName),
-            strict: true,
-          },
+    const requestStartedAt = Date.now();
+    let response: Response;
+
+    try {
+      response = await fetch(OPENAI_CHAT_COMPLETIONS_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${key}`,
         },
-      }),
-    });
+        signal: AbortSignal.timeout(OPENAI_REQUEST_TIMEOUT_MS),
+        body: JSON.stringify({
+          model: OPENAI_MEAL_MODEL,
+          reasoning_effort: "minimal",
+          max_completion_tokens: completionBudgets[attempt],
+          messages: [
+            {
+              role: "system",
+              content: "You are Planner Hub meal planner AI. Return compact JSON only.",
+            },
+            {
+              role: "user",
+              content: prompt,
+            },
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              ...getJsonSchema(schemaName),
+              strict: true,
+            },
+          },
+        }),
+      });
+    } catch (error) {
+      lastError = new Error(
+        error instanceof Error && error.name === "TimeoutError"
+          ? `OpenAI request timed out after ${OPENAI_REQUEST_TIMEOUT_MS / 1000}s.`
+          : error instanceof Error
+            ? error.message
+            : String(error),
+      );
+      continue;
+    }
 
     if (!response.ok) {
       throw new Error(`OpenAI request failed: ${await response.text()}`);
@@ -243,6 +260,12 @@ async function requestStructuredJson<T>({
           inputTokens: body.usage?.prompt_tokens ?? 0,
           outputTokens: body.usage?.completion_tokens ?? 0,
         } satisfies AiProviderUsage,
+        meta: {
+          elapsedMs: Date.now() - requestStartedAt,
+          completionBudget: completionBudgets[attempt],
+          attempts: attempt + 1,
+          model: OPENAI_MEAL_MODEL,
+        },
       };
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
@@ -264,7 +287,7 @@ export async function generateWeeklyPlanAI(input: GenerateWeekAiInput) {
     schemaName: "weekly_plan",
     validator: aiWeekPlanSchema,
   });
-  return { plan: result.data, usage: result.usage };
+  return { plan: result.data, usage: result.usage, meta: result.meta };
 }
 
 export async function editMealAI(input: EditMealAiInput) {
@@ -273,7 +296,7 @@ export async function editMealAI(input: EditMealAiInput) {
     schemaName: "single_meal",
     validator: aiMealSchema,
   });
-  return { meal: result.data as AiMeal, usage: result.usage };
+  return { meal: result.data as AiMeal, usage: result.usage, meta: result.meta };
 }
 
 export async function regenerateDayAI(input: RegenerateDayAiInput) {
@@ -282,5 +305,5 @@ export async function regenerateDayAI(input: RegenerateDayAiInput) {
     schemaName: "single_day",
     validator: aiDaySchema,
   });
-  return { day: result.data as AiDayPlan, usage: result.usage };
+  return { day: result.data as AiDayPlan, usage: result.usage, meta: result.meta };
 }

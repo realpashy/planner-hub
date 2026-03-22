@@ -663,9 +663,11 @@ export function ConversationalMealOnboarding({
                         cuisinePreferences: selectedValues.filter((item) => item !== value),
                       })
                     }
-                    className="relative inline-flex min-h-11 items-center rounded-[1.05rem] border border-slate-400/35 bg-[linear-gradient(180deg,rgba(15,23,42,0.06),rgba(15,23,42,0.03))] px-4 py-2 pe-4 ps-9 text-xs font-semibold text-foreground shadow-[0_10px_22px_rgba(15,23,42,0.04)] transition hover:border-slate-500/45 dark:border-white/15 dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.04))]"
+                    className="relative inline-flex min-h-11 items-center rounded-[1.05rem] border border-slate-400/35 bg-[linear-gradient(180deg,rgba(15,23,42,0.06),rgba(15,23,42,0.03))] px-4 py-2 text-xs font-semibold text-foreground shadow-[0_10px_22px_rgba(15,23,42,0.04)] transition hover:border-slate-500/45 dark:border-white/15 dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.04))]"
                   >
-                    <X className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                    <span className="pointer-events-none absolute -top-2 left-2 grid h-5 w-5 place-items-center rounded-full border border-slate-300/70 bg-white text-[10px] text-muted-foreground shadow-sm dark:border-white/15 dark:bg-slate-900">
+                      <X className="h-3 w-3" />
+                    </span>
                     {value}
                   </button>
                 ))
@@ -695,7 +697,7 @@ export function ConversationalMealOnboarding({
                 );
               })}
             </div>
-            <div className="flex flex-row-reverse items-center justify-between gap-3">
+            <div className="flex items-center justify-between gap-3">
               <p className="text-xs leading-6 text-muted-foreground">{selectedValues.length ? `${selectedValues.length} اختيار` : "يمكنك المتابعة بدون اختيار إذا رغبت."}</p>
               <InteractiveButton type="button" className="rounded-full px-4" onClick={saveAndContinue}>
                 متابعة
@@ -724,7 +726,7 @@ export function ConversationalMealOnboarding({
               );
             })}
           </div>
-          <div className="flex flex-row-reverse items-center justify-between gap-3">
+          <div className="flex items-center justify-between gap-3">
             <p className="text-xs leading-6 text-muted-foreground">{selectedValues.length ? `${selectedValues.length} اختيار` : "يمكنك المتابعة بدون اختيار إذا رغبت."}</p>
             <InteractiveButton type="button" className="rounded-full px-4" onClick={saveAndContinue}>
               {returnToReviewAfterAnswer ? "حفظ والعودة للمراجعة" : "متابعة"}
@@ -791,7 +793,7 @@ export function ConversationalMealOnboarding({
               onChange={(value) => updateWindowPart("end", value)}
             />
           </div>
-          <div className="flex flex-row-reverse items-center justify-between gap-3">
+          <div className="flex items-center justify-between gap-3">
             <p className="text-xs leading-6 text-muted-foreground">اختر وقت البداية والنهاية وسأرتب الوجبات داخل هذه النافذة تلقائيًا.</p>
             <InteractiveButton type="button" className="rounded-full px-4" onClick={() => commitDraftAnswer(activeQuestion)}>
               {returnToReviewAfterAnswer ? "حفظ والعودة للمراجعة" : "متابعة"}
@@ -838,7 +840,7 @@ export function ConversationalMealOnboarding({
             ))}
           </div>
         ) : null}
-        <div className="flex flex-row-reverse items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-3">
           <p className="text-xs leading-6 text-muted-foreground">اكتب بحرية، ثم تابع عندما تنتهي.</p>
           <InteractiveButton type="button" className="rounded-full px-4" onClick={() => commitDraftAnswer(activeQuestion)}>
             {returnToReviewAfterAnswer ? "حفظ والعودة للمراجعة" : "متابعة"}
@@ -901,9 +903,9 @@ export function ConversationalMealOnboarding({
               <p className="text-sm font-bold text-primary/85">{GENERATION_LINES[loadingLineIndex]}</p>
               <div className="relative h-2 overflow-hidden rounded-full bg-primary/10">
                 <motion.div
-                  initial={{ x: "-45%" }}
-                  animate={{ x: ["-45%", "145%"] }}
-                  transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
+                  initial={{ x: "-120%" }}
+                  animate={{ x: ["-120%", "260%"] }}
+                  transition={{ duration: 2.3, repeat: Infinity, ease: "linear" }}
                   className="absolute inset-y-0 w-[42%] rounded-full bg-[linear-gradient(90deg,rgba(99,102,241,0.92),rgba(56,189,248,0.88))]"
                 />
               </div>
@@ -919,7 +921,7 @@ export function ConversationalMealOnboarding({
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(129,140,248,0.18),transparent_30%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_52%,#f8fafc_100%)] px-4 py-6 dark:bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.22),transparent_22%),linear-gradient(180deg,#020617_0%,#0f172a_46%,#020617_100%)]" dir="rtl">
       <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-6xl flex-col gap-6">
-        <header className="flex flex-row-reverse items-start justify-between gap-4">
+        <header className="flex items-start justify-between gap-4">
           <div className="flex-1 text-right">
             <p className="text-xs font-bold tracking-[0.24em] text-primary">MEAL PLANNER</p>
             <h1 className="mt-1 text-2xl font-black tracking-tight text-foreground md:text-3xl">{mode === "review" ? "المراجعة النهائية" : currentStepTitle}</h1>
@@ -939,7 +941,7 @@ export function ConversationalMealOnboarding({
           <motion.div animate={{ width: `${(currentStep / 9) * 100}%` }} transition={{ duration: 0.22, ease: "easeOut" }} className="h-full rounded-full bg-[linear-gradient(90deg,rgba(99,102,241,0.92),rgba(56,189,248,0.88))]" />
         </div>
 
-        <div className="flex flex-1 flex-col gap-6 xl:flex-row-reverse">
+        <div className="flex flex-1 flex-col gap-6 xl:flex-row">
           <main className="order-1 flex-1 xl:basis-[64%]">
             <div className="rounded-[2.4rem] border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.86),rgba(244,247,255,0.92))] p-6 shadow-[0_36px_120px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.84),rgba(2,6,23,0.92))] md:p-8">
               {errorMessage ? <div className="mb-5 rounded-[1.2rem] border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-right text-sm leading-7 text-rose-700 dark:text-rose-300">{errorMessage}</div> : null}
@@ -986,7 +988,7 @@ export function ConversationalMealOnboarding({
                     <p className="text-sm font-black text-foreground">أي شيء إضافي تحب تضيفه قبل توليد الخطة؟</p>
                     <Textarea value={committedPreferences.additionalNotes ?? ""} onChange={(event) => updateCommitted({ additionalNotes: event.target.value })} placeholder="اكتب ملاحظة أخيرة فقط إذا كانت ستؤثر فعلاً على الخطة." className="mt-3 min-h-[110px] rounded-[1.4rem] border-white/60 bg-white/78 text-right shadow-none dark:border-white/10 dark:bg-slate-950/60" dir="rtl" />
                   </div>
-                  <div className="flex flex-col gap-3 sm:flex-row-reverse sm:items-center sm:justify-between">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     {hasActivePlan ? (
                       <InteractiveButton type="button" variant="outline" className="rounded-full px-5" onClick={() => submitPlan(true)}>
                         <RefreshCcw className="h-4 w-4" />
@@ -1013,7 +1015,7 @@ export function ConversationalMealOnboarding({
                       </motion.div>
                     ) : null}
                   </AnimatePresence>
-                  <div className="flex flex-col gap-3 sm:flex-row-reverse sm:items-center sm:justify-between">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex flex-wrap items-center gap-3">
                       {activeQuestion?.optional ? (
                         <button type="button" className="text-sm font-semibold text-muted-foreground transition hover:text-foreground" onClick={() => {
@@ -1042,7 +1044,7 @@ export function ConversationalMealOnboarding({
 
           <aside className="order-2 xl:w-[24rem] xl:min-w-[24rem]">
             <div className="rounded-[2rem] border border-white/60 bg-white/62 p-4 shadow-[0_20px_50px_rgba(15,23,42,0.06)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/48">
-              <div className="mb-3 flex flex-row-reverse items-center justify-between">
+              <div className="mb-3 flex items-center justify-between">
                 <PlannerMetaBadge icon={MoonStar} label="السياق الحديث" tone="accent" />
                 <span className="text-xs text-muted-foreground">آخر {Math.min(historyEntries.length, 10)} إجابات</span>
               </div>
