@@ -183,6 +183,23 @@ function hasMeaningfulSavedPreferences(preferences: PlannerPreferences | null) {
   );
 }
 
+function answerGridClass(optionCount: number, centered = false) {
+  if (optionCount <= 3) {
+    return cn("grid gap-3", optionCount === 2 ? "grid-cols-2" : "grid-cols-3");
+  }
+  return cn("flex flex-wrap gap-3", centered ? "justify-center" : "justify-start");
+}
+
+function answerButtonClass(active: boolean, fillWidth = false) {
+  return cn(
+    "inline-flex min-h-12 items-center justify-center rounded-[1.25rem] border px-4 py-3 text-sm font-bold transition text-center",
+    fillWidth && "w-full",
+    active
+      ? "border-primary/30 bg-primary/12 text-primary shadow-[0_16px_34px_rgba(99,102,241,0.16)]"
+      : "border-border/70 bg-white/82 text-foreground hover:border-primary/20 hover:bg-primary/5 dark:bg-slate-950/55",
+  );
+}
+
 function answerSummary(question: QuestionConfig, preferences: PlannerPreferences) {
   switch (question.id) {
     case "dietType":
@@ -367,7 +384,8 @@ export function ConversationalMealOnboarding({
         prompt: question.prompt,
         answer: answerSummary(question, committedPreferences),
       }))
-      .slice(-10);
+      .slice(-10)
+      .reverse();
   }, [activeQuestion?.id, committedPreferences, historyOrder, visibleQuestions]);
 
   const bmi = useMemo(
@@ -488,17 +506,22 @@ export function ConversationalMealOnboarding({
   const renderHistory = () => (
     <div className="space-y-3">
       {historyEntries.map((entry, index) => {
-        const faded = index < historyEntries.length - 6;
+        const faded = index > 5;
         return (
           <motion.div
             key={entry.id}
             layout
+            initial={{ opacity: 0, x: 18, scale: 0.98 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
             className={cn(
-              "rounded-[1.4rem] border border-white/50 bg-white/70 p-3 text-right shadow-[0_10px_24px_rgba(15,23,42,0.04)] backdrop-blur-sm dark:border-white/10 dark:bg-slate-950/55",
+              "rounded-[1.4rem] border border-white/50 bg-white/74 p-3 text-right shadow-[0_10px_24px_rgba(15,23,42,0.04)] backdrop-blur-sm dark:border-white/10 dark:bg-slate-950/55",
               faded && "opacity-45 blur-[0.3px]",
             )}
           >
-            <p className="text-[11px] font-bold text-primary">الخطوة {entry.step}</p>
+            <div className="mb-2 flex items-center justify-between">
+              <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-black text-primary">الخطوة {entry.step}</span>
+              {index === 0 ? <span className="text-[10px] font-bold text-primary/80">الأحدث</span> : null}
+            </div>
             <p className="mt-1 text-xs text-muted-foreground">{entry.prompt}</p>
             <p className="mt-2 text-sm font-semibold text-foreground">{entry.answer}</p>
           </motion.div>
@@ -513,9 +536,11 @@ export function ConversationalMealOnboarding({
     const numericValue = rawDraft || valueToDraft(activeQuestion, committedPreferences);
 
     if (activeQuestion.type === "choice-single") {
+      const options = activeQuestion.options ?? [];
+      const fillWidth = options.length <= 3;
       return (
-        <div className="flex flex-wrap justify-end gap-3">
-          {activeQuestion.options?.map((option) => {
+        <div className={answerGridClass(options.length || 4, true)}>
+          {options.map((option) => {
             const active = answerSummary(activeQuestion, { ...committedPreferences, [activeQuestion.id]: option.value } as PlannerPreferences) === option.label ||
               String(committedPreferences[activeQuestion.id as keyof PlannerPreferences]) === option.value;
             return (
@@ -523,12 +548,7 @@ export function ConversationalMealOnboarding({
                 key={option.value}
                 type="button"
                 onClick={() => commitStructuredAnswer(activeQuestion, option.value)}
-                className={cn(
-                  "rounded-full border px-4 py-3 text-sm font-semibold transition",
-                  active
-                    ? "border-primary/20 bg-primary text-primary-foreground shadow-[0_18px_34px_rgba(99,102,241,0.24)]"
-                    : "border-border/60 bg-white/75 text-foreground hover:border-primary/20 hover:bg-primary/8 dark:bg-slate-950/55",
-                )}
+                className={answerButtonClass(active, fillWidth)}
               >
                 {option.label}
               </button>
@@ -541,7 +561,7 @@ export function ConversationalMealOnboarding({
     if (activeQuestion.type === "yes-no") {
       const currentValue = Boolean(committedPreferences[activeQuestion.id as keyof PlannerPreferences]);
       return (
-        <div className="flex flex-wrap justify-end gap-3">
+        <div className={answerGridClass(2, true)}>
           {[
             { value: true, label: "نعم" },
             { value: false, label: "لا" },
@@ -550,12 +570,7 @@ export function ConversationalMealOnboarding({
               key={String(option.value)}
               type="button"
               onClick={() => commitStructuredAnswer(activeQuestion, option.value)}
-              className={cn(
-                "min-w-28 rounded-full border px-4 py-3 text-sm font-semibold transition",
-                currentValue === option.value
-                  ? "border-primary/20 bg-primary text-primary-foreground shadow-[0_18px_34px_rgba(99,102,241,0.24)]"
-                  : "border-border/60 bg-white/75 text-foreground hover:border-primary/20 hover:bg-primary/8 dark:bg-slate-950/55",
-              )}
+              className={answerButtonClass(currentValue === option.value, true)}
             >
               {option.label}
             </button>
@@ -578,7 +593,7 @@ export function ConversationalMealOnboarding({
               className="h-12 rounded-[1.35rem] border-white/60 bg-white/75 text-right shadow-[0_18px_36px_rgba(15,23,42,0.05)] dark:border-white/10 dark:bg-slate-950/55"
               dir="rtl"
             />
-            <div className="flex min-h-10 flex-wrap justify-end gap-2">
+            <div className="flex min-h-10 flex-wrap justify-start gap-2">
               {selectedValues.length ? (
                 selectedValues.map((value) => (
                   <button
@@ -599,7 +614,7 @@ export function ConversationalMealOnboarding({
                 <p className="text-xs leading-6 text-muted-foreground">اختر مطابخك المفضلة إن وُجدت، أو اتركها مفتوحة لنطاق أوسع.</p>
               )}
             </div>
-            <div className="flex flex-wrap justify-end gap-3">
+            <div className="flex flex-wrap justify-start gap-3">
               {filteredOptions.map((option) => {
                 const active = selectedValues.includes(option.value);
                 return (
@@ -614,19 +629,14 @@ export function ConversationalMealOnboarding({
                           : [...selectedValues, option.value],
                       });
                     }}
-                    className={cn(
-                      "rounded-full border px-4 py-3 text-sm font-semibold transition",
-                      active
-                        ? "border-primary/20 bg-primary text-primary-foreground shadow-[0_18px_34px_rgba(99,102,241,0.24)]"
-                        : "border-border/60 bg-white/75 text-foreground hover:border-primary/20 hover:bg-primary/8 dark:bg-slate-950/55",
-                    )}
+                    className={answerButtonClass(active)}
                   >
                     {option.label}
                   </button>
                 );
               })}
             </div>
-            <div className="flex justify-between gap-3">
+            <div className="flex flex-row-reverse items-center justify-between gap-3">
               <p className="text-xs leading-6 text-muted-foreground">{selectedValues.length ? `${selectedValues.length} اختيار` : "يمكنك المتابعة بدون اختيار إذا رغبت."}</p>
               <InteractiveButton type="button" className="rounded-full px-4" onClick={saveAndContinue}>
                 متابعة
@@ -638,7 +648,7 @@ export function ConversationalMealOnboarding({
       }
       return (
         <div className="space-y-4">
-          <div className="flex flex-wrap justify-end gap-3">
+          <div className={answerGridClass((activeQuestion.options ?? []).length || 4)}>
             {activeQuestion.options?.map((option) => {
               const active = selectedValues.includes(option.value);
               return (
@@ -648,19 +658,14 @@ export function ConversationalMealOnboarding({
                   onClick={() => updateCommitted({
                     [activeQuestion.id]: active ? selectedValues.filter((item) => item !== option.value) : [...selectedValues, option.value],
                   } as Partial<PlannerPreferences>)}
-                  className={cn(
-                    "rounded-full border px-4 py-3 text-sm font-semibold transition",
-                    active
-                      ? "border-primary/20 bg-primary text-primary-foreground shadow-[0_18px_34px_rgba(99,102,241,0.24)]"
-                      : "border-border/60 bg-white/75 text-foreground hover:border-primary/20 hover:bg-primary/8 dark:bg-slate-950/55",
-                  )}
+                  className={answerButtonClass(active, (activeQuestion.options?.length ?? 0) <= 3)}
                 >
                   {option.label}
                 </button>
               );
             })}
           </div>
-          <div className="flex justify-between gap-3">
+          <div className="flex flex-row-reverse items-center justify-between gap-3">
             <p className="text-xs leading-6 text-muted-foreground">{selectedValues.length ? `${selectedValues.length} اختيار` : "يمكنك المتابعة بدون اختيار إذا رغبت."}</p>
             <InteractiveButton type="button" className="rounded-full px-4" onClick={saveAndContinue}>
               متابعة
@@ -694,7 +699,7 @@ export function ConversationalMealOnboarding({
               +
             </button>
           </div>
-          <div className="flex justify-end">
+          <div className="flex justify-start">
             <InteractiveButton type="button" className="rounded-full px-4" onClick={commitNumber}>
               متابعة
               <ChevronLeft className="h-4 w-4" />
@@ -725,7 +730,7 @@ export function ConversationalMealOnboarding({
           dir="rtl"
         />
         {chips.length ? (
-          <div className="flex flex-wrap justify-end gap-2">
+          <div className="flex flex-wrap justify-start gap-2">
             {chips.map((chip) => (
               <button key={chip} type="button" onClick={() => updateDraft(activeQuestion.id, rawDraft ? `${rawDraft}${rawDraft.endsWith(" ") ? "" : " "}${chip}` : chip)} className="rounded-full border border-border/60 bg-white/70 px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:border-primary/20 hover:text-primary dark:bg-slate-950/55">
                 {chip}
@@ -734,7 +739,7 @@ export function ConversationalMealOnboarding({
           </div>
         ) : null}
         {committedItems.length ? (
-          <div className="flex flex-wrap justify-end gap-2">
+          <div className="flex flex-wrap justify-start gap-2">
             {committedItems.map((item) => (
               <span key={item} className="rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary">
                 {item}
@@ -742,7 +747,7 @@ export function ConversationalMealOnboarding({
             ))}
           </div>
         ) : null}
-        <div className="flex justify-between gap-3">
+        <div className="flex flex-row-reverse items-center justify-between gap-3">
           <p className="text-xs leading-6 text-muted-foreground">اكتب بحرية، ثم تابع عندما تنتهي.</p>
           <InteractiveButton type="button" className="rounded-full px-4" onClick={() => commitDraftAnswer(activeQuestion)}>
             متابعة
@@ -812,7 +817,12 @@ export function ConversationalMealOnboarding({
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(129,140,248,0.18),transparent_30%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_52%,#f8fafc_100%)] px-4 py-6 dark:bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.22),transparent_22%),linear-gradient(180deg,#020617_0%,#0f172a_46%,#020617_100%)]" dir="rtl">
       <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-6xl flex-col gap-6">
-        <header className="flex items-center justify-between gap-4">
+        <header className="flex flex-row-reverse items-start justify-between gap-4">
+          <div className="text-right">
+            <p className="text-xs font-bold tracking-[0.24em] text-primary">MEAL PLANNER</p>
+            <h1 className="mt-1 text-2xl font-black tracking-tight text-foreground md:text-3xl">{mode === "review" ? "المراجعة النهائية" : currentStepTitle}</h1>
+            <p className="text-sm text-muted-foreground">الخطوة {currentStep} من 9</p>
+          </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <InteractiveButton type="button" variant="ghost" size="icon" className="h-11 w-11 rounded-2xl bg-white/70 dark:bg-slate-950/55" asChild>
@@ -821,36 +831,21 @@ export function ConversationalMealOnboarding({
               </Link>
             </InteractiveButton>
           </div>
-          <div className="text-right">
-            <p className="text-xs font-bold tracking-[0.24em] text-primary">MEAL PLANNER</p>
-            <h1 className="mt-1 text-2xl font-black tracking-tight text-foreground md:text-3xl">{mode === "review" ? "المراجعة النهائية" : currentStepTitle}</h1>
-            <p className="text-sm text-muted-foreground">الخطوة {currentStep} من 9</p>
-          </div>
         </header>
 
         <div className="h-1.5 overflow-hidden rounded-full bg-white/60 dark:bg-white/10">
           <motion.div animate={{ width: `${(currentStep / 9) * 100}%` }} transition={{ duration: 0.22, ease: "easeOut" }} className="h-full rounded-full bg-[linear-gradient(90deg,rgba(99,102,241,0.92),rgba(56,189,248,0.88))]" />
         </div>
 
-        <div className="grid flex-1 gap-6 xl:grid-cols-[0.8fr_1.2fr]">
-          <aside className="order-2 xl:order-1">
-            <div className="rounded-[2rem] border border-white/60 bg-white/62 p-4 shadow-[0_20px_50px_rgba(15,23,42,0.06)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/48">
-              <div className="mb-3 flex items-center justify-between">
-                <PlannerMetaBadge icon={MoonStar} label="السياق الحديث" tone="accent" />
-                <span className="text-xs text-muted-foreground">آخر {Math.min(historyEntries.length, 10)} إجابات</span>
-              </div>
-              {historyEntries.length ? renderHistory() : <p className="text-sm leading-7 text-muted-foreground">سنحتفظ هنا بآخر الإجابات حتى تشعر أن المحادثة تتقدم فعلاً، من دون ازدحام بصري.</p>}
-            </div>
-          </aside>
-
-          <main className="order-1 xl:order-2">
+        <div className="flex flex-1 flex-col gap-6 xl:flex-row-reverse">
+          <main className="order-1 flex-1 xl:basis-[64%]">
             <div className="rounded-[2.4rem] border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.86),rgba(244,247,255,0.92))] p-6 shadow-[0_36px_120px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.84),rgba(2,6,23,0.92))] md:p-8">
               {errorMessage ? <div className="mb-5 rounded-[1.2rem] border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-right text-sm leading-7 text-rose-700 dark:text-rose-300">{errorMessage}</div> : null}
 
               {mode === "welcome" ? (
                 <div className="space-y-8 text-right">
                   <AssistantPrompt title="لنحوّل أسبوعك الغذائي إلى خطة شخصية واضحة" prompt="تخيلها كمحادثة قصيرة مع أخصائية تغذية. سؤال واحد في كل مرة، وإجابات سريعة، ثم أنا أتولى الباقي." helper="أغلب المستخدمين ينهون هذا الإعداد خلال 3 إلى 5 دقائق فقط." />
-                  <div className="flex flex-col items-end gap-3">
+                  <div className="flex flex-col items-start gap-3">
                     <InteractiveButton type="button" className="min-h-12 rounded-full px-6 shadow-[0_18px_34px_rgba(99,102,241,0.24)]" onClick={() => beginQuestionFlow(false)}>
                       ابدأ الآن
                       <ChevronLeft className="h-4 w-4" />
@@ -871,14 +866,14 @@ export function ConversationalMealOnboarding({
                         <p className="text-sm font-black text-foreground">{section.title}</p>
                         <div className="mt-3 space-y-3">
                           {section.rows.map((row) => (
-                            <div key={`${section.title}_${row.label}`} className="flex items-start justify-between gap-3">
-                              <InteractiveButton type="button" variant="outline" size="sm" className="rounded-full px-3" onClick={() => jumpToQuestion(row.questionId)}>
-                                تعديل
-                              </InteractiveButton>
+                            <div key={`${section.title}_${row.label}`} className="flex flex-row-reverse items-start justify-between gap-3">
                               <div className="flex-1 text-right">
                                 <p className="text-xs text-muted-foreground">{row.label}</p>
                                 <p className="mt-1 text-sm font-semibold text-foreground">{row.value}</p>
                               </div>
+                              <InteractiveButton type="button" variant="outline" size="sm" className="rounded-full px-3" onClick={() => jumpToQuestion(row.questionId)}>
+                                تعديل
+                              </InteractiveButton>
                             </div>
                           ))}
                         </div>
@@ -889,7 +884,7 @@ export function ConversationalMealOnboarding({
                     <p className="text-sm font-black text-foreground">أي شيء إضافي تحب تضيفه قبل توليد الخطة؟</p>
                     <Textarea value={committedPreferences.additionalNotes ?? ""} onChange={(event) => updateCommitted({ additionalNotes: event.target.value })} placeholder="اكتب ملاحظة أخيرة فقط إذا كانت ستؤثر فعلاً على الخطة." className="mt-3 min-h-[110px] rounded-[1.4rem] border-white/60 bg-white/78 text-right shadow-none dark:border-white/10 dark:bg-slate-950/60" dir="rtl" />
                   </div>
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-col gap-3 sm:flex-row-reverse sm:items-center sm:justify-between">
                     {hasActivePlan ? (
                       <InteractiveButton type="button" variant="outline" className="rounded-full px-5" onClick={() => submitPlan(true)}>
                         <RefreshCcw className="h-4 w-4" />
@@ -916,8 +911,9 @@ export function ConversationalMealOnboarding({
                       </motion.div>
                     ) : null}
                   </AnimatePresence>
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center gap-3">
+                  <div className="flex flex-col gap-3 sm:flex-row-reverse sm:items-center sm:justify-between">
+                    <PlannerMetaBadge icon={SunMedium} label={`${currentStepTitle} • سؤال واحد في التركيز`} />
+                    <div className="flex flex-wrap items-center gap-3">
                       {activeQuestion?.optional ? (
                         <button type="button" className="text-sm font-semibold text-muted-foreground transition hover:text-foreground" onClick={() => {
                           const nextId = activeQuestion ? nextQuestionId(QUESTIONS, activeQuestion.id, committedPreferences) : null;
@@ -936,12 +932,21 @@ export function ConversationalMealOnboarding({
                         {returnToReviewAfterAnswer ? "العودة إلى المراجعة" : currentStep === 2 && activeQuestion?.id === "dietType" ? "العودة إلى الرئيسية" : "السؤال السابق"}
                       </InteractiveButton>
                     </div>
-                    <PlannerMetaBadge icon={SunMedium} label={`${currentStepTitle} • سؤال واحد في التركيز`} />
                   </div>
                 </div>
               )}
             </div>
           </main>
+
+          <aside className="order-2 xl:w-[24rem] xl:min-w-[24rem]">
+            <div className="rounded-[2rem] border border-white/60 bg-white/62 p-4 shadow-[0_20px_50px_rgba(15,23,42,0.06)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/48">
+              <div className="mb-3 flex flex-row-reverse items-center justify-between">
+                <span className="text-xs text-muted-foreground">آخر {Math.min(historyEntries.length, 10)} إجابات</span>
+                <PlannerMetaBadge icon={MoonStar} label="السياق الحديث" tone="accent" />
+              </div>
+              {historyEntries.length ? renderHistory() : <p className="text-sm leading-7 text-muted-foreground">سنحتفظ هنا بآخر الإجابات حتى تشعر أن المحادثة تتقدم فعلاً، من دون ازدحام بصري.</p>}
+            </div>
+          </aside>
         </div>
       </div>
     </div>
