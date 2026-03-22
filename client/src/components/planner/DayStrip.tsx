@@ -38,7 +38,7 @@ export function DayStrip({ days, selectedDate, onSelect, tasks = [] }: DayStripP
     <div className="weekly-day-strip-wrap relative" data-testid="day-strip">
       <div
         ref={scrollRef}
-        className="weekly-day-strip hide-scrollbar snap-x-mandatory flex justify-center gap-2 overflow-x-auto py-2 md:gap-3"
+        className="weekly-day-strip hide-scrollbar snap-x-mandatory flex justify-center gap-3 overflow-x-auto py-4 md:gap-4"
         dir="rtl"
       >
         {days.map((date) => {
@@ -53,29 +53,29 @@ export function DayStrip({ days, selectedDate, onSelect, tasks = [] }: DayStripP
                 variant={isSelected ? "default" : "outline"}
                 size="sm"
                 className={cn(
-                  "flex h-[5.5rem] w-[4.5rem] flex-col items-center justify-center gap-0.5 rounded-[1.25rem] transition-all duration-200 md:h-[6.5rem] md:w-[5.5rem]",
-                  isSelected && "shadow-lg shadow-primary/25",
-                  !isSelected && isToday && "border-2 border-primary/30 bg-primary/10 text-primary hover:bg-primary/15",
-                  !isSelected && !isToday && "border-white/60 bg-background/80 backdrop-blur hover:border-primary/20 hover:bg-primary/5 dark:border-white/10"
+                  "flex h-24 w-20 flex-col items-center justify-center gap-1 rounded-2xl border-2 font-bold transition-all duration-200 md:h-28 md:w-24",
+                  isSelected && "border-blue-500 bg-blue-600 text-white shadow-xl shadow-blue-500/30 hover:bg-blue-700",
+                  !isSelected && isToday && "border-blue-400 bg-blue-100 text-blue-700 hover:bg-blue-200 dark:border-blue-500 dark:bg-blue-950/50 dark:text-blue-300",
+                  !isSelected && !isToday && "border-slate-300 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
                 )}
                 onClick={() => onSelect(date)}
                 data-selected={isSelected}
                 data-testid={`day-button-${date.getDay()}`}
               >
-                <span className={cn("text-xs md:text-sm font-semibold", isSelected && "text-primary-foreground/75", !isSelected && isToday && "text-primary/70", !isSelected && !isToday && "text-muted-foreground")}>
+                <span className={cn("text-xs font-bold uppercase tracking-wider", isSelected && "text-blue-100 opacity-90")}>
                   {getDayShortName(date)}
                 </span>
-                <span className="text-xl md:text-2xl font-bold leading-none">
+                <span className={cn("text-2xl font-extrabold leading-none md:text-3xl", isSelected && "text-white")}>
                   {date.getDate()}
                 </span>
                 {total > 0 && (
-                  <div className="flex gap-0.5 mt-1.5">
+                  <div className="mt-2 flex gap-1">
                     {allDone ? (
-                      <div className={cn("w-1.5 h-1.5 rounded-full", isSelected ? "bg-green-300" : "bg-green-500")} />
+                      <div className={cn("h-2 w-2 rounded-full", isSelected ? "bg-green-300" : "bg-green-500")} />
                     ) : (
                       <>
-                        <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-primary-foreground/60" : "bg-muted-foreground/50")} />
-                        <div className={cn("w-1 h-1 rounded-full", completed >= 1 ? (isSelected ? "bg-primary-foreground" : "bg-primary") : (isSelected ? "bg-primary-foreground/30" : "bg-muted"))} />
+                        <div className={cn("h-1.5 w-1.5 rounded-full", isSelected ? "bg-blue-200/60" : "bg-slate-400/50")} />
+                        <div className={cn("h-1.5 w-1.5 rounded-full", completed >= 1 ? (isSelected ? "bg-blue-200" : "bg-blue-500") : (isSelected ? "bg-blue-200/30" : "bg-slate-300"))} />
                       </>
                     )}
                   </div>

@@ -113,11 +113,36 @@ export default function MealPlanner() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(129,140,248,0.12),transparent_22%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_48%,#f8fafc_100%)] pb-14 dark:bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.2),transparent_18%),linear-gradient(180deg,#020617_0%,#0f172a_48%,#020617_100%)]" dir="rtl">
-      {hydrating ? <div className="h-1 w-full bg-primary/10"><motion.div initial={{ width: "20%" }} animate={{ width: ["20%", "52%", "20%"] }} transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }} className="h-full bg-[linear-gradient(90deg,rgba(99,102,241,0.92),rgba(56,189,248,0.88))]" /></div> : null}
-      <PlannerTopBar title="مخطط الوجبات الذكي" subtitle="نطاق الأيام الحالية حتى نهاية الأسبوع" onOpenSettings={() => setSettingsOpen(true)} />
-      <main className="px-4 pt-6 md:px-6">
-        <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className={shellClass} dir="rtl">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50 to-slate-50 pb-14 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950" dir="rtl">
+      {/* Decorative backgrounds */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute -top-40 right-1/4 h-96 w-96 rounded-full bg-gradient-to-l from-orange-300/20 to-transparent blur-3xl dark:from-orange-900/20" />
+        <div className="absolute bottom-1/3 left-0 h-80 w-80 rounded-full bg-gradient-to-r from-amber-300/15 to-transparent blur-3xl dark:from-amber-900/20" />
+      </div>
+
+      {hydrating ? (
+        <div className="h-1 w-full bg-orange-200">
+          <motion.div
+            initial={{ width: "20%" }}
+            animate={{ width: ["20%", "52%", "20%"] }}
+            transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+            className="h-full bg-gradient-to-r from-orange-400 to-amber-500"
+          />
+        </div>
+      ) : null}
+      <PlannerTopBar
+        title="مخطط الوجبات الذكي"
+        subtitle="خطط متوازنة وسهلة على الميزانية"
+        onOpenSettings={() => setSettingsOpen(true)}
+      />
+      <main className="relative px-4 pt-6 md:px-6">
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="mx-auto max-w-6xl space-y-8 rounded-3xl border-2 border-orange-200/50 bg-white/80 p-4 shadow-2xl backdrop-blur dark:border-orange-900/30 dark:bg-slate-800/80 md:p-6"
+          dir="rtl"
+        >
           <PlannerHeroOverview plan={plan} summary={dashboardSummary} />
 
           <div className="space-y-4">

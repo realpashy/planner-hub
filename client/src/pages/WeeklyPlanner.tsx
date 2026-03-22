@@ -73,111 +73,136 @@ export default function WeeklyPlanner() {
   const allDayDone = totalDayTasks > 0 && completedDayTasks === totalDayTasks;
 
   return (
-    <div className="page-bg-premium pb-24 md:pb-8" dir="rtl">
-      <header className="header-bar-premium">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 md:py-4">
-          <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between lg:flex-1">
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon" asChild>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 pb-24 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 md:pb-8" dir="rtl">
+      {/* Decorative background */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute -top-40 right-0 h-96 w-96 rounded-full bg-gradient-to-l from-blue-300/20 to-transparent blur-3xl dark:from-blue-900/20" />
+        <div className="absolute bottom-1/4 left-0 h-80 w-80 rounded-full bg-gradient-to-r from-indigo-300/15 to-transparent blur-3xl dark:from-indigo-900/20" />
+      </div>
+
+      <header className="relative sticky top-0 z-30 border-b border-slate-200/60 bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/50 dark:border-slate-700/60 dark:bg-slate-900/70">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-5">
+          <div className="space-y-4">
+            {/* Top controls */}
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3 }}
+                className="flex items-center gap-2"
+              >
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+                  asChild
+                >
                   <Link href="/" data-testid="link-back-dashboard">
-                    <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
+                    <ChevronRight className="w-5 h-5 md:w-6 md:h-6 text-slate-600 dark:text-slate-400" />
                   </Link>
                 </Button>
                 <ThemeToggle />
                 <Button
                   variant="ghost"
                   size="icon"
+                  className="rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
                   onClick={() => setTemplatePickerOpen(true)}
                   title="اختيار قالب"
                 >
-                  <WandSparkles className="w-4 h-4 md:w-5 md:h-5" />
+                  <WandSparkles className="w-4 h-4 md:w-5 md:h-5 text-slate-600 dark:text-slate-400" />
                 </Button>
-              </div>
+              </motion.div>
 
+              {/* Center - Module Info */}
               <motion.div
-                initial={{ opacity: 0, y: -8 }}
+                initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.25 }}
-                className="module-info-badge"
+                transition={{ duration: 0.3, delay: 0.05 }}
+                className="hidden lg:flex lg:flex-1 lg:justify-center items-center gap-3 rounded-2xl border border-blue-200/50 bg-blue-50/50 px-5 py-3 dark:border-blue-900/50 dark:bg-blue-950/30"
               >
-                <div className="icon-container-primary">
-                  <CalendarIcon className="h-5 w-5" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600">
+                  <CalendarIcon className="h-5 w-5 text-white" />
                 </div>
-                <div>
-                  <p className="text-sm font-bold text-foreground md:text-base">المخطط الأسبوعي</p>
-                  <p className="text-xs leading-5 text-muted-foreground md:text-sm">
-                    تنظيم الأيام، المهام، العادات، والملاحظات من نفس المساحة.
-                  </p>
+                <div className="text-center">
+                  <p className="text-sm font-bold text-slate-900 dark:text-white">المخطط الأسبوعي</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400">نظّمي أسبوعك بكل سهولة</p>
+                </div>
+              </motion.div>
+
+              {/* Right - Date Controls */}
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3 }}
+                className="flex items-center justify-end gap-3"
+              >
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="rounded-xl border-2 border-slate-200 bg-white px-4 py-2 font-bold text-slate-900 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700"
+                      data-testid="button-open-calendar"
+                    >
+                      <span className="flex items-center gap-2 text-sm md:text-base">
+                        {getWeekHeader(selectedDate)}
+                        <CalendarIcon className="w-4 h-4 md:w-5 md:h-5" />
+                      </span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="center" sideOffset={8} dir="rtl">
+                    <MonthCalendar selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+                  </PopoverContent>
+                </Popover>
+
+                <div className="flex items-center gap-1 rounded-xl border-2 border-slate-200 bg-white p-1 dark:border-slate-600 dark:bg-slate-800" dir="ltr">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
+                    onClick={() => setSelectedDate(subWeeks(selectedDate, 1))}
+                    data-testid="button-prev-week"
+                  >
+                    <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
+                    onClick={() => setSelectedDate(addWeeks(selectedDate, 1))}
+                    data-testid="button-next-week"
+                  >
+                    <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
+                  </Button>
                 </div>
               </motion.div>
             </div>
 
-            <div className="flex items-center justify-between gap-3 rounded-[1.75rem] border border-white/60 bg-background/80 p-2 shadow-sm backdrop-blur dark:border-white/10">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="h-auto justify-start rounded-2xl px-3 py-2 text-right"
-                    data-testid="button-open-calendar"
-                  >
-                    <span className="flex items-center gap-1.5 text-sm font-bold text-foreground md:text-base">
-                      {getWeekHeader(selectedDate)}
-                      <CalendarIcon className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
-                    </span>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="center" sideOffset={8} dir="rtl">
-                  <MonthCalendar selectedDate={selectedDate} onSelectDate={setSelectedDate} />
-                </PopoverContent>
-              </Popover>
-
-              <div className="flex items-center gap-0.5 rounded-2xl bg-background/70 px-1 py-1" dir="ltr">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setSelectedDate(subWeeks(selectedDate, 1))}
-                  data-testid="button-prev-week"
-                >
-                  <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setSelectedDate(addWeeks(selectedDate, 1))}
-                  data-testid="button-next-week"
-                >
-                  <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
-                </Button>
-              </div>
-            </div>
+            {/* Day Strip */}
+            <DayStrip days={weekDays} selectedDate={selectedDate} onSelect={setSelectedDate} tasks={data.tasks} />
           </div>
-
-          <DayStrip days={weekDays} selectedDate={selectedDate} onSelect={setSelectedDate} tasks={data.tasks} />
         </div>
       </header>
 
-      <main className="relative mx-auto max-w-7xl px-4 pb-4 pt-5 md:px-6 md:pt-6">
-        <div className="mb-5 md:mb-6">
+      <main className="relative mx-auto max-w-7xl space-y-6 px-4 pb-4 pt-6 md:px-6 md:pt-8 md:space-y-8">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="mb-2"
+        >
           <WeeklySummary tasks={data.tasks} habits={data.habits} events={data.events} selectedDate={selectedDate} />
-        </div>
+        </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 md:gap-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 md:gap-8">
           <div className="lg:col-span-8">
             <motion.div
               key={dateISO}
-              initial={{ opacity: 0, y: 6 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25 }}
+              transition={{ duration: 0.3 }}
             >
-              <Card
-                variant="premium"
-                radius="2xl"
-                className={cn(
-                  "transition-all duration-300 lg:sticky lg:top-24",
-                  allDayDone && "border-emerald-500/30 bg-emerald-500/5 dark:border-emerald-400/20 dark:bg-emerald-500/10"
-                )}
-                data-testid="selected-day-card"
+              <div
+                className="relative overflow-hidden rounded-3xl border-2 border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-800"
               >
                 <CardHeader className="pb-4">
                   <div className="flex items-center justify-between">
