@@ -18,6 +18,7 @@ export const InteractiveButton = React.forwardRef<HTMLButtonElement, Interactive
         className={cn(
           "relative overflow-hidden rounded-2xl transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/40",
           "hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:scale-[0.99]",
+          "whitespace-nowrap",
           active && "border-primary/50 bg-primary/10 text-primary shadow-md",
           feedbackTone === "success" && "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
           feedbackTone === "warning" && "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
@@ -25,9 +26,9 @@ export const InteractiveButton = React.forwardRef<HTMLButtonElement, Interactive
         )}
         {...props}
       >
-        <span className="flex items-center gap-2">
+        <span className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-center">
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-          <span className={cn(loading && "opacity-90")}>{children}</span>
+          <span className={cn("inline-flex items-center justify-center gap-2 whitespace-nowrap", loading && "opacity-90")}>{children}</span>
         </span>
       </Button>
     );

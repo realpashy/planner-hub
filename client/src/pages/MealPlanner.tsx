@@ -50,6 +50,37 @@ const BUSY_DAYS = [
   ["saturday", "السبت"],
 ] as const;
 
+function hasMeaningfulSavedPreferences(preferences: PlannerPreferences | null) {
+  if (!preferences) return false;
+  return Boolean(
+    preferences.dietType !== "balanced" ||
+      preferences.mealsPerDay !== 3 ||
+      !preferences.snacks ||
+      preferences.cuisinePreferences.length ||
+      preferences.allergies.length ||
+      preferences.dislikedIngredients.length ||
+      preferences.dislikedMeals.length ||
+      preferences.foodRules.length ||
+      preferences.ingredientsAtHome.length ||
+      preferences.goal !== "eat_healthier" ||
+      preferences.caloriesTarget !== 1900 ||
+      preferences.age ||
+      preferences.heightCm ||
+      preferences.weightKg ||
+      preferences.activityLevel !== "moderate" ||
+      preferences.workout ||
+      preferences.cookingTime !== "medium" ||
+      preferences.skillLevel !== "beginner" ||
+      !preferences.repeatMeals ||
+      !preferences.leftovers ||
+      preferences.maxIngredients !== 8 ||
+      !preferences.quickMealsPreference ||
+      preferences.busyDays.length ||
+      preferences.fastingEnabled ||
+      preferences.fastingWindow !== "12:00 - 20:00",
+  );
+}
+
 function SplitInput({ value, placeholder, onChange }: { value: string[]; placeholder: string; onChange: (next: string[]) => void }) {
   return (
     <Input
@@ -68,45 +99,66 @@ function SplitInput({ value, placeholder, onChange }: { value: string[]; placeho
   );
 }
 
-function StepChip({ index, current, title, onClick }: { index: number; current: number; title: string; onClick: () => void }) {
+function StepChip({
+  index,
+  current,
+  title,
+  onClick,
+  showConnector,
+}: {
+  index: number;
+  current: number;
+  title: string;
+  onClick: () => void;
+  showConnector: boolean;
+}) {
   const state = index < current ? "done" : index === current ? "current" : "upcoming";
   const isCurrent = state === "current";
   const isDone = state === "done";
   return (
-    <button type="button" disabled={state !== "done"} onClick={state === "done" ? onClick : undefined} className="shrink-0 text-right">
-      <InteractiveCard
-        interactive={isDone}
-        selected={isCurrent}
-        className={`flex h-20 items-center px-3 py-3 transition-all md:h-24 md:px-4 ${
-          isCurrent ? "w-[10.75rem] md:w-[12.5rem]" : "w-[4.75rem] md:w-[8.5rem]"
-        }`}
+    <motion.div layout className="flex shrink-0 items-center gap-2">
+      {showConnector ? (
+        <div className={`h-[2px] w-8 rounded-full md:w-10 ${index < current ? "bg-primary/70" : "bg-border"}`} />
+      ) : null}
+      <InteractiveButton
+        type="button"
+        variant="ghost"
+        disabled={!isDone}
+        onClick={isDone ? onClick : undefined}
+        className="h-auto rounded-full px-0 py-0 hover:bg-transparent focus-visible:ring-2 focus-visible:ring-primary/40"
       >
-        <div className="flex w-full flex-row-reverse items-center justify-between gap-3 text-right">
-          {(isCurrent || isDone) ? (
-            <div className="min-w-0 flex-1">
-              <p className="line-clamp-2 text-xs font-bold text-foreground md:line-clamp-1">{title}</p>
-              <p className="text-[11px] text-muted-foreground">الخطوة {index + 1}</p>
-            </div>
-          ) : (
-            <div className="min-w-0 flex-1 text-center md:text-right">
-              <p className="text-[11px] text-muted-foreground">الخطوة</p>
-              <p className="text-xs font-bold text-foreground">{index + 1}</p>
-            </div>
-          )}
-          <div
-            className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
+        <motion.div layout className="flex flex-row-reverse items-center gap-2 text-right">
+          <motion.div
+            layout
+            className={`flex h-10 w-10 items-center justify-center rounded-full text-xs font-bold transition-colors ${
               isDone
                 ? "bg-emerald-500 text-white"
                 : isCurrent
-                  ? "bg-primary text-primary-foreground"
+                  ? "bg-primary text-primary-foreground shadow-[0_0_0_6px_rgba(99,91,255,0.12)]"
                   : "bg-muted text-muted-foreground"
             }`}
           >
             {isDone ? <CheckCircle2 className="h-4 w-4" /> : index + 1}
-          </div>
-        </div>
-      </InteractiveCard>
-    </button>
+          </motion.div>
+          <AnimatePresence initial={false}>
+            {isCurrent ? (
+              <motion.div
+                key={`step_label_${index}`}
+                layout
+                initial={{ opacity: 0, x: 12, scale: 0.96 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: -12, scale: 0.96 }}
+                transition={{ duration: 0.22, ease: "easeOut" }}
+                className="min-w-[7.75rem] rounded-full border border-primary/20 bg-primary/10 px-3 py-2"
+              >
+                <p className="text-xs font-bold text-foreground">{title}</p>
+                <p className="text-[11px] text-muted-foreground">الخطوة {index + 1}</p>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+        </motion.div>
+      </InteractiveButton>
+    </motion.div>
   );
 }
 
@@ -150,6 +202,7 @@ export default function MealPlanner() {
   const [deleteMode, setDeleteMode] = useState<null | "meals" | "all">(null);
   const [groceryOpen, setGroceryOpen] = useState(false);
   const [loadingIndex, setLoadingIndex] = useState(0);
+  const [caloriesInput, setCaloriesInput] = useState(String(state.preferences.caloriesTarget));
 
   useEffect(() => {
     if (!generating) return;
@@ -157,12 +210,17 @@ export default function MealPlanner() {
     return () => window.clearInterval(timer);
   }, [generating]);
 
+  useEffect(() => {
+    setCaloriesInput(String(state.preferences.caloriesTarget));
+  }, [state.preferences.caloriesTarget]);
+
   const bmi = useMemo(() => calculateBMI(state.preferences.heightCm, state.preferences.weightKg), [state.preferences.heightCm, state.preferences.weightKg]);
   const plan = state.activePlan;
   const plannerDays = plan?.days ?? [];
   const currentDay = selectedDay ?? plannerDays[0] ?? null;
   const nextStepTitle = step < STEPS.length - 1 ? STEPS[step + 1] : null;
   const previousStepTitle = step > 0 ? STEPS[step - 1] : null;
+  const canUsePreviousPreferences = useMemo(() => hasMeaningfulSavedPreferences(state.savedPreferences), [state.savedPreferences]);
 
   const nextEnabled = useMemo(() => {
     if (step === 4) return Boolean(state.preferences.heightCm && state.preferences.weightKg);
@@ -239,8 +297,16 @@ export default function MealPlanner() {
           <h2 className="text-3xl font-black text-foreground">لنصمم أسبوعك الغذائي خلال دقائق</h2>
           <p className="text-sm leading-7 text-muted-foreground">سننشئ خطة نشطة من اليوم وحتى السبت مع تعديلات سريعة على مستوى اليوم والوجبة.</p>
           <div className="flex flex-wrap justify-end gap-3">
-            {state.savedPreferences ? (
-              <InteractiveButton type="button" variant="outline" className="min-h-12 rounded-2xl px-5" onClick={() => { usePreviousPreferences(); setStep(1); }}>
+            {canUsePreviousPreferences ? (
+              <InteractiveButton
+                type="button"
+                variant="outline"
+                className="min-h-12 rounded-2xl px-5"
+                onClick={() => {
+                  usePreviousPreferences();
+                  setStep(8);
+                }}
+              >
                 استخدام التفضيلات السابقة
               </InteractiveButton>
             ) : null}
@@ -256,12 +322,20 @@ export default function MealPlanner() {
       return (
         <div className="space-y-4 text-right">
           <h3 className="text-xl font-extrabold text-foreground">أسلوب الأكل</h3>
+          <div className="space-y-3">
+            <p className="text-sm font-bold text-foreground">نوع النظام</p>
+            <Separator className="bg-border/60" />
+          </div>
           <div className="flex flex-wrap justify-end gap-2">
             {Object.entries(DIET_LABELS).map(([value, label]) => (
               <InteractiveButton key={value} type="button" variant={state.preferences.dietType === value ? "default" : "outline"} active={state.preferences.dietType === value} className="rounded-full px-4" onClick={() => patchPreferences({ dietType: value as PlannerPreferences["dietType"] })}>
                 {label}
               </InteractiveButton>
             ))}
+          </div>
+          <div className="space-y-3">
+            <p className="text-sm font-bold text-foreground">عدد الوجبات والسناك</p>
+            <Separator className="bg-border/60" />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <Select dir="rtl" value={String(state.preferences.mealsPerDay)} onValueChange={(value) => patchPreferences({ mealsPerDay: Number(value) as 2 | 3 | 4 })}>
@@ -282,6 +356,10 @@ export default function MealPlanner() {
               </div>
             </InteractiveCard>
           </div>
+          <div className="space-y-3">
+            <p className="text-sm font-bold text-foreground">المطابخ المفضلة</p>
+            <Separator className="bg-border/60" />
+          </div>
           <SplitInput value={state.preferences.cuisinePreferences} onChange={(value) => patchPreferences({ cuisinePreferences: value })} placeholder="مطابخ مفضلة" />
         </div>
       );
@@ -291,6 +369,7 @@ export default function MealPlanner() {
       return (
         <div className="space-y-3 text-right">
           <h3 className="text-xl font-extrabold text-foreground">القيود</h3>
+          <Separator className="bg-border/60" />
           <SplitInput value={state.preferences.allergies} onChange={(value) => patchPreferences({ allergies: value })} placeholder="الحساسيات" />
           <SplitInput value={state.preferences.dislikedIngredients} onChange={(value) => patchPreferences({ dislikedIngredients: value })} placeholder="مكونات لا تحبها" />
           <SplitInput value={state.preferences.dislikedMeals} onChange={(value) => patchPreferences({ dislikedMeals: value })} placeholder="وجبات لا ترغب بها" />
@@ -304,6 +383,10 @@ export default function MealPlanner() {
       return (
         <div className="space-y-4 text-right">
           <h3 className="text-xl font-extrabold text-foreground">الهدف والسعرات</h3>
+          <div className="space-y-3">
+            <p className="text-sm font-bold text-foreground">الهدف</p>
+            <Separator className="bg-border/60" />
+          </div>
           <div className="flex flex-wrap justify-end gap-2">
             {Object.entries(GOAL_LABELS).map(([value, label]) => (
               <InteractiveButton key={value} type="button" variant={state.preferences.goal === value ? "default" : "outline"} active={state.preferences.goal === value} className="rounded-full px-4" onClick={() => patchPreferences({ goal: value as GoalType })}>
@@ -311,7 +394,30 @@ export default function MealPlanner() {
               </InteractiveButton>
             ))}
           </div>
-          <Input type="number" value={state.preferences.caloriesTarget} onChange={(e) => patchPreferences({ caloriesTarget: Number(e.target.value) || 1900 })} className="h-12 rounded-2xl text-right" />
+          <div className="space-y-3">
+            <p className="text-sm font-bold text-foreground">السعرات اليومية</p>
+            <Separator className="bg-border/60" />
+          </div>
+          <Input
+            type="text"
+            inputMode="numeric"
+            value={caloriesInput}
+            onChange={(e) => {
+              const nextValue = e.target.value.replace(/[^\d]/g, "");
+              setCaloriesInput(nextValue);
+              if (nextValue) {
+                patchPreferences({ caloriesTarget: Number(nextValue) });
+              }
+            }}
+            onBlur={() => {
+              if (!caloriesInput.trim()) {
+                setCaloriesInput("1900");
+                patchPreferences({ caloriesTarget: 1900 });
+              }
+            }}
+            className="h-12 rounded-2xl text-right"
+            placeholder="1900"
+          />
         </div>
       );
     }
@@ -320,6 +426,10 @@ export default function MealPlanner() {
       return (
         <div className="space-y-4 text-right">
           <h3 className="text-xl font-extrabold text-foreground">بيانات الجسم</h3>
+          <div className="space-y-3">
+            <p className="text-sm font-bold text-foreground">المعلومات الأساسية</p>
+            <Separator className="bg-border/60" />
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <Input type="number" value={state.preferences.age ?? ""} onChange={(e) => patchPreferences({ age: Number(e.target.value) || null })} className="h-12 rounded-2xl text-right" placeholder="العمر" />
             <Select dir="rtl" value={state.preferences.sex} onValueChange={(value) => patchPreferences({ sex: value as SexType })}>
@@ -328,6 +438,10 @@ export default function MealPlanner() {
             </Select>
             <Input type="number" value={state.preferences.heightCm ?? ""} onChange={(e) => patchPreferences({ heightCm: Number(e.target.value) || null })} className="h-12 rounded-2xl text-right" placeholder="الطول سم" />
             <Input type="number" value={state.preferences.weightKg ?? ""} onChange={(e) => patchPreferences({ weightKg: Number(e.target.value) || null })} className="h-12 rounded-2xl text-right" placeholder="الوزن كغ" />
+          </div>
+          <div className="space-y-3">
+            <p className="text-sm font-bold text-foreground">النشاط والتمارين</p>
+            <Separator className="bg-border/60" />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <Select dir="rtl" value={state.preferences.activityLevel} onValueChange={(value) => patchPreferences({ activityLevel: value as PlannerPreferences["activityLevel"] })}>
@@ -355,6 +469,10 @@ export default function MealPlanner() {
       return (
         <div className="space-y-4 text-right">
           <h3 className="text-xl font-extrabold text-foreground">تفضيلات الطبخ</h3>
+          <div className="space-y-3">
+            <p className="text-sm font-bold text-foreground">الوقت والمهارة</p>
+            <Separator className="bg-border/60" />
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <Select dir="rtl" value={state.preferences.cookingTime} onValueChange={(value) => patchPreferences({ cookingTime: value as PlannerPreferences["cookingTime"] })}>
               <SelectTrigger className="h-12 rounded-2xl bg-background/80"><SelectValue /></SelectTrigger>
@@ -364,6 +482,10 @@ export default function MealPlanner() {
               <SelectTrigger className="h-12 rounded-2xl bg-background/80"><SelectValue /></SelectTrigger>
               <SelectContent dir="rtl">{Object.entries(SKILL_LEVEL_LABELS).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent>
             </Select>
+          </div>
+          <div className="space-y-3">
+            <p className="text-sm font-bold text-foreground">تفضيلات التنفيذ</p>
+            <Separator className="bg-border/60" />
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <InteractiveCard className="p-4"><div className="flex items-center justify-between"><div className="text-right"><p className="text-sm font-bold">تكرار الوجبات</p><p className="text-xs text-muted-foreground">لتقليل القرارات.</p></div><Switch checked={state.preferences.repeatMeals} onCheckedChange={(checked) => patchPreferences({ repeatMeals: checked })} /></div></InteractiveCard>
@@ -379,6 +501,7 @@ export default function MealPlanner() {
       return (
         <div className="space-y-4 text-right">
           <h3 className="text-xl font-extrabold text-foreground">الأيام المزدحمة</h3>
+          <Separator className="bg-border/60" />
           <div className="flex flex-wrap justify-end gap-2">
             {BUSY_DAYS.map(([value, label]) => (
               <InteractiveButton
@@ -407,6 +530,7 @@ export default function MealPlanner() {
       return (
         <div className="space-y-4 text-right">
           <h3 className="text-xl font-extrabold text-foreground">الصيام</h3>
+          <Separator className="bg-border/60" />
           <InteractiveCard className="p-4">
             <div className="flex items-center justify-between">
               <div className="text-right"><p className="text-sm font-bold">تفعيل الصيام المتقطع</p><p className="text-xs text-muted-foreground">سنتكيف مع نافذة الأكل.</p></div>
@@ -616,7 +740,7 @@ export default function MealPlanner() {
               <motion.div key="onboarding" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mx-auto max-w-5xl space-y-6">
                 <InteractiveCard className="space-y-6 p-5 md:p-6">
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="flex flex-row-reverse items-start justify-between gap-3 text-right">
                       <Badge className="rounded-full border-primary/20 bg-primary/10 text-primary">{step === 8 ? "جاهز للتوليد" : "إعداد تفاعلي"}</Badge>
                       <div className="text-right">
                         <h1 className="text-2xl font-black text-foreground md:text-3xl">{STEPS[step]}</h1>
@@ -624,16 +748,32 @@ export default function MealPlanner() {
                       </div>
                     </div>
                     <Progress value={((step + 1) / STEPS.length) * 100} className="h-2" />
-                    <div className="flex flex-row-reverse justify-start gap-2 overflow-x-auto pb-1 md:gap-3">
+                    <div className="flex flex-row-reverse items-center justify-start gap-2 overflow-x-auto pb-1 md:gap-3">
                       {STEPS.map((title, index) => (
-                        <StepChip key={title} title={title} index={index} current={step} onClick={() => setStep(index)} />
+                        <StepChip
+                          key={title}
+                          title={title}
+                          index={index}
+                          current={step}
+                          onClick={() => setStep(index)}
+                          showConnector={index < STEPS.length - 1}
+                        />
                       ))}
                     </div>
                   </div>
                   <Separator />
-                  <motion.div key={step} initial={{ opacity: 0, x: -14 }} animate={{ opacity: 1, x: 0 }} className="min-h-[30rem]">
-                    {renderStep()}
-                  </motion.div>
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.div
+                      key={step}
+                      initial={{ opacity: 0, x: 20, scale: 0.98 }}
+                      animate={{ opacity: 1, x: 0, scale: 1 }}
+                      exit={{ opacity: 0, x: -20, scale: 0.98 }}
+                      transition={{ duration: 0.24, ease: "easeOut" }}
+                      className="min-h-[30rem]"
+                    >
+                      {renderStep()}
+                    </motion.div>
+                  </AnimatePresence>
                   {state.lastError ? <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-4 text-right text-sm text-rose-700 dark:text-rose-300">{state.lastError}</div> : null}
                   <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-5">
                     <div className="text-right text-xs text-muted-foreground">{step === 8 ? "لن تظهر عملية التوليد إلا في الخطوة النهائية." : "نعرض فقط ما تحتاجه في هذه الخطوة."}</div>
@@ -645,8 +785,10 @@ export default function MealPlanner() {
                           className="min-h-12 rounded-2xl px-5"
                           onClick={() => setStep((current) => Math.max(0, current - 1))}
                         >
-                          <ChevronRight className="h-4 w-4" />
-                          {previousStepTitle ? `العودة إلى ${previousStepTitle}` : "العودة"}
+                          <span className="inline-flex items-center justify-center gap-2 whitespace-nowrap">
+                            <ChevronRight className="h-4 w-4" />
+                            <span>{previousStepTitle ? `العودة إلى ${previousStepTitle}` : "العودة"}</span>
+                          </span>
                         </InteractiveButton>
                       ) : null}
                       {step < 8 ? (
@@ -656,13 +798,17 @@ export default function MealPlanner() {
                           disabled={!nextEnabled}
                           onClick={() => setStep((current) => Math.min(8, current + 1))}
                         >
-                          {nextStepTitle ? `المتابعة إلى ${nextStepTitle}` : "المتابعة"}
-                          <ChevronLeft className="h-4 w-4" />
+                          <span className="inline-flex items-center justify-center gap-2 whitespace-nowrap">
+                            <span>{nextStepTitle ? `المتابعة إلى ${nextStepTitle}` : "المتابعة"}</span>
+                            <ChevronLeft className="h-4 w-4" />
+                          </span>
                         </InteractiveButton>
                       ) : (
                         <InteractiveButton type="button" className="min-h-12 rounded-2xl px-5" loading={generating} onClick={() => (plan ? setReplaceDialog(true) : handleGenerate(false))}>
-                          توليد خطة أسبوعية
-                          <Wand2 className="h-4 w-4" />
+                          <span className="inline-flex items-center justify-center gap-2 whitespace-nowrap">
+                            <span>توليد خطة أسبوعية</span>
+                            <Wand2 className="h-4 w-4" />
+                          </span>
                         </InteractiveButton>
                       )}
                     </div>
