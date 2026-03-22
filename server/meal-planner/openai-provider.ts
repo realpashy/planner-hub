@@ -10,14 +10,28 @@ import {
   type GenerateWeekAiInput,
   type RegenerateDayAiInput,
 } from "../../shared/ai/ai-types.ts";
-import { buildDayRegenerationPrompt, buildMealEditPrompt, buildWeeklyGenerationPrompt } from "./prompts.ts";
+import {
+  buildDayRegenerationPrompt,
+  buildMealEditPrompt,
+  buildSingleDayGenerationPrompt,
+  buildWeeklyGenerationPrompt,
+} from "./prompts.ts";
 import { getPlanTierConfig } from "../../shared/plans/feature-access.ts";
 
 const OPENAI_CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions";
 const OPENAI_MEAL_MODEL = process.env.OPENAI_MEAL_MODEL || "gpt-5-mini";
 const OPENAI_REQUEST_TIMEOUT_MS = 30_000;
+const SINGLE_DAY_WEEKLY_TIMEOUT_MS = 15_000;
+const WEEKLY_DAY_BATCH_SIZE = 3;
 
 type JsonSchemaName = "weekly_plan" | "single_day" | "single_meal";
+type WeeklyGenerationProgress = {
+  stage: string;
+  message: string;
+  dayIndex?: number;
+  totalDays?: number;
+  dateISO?: string;
+};
 
 function extractMessageContent(message: unknown) {
   if (!message || typeof message !== "object") return "";
@@ -173,10 +187,12 @@ async function requestStructuredJson<T>({
   prompt,
   schemaName,
   validator,
+  timeoutMs,
 }: {
   prompt: string;
   schemaName: JsonSchemaName;
   validator: z.ZodType<T>;
+  timeoutMs?: number;
 }) {
   const key = process.env.OPENAI_API_KEY;
   if (!key) {
@@ -188,8 +204,8 @@ async function requestStructuredJson<T>({
     schemaName === "weekly_plan"
       ? [2400, 3400]
       : schemaName === "single_day"
-        ? [1100]
-        : [650];
+        ? [1100, 1500]
+        : [650, 900];
 
   for (let attempt = 0; attempt < completionBudgets.length; attempt += 1) {
     const requestStartedAt = Date.now();
@@ -202,7 +218,7 @@ async function requestStructuredJson<T>({
           "Content-Type": "application/json",
           Authorization: `Bearer ${key}`,
         },
-        signal: AbortSignal.timeout(OPENAI_REQUEST_TIMEOUT_MS),
+        signal: AbortSignal.timeout(timeoutMs ?? OPENAI_REQUEST_TIMEOUT_MS),
         body: JSON.stringify({
           model: OPENAI_MEAL_MODEL,
           reasoning_effort: "minimal",
@@ -229,7 +245,7 @@ async function requestStructuredJson<T>({
     } catch (error) {
       lastError = new Error(
         error instanceof Error && error.name === "TimeoutError"
-          ? `OpenAI request timed out after ${OPENAI_REQUEST_TIMEOUT_MS / 1000}s.`
+          ? `OpenAI request timed out after ${(timeoutMs ?? OPENAI_REQUEST_TIMEOUT_MS) / 1000}s.`
           : error instanceof Error
             ? error.message
             : String(error),
@@ -270,10 +286,7 @@ async function requestStructuredJson<T>({
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
       const finishReason = body.choices?.[0]?.finish_reason ?? "unknown";
-      const shouldRetryForLength =
-        schemaName === "weekly_plan" &&
-        attempt < completionBudgets.length - 1 &&
-        finishReason === "length";
+      const shouldRetryForLength = attempt < completionBudgets.length - 1 && finishReason === "length";
       if (shouldRetryForLength) {
         continue;
       }
@@ -283,19 +296,159 @@ async function requestStructuredJson<T>({
   throw new Error(`OpenAI structured JSON parsing failed: ${lastError?.message ?? "unknown error"}`);
 }
 
-export async function generateWeeklyPlanAI(input: GenerateWeekAiInput) {
-  const prompt = buildWeeklyGenerationPrompt(
-    input.userContext,
-    input.preferences,
-    getPlanTierConfig(input.userContext.tier).access,
-    input.activeDates,
-  );
+function buildWeeklySummary(days: AiDayPlan[], preferences: Record<string, unknown>) {
+  const totalCalories = days.reduce((sum, day) => sum + day.meals.reduce((mealSum, meal) => mealSum + meal.calories, 0), 0);
+  const averageCalories = days.length ? Math.round(totalCalories / days.length) : 0;
+  const mealsPerDay = typeof preferences.mealsPerDay === "number" ? preferences.mealsPerDay : 3;
+  const summary = `خطة ${days.length} أيام بمتوسط ${averageCalories} kcal و${mealsPerDay} وجبات يوميًا.`;
+  return summary.slice(0, 220);
+}
+
+async function generateSingleDayFromScratch(input: GenerateWeekAiInput, dateISO: string) {
   const result = await requestStructuredJson({
-    prompt,
-    schemaName: "weekly_plan",
-    validator: aiWeekPlanSchema,
+    prompt: buildSingleDayGenerationPrompt(dateISO, input.userContext, input.preferences, input.activeDates),
+    schemaName: "single_day",
+    validator: aiDaySchema,
+    timeoutMs: SINGLE_DAY_WEEKLY_TIMEOUT_MS,
   });
-  return { plan: result.data, usage: result.usage, meta: result.meta };
+
+  return {
+    day: aiDaySchema.parse({
+      ...result.data,
+      dateISO,
+    }) as AiDayPlan,
+    usage: result.usage,
+    meta: result.meta,
+  };
+}
+
+async function runWeeklyDayBatches(
+  input: GenerateWeekAiInput,
+  onProgress?: (progress: WeeklyGenerationProgress) => Promise<void> | void,
+) {
+  const wallStartedAt = Date.now();
+  const days: AiDayPlan[] = [];
+  let inputTokens = 0;
+  let outputTokens = 0;
+  let completionBudget = 0;
+
+  for (let index = 0; index < input.activeDates.length; index += WEEKLY_DAY_BATCH_SIZE) {
+    const batch = input.activeDates.slice(index, index + WEEKLY_DAY_BATCH_SIZE);
+    await onProgress?.({
+      stage: "weekly_batch_started",
+      message: `Starting batch ${Math.floor(index / WEEKLY_DAY_BATCH_SIZE) + 1} for ${batch.join(", ")}`,
+      dayIndex: index + 1,
+      totalDays: input.activeDates.length,
+      dateISO: batch[0],
+    });
+
+    const batchResults = await Promise.all(
+      batch.map(async (dateISO, batchIndex) => {
+        await onProgress?.({
+          stage: "weekly_day_started",
+          message: `Generating ${dateISO}`,
+          dayIndex: index + batchIndex + 1,
+          totalDays: input.activeDates.length,
+          dateISO,
+        });
+        const result = await generateSingleDayFromScratch(input, dateISO);
+        await onProgress?.({
+          stage: "weekly_day_completed",
+          message: `Completed ${dateISO} in ${result.meta.elapsedMs}ms (${result.usage.inputTokens}/${result.usage.outputTokens} tokens)`,
+          dayIndex: index + batchIndex + 1,
+          totalDays: input.activeDates.length,
+          dateISO,
+        });
+        return result;
+      }),
+    );
+
+    for (const result of batchResults) {
+      days.push(result.day);
+      inputTokens += result.usage.inputTokens;
+      outputTokens += result.usage.outputTokens;
+      completionBudget = Math.max(completionBudget, result.meta.completionBudget);
+    }
+
+    await onProgress?.({
+      stage: "weekly_batch_completed",
+      message: `Finished batch ${Math.floor(index / WEEKLY_DAY_BATCH_SIZE) + 1}`,
+      dayIndex: Math.min(index + batch.length, input.activeDates.length),
+      totalDays: input.activeDates.length,
+      dateISO: batch[batch.length - 1],
+    });
+  }
+
+  return {
+    plan: aiWeekPlanSchema.parse({
+      summary: buildWeeklySummary(days, input.preferences),
+      insights: [],
+      days,
+    }),
+    usage: {
+      inputTokens,
+      outputTokens,
+    } satisfies AiProviderUsage,
+    meta: {
+      elapsedMs: Date.now() - wallStartedAt,
+      completionBudget,
+      attempts: days.length,
+      model: OPENAI_MEAL_MODEL,
+    },
+  };
+}
+
+export async function generateWeeklyPlanAI(
+  input: GenerateWeekAiInput,
+  options?: {
+    onProgress?: (progress: WeeklyGenerationProgress) => Promise<void> | void;
+  },
+) {
+  const activeDates = input.activeDates.slice(0, 7);
+  const compactInput = {
+    ...input,
+    activeDates,
+  };
+
+  await options?.onProgress?.({
+    stage: "weekly_generation_started",
+    message: `Starting weekly generation for ${activeDates.length} day(s)`,
+    dayIndex: 0,
+    totalDays: activeDates.length,
+  });
+
+  const tierAccess = getPlanTierConfig(compactInput.userContext.tier).access;
+  if (activeDates.length <= 2 && tierAccess.mealPlanner.smartOptimization) {
+    const prompt = buildWeeklyGenerationPrompt(
+      compactInput.userContext,
+      compactInput.preferences,
+      tierAccess,
+      activeDates,
+    );
+    const result = await requestStructuredJson({
+      prompt,
+      schemaName: "weekly_plan",
+      validator: aiWeekPlanSchema,
+    });
+    await options?.onProgress?.({
+      stage: "weekly_generation_completed",
+      message: `Completed compact weekly generation in ${result.meta.elapsedMs}ms`,
+      dayIndex: activeDates.length,
+      totalDays: activeDates.length,
+      dateISO: activeDates[activeDates.length - 1],
+    });
+    return { plan: result.data, usage: result.usage, meta: result.meta };
+  }
+
+  const result = await runWeeklyDayBatches(compactInput, options?.onProgress);
+  await options?.onProgress?.({
+    stage: "weekly_generation_completed",
+    message: `Completed weekly generation in ${result.meta.elapsedMs}ms`,
+    dayIndex: activeDates.length,
+    totalDays: activeDates.length,
+    dateISO: activeDates[activeDates.length - 1],
+  });
+  return result;
 }
 
 export async function editMealAI(input: EditMealAiInput) {

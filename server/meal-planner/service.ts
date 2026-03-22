@@ -9,6 +9,7 @@ import {
   deactivateActiveMealPlan,
   getActiveMealPlan,
   getCloudData,
+  getMealPlannerDebugLog,
   getFeatureFlags as getPersistedFeatureFlags,
   getLatestMealPlan,
   getOrCreateAiUsageRows,
@@ -16,6 +17,7 @@ import {
   getSavedMealPlanContext,
   incrementAiUsage,
   recordOverLimitAttempt,
+  replaceMealPlannerDebugLog,
   saveMealPlannerPreferences,
   saveSavedMealPlan,
   updateMealPlanVersion,
@@ -272,11 +274,21 @@ function buildStoredPlan(plan: Record<string, unknown>) {
   };
 }
 
+function createDebugLogEntry(stage: string, message: string) {
+  return {
+    id: `${stage}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    stage,
+    message,
+    createdAt: new Date().toISOString(),
+  };
+}
+
 async function buildPlannerStateForUser(userId: string) {
-  const [profile, cloudData, usageRows] = await Promise.all([
+  const [profile, cloudData, usageRows, debugLog] = await Promise.all([
     getOrCreateProfile(userId, "user"),
     getCloudData(userId),
     getOrCreateAiUsageRows(userId, todayKey(), currentMonthKey()),
+    getMealPlannerDebugLog(userId),
   ]);
   const weekStart = currentWeekStart();
   const rawActivePlan = await getActiveMealPlan(userId, weekStart);
@@ -294,6 +306,7 @@ async function buildPlannerStateForUser(userId: string) {
     activePlan: planRowToClient(activePlan, usageRows.monthly),
     limits: getLimits(profile.role),
     plannerState,
+    adminDebugLog: profile.role === "admin" || profile.role === "super_admin" ? debugLog : [],
   };
 }
 
@@ -341,6 +354,10 @@ export async function generateWeekForUser(userId: string, body: unknown) {
   const nextSignature = preferencesSignature(normalizeSavedPreferences(parsed.preferences));
   const currentSignature = currentPlan ? preferencesSignature(normalizeSavedPreferences(currentPlan.preferences)) : null;
   if (currentPlan && currentPlan.source === "ai" && currentSignature === nextSignature && !parsed.replaceCurrent) {
+    const cachedDebugLog = [
+      createDebugLogEntry("generate_week_cached", "Returned cached AI plan for identical week and preferences."),
+    ];
+    await replaceMealPlannerDebugLog(userId, cachedDebugLog);
     return {
       state: await buildPlannerStateForUser(userId),
       provider: "openai" as const,
@@ -352,12 +369,31 @@ export async function generateWeekForUser(userId: string, body: unknown) {
   }
 
   const userContext = await buildUserContext(userId, profile.timezone);
-  const result = await generateWeeklyPlanAI({
-    action: "generate_week",
-    preferences: parsed.preferences,
-    activeDates: activeDates(),
-    userContext,
-  } satisfies GenerateWeekAiInput).catch((error) => {
+  const generationDebugLog = [
+    createDebugLogEntry("generate_week_started", `Starting AI generation for week ${weekStart}`),
+  ];
+  await replaceMealPlannerDebugLog(userId, generationDebugLog);
+
+  const result = await generateWeeklyPlanAI(
+    {
+      action: "generate_week",
+      preferences: parsed.preferences,
+      activeDates: activeDates(),
+      userContext,
+    } satisfies GenerateWeekAiInput,
+    {
+      onProgress: async (progress) => {
+        generationDebugLog.unshift(createDebugLogEntry(progress.stage, progress.message));
+        if (!progress.stage.startsWith("weekly_day_")) {
+          await replaceMealPlannerDebugLog(userId, generationDebugLog);
+        }
+      },
+    },
+  ).catch(async (error) => {
+    generationDebugLog.unshift(
+      createDebugLogEntry("generate_week_failed", error instanceof Error ? error.message : "Meal planner AI failed to generate the week."),
+    );
+    await replaceMealPlannerDebugLog(userId, generationDebugLog);
     throw Object.assign(new Error(error instanceof Error ? error.message : "Meal planner AI failed to generate the week."), {
       status: 502,
       code: "MEAL_PLANNER_GENERATION_FAILED",
@@ -393,6 +429,14 @@ export async function generateWeekForUser(userId: string, body: unknown) {
     planData,
     source: "ai",
   });
+
+  generationDebugLog.unshift(
+    createDebugLogEntry(
+      "generate_week_succeeded",
+      `OpenAI ${result.meta.model} in ${result.meta.elapsedMs}ms • prompt ${result.usage.inputTokens} • completion ${result.usage.outputTokens}`,
+    ),
+  );
+  await replaceMealPlannerDebugLog(userId, generationDebugLog);
 
   return {
     state: await buildPlannerStateForUser(userId),

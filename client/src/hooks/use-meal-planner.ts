@@ -31,6 +31,30 @@ type AdminDebugEntry = {
   createdAt: string;
 };
 
+function mapServerDebugEntry(entry: {
+  id: string;
+  stage: string;
+  message: string;
+  createdAt: string;
+}): AdminDebugEntry {
+  const stage = entry.stage.toLowerCase();
+  const kind: AdminDebugEntry["kind"] = stage.includes("regenerate")
+    ? "regenerate"
+    : stage.includes("replace") || stage.includes("meal")
+      ? "swap"
+      : stage.includes("delete")
+        ? "delete"
+        : stage.includes("load")
+          ? "load"
+          : "generate";
+  return {
+    id: entry.id,
+    kind,
+    message: `${entry.stage}: ${entry.message}`,
+    createdAt: entry.createdAt,
+  };
+}
+
 function createDebugEntry(kind: AdminDebugEntry["kind"], message: string): AdminDebugEntry {
   return {
     id: `${kind}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
@@ -61,6 +85,9 @@ export function useMealPlanner() {
         const nextState = applyServerState(serverState);
         setState(nextState);
         setLimits(serverState.limits);
+        if ((serverState.role === "admin" || serverState.role === "super_admin") && Array.isArray(serverState.adminDebugLog)) {
+          setAdminDebug(serverState.adminDebugLog.map(mapServerDebugEntry));
+        }
       })
       .catch((error) => {
         if (!mounted) return;
@@ -120,6 +147,9 @@ export function useMealPlanner() {
     const serverState = await fetchMealPlannerState();
     setState(applyServerState(serverState));
     setLimits(serverState.limits);
+    if ((serverState.role === "admin" || serverState.role === "super_admin") && Array.isArray(serverState.adminDebugLog)) {
+      setAdminDebug(serverState.adminDebugLog.map(mapServerDebugEntry));
+    }
   };
 
   const generatePlan = async (replaceCurrent = false, preferencesOverride?: PlannerPreferences) => {

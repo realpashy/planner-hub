@@ -33,6 +33,13 @@ export interface MealPlanRecordRow {
   updatedAt: string;
 }
 
+export interface MealPlannerDebugLogEntry {
+  id: string;
+  stage: string;
+  message: string;
+  createdAt: string;
+}
+
 function getJerusalemKeys(date = new Date()) {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Jerusalem",
@@ -322,6 +329,29 @@ export async function saveMealPlannerPreferences(userId: string, preferences: un
       updatedAt: new Date().toISOString(),
     },
   });
+}
+
+export async function replaceMealPlannerDebugLog(userId: string, entries: MealPlannerDebugLogEntry[]) {
+  const cloud = await getCloudData(userId);
+  const currentMealData =
+    cloud.mealData && typeof cloud.mealData === "object" ? { ...(cloud.mealData as Record<string, unknown>) } : {};
+
+  await saveCloudData(userId, {
+    mealData: {
+      ...currentMealData,
+      debugLog: entries.slice(0, 24),
+      updatedAt: new Date().toISOString(),
+    },
+  });
+}
+
+export async function getMealPlannerDebugLog(userId: string) {
+  const cloud = await getCloudData(userId);
+  const mealData =
+    cloud.mealData && typeof cloud.mealData === "object" ? (cloud.mealData as Record<string, unknown>) : {};
+  return Array.isArray(mealData.debugLog)
+    ? (mealData.debugLog as MealPlannerDebugLogEntry[]).slice(0, 24)
+    : [];
 }
 
 export async function getMealPlannerPreferences(userId: string) {

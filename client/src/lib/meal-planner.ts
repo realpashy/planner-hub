@@ -211,6 +211,12 @@ export interface PlannerServerState {
   activePlan: WeeklyPlanRecord | null;
   limits: PlannerLimits;
   plannerState: PlannerViewState;
+  adminDebugLog?: Array<{
+    id: string;
+    stage: string;
+    message: string;
+    createdAt: string;
+  }>;
 }
 
 export interface MealPlannerState {

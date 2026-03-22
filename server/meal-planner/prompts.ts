@@ -78,6 +78,36 @@ export function buildWeeklyGenerationPrompt(
   ].join("\n");
 }
 
+export function buildSingleDayGenerationPrompt(
+  dateISO: string,
+  userContext: MealPlannerUserContext,
+  preferences: Record<string, unknown>,
+  activeDates: string[],
+) {
+  return [
+    "Generate one meal-planner day in Arabic for Planner Hub.",
+    "Return strict JSON only.",
+    "Do not generate a full week.",
+    "Internal mealType enum values must stay in English: breakfast, lunch, dinner, snack.",
+    `Generate only for date: ${dateISO}.`,
+    `Visible active range: ${compactJson(activeDates)}.`,
+    "Rules:",
+    "- Respect preferences and saved context.",
+    "- Keep the day practical and easy to shop.",
+    "- Generate exactly the requested meals count when possible.",
+    "- Keep the day tip under 10 Arabic words.",
+    "- Keep notes under 12 Arabic words or leave empty.",
+    "- Ingredients max 6 items per meal.",
+    "- Steps max 2 very short steps per meal.",
+    "- Reason max 12 to 15 words.",
+    "- Tags max 2 short tags per meal.",
+    "- Keep macros as simple rounded integers.",
+    "- Prefer emoji-friendly visual placeholders over photos.",
+    `User context: ${compactJson(compactWeeklyContext(userContext))}.`,
+    `Preferences: ${compactJson(compactPreferences(preferences))}.`,
+  ].join("\n");
+}
+
 export function buildMealEditPrompt(
   existingMeal: Record<string, unknown>,
   editRequest: string,
