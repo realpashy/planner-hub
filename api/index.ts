@@ -3,17 +3,6 @@ import express from "express";
 import { Pool } from "pg";
 import { readFile } from "fs/promises";
 import path from "path";
-import { initializeDatabase as initializeSharedDatabase } from "../server/db";
-import {
-  getAdminUsageSummary,
-  recordOverLimitAttempt,
-} from "../server/persistence";
-import {
-  editMealForUser,
-  generateWeekForUser,
-  getAiQuotaStatus,
-  regenerateDayForUser,
-} from "../server/meal-planner/service";
 
 declare module "http" {
   interface IncomingMessage {
@@ -35,6 +24,18 @@ let startupError: string | null = null;
 let initPromise: Promise<void> | null = null;
 let mealPlannerInitPromise: Promise<void> | null = null;
 let dbPoolInstance: Pool | null = null;
+
+type MealPlannerRuntime = {
+  initializeSharedDatabase: () => Promise<void>;
+  getAdminUsageSummary: () => Promise<unknown>;
+  recordOverLimitAttempt: (userId: string) => Promise<unknown>;
+  getAiQuotaStatus: (userId: string) => Promise<unknown>;
+  generateWeekForUser: (userId: string, body: unknown) => Promise<unknown>;
+  editMealForUser: (userId: string, body: unknown) => Promise<unknown>;
+  regenerateDayForUser: (userId: string, body: unknown) => Promise<unknown>;
+};
+
+let mealPlannerRuntimePromise: Promise<MealPlannerRuntime> | null = null;
 
 function getDebugPayload() {
   return {
@@ -247,12 +248,41 @@ async function ensureInit() {
   return initPromise;
 }
 
-async function ensureMealPlannerInit() {
-  if (!mealPlannerInitPromise) {
-    mealPlannerInitPromise = initializeSharedDatabase().catch((error) => {
-      mealPlannerInitPromise = null;
+async function loadMealPlannerRuntime(): Promise<MealPlannerRuntime> {
+  if (!mealPlannerRuntimePromise) {
+    mealPlannerRuntimePromise = (async () => {
+      const [{ initializeDatabase }, persistenceModule, serviceModule] = await Promise.all([
+        import("../server/db"),
+        import("../server/persistence"),
+        import("../server/meal-planner/service"),
+      ]);
+
+      return {
+        initializeSharedDatabase: initializeDatabase,
+        getAdminUsageSummary: persistenceModule.getAdminUsageSummary,
+        recordOverLimitAttempt: persistenceModule.recordOverLimitAttempt,
+        getAiQuotaStatus: serviceModule.getAiQuotaStatus,
+        generateWeekForUser: serviceModule.generateWeekForUser,
+        editMealForUser: serviceModule.editMealForUser,
+        regenerateDayForUser: serviceModule.regenerateDayForUser,
+      };
+    })().catch((error) => {
+      mealPlannerRuntimePromise = null;
       throw error;
     });
+  }
+
+  return mealPlannerRuntimePromise;
+}
+
+async function ensureMealPlannerInit() {
+  if (!mealPlannerInitPromise) {
+    mealPlannerInitPromise = loadMealPlannerRuntime()
+      .then((runtime) => runtime.initializeSharedDatabase())
+      .catch((error) => {
+      mealPlannerInitPromise = null;
+      throw error;
+      });
   }
   return mealPlannerInitPromise;
 }
@@ -483,7 +513,8 @@ app.get("/api/meal-planner/quota", async (req, res) => {
   const auth = readAuthFromRequest(req);
   if (!auth?.userId) return res.status(401).json({ message: "غير مصرح" });
   await ensureMealPlannerInit();
-  const quota = await getAiQuotaStatus(auth.userId);
+  const runtime = await loadMealPlannerRuntime();
+  const quota = await runtime.getAiQuotaStatus(auth.userId);
   return res.json(quota);
 });
 
@@ -492,11 +523,13 @@ app.post("/api/meal-planner/generate-week", async (req, res, next) => {
   if (!auth?.userId) return res.status(401).json({ message: "غير مصرح" });
   try {
     await ensureMealPlannerInit();
-    const result = await generateWeekForUser(auth.userId, req.body);
+    const runtime = await loadMealPlannerRuntime();
+    const result = await runtime.generateWeekForUser(auth.userId, req.body);
     return res.json(result);
   } catch (error) {
     if ((error as { code?: string }).code === "AI_LIMIT_REACHED") {
-      await recordOverLimitAttempt(auth.userId);
+      const runtime = await loadMealPlannerRuntime();
+      await runtime.recordOverLimitAttempt(auth.userId);
       return res.status(429).json({
         message: "تم الوصول إلى حد الذكاء الاصطناعي اليومي أو الشهري",
         code: "AI_LIMIT_REACHED",
@@ -512,11 +545,13 @@ app.post("/api/meal-planner/edit-meal", async (req, res, next) => {
   if (!auth?.userId) return res.status(401).json({ message: "غير مصرح" });
   try {
     await ensureMealPlannerInit();
-    const result = await editMealForUser(auth.userId, req.body);
+    const runtime = await loadMealPlannerRuntime();
+    const result = await runtime.editMealForUser(auth.userId, req.body);
     return res.json(result);
   } catch (error) {
     if ((error as { code?: string }).code === "AI_LIMIT_REACHED") {
-      await recordOverLimitAttempt(auth.userId);
+      const runtime = await loadMealPlannerRuntime();
+      await runtime.recordOverLimitAttempt(auth.userId);
       return res.status(429).json({
         message: "تم الوصول إلى حد تعديلات الذكاء الاصطناعي",
         code: "AI_LIMIT_REACHED",
@@ -532,11 +567,13 @@ app.post("/api/meal-planner/regenerate-day", async (req, res, next) => {
   if (!auth?.userId) return res.status(401).json({ message: "غير مصرح" });
   try {
     await ensureMealPlannerInit();
-    const result = await regenerateDayForUser(auth.userId, req.body);
+    const runtime = await loadMealPlannerRuntime();
+    const result = await runtime.regenerateDayForUser(auth.userId, req.body);
     return res.json(result);
   } catch (error) {
     if ((error as { code?: string }).code === "AI_LIMIT_REACHED") {
-      await recordOverLimitAttempt(auth.userId);
+      const runtime = await loadMealPlannerRuntime();
+      await runtime.recordOverLimitAttempt(auth.userId);
       return res.status(429).json({
         message: "تم الوصول إلى حد تعديلات الذكاء الاصطناعي",
         code: "AI_LIMIT_REACHED",
@@ -576,7 +613,8 @@ app.get("/api/admin/ai-usage", async (req, res) => {
     return res.status(403).json({ message: "غير مصرح بهذه العملية" });
   }
   await ensureMealPlannerInit();
-  const summary = await getAdminUsageSummary();
+  const runtime = await loadMealPlannerRuntime();
+  const summary = await runtime.getAdminUsageSummary();
   return res.json(summary);
 });
 
