@@ -1601,8 +1601,8 @@ export default function BudgetPlanner() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-12" dir="rtl">
-      <header className="sticky top-0 z-30 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+    <div className="page-bg-premium pb-12" dir="rtl">
+      <header className="header-bar-premium">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-4">
           <div className="relative flex min-h-[48px] items-center justify-between gap-3 md:min-h-[56px]">
             <div className="absolute left-0 flex items-center gap-2 md:hidden">
@@ -1657,19 +1657,26 @@ export default function BudgetPlanner() {
                 <Settings2 className="w-4 h-4" />
               </Button>
             </div>
-            <h1 className="mx-auto hidden items-center gap-2 text-center text-base font-bold text-foreground sm:text-lg md:absolute md:left-1/2 md:flex md:mx-0 md:-translate-x-1/2 md:px-0 md:text-2xl">
-              <Wallet className="w-5 h-5 md:w-6 md:h-6 text-emerald-500" />
-              الميزانيّة الشهرية
-            </h1>
+            <div className="module-info-badge mx-auto hidden md:absolute md:left-1/2 md:mx-0 md:flex md:-translate-x-1/2">
+              <div className="icon-container-emerald">
+                <Wallet className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-foreground md:text-base">الميزانيّة الشهرية</p>
+                <p className="text-xs leading-5 text-muted-foreground">{localizedMonthLabel}</p>
+              </div>
+            </div>
             <div className="absolute right-0 flex items-center justify-end gap-2 md:hidden">
-              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-2xl bg-background/75 shadow-sm backdrop-blur" asChild>
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-2xl border border-white/60 bg-background/80 shadow-sm backdrop-blur dark:border-white/10" asChild>
                 <Link href="/">
-                  <ArrowRight className="w-5 h-5" />
+                  <ArrowRight className="h-5 w-5" />
                 </Link>
               </Button>
-              <div className="flex items-center gap-2 px-1 py-2">
-                <Wallet className="h-4 w-4 text-emerald-500" />
-                <span className="text-sm font-semibold text-foreground whitespace-nowrap">الميزانيّة الشهرية</span>
+              <div className="flex items-center gap-2 rounded-2xl border border-white/60 bg-background/80 px-3 py-2 shadow-sm backdrop-blur dark:border-white/10">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/10">
+                  <Wallet className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <span className="whitespace-nowrap text-sm font-bold text-foreground">الميزانيّة</span>
               </div>
             </div>
           </div>
@@ -1998,7 +2005,7 @@ export default function BudgetPlanner() {
                               <SelectContent dir="rtl" className="budget-rtl-select-content">
                                 <SelectItem value="active" className="budget-select-item">نشط</SelectItem>
                                 <SelectItem value="completed" className="budget-select-item">مكتمل</SelectItem>
-                                <SelectItem value="archived" className="budget-select-item">مؤرشف</SelectItem>
+                                <SelectItem value="archived" className="budget-select-item">مؤرش��</SelectItem>
                               </SelectContent>
                             </Select>
                             <Button

@@ -390,9 +390,7 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background px-4 py-6 sm:px-6 lg:px-8" dir="rtl">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.16),transparent_52%),radial-gradient(circle_at_top_left,rgba(16,185,129,0.12),transparent_44%)]" />
-      <div className="pointer-events-none absolute inset-x-0 top-28 h-72 bg-[linear-gradient(180deg,transparent,rgba(255,255,255,0.45),transparent)] dark:bg-[linear-gradient(180deg,transparent,rgba(15,23,42,0.24),transparent)]" />
+    <div className="page-bg-premium px-4 py-6 sm:px-6 lg:px-8" dir="rtl">
 
       <div className="relative mx-auto max-w-6xl space-y-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

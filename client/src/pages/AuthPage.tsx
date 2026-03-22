@@ -135,30 +135,33 @@ export default function AuthPage() {
 
   return (
     <div
-      className="auth-page relative min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4 overflow-hidden"
+      className="page-bg-premium flex items-center justify-center p-4"
       dir="rtl"
     >
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(56,189,248,0.16),_transparent_55%),radial-gradient(ellipse_at_bottom,_rgba(14,165,233,0.13),_transparent_60%)]" />
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative z-10 w-full max-w-md rounded-3xl border border-slate-200/70 dark:border-slate-800 bg-white/90 dark:bg-slate-900/80 backdrop-blur p-6 shadow-xl"
+        className="relative z-10 w-full max-w-md rounded-[1.75rem] border border-white/60 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.08),transparent_22%),linear-gradient(180deg,rgba(255,255,255,0.95),rgba(248,250,252,0.98))] p-6 shadow-[0_24px_64px_rgba(15,23,42,0.08)] backdrop-blur dark:border-white/10 dark:bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.12),transparent_18%),linear-gradient(180deg,rgba(2,6,23,0.88),rgba(15,23,42,0.96))] dark:shadow-[0_24px_64px_rgba(2,6,23,0.45)]"
       >
-        <div className="flex items-center justify-center gap-2">
-          <ShieldCheck className="h-5 w-5 text-primary" />
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 text-center">Planner Hub</h1>
+        <div className="flex items-center justify-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10">
+            <ShieldCheck className="h-6 w-6 text-primary" />
+          </div>
+          <div className="text-center">
+            <h1 className="text-2xl font-extrabold text-foreground">Planner Hub</h1>
+            <p className="text-sm text-muted-foreground">
+              حسابك يحفظ كل بياناتك بأمان
+            </p>
+          </div>
         </div>
-        <p className="text-sm text-slate-500 dark:text-slate-400 text-center mt-1">
-          حسابك يحفظ كل بياناتك بأمان على السحابة
-        </p>
 
-        <div className="mt-5 grid grid-cols-2 gap-2 rounded-xl bg-slate-100 dark:bg-slate-800 p-1">
+        <div className="mt-6 grid grid-cols-2 gap-2 rounded-2xl border border-border/60 bg-background/70 p-1.5">
           <button
             onClick={() => {
               setMode("login");
               setError("");
             }}
-            className={`rounded-lg py-2 text-sm font-semibold ${mode === "login" ? "bg-primary text-white" : "text-slate-600 dark:text-slate-300"}`}
+            className={`rounded-xl py-2.5 text-sm font-bold transition-all ${mode === "login" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
           >
             تسجيل الدخول
           </button>
@@ -167,19 +170,19 @@ export default function AuthPage() {
               setMode("register");
               setError("");
             }}
-            className={`rounded-lg py-2 text-sm font-semibold ${mode === "register" ? "bg-primary text-white" : "text-slate-600 dark:text-slate-300"}`}
+            className={`rounded-xl py-2.5 text-sm font-bold transition-all ${mode === "register" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
           >
             إنشاء حساب
           </button>
         </div>
 
-        <form className="mt-4 space-y-3" onSubmit={onSubmit}>
+        <form className="mt-5 space-y-3" onSubmit={onSubmit}>
           {mode === "register" && (
             <input
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder="الاسم (اختياري)"
-              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 outline-none transition-all focus:ring-2 focus:ring-primary/35"
+              className="w-full rounded-2xl border border-border/70 bg-background/80 px-4 py-3 text-sm outline-none transition-all placeholder:text-muted-foreground focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
             />
           )}
 
@@ -190,7 +193,7 @@ export default function AuthPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="البريد الإلكتروني"
-            className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 text-left [direction:ltr] outline-none transition-all focus:ring-2 focus:ring-primary/35"
+            className="w-full rounded-2xl border border-border/70 bg-background/80 px-4 py-3 text-left text-sm [direction:ltr] outline-none transition-all placeholder:text-muted-foreground focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
           />
 
           <div className="relative">
@@ -201,7 +204,7 @@ export default function AuthPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="كلمة المرور"
-              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 ps-10 text-left [direction:ltr] outline-none transition-all focus:ring-2 focus:ring-primary/35"
+              className="w-full rounded-2xl border border-border/70 bg-background/80 px-4 py-3 ps-10 text-left text-sm [direction:ltr] outline-none transition-all placeholder:text-muted-foreground focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
             />
             <button
               type="button"
@@ -222,7 +225,7 @@ export default function AuthPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="تأكيد كلمة المرور"
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 ps-10 text-left [direction:ltr] outline-none transition-all focus:ring-2 focus:ring-primary/35"
+                className="w-full rounded-2xl border border-border/70 bg-background/80 px-4 py-3 ps-10 text-left text-sm [direction:ltr] outline-none transition-all placeholder:text-muted-foreground focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
               />
               <button
                 type="button"
@@ -245,7 +248,7 @@ export default function AuthPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl bg-primary text-white font-semibold py-2.5 disabled:opacity-60 inline-flex items-center justify-center gap-2"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-3 text-sm font-bold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 disabled:opacity-60"
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             {submitLabel}

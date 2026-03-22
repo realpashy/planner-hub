@@ -73,8 +73,8 @@ export default function WeeklyPlanner() {
   const allDayDone = totalDayTasks > 0 && completedDayTasks === totalDayTasks;
 
   return (
-    <div className="min-h-screen bg-background pb-24 md:pb-8" dir="rtl">
-      <header className="sticky top-0 z-30 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+    <div className="page-bg-premium pb-24 md:pb-8" dir="rtl">
+      <header className="header-bar-premium">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 md:py-4">
           <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between lg:flex-1">
@@ -95,9 +95,14 @@ export default function WeeklyPlanner() {
                 </Button>
               </div>
 
-              <div className="flex items-center justify-start gap-3 rounded-[1.75rem] border border-border/80 bg-background/75 px-4 py-3 text-right shadow-sm">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                  <CalendarIcon className="w-5 h-5" />
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25 }}
+                className="module-info-badge"
+              >
+                <div className="icon-container-primary">
+                  <CalendarIcon className="h-5 w-5" />
                 </div>
                 <div>
                   <p className="text-sm font-bold text-foreground md:text-base">المخطط الأسبوعي</p>
@@ -105,10 +110,10 @@ export default function WeeklyPlanner() {
                     تنظيم الأيام، المهام، العادات، والملاحظات من نفس المساحة.
                   </p>
                 </div>
-              </div>
+              </motion.div>
             </div>
 
-            <div className="flex items-center justify-between gap-3 rounded-[1.75rem] border border-border/80 bg-background/75 p-2 shadow-sm">
+            <div className="flex items-center justify-between gap-3 rounded-[1.75rem] border border-white/60 bg-background/80 p-2 shadow-sm backdrop-blur dark:border-white/10">
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -152,7 +157,7 @@ export default function WeeklyPlanner() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 md:px-6 pt-5 md:pt-6 pb-4">
+      <main className="relative mx-auto max-w-7xl px-4 pb-4 pt-5 md:px-6 md:pt-6">
         <div className="mb-5 md:mb-6">
           <WeeklySummary tasks={data.tasks} habits={data.habits} events={data.events} selectedDate={selectedDate} />
         </div>
@@ -166,9 +171,11 @@ export default function WeeklyPlanner() {
               transition={{ duration: 0.25 }}
             >
               <Card
+                variant="premium"
+                radius="2xl"
                 className={cn(
-                  "lg:sticky lg:top-24 transition-all duration-300",
-                  allDayDone && "border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-500/10"
+                  "transition-all duration-300 lg:sticky lg:top-24",
+                  allDayDone && "border-emerald-500/30 bg-emerald-500/5 dark:border-emerald-400/20 dark:bg-emerald-500/10"
                 )}
                 data-testid="selected-day-card"
               >

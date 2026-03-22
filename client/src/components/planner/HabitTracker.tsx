@@ -45,26 +45,26 @@ export function HabitTracker({ habits, weekStart }: { habits: HabitItem[], weekS
   const habitProgress = totalHabitChecks === 0 ? 0 : Math.round((completedHabitChecks / totalHabitChecks) * 100);
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-4 md:p-5" data-testid="habit-tracker">
-      <div className="flex items-center justify-between mb-4">
+    <div className="rounded-[1.75rem] border border-white/60 bg-[radial-gradient(circle_at_top_right,rgba(139,92,246,0.08),transparent_22%),linear-gradient(180deg,rgba(255,255,255,0.94),rgba(248,250,252,0.96))] p-4 shadow-[0_20px_48px_rgba(15,23,42,0.06)] dark:border-white/10 dark:bg-[radial-gradient(circle_at_top_right,rgba(139,92,246,0.12),transparent_18%),linear-gradient(180deg,rgba(2,6,23,0.85),rgba(15,23,42,0.94))] dark:shadow-[0_20px_48px_rgba(2,6,23,0.4)] md:p-5" data-testid="habit-tracker">
+      <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-full bg-violet-50 dark:bg-violet-500/15 flex items-center justify-center">
-            <Activity className="w-4.5 h-4.5 text-violet-600 dark:text-violet-400" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-violet-500/15 bg-violet-500/10">
+            <Activity className="h-5 w-5 text-violet-600 dark:text-violet-400" />
           </div>
-          <h3 className="font-bold text-base md:text-lg text-slate-800 dark:text-slate-100">متتبع العادات</h3>
+          <h3 className="text-base font-bold text-foreground md:text-lg">متتبع العادات</h3>
         </div>
         {habits.length > 0 && (
-          <span className="text-xs font-bold text-slate-400 bg-slate-50 dark:bg-slate-800 dark:text-slate-300 px-2.5 py-0.5 rounded-full">{habitProgress}%</span>
+          <span className="rounded-full border border-violet-200/70 bg-violet-50/80 px-3 py-1 text-xs font-bold text-violet-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] dark:border-violet-400/20 dark:bg-violet-500/15 dark:text-violet-300">{habitProgress}%</span>
         )}
       </div>
 
       {habits.length > 0 && (
-        <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full mb-4 overflow-hidden">
+        <div className="mb-4 h-2 w-full overflow-hidden rounded-full bg-violet-100/60 dark:bg-violet-500/10">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${habitProgress}%` }}
             transition={{ duration: 0.5, ease: "easeOut" }}
-            className="h-full rounded-full bg-violet-500"
+            className="h-full rounded-full bg-gradient-to-l from-violet-500 to-violet-600"
           />
         </div>
       )}
