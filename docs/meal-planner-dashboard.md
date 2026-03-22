@@ -15,71 +15,107 @@ The day drawer is the secondary detail layer.
 
 ## Weekly planner structure
 
-- use a single vertical stacked flow
-- no multi-column grid
-- each day is one card
-- cards should scan naturally from top to bottom
+- the weekly planner is always a single vertical stacked flow
+- no multi-column day grid
+- each day is one planner card
+- cards should scan naturally from top to bottom in RTL
 
 ## Day card structure
 
-Each day card should contain:
+Each card contains:
 
-- day name
+- day title
 - date
 - meal preview list
-- compact nutrition / macro tags
+- compact macro / nutrition row
+
+Day cards should be:
+
+- full-card clickable
+- visually rich but not cluttered
+- clearly differentiated from summary and grocery surfaces
 
 Remove from unopened cards:
 
 - progress widgets
 - AI tip boxes
 - loud gradients
-- repeated icon clusters
-- detached detail buttons
 - regenerate controls
+- detached detail buttons
 
 ## Shopping list structure
 
-- grouped by supermarket-style categories
+The shopping list must render from a normalized shopping model, not raw ingredient strings.
+
+Rules:
+
+- group by supermarket-style categories
 - item name on the right
 - quantity on the left
 - delete action appears cleanly on hover
 - removed items persist for the active weekly plan only
 
+### Grocery normalization behavior
+
+- merge equivalent ingredient phrasing into one human-friendly grocery item
+- aggregate grams or simple counts when possible
+- keep distinctions only when they matter in real shopping
+- output should feel like a supermarket list, not an AI ingredient dump
+
+Examples of intended consolidation:
+
+- `120غ صدر دجاج مشوي`
+- `150غ صدر دجاج بدون جلد`
+- `صدور دجاج 150غ`
+
+should render as one normalized chicken entry with a combined approximate quantity.
+
 ## WhatsApp flow
 
-- send action lives inside the shopping module
-- open a modal
-- default country code is `+972`
-- normalize local Israeli numbers by removing leading `0` after `972`
-- build one grouped Arabic message
+- share action lives inside the shopping module
+- button uses WhatsApp styling and iconography
+- modal aligns fully right in RTL
+- changing country code updates the flag immediately
+- default country should be detected from browser locale when possible
+- fallback remains sensible
 - use `wa.me` link flow only
+- the WhatsApp message should be grouped by shopping category
 
 ## Guidance widget
 
 - lightweight only
 - maximum 3 suggestions
 - icon + short sentence
-- no heavy boxed cards
+- no heavy boxed cards inside the zone
 
 ## Drawer structure
 
 - right-aligned titles and content
-- strong section hierarchy
-- clean meal blocks
-- macros clearly visible
+- stronger hierarchy than the day card
+- meal blocks with clean macro visibility
 - actions remain contextual and secondary
+- close and action placement must follow RTL conventions deliberately
 
-## Moved to settings
+## Settings containment rules
+
+Keep these inside settings, not the main dashboard:
 
 - regenerate week
 - destructive reset/delete actions
-- advanced management / admin controls
+- diagnostics/admin controls
 
-## Removed from the main dashboard
+Remove from the main dashboard:
 
-- noisy quick actions
+- duplicate management actions
 - version labels
 - hydration widget cards
 - broken or low-value graphs
-- duplicate management actions
+- noisy quick actions
+
+## RTL conventions for this module
+
+- section titles right, meta/count opposite on the left
+- drawer title block right, utility opposite
+- settings close control left
+- modal titles, labels, and helper text right
+- shopping rows always render item right and quantity left

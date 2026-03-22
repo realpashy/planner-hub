@@ -1,8 +1,10 @@
 # Planner Hub Design System
 
-This file is the default visual reference for Planner Hub modules.
+This file is the visual reference for Planner Hub. Any new UI work must match this system before it is considered complete.
 
 ## Spacing scale
+
+Use this rhythm first:
 
 - `4`
 - `8`
@@ -11,61 +13,95 @@ This file is the default visual reference for Planner Hub modules.
 - `24`
 - `32`
 
-Use this rhythm before introducing any new spacing value.
+Avoid one-off spacing unless there is a clear structural reason.
 
 ## Border radius
 
-- cards: `rounded-2xl`
-- inner containers: `rounded-xl`
-- pills / badges / chips: `rounded-full`
+- major cards and section shells: `rounded-2xl`
+- inner surfaces and nested containers: `rounded-xl`
+- pills, chips, micro-badges: `rounded-full`
 
-## Shadows
+## Shadow system
 
-- base surfaces: soft shadow only
-- hover states: slight elevation increase
-- drawers / sheets: stronger shadow than cards
+- base surface: soft shadow only
+- hover state: slight elevation increase
+- modal and drawer surfaces: stronger, deeper shadow than cards
 
-Avoid heavy, muddy, or stacked shadows.
+Do not stack multiple loud shadows or use muddy dark glows.
 
 ## Typography hierarchy
 
-- page title: large, bold, high contrast
+- page title: large, bold, highest contrast
 - section title: medium-large, bold
-- content text: regular readable weight
-- metadata: smaller and muted
+- card title: bold and compact
+- body content: regular readable weight
+- helper text / subtitle / meta: smaller and muted
 
-Arabic layouts should default to right-aligned text for titles, body, and helper content.
+Arabic product text should default to right alignment.
 
 ## Color usage
 
-- keep palette minimal
-- accent color is for highlights and active emphasis only
-- avoid decorative gradients unless they serve hierarchy clearly
-- do not let utility areas compete with the planner itself
+The product should not feel monochrome or like duplicated white cards.
+
+Use restrained tinted surfaces by zone:
+
+- overview strip: soft cool tint
+- weekly planner cards: soft neutral with planner accent
+- shopping list: fresh grocery tint
+- guidance widget: warm or insight tint
+- day drawer: elevated focused tint
+- settings drawer: quiet administrative tint
+
+Rules:
+
+- use accent colors intentionally, not everywhere
+- major zones should feel visually distinct
+- avoid rainbow treatment
+- avoid identical backgrounds for all sections
+- gradients are allowed only when subtle and hierarchy-driven
+
+## Card hierarchy
+
+- page shell: calm, large framing surface
+- zone shell: visually distinct but secondary to content
+- card: compact, readable, premium
+- inner sub-surface: quieter than the parent card
+
+Every card family should feel related but not identical. Summary, day, grocery, guidance, and settings surfaces should not all look like the same template block.
+
+## Chip rules
+
+- chips should be content-signaling, not decorative noise
+- use dedicated chip tones by purpose:
+  - neutral meta
+  - meal type
+  - macro
+  - warning / repeated / shared ingredient
+- selected or active states must not look identical to the primary navigation button
 
 ## Icon system
 
-- use `lucide-react` for product UI
-- keep icon stroke/style consistent
-- emoji are optional only inside meal content where they add direct meaning
-- avoid mixing unrelated icon families
+- use `lucide-react` for structural product UI
+- keep icon size and visual weight consistent
+- emoji are allowed only when directly tied to meal semantics, not for structural navigation
+- brand icons may be custom only when the brand itself is the action, such as WhatsApp sharing
 
 ## Motion
 
 - use `framer-motion`
-- keep motion subtle, fast, and premium
+- motion should be subtle, fast, and premium
 - preferred patterns:
   - hover lift
-  - tap compression
-  - open/close transitions
-  - gentle list/card reveal
+  - drawer / modal reveal
+  - list reveal
+  - compact micro-state transitions
 
-Avoid theatrical animation, bouncy motion, and decorative loading behavior.
+Avoid decorative or looping motion that creates anxiety or false progress.
 
 ## Mandatory reuse rule
 
 Whenever building or changing UI:
 
-1. Check this file first.
-2. Match the same spacing, radius, shadow, icon, and motion system.
-3. Adjust the new UI if it does not fit the system.
+1. Read this file first.
+2. Reuse the same spacing, tint, radius, shadow, and motion logic.
+3. Adjust the new UI if it feels flatter, louder, or more generic than the existing system.

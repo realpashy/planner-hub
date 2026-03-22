@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertTriangle, DatabaseZap, RefreshCcw, Settings2, ShoppingBasket, Sparkles, Trash2 } from "lucide-react";
+import { AlertTriangle, DatabaseZap, RefreshCcw, Sparkles, Trash2 } from "lucide-react";
 import { ConversationalMealOnboarding } from "@/components/meal-planner/ConversationalMealOnboarding";
 import { PlannerDayCard } from "@/components/meal-planner/PlannerDayCard";
 import { PlannerDayDrawer } from "@/components/meal-planner/PlannerDayDrawer";
@@ -47,7 +47,7 @@ export default function MealPlanner() {
   const plannerDays = plan?.days ?? [];
   const currentDay = (selectedDayISO ? plannerDays.find((day) => day.dateISO === selectedDayISO) : null) ?? plannerDays[0] ?? null;
   const shellClass =
-    "mx-auto max-w-6xl space-y-6 rounded-[2rem] border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.88),rgba(248,250,252,0.94))] p-4 shadow-[0_32px_90px_rgba(15,23,42,0.06)] backdrop-blur-xl dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.84),rgba(15,23,42,0.94))] dark:shadow-[0_34px_90px_rgba(2,6,23,0.52)] md:p-6";
+    "mx-auto max-w-6xl space-y-8 rounded-[2rem] border border-white/60 bg-[radial-gradient(circle_at_top_right,rgba(129,140,248,0.1),transparent_18%),linear-gradient(180deg,rgba(255,255,255,0.9),rgba(248,250,252,0.96))] p-4 shadow-[0_32px_90px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.14),transparent_16%),linear-gradient(180deg,rgba(2,6,23,0.86),rgba(15,23,42,0.96))] dark:shadow-[0_34px_90px_rgba(2,6,23,0.56)] md:p-6";
 
   const toastError = (title: string, error: unknown) =>
     showFeedbackToast({
@@ -132,12 +132,12 @@ export default function MealPlanner() {
 
           <div className="space-y-4">
             <div className="flex items-start justify-between gap-4">
-              <div className="rounded-full border border-border/60 bg-background/80 px-3 py-2 text-xs font-semibold text-muted-foreground dark:bg-white/5">
-                افتح أي يوم لمراجعة الوجبات والتعديل الخفيف
-              </div>
               <div className="text-right">
                 <p className="text-xl font-black text-foreground">الخطة الأسبوعية</p>
                 <p className="text-sm text-muted-foreground">تدفق عمودي واضح لقراءة أيام الأسبوع من الأعلى إلى الأسفل.</p>
+              </div>
+              <div className="rounded-full border border-indigo-200/70 bg-white/80 px-3 py-2 text-xs font-semibold text-indigo-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] dark:border-indigo-400/20 dark:bg-white/10 dark:text-indigo-200">
+                افتح أي يوم لمراجعة الوجبات والتعديل الخفيف
               </div>
             </div>
             <div className="space-y-4">
@@ -149,12 +149,12 @@ export default function MealPlanner() {
 
           <div className="space-y-4">
             <div className="flex items-start justify-between gap-4">
-              <div className="rounded-full border border-border/60 bg-background/80 px-3 py-2 text-xs font-semibold text-muted-foreground dark:bg-white/5">
-                مرتبة حسب أقسام السوبرماركت
-              </div>
               <div className="text-right">
                 <p className="text-xl font-black text-foreground">التسوق لهذا الأسبوع</p>
                 <p className="text-sm text-muted-foreground">استخدم القائمة كما هي أو أرسلها مباشرة إلى واتساب.</p>
+              </div>
+              <div className="rounded-full border border-emerald-200/70 bg-white/80 px-3 py-2 text-xs font-semibold text-emerald-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] dark:border-emerald-400/20 dark:bg-white/10 dark:text-emerald-200">
+                مرتبة حسب أقسام السوبرماركت
               </div>
             </div>
             <PlannerGroceryModule grocery={plan.grocery} open={groceryOpen} onOpenChange={setGroceryOpen} onRemoveItem={handleRemoveGroceryItem} />
@@ -162,12 +162,12 @@ export default function MealPlanner() {
 
           <div className="space-y-4">
             <div className="flex items-start justify-between gap-4">
-              <div className="rounded-full border border-border/60 bg-background/80 px-3 py-2 text-xs font-semibold text-muted-foreground dark:bg-white/5">
-                ملاحظات خفيفة فقط
-              </div>
               <div className="text-right">
                 <p className="text-xl font-black text-foreground">إرشادات الأسبوع</p>
                 <p className="text-sm text-muted-foreground">تحسينات بسيطة تبقي الخطة واضحة وغير مزدحمة.</p>
+              </div>
+              <div className="rounded-full border border-amber-200/70 bg-white/80 px-3 py-2 text-xs font-semibold text-amber-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] dark:border-amber-400/20 dark:bg-white/10 dark:text-amber-200">
+                ملاحظات خفيفة فقط
               </div>
             </div>
             <PlannerSuggestionModule suggestions={plan.suggestions} />
@@ -188,50 +188,59 @@ export default function MealPlanner() {
       />
 
       <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
-        <SheetContent side="right" className="w-full overflow-y-auto bg-[linear-gradient(180deg,rgba(248,250,252,0.98),rgba(255,255,255,0.96))] p-0 sm:max-w-lg dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.96),rgba(15,23,42,0.96))]" dir="rtl">
+        <SheetContent side="right" className="w-full overflow-y-auto bg-[radial-gradient(circle_at_top_right,rgba(148,163,184,0.14),transparent_22%),linear-gradient(180deg,rgba(248,250,252,0.98),rgba(255,255,255,0.96))] p-0 sm:max-w-lg dark:bg-[radial-gradient(circle_at_top_right,rgba(100,116,139,0.2),transparent_20%),linear-gradient(180deg,rgba(2,6,23,0.96),rgba(15,23,42,0.96))]" dir="rtl">
           <div className="space-y-5 p-5">
             <SheetHeader className="text-right">
               <SheetTitle className="text-right text-2xl font-black">إدارة الخطة</SheetTitle>
+              <p className="text-sm leading-7 text-muted-foreground">كل الإجراءات الإدارية تبقى هنا حتى تظل شاشة الخطة نفسها هادئة وواضحة.</p>
             </SheetHeader>
-            <div className="rounded-[1.5rem] border border-border/60 bg-background/70 p-4 dark:bg-slate-950/60">
-              <p className="text-sm font-bold text-foreground">رصيد الشهر الحالي</p>
+            <div className="rounded-[1.5rem] border border-slate-200/70 bg-white/72 p-4 shadow-[0_12px_28px_rgba(15,23,42,0.05)] dark:border-slate-700/70 dark:bg-slate-950/60">
+              <p className="text-sm font-black text-foreground">رصيد الشهر الحالي</p>
               <div className="mt-3 grid gap-3">
-                <div className="flex items-center justify-between rounded-[1rem] bg-background/70 px-3 py-2 dark:bg-slate-950/60"><span className="font-black text-foreground">{usage.generationsLeft ?? "∞"}</span><span className="text-sm text-muted-foreground">توليد الأسبوع</span></div>
-                <div className="flex items-center justify-between rounded-[1rem] bg-background/70 px-3 py-2 dark:bg-slate-950/60"><span className="font-black text-foreground">{usage.dayRegenerationsLeft ?? "∞"}</span><span className="text-sm text-muted-foreground">إعادة الأيام</span></div>
-                <div className="flex items-center justify-between rounded-[1rem] bg-background/70 px-3 py-2 dark:bg-slate-950/60"><span className="font-black text-foreground">{usage.swapsLeft ?? "∞"}</span><span className="text-sm text-muted-foreground">تبديل الوجبات</span></div>
+                <div className="flex items-center justify-between rounded-[1rem] bg-background/70 px-3 py-2 dark:bg-slate-950/60"><span className="text-sm text-muted-foreground">توليد الأسبوع</span><span className="font-black text-foreground">{usage.generationsLeft ?? "∞"}</span></div>
+                <div className="flex items-center justify-between rounded-[1rem] bg-background/70 px-3 py-2 dark:bg-slate-950/60"><span className="text-sm text-muted-foreground">إعادة الأيام</span><span className="font-black text-foreground">{usage.dayRegenerationsLeft ?? "∞"}</span></div>
+                <div className="flex items-center justify-between rounded-[1rem] bg-background/70 px-3 py-2 dark:bg-slate-950/60"><span className="text-sm text-muted-foreground">تبديل الوجبات</span><span className="font-black text-foreground">{usage.swapsLeft ?? "∞"}</span></div>
               </div>
             </div>
-            <div className="grid gap-3">
-              <InteractiveButton type="button" className="min-h-12 rounded-[1.2rem]" onClick={() => { setSettingsOpen(false); setReplaceDialog(true); }}>
-                توليد نسخة جديدة
-                <RefreshCcw className="h-4 w-4" />
-              </InteractiveButton>
-              <div className="rounded-[1.2rem] border border-border/60 bg-background/70 p-4 text-right text-sm leading-7 text-muted-foreground dark:bg-slate-950/60">
-                <div className="mb-2 inline-flex items-center gap-2 text-sm font-bold text-foreground">
-                  <ShoppingBasket className="h-4 w-4 text-primary" />
-                  إدارة القائمة
+            <div className="space-y-4">
+              <section className="rounded-[1.5rem] border border-indigo-200/70 bg-white/72 p-4 shadow-[0_12px_28px_rgba(15,23,42,0.05)] dark:border-indigo-400/15 dark:bg-slate-950/60">
+                <div className="mb-3 text-right">
+                  <p className="text-sm font-black text-foreground">إجراءات التوليد</p>
+                  <p className="text-xs leading-6 text-muted-foreground">استخدمها عندما تريد استبدال الأسبوع الحالي بنسخة جديدة.</p>
                 </div>
-                حذف عناصر التسوق يتم من داخل القائمة نفسها، بينما إعادة توليد الأسبوع أو حذف الخطة تبقى هنا في الإعدادات.
-              </div>
-              <InteractiveButton type="button" variant="outline" className="min-h-12 rounded-[1.2rem]" onClick={() => setDeleteMode("meals")}>
-                حذف الخطة الحالية فقط
-                <Trash2 className="h-4 w-4" />
-              </InteractiveButton>
-              <InteractiveButton type="button" variant="outline" className="min-h-12 rounded-[1.2rem] border-rose-500/25 text-rose-700 dark:text-rose-300" onClick={() => setDeleteMode("all")}>
-                إعادة ضبط الوجبات والتفضيلات
-                <AlertTriangle className="h-4 w-4" />
-              </InteractiveButton>
+                <InteractiveButton type="button" className="min-h-12 rounded-[1.2rem]" onClick={() => { setSettingsOpen(false); setReplaceDialog(true); }}>
+                  توليد نسخة جديدة
+                  <RefreshCcw className="h-4 w-4" />
+                </InteractiveButton>
+              </section>
+
+              <section className="rounded-[1.5rem] border border-rose-200/70 bg-white/72 p-4 shadow-[0_12px_28px_rgba(15,23,42,0.05)] dark:border-rose-400/15 dark:bg-slate-950/60">
+                <div className="mb-3 text-right">
+                  <p className="text-sm font-black text-foreground">إجراءات الخطة</p>
+                  <p className="text-xs leading-6 text-muted-foreground">إجراءات حساسة، لذلك أبقيناها هنا بعيدًا عن واجهة التخطيط اليومية.</p>
+                </div>
+                <div className="grid gap-3">
+                  <InteractiveButton type="button" variant="outline" className="min-h-12 rounded-[1.2rem]" onClick={() => setDeleteMode("meals")}>
+                    حذف الخطة الحالية فقط
+                    <Trash2 className="h-4 w-4" />
+                  </InteractiveButton>
+                  <InteractiveButton type="button" variant="outline" className="min-h-12 rounded-[1.2rem] border-rose-500/25 text-rose-700 dark:text-rose-300" onClick={() => setDeleteMode("all")}>
+                    إعادة ضبط الوجبات والتفضيلات
+                    <AlertTriangle className="h-4 w-4" />
+                  </InteractiveButton>
+                </div>
+              </section>
             </div>
             {isAdmin ? (
-              <div className="rounded-[1.5rem] border border-dashed border-border/60 bg-background/55 p-4 dark:bg-slate-950/45">
+              <div className="rounded-[1.5rem] border border-dashed border-slate-300/80 bg-white/55 p-4 dark:border-slate-600/70 dark:bg-slate-950/45">
                 <button type="button" className="flex w-full items-center justify-between gap-3 text-right" onClick={() => setDebugOpen((value) => !value)}>
-                  <InteractiveButton type="button" variant="ghost" size="sm" className="rounded-2xl">
-                    {debugOpen ? "إخفاء" : "عرض"}
-                  </InteractiveButton>
                   <div className="text-right">
                     <p className="text-base font-black text-foreground">لوحة تشخيص الإدارة</p>
                     <p className="text-xs text-muted-foreground">أثر الخادم وأخطاء التوليد يظهر هنا فقط للمشرف.</p>
                   </div>
+                  <InteractiveButton type="button" variant="ghost" size="sm" className="rounded-2xl">
+                    {debugOpen ? "إخفاء" : "عرض"}
+                  </InteractiveButton>
                 </button>
                 <AnimatePresence initial={false}>
                   {debugOpen ? (

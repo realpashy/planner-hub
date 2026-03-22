@@ -483,6 +483,71 @@ const GROUP_LABELS: Record<string, string> = {
   spices: "بهارات وصلصات",
 };
 
+const GROUP_ORDER = ["produce", "dairy_fridge", "meats", "pantry", "bakery", "frozen", "snacks", "spices"] as const;
+
+export const GROCERY_NORMALIZATION_EXAMPLES = [
+  ["120غ صدر دجاج مشوي", "150غ صدر دجاج بدون جلد", "صدور دجاج 150غ"],
+  ["طماطم كرزية", "2 حبة طماطم", "طماطم مقطعة"],
+  ["زبادي يوناني 170غ", "170 غ زبادي", "علبة زبادي"],
+] as const;
+
+function normalizeIngredientText(label: string) {
+  return label
+    .toLowerCase()
+    .replace(/[.,،:;()]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function extractIngredientMeasure(label: string) {
+  const value = normalizeIngredientText(label);
+  const gramsMatch = value.match(/(\d+(?:\.\d+)?)\s*(غ|غم|جرام|جرامًا|جرامات|g|gm|gram|grams)/i);
+  if (gramsMatch) {
+    return {
+      grams: Number(gramsMatch[1]),
+      units: 0,
+    };
+  }
+
+  const unitMatch = value.match(/(\d+(?:\.\d+)?)/);
+  return {
+    grams: 0,
+    units: unitMatch ? Number(unitMatch[1]) : 0,
+  };
+}
+
+function canonicalIngredientLabel(rawLabel: string) {
+  const value = normalizeIngredientText(rawLabel)
+    .replace(/(\d+(?:\.\d+)?)\s*(غ|غم|جرام|جرامًا|جرامات|g|gm|gram|grams)/gi, " ")
+    .replace(/\d+(?:\.\d+)?/g, " ")
+    .replace(/(مشوي|المشوي|مسلوق|المسلوق|مقلي|مفروم|طازج|بدون جلد|قليل الدسم|كامل الدسم|شرائح|مكعبات|مقطع|مقطعة|صغير|صغيرة|متوسط|متوسطة|كبير|كبيرة|حسب الحاجة|يوناني|كرزية)/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (/(صدر دجاج|صدور دجاج)/.test(value)) return "صدور دجاج";
+  if (/(طماطم|بندورة)/.test(value)) return "طماطم";
+  if (/(خيار)/.test(value)) return "خيار";
+  if (/(زبادي|لبن زبادي|يوغرت|yogurt)/.test(value)) return "زبادي";
+  if (/(شوفان|oats|oat)/.test(value)) return "شوفان";
+  if (/(موز|banana)/.test(value)) return "موز";
+  if (/(تفاح|apple)/.test(value)) return "تفاح";
+  if (/(بيض|egg)/.test(value)) return "بيض";
+  if (/(تونة|tuna)/.test(value)) return "تونة";
+  if (/(أرز|رز|rice)/.test(value)) return "أرز";
+  if (/(خبز|توست|bread)/.test(value)) return "خبز";
+  if (/(حليب|milk)/.test(value)) return "حليب";
+  if (/(جبن|cheese)/.test(value)) return "جبن";
+  return value || rawLabel.trim();
+}
+
+function formatNormalizedQuantity(totalGrams: number, totalUnits: number, count: number) {
+  if (totalGrams > 0 && count > 1) return `${Math.round(totalGrams)}غ تقريبًا • ${count} حصص`;
+  if (totalGrams > 0) return `${Math.round(totalGrams)}غ تقريبًا`;
+  if (totalUnits > 1) return `${Math.round(totalUnits)} وحدات`;
+  if (count > 1) return `${count} حصص`;
+  return "حصة واحدة";
+}
+
 function toEmojiForMealType(mealType: MealType) {
   if (mealType === "breakfast") return "🍳";
   if (mealType === "lunch") return "🥗";
@@ -579,26 +644,32 @@ function markRepeats(days: PlannerDay[]) {
 }
 
 export function buildGroceryGroups(days: PlannerDay[], removedKeys: string[] = []) {
-  const merged = new Map<string, GroceryListItem>();
+  const merged = new Map<string, GroceryListItem & { totalGrams: number; totalUnits: number }>();
   const hidden = new Set(removedKeys);
   for (const day of days) {
     for (const meal of day.meals) {
       for (const ingredient of meal.ingredients) {
         const label = ingredient.trim();
         if (!label) continue;
-        const key = label.toLowerCase();
+        const canonicalLabel = canonicalIngredientLabel(label);
+        const key = canonicalLabel.toLowerCase();
         if (hidden.has(key)) continue;
+        const measure = extractIngredientMeasure(label);
         const existing = merged.get(key);
         if (existing) {
           existing.count += 1;
-          existing.quantity = existing.count > 1 ? `${existing.count}x` : existing.quantity;
+          existing.totalGrams += measure.grams;
+          existing.totalUnits += measure.units;
+          existing.quantity = formatNormalizedQuantity(existing.totalGrams, existing.totalUnits, existing.count);
         } else {
           merged.set(key, {
             key,
-            label,
-            quantity: "1x",
+            label: canonicalLabel,
+            quantity: formatNormalizedQuantity(measure.grams, measure.units, 1),
             checked: false,
             count: 1,
+            totalGrams: measure.grams,
+            totalUnits: measure.units,
           });
         }
       }
@@ -614,10 +685,14 @@ export function buildGroceryGroups(days: PlannerDay[], removedKeys: string[] = [
     groups.get(groupKey)!.items.push(item);
   }
 
-  return Array.from(groups.values()).map((group) => ({
-    ...group,
-    items: group.items.sort((a, b) => a.label.localeCompare(b.label)),
-  }));
+  return GROUP_ORDER.flatMap((groupKey) => {
+    const group = groups.get(groupKey);
+    if (!group) return [];
+    return [{
+      ...group,
+      items: group.items.sort((a, b) => a.label.localeCompare(b.label)),
+    }];
+  });
 }
 
 function buildPlanSuggestions(plan: WeeklyPlanRecord): PlannerSuggestionBundle {
