@@ -5,11 +5,7 @@
   "framework": "vite",
   "functions": {
     "api/index.ts": {
-      "includeFiles": [
-        "server/**",
-        "shared/**",
-        "data/**"
-      ]
+      "includeFiles": "{server/**,shared/**,data/**}"
     }
   },
   "rewrites": [
