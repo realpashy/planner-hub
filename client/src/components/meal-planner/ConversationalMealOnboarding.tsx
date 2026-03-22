@@ -5,13 +5,14 @@ import type { LucideIcon } from "lucide-react";
 import {
   ArrowUpLeft,
   Bot,
-  Check,
   ChevronLeft,
   ChevronRight,
+  Clock3,
   MoonStar,
   RefreshCcw,
   Sparkles,
   SunMedium,
+  X,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { PlannerMetaBadge } from "@/components/meal-planner/PlannerMetaBadge";
@@ -39,6 +40,7 @@ const NUMERIC_QUESTION_IDS = ["caloriesTarget", "age", "heightCm", "weightKg", "
 const BOOLEAN_QUESTION_SET = new Set<QuestionId>(BOOLEAN_QUESTION_IDS);
 const TAG_INPUT_QUESTION_SET = new Set<QuestionId>(TAG_INPUT_QUESTION_IDS);
 const NUMERIC_QUESTION_SET = new Set<QuestionId>(NUMERIC_QUESTION_IDS);
+const ONBOARDING_SESSION_STORAGE_KEY = "planner_hub_meal_onboarding_session_v1";
 
 type QuestionType =
   | "choice-single"
@@ -82,6 +84,16 @@ type HistoryEntry = {
   title: string;
   prompt: string;
   answer: string;
+};
+
+type OnboardingSessionSnapshot = {
+  started: boolean;
+  mode: "welcome" | "question" | "review";
+  activeQuestionId: QuestionId;
+  committedPreferences: PlannerPreferences;
+  drafts: DraftState;
+  historyOrder: QuestionId[];
+  returnToReviewAfterAnswer: boolean;
 };
 
 type QuestionConfig = {
@@ -187,16 +199,16 @@ function answerGridClass(optionCount: number, centered = false) {
   if (optionCount <= 3) {
     return cn("grid gap-3", optionCount === 2 ? "grid-cols-2" : "grid-cols-3");
   }
-  return cn("flex flex-wrap gap-3", centered ? "justify-center" : "justify-start");
+  return cn("flex flex-wrap gap-3", centered ? "justify-center" : "justify-end");
 }
 
 function answerButtonClass(active: boolean, fillWidth = false) {
   return cn(
-    "inline-flex min-h-12 items-center justify-center rounded-[1.25rem] border px-4 py-3 text-sm font-bold transition text-center",
+    "inline-flex min-h-12 items-center justify-center rounded-[1.25rem] border px-4 py-3 text-sm font-bold text-center transition",
     fillWidth && "w-full",
     active
-      ? "border-primary/35 bg-[linear-gradient(180deg,rgba(99,102,241,0.14),rgba(99,102,241,0.08))] text-primary shadow-[0_12px_26px_rgba(99,102,241,0.12)]"
-      : "border-border/70 bg-white/82 text-foreground hover:border-primary/20 hover:bg-primary/5 dark:bg-slate-950/55",
+      ? "border-slate-500/35 bg-[linear-gradient(180deg,rgba(15,23,42,0.07),rgba(15,23,42,0.02))] text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.52),0_8px_20px_rgba(15,23,42,0.04)] dark:border-white/15 dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.04))]"
+      : "border-border/70 bg-white/82 text-foreground hover:border-slate-400/35 hover:bg-slate-900/[0.03] dark:bg-slate-950/55 dark:hover:bg-white/[0.04]",
   );
 }
 
@@ -359,12 +371,45 @@ export function ConversationalMealOnboarding({
   }, [initialPreferences, started]);
 
   useEffect(() => {
+    if (typeof window === "undefined" || started) return;
+    try {
+      const raw = window.localStorage.getItem(ONBOARDING_SESSION_STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as Partial<OnboardingSessionSnapshot>;
+      if (!parsed.started || !parsed.activeQuestionId || !parsed.committedPreferences) return;
+      setStarted(true);
+      setMode(parsed.mode === "review" ? "review" : parsed.mode === "question" ? "question" : "welcome");
+      setActiveQuestionId(parsed.activeQuestionId);
+      setCommittedPreferences(normalizePreferences(parsed.committedPreferences as PlannerPreferences));
+      setDrafts(typeof parsed.drafts === "object" && parsed.drafts ? (parsed.drafts as DraftState) : {});
+      setHistoryOrder(Array.isArray(parsed.historyOrder) ? (parsed.historyOrder as QuestionId[]) : []);
+      setReturnToReviewAfterAnswer(Boolean(parsed.returnToReviewAfterAnswer));
+    } catch {
+      window.localStorage.removeItem(ONBOARDING_SESSION_STORAGE_KEY);
+    }
+  }, [started]);
+
+  useEffect(() => {
     if (!generating) return;
     const timer = window.setInterval(() => {
       setLoadingLineIndex((current) => (current + 1) % GENERATION_LINES.length);
-    }, 1800);
+    }, 2400);
     return () => window.clearInterval(timer);
   }, [generating]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !started) return;
+    const snapshot: OnboardingSessionSnapshot = {
+      started,
+      mode,
+      activeQuestionId,
+      committedPreferences,
+      drafts,
+      historyOrder,
+      returnToReviewAfterAnswer,
+    };
+    window.localStorage.setItem(ONBOARDING_SESSION_STORAGE_KEY, JSON.stringify(snapshot));
+  }, [activeQuestionId, committedPreferences, drafts, historyOrder, mode, returnToReviewAfterAnswer, started]);
 
   const visibleQuestions = useMemo(
     () => QUESTIONS.filter((question) => !question.showWhen || question.showWhen(committedPreferences)),
@@ -401,6 +446,10 @@ export function ConversationalMealOnboarding({
     [committedPreferences.heightCm, committedPreferences.weightKg],
   );
   const canUseSavedPreferences = useMemo(() => hasMeaningfulSavedPreferences(savedPreferences), [savedPreferences]);
+  const shouldShowCurrentSelection = Boolean(
+    activeQuestion &&
+      (historyOrder.includes(activeQuestion.id) || returnToReviewAfterAnswer || mode === "review"),
+  );
 
   const updateCommitted = (patch: Partial<PlannerPreferences>) => {
     const nextPreferences = normalizePreferences({
@@ -502,6 +551,9 @@ export function ConversationalMealOnboarding({
     onPreferencesSync(normalized);
     try {
       await onGenerate(normalized, replaceCurrent);
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem(ONBOARDING_SESSION_STORAGE_KEY);
+      }
     } catch (error) {
       showFeedbackToast({
         title: "تعذر توليد الخطة",
@@ -549,8 +601,7 @@ export function ConversationalMealOnboarding({
       return (
         <div className={answerGridClass(options.length || 4, true)}>
           {options.map((option) => {
-            const active = answerSummary(activeQuestion, { ...committedPreferences, [activeQuestion.id]: option.value } as PlannerPreferences) === option.label ||
-              String(committedPreferences[activeQuestion.id as keyof PlannerPreferences]) === option.value;
+            const active = shouldShowCurrentSelection && String(committedPreferences[activeQuestion.id as keyof PlannerPreferences]) === option.value;
             return (
               <button
                 key={option.value}
@@ -567,7 +618,7 @@ export function ConversationalMealOnboarding({
     }
 
     if (activeQuestion.type === "yes-no") {
-      const currentValue = Boolean(committedPreferences[activeQuestion.id as keyof PlannerPreferences]);
+      const currentValue = shouldShowCurrentSelection ? Boolean(committedPreferences[activeQuestion.id as keyof PlannerPreferences]) : null;
       return (
         <div className={answerGridClass(2, true)}>
           {[
@@ -601,7 +652,7 @@ export function ConversationalMealOnboarding({
               className="h-12 rounded-[1.35rem] border-white/60 bg-white/75 text-right shadow-[0_18px_36px_rgba(15,23,42,0.05)] dark:border-white/10 dark:bg-slate-950/55"
               dir="rtl"
             />
-            <div className="flex min-h-10 flex-wrap justify-start gap-2">
+            <div className="flex min-h-10 flex-wrap justify-end gap-2">
               {selectedValues.length ? (
                 selectedValues.map((value) => (
                   <button
@@ -612,9 +663,9 @@ export function ConversationalMealOnboarding({
                         cuisinePreferences: selectedValues.filter((item) => item !== value),
                       })
                     }
-                    className="inline-flex items-center gap-2 rounded-full bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground shadow-[0_14px_28px_rgba(99,102,241,0.2)]"
+                    className="relative inline-flex min-h-11 items-center rounded-[1.05rem] border border-slate-400/35 bg-[linear-gradient(180deg,rgba(15,23,42,0.06),rgba(15,23,42,0.03))] px-4 py-2 pe-4 ps-9 text-xs font-semibold text-foreground shadow-[0_10px_22px_rgba(15,23,42,0.04)] transition hover:border-slate-500/45 dark:border-white/15 dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.04))]"
                   >
-                    <span className="text-primary-foreground/80">إزالة</span>
+                    <X className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                     {value}
                   </button>
                 ))
@@ -622,9 +673,9 @@ export function ConversationalMealOnboarding({
                 <p className="text-xs leading-6 text-muted-foreground">اختر مطابخك المفضلة إن وُجدت، أو اتركها مفتوحة لنطاق أوسع.</p>
               )}
             </div>
-            <div className="flex flex-wrap justify-start gap-3">
+            <div className="flex flex-wrap justify-end gap-3">
               {filteredOptions.map((option) => {
-                const active = selectedValues.includes(option.value);
+                const active = shouldShowCurrentSelection && selectedValues.includes(option.value);
                 return (
                   <button
                     key={option.value}
@@ -658,7 +709,7 @@ export function ConversationalMealOnboarding({
         <div className="space-y-4">
           <div className={answerGridClass((activeQuestion.options ?? []).length || 4)}>
             {activeQuestion.options?.map((option) => {
-              const active = selectedValues.includes(option.value);
+              const active = shouldShowCurrentSelection && selectedValues.includes(option.value);
               return (
                 <button
                   key={option.value}
@@ -770,7 +821,7 @@ export function ConversationalMealOnboarding({
           dir="rtl"
         />
         {chips.length ? (
-          <div className="flex flex-wrap justify-start gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
             {chips.map((chip) => (
               <button key={chip} type="button" onClick={() => updateDraft(activeQuestion.id, rawDraft ? `${rawDraft}${rawDraft.endsWith(" ") ? "" : " "}${chip}` : chip)} className="rounded-full border border-border/60 bg-white/70 px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:border-primary/20 hover:text-primary dark:bg-slate-950/55">
                 {chip}
@@ -779,9 +830,9 @@ export function ConversationalMealOnboarding({
           </div>
         ) : null}
         {committedItems.length ? (
-          <div className="flex flex-wrap justify-start gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
             {committedItems.map((item) => (
-              <span key={item} className="rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary">
+              <span key={item} className="rounded-full border border-slate-300/60 bg-slate-900/[0.04] px-3 py-1.5 text-xs font-semibold text-foreground dark:border-white/10 dark:bg-white/[0.05]">
                 {item}
               </span>
             ))}
@@ -846,19 +897,17 @@ export function ConversationalMealOnboarding({
               <Sparkles className="h-8 w-8" />
             </motion.div>
             <h2 className="mt-6 text-3xl font-black tracking-tight text-foreground">نبني الخطة الأولى الآن</h2>
-            <div className="mt-4 space-y-3">
-              <div className="flex flex-row-reverse items-center justify-between text-xs font-bold text-primary/80">
-                <span>{loadingLineIndex + 1}/{GENERATION_LINES.length}</span>
-                <span>{GENERATION_LINES[loadingLineIndex]}</span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-primary/10">
+            <div className="mt-4 space-y-3 text-right">
+              <p className="text-sm font-bold text-primary/85">{GENERATION_LINES[loadingLineIndex]}</p>
+              <div className="relative h-2 overflow-hidden rounded-full bg-primary/10">
                 <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${((loadingLineIndex + 1) / GENERATION_LINES.length) * 100}%` }}
-                  transition={{ duration: 0.9, ease: "easeOut" }}
-                  className="h-full rounded-full bg-[linear-gradient(90deg,rgba(99,102,241,0.92),rgba(56,189,248,0.88))]"
+                  initial={{ x: "-45%" }}
+                  animate={{ x: ["-45%", "145%"] }}
+                  transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
+                  className="absolute inset-y-0 w-[42%] rounded-full bg-[linear-gradient(90deg,rgba(99,102,241,0.92),rgba(56,189,248,0.88))]"
                 />
               </div>
+              <p className="text-xs leading-6 text-muted-foreground">نحاول إنهاء الطلب بسرعة ومن دون فقدان إجاباتك الحالية.</p>
             </div>
             {errorMessage ? <p className="mt-5 rounded-full bg-rose-500/10 px-4 py-2 text-sm font-semibold text-rose-600 dark:text-rose-300">{errorMessage}</p> : null}
           </div>
@@ -870,7 +919,7 @@ export function ConversationalMealOnboarding({
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(129,140,248,0.18),transparent_30%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_52%,#f8fafc_100%)] px-4 py-6 dark:bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.22),transparent_22%),linear-gradient(180deg,#020617_0%,#0f172a_46%,#020617_100%)]" dir="rtl">
       <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-6xl flex-col gap-6">
-        <header className="flex items-start justify-between gap-4">
+        <header className="flex flex-row-reverse items-start justify-between gap-4">
           <div className="flex-1 text-right">
             <p className="text-xs font-bold tracking-[0.24em] text-primary">MEAL PLANNER</p>
             <h1 className="mt-1 text-2xl font-black tracking-tight text-foreground md:text-3xl">{mode === "review" ? "المراجعة النهائية" : currentStepTitle}</h1>
@@ -890,7 +939,7 @@ export function ConversationalMealOnboarding({
           <motion.div animate={{ width: `${(currentStep / 9) * 100}%` }} transition={{ duration: 0.22, ease: "easeOut" }} className="h-full rounded-full bg-[linear-gradient(90deg,rgba(99,102,241,0.92),rgba(56,189,248,0.88))]" />
         </div>
 
-        <div className="flex flex-1 flex-col gap-6 xl:flex-row">
+        <div className="flex flex-1 flex-col gap-6 xl:flex-row-reverse">
           <main className="order-1 flex-1 xl:basis-[64%]">
             <div className="rounded-[2.4rem] border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.86),rgba(244,247,255,0.92))] p-6 shadow-[0_36px_120px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.84),rgba(2,6,23,0.92))] md:p-8">
               {errorMessage ? <div className="mb-5 rounded-[1.2rem] border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-right text-sm leading-7 text-rose-700 dark:text-rose-300">{errorMessage}</div> : null}
@@ -937,7 +986,7 @@ export function ConversationalMealOnboarding({
                     <p className="text-sm font-black text-foreground">أي شيء إضافي تحب تضيفه قبل توليد الخطة؟</p>
                     <Textarea value={committedPreferences.additionalNotes ?? ""} onChange={(event) => updateCommitted({ additionalNotes: event.target.value })} placeholder="اكتب ملاحظة أخيرة فقط إذا كانت ستؤثر فعلاً على الخطة." className="mt-3 min-h-[110px] rounded-[1.4rem] border-white/60 bg-white/78 text-right shadow-none dark:border-white/10 dark:bg-slate-950/60" dir="rtl" />
                   </div>
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-col gap-3 sm:flex-row-reverse sm:items-center sm:justify-between">
                     {hasActivePlan ? (
                       <InteractiveButton type="button" variant="outline" className="rounded-full px-5" onClick={() => submitPlan(true)}>
                         <RefreshCcw className="h-4 w-4" />
@@ -964,7 +1013,7 @@ export function ConversationalMealOnboarding({
                       </motion.div>
                     ) : null}
                   </AnimatePresence>
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-col gap-3 sm:flex-row-reverse sm:items-center sm:justify-between">
                     <div className="flex flex-wrap items-center gap-3">
                       {activeQuestion?.optional ? (
                         <button type="button" className="text-sm font-semibold text-muted-foreground transition hover:text-foreground" onClick={() => {
@@ -993,7 +1042,7 @@ export function ConversationalMealOnboarding({
 
           <aside className="order-2 xl:w-[24rem] xl:min-w-[24rem]">
             <div className="rounded-[2rem] border border-white/60 bg-white/62 p-4 shadow-[0_20px_50px_rgba(15,23,42,0.06)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/48">
-              <div className="mb-3 flex items-center justify-between">
+              <div className="mb-3 flex flex-row-reverse items-center justify-between">
                 <PlannerMetaBadge icon={MoonStar} label="السياق الحديث" tone="accent" />
                 <span className="text-xs text-muted-foreground">آخر {Math.min(historyEntries.length, 10)} إجابات</span>
               </div>
@@ -1034,13 +1083,16 @@ function ConversationTimeField({
   return (
     <div className="rounded-[1.45rem] border border-white/60 bg-white/78 p-4 text-right shadow-[0_14px_30px_rgba(15,23,42,0.05)] dark:border-white/10 dark:bg-slate-950/55">
       <p className="mb-3 text-sm font-black text-foreground">{label}</p>
-      <Input
-        type="time"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-12 rounded-[1.1rem] border-border/70 bg-background/85 text-right shadow-none"
-        dir="rtl"
-      />
+      <div className="relative">
+        <Input
+          type="time"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          className="h-12 rounded-[1.1rem] border-border/70 bg-background/85 pl-11 pr-4 text-right shadow-none [direction:ltr] [appearance:textfield] [&::-webkit-calendar-picker-indicator]:opacity-0"
+          dir="ltr"
+        />
+        <Clock3 className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      </div>
     </div>
   );
 }

@@ -38,6 +38,19 @@ export interface MealPlannerQuotaResponse {
   remainingDayRegenerationsMonth?: number | null;
 }
 
+async function readJsonBody<T>(response: Response, fallbackMessage: string) {
+  const text = await response.text();
+  if (!text.trim()) {
+    throw new Error(fallbackMessage);
+  }
+
+  try {
+    return JSON.parse(text) as T;
+  } catch (error) {
+    throw new Error(error instanceof Error ? error.message : fallbackMessage);
+  }
+}
+
 export function aiMealToPlannerMeal(meal: AiMeal): MealPlanMeal {
   return {
     id: `${meal.mealType}_${meal.title}_${Math.random().toString(36).slice(2, 8)}`,
@@ -68,7 +81,7 @@ export async function fetchMealPlannerState() {
   if (!response.ok) {
     throw new Error((await response.text()) || "Failed to load meal planner state");
   }
-  return (await response.json()) as PlannerServerState;
+  return await readJsonBody<PlannerServerState>(response, "Failed to load meal planner state");
 }
 
 export async function fetchMealPlannerQuota() {
@@ -76,23 +89,23 @@ export async function fetchMealPlannerQuota() {
   if (!response.ok) {
     throw new Error((await response.text()) || "Failed to load meal planner quota");
   }
-  return (await response.json()) as MealPlannerQuotaResponse;
+  return await readJsonBody<MealPlannerQuotaResponse>(response, "Failed to load meal planner quota");
 }
 
 export async function saveMealPlannerPreferences(preferences: PlannerPreferences) {
   const response = await apiRequest("POST", "/api/meal-planner/preferences", { preferences });
-  return (await response.json()) as { ok: true; preferences: PlannerPreferences };
+  return await readJsonBody<{ ok: true; preferences: PlannerPreferences }>(response, "Failed to save preferences");
 }
 
 export async function generateWeekWithAi(preferences: PlannerPreferences, replaceCurrent = false) {
   const response = await apiRequest("POST", "/api/meal-planner/generate-week", { preferences, replaceCurrent });
-  return (await response.json()) as {
+  return await readJsonBody<{
     state: PlannerServerState;
     provider: "openai";
     source: "ai";
     debug?: string | null;
     cached?: boolean;
-  };
+  }>(response, "تعذر قراءة استجابة التوليد من الخادم.");
 }
 
 export async function editMealWithAi(payload: {
@@ -102,13 +115,13 @@ export async function editMealWithAi(payload: {
   editRequest: string;
 }) {
   const response = await apiRequest("POST", "/api/meal-planner/edit-meal", payload);
-  return (await response.json()) as {
+  return await readJsonBody<{
     meal: AiMeal;
     activePlan: WeeklyPlanRecord;
     provider: "openai";
     source: "ai";
     debug?: string | null;
-  };
+  }>(response, "تعذر قراءة استجابة تعديل الوجبة.");
 }
 
 export async function regenerateDayWithAi(payload: {
@@ -117,16 +130,16 @@ export async function regenerateDayWithAi(payload: {
   preferences: PlannerPreferences;
 }) {
   const response = await apiRequest("POST", "/api/meal-planner/regenerate-day", payload);
-  return (await response.json()) as {
+  return await readJsonBody<{
     day: AiDayPlan;
     activePlan: WeeklyPlanRecord;
     provider: "openai";
     source: "ai";
     debug?: string | null;
-  };
+  }>(response, "تعذر قراءة استجابة إعادة توليد اليوم.");
 }
 
 export async function deleteMealPlanRemote(mode: "meals" | "all") {
   const response = await apiRequest("POST", "/api/meal-planner/delete-plan", { mode });
-  return (await response.json()) as { ok: true; state: PlannerServerState };
+  return await readJsonBody<{ ok: true; state: PlannerServerState }>(response, "Failed to delete meal plan");
 }
