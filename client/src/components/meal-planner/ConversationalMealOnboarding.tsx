@@ -919,17 +919,25 @@ export function ConversationalMealOnboarding({
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(129,140,248,0.18),transparent_30%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_52%,#f8fafc_100%)] px-4 py-6 dark:bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.22),transparent_22%),linear-gradient(180deg,#020617_0%,#0f172a_46%,#020617_100%)]" dir="rtl">
-      <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-6xl flex-col gap-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-lime-50 to-white px-4 py-6 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900" dir="rtl">
+      {/* Decorative background */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute -top-40 right-1/4 h-96 w-96 rounded-full bg-gradient-to-l from-lime-300/20 to-transparent blur-3xl dark:from-lime-900/20" />
+        <div className="absolute bottom-1/3 left-0 h-80 w-80 rounded-full bg-gradient-to-r from-indigo-300/15 to-transparent blur-3xl dark:from-indigo-900/20" />
+      </div>
+
+      <div className="relative mx-auto flex min-h-[calc(100vh-3rem)] max-w-6xl flex-col gap-6">
         <header className="flex items-start justify-between gap-4">
           <div className="flex-1 text-right">
-            <p className="text-xs font-bold tracking-[0.24em] text-primary">MEAL PLANNER</p>
-            <h1 className="mt-1 text-2xl font-black tracking-tight text-foreground md:text-3xl">{mode === "review" ? "المراجعة النهائية" : currentStepTitle}</h1>
-            <p className="text-sm text-muted-foreground">الخطوة {currentStep} من 9</p>
+            <p className="text-xs font-bold tracking-widest text-lime-600 dark:text-lime-400">MEAL PLANNER</p>
+            <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white md:text-4xl">{mode === "review" ? "المراجعة النهائية" : currentStepTitle}</h1>
+            <p className="mt-1 text-sm font-semibold text-slate-600 dark:text-slate-400">
+              الخطوة <span className="text-lime-600 dark:text-lime-400">{currentStep}</span> من 9
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <InteractiveButton type="button" variant="ghost" size="icon" className="h-11 w-11 rounded-2xl bg-white/70 dark:bg-slate-950/55" asChild>
+            <InteractiveButton type="button" variant="ghost" size="icon" className="h-11 w-11 rounded-2xl bg-white/70 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700" asChild>
               <Link href="/">
                 <ArrowUpLeft className="h-5 w-5" />
               </Link>
@@ -937,14 +945,33 @@ export function ConversationalMealOnboarding({
           </div>
         </header>
 
-        <div className="h-1.5 overflow-hidden rounded-full bg-white/60 dark:bg-white/10">
-          <motion.div animate={{ width: `${(currentStep / 9) * 100}%` }} transition={{ duration: 0.22, ease: "easeOut" }} className="h-full rounded-full bg-[linear-gradient(90deg,rgba(99,102,241,0.92),rgba(56,189,248,0.88))]" />
+        {/* Enhanced Progress Bar */}
+        <div className="space-y-2">
+          <div className="h-2.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+            <motion.div
+              animate={{ width: `${(currentStep / 9) * 100}%` }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="h-full rounded-full bg-gradient-to-r from-lime-400 to-lime-500 shadow-lg shadow-lime-500/40"
+            />
+          </div>
+          <div className="flex justify-between text-xs font-bold text-slate-600 dark:text-slate-400">
+            <span>{currentStep} من 9</span>
+            <span>{Math.round((currentStep / 9) * 100)}%</span>
+          </div>
         </div>
 
         <div className="flex flex-1 flex-col gap-6 xl:flex-row">
           <main className="order-1 flex-1 xl:basis-[64%]">
-            <div className="rounded-[2.4rem] border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.86),rgba(244,247,255,0.92))] p-6 shadow-[0_36px_120px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.84),rgba(2,6,23,0.92))] md:p-8">
-              {errorMessage ? <div className="mb-5 rounded-[1.2rem] border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-right text-sm leading-7 text-rose-700 dark:text-rose-300">{errorMessage}</div> : null}
+            <div className="rounded-3xl border-2 border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-800 md:p-8">
+              {errorMessage ? (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mb-6 rounded-2xl border-2 border-red-200 bg-red-50 px-4 py-3 text-right text-sm font-semibold leading-7 text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300"
+                >
+                  {errorMessage}
+                </motion.div>
+              ) : null}
 
               {mode === "welcome" ? (
                 <div className="space-y-8 text-right">
@@ -1059,17 +1086,26 @@ export function ConversationalMealOnboarding({
 
 function AssistantPrompt({ title, prompt, helper }: { title: string; prompt: string; helper?: string }) {
   return (
-    <div className="space-y-3 text-right">
-      <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
-        <Bot className="h-3.5 w-3.5" />
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-4 text-right"
+    >
+      <div className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-lime-100 to-green-100 px-4 py-2 text-sm font-bold text-lime-700 dark:from-lime-950/50 dark:to-green-950/50 dark:text-lime-300">
+        <Bot className="h-4 w-4" />
         مساعدك الغذائي
       </div>
-      <div className="space-y-2">
-        <h2 className="text-3xl font-black tracking-tight text-foreground md:text-4xl">{title}</h2>
-        <p className="max-w-2xl text-sm leading-8 text-muted-foreground">{prompt}</p>
-        {helper ? <p className="text-xs leading-6 text-muted-foreground">{helper}</p> : null}
+      <div className="space-y-3">
+        <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white md:text-4xl">{title}</h2>
+        <p className="max-w-2xl text-base leading-7 text-slate-600 dark:text-slate-300">{prompt}</p>
+        {helper && (
+          <p className="inline-flex items-center gap-2 rounded-xl bg-lime-100/50 px-3 py-2 text-xs font-semibold leading-5 text-lime-700 dark:bg-lime-950/30 dark:text-lime-300">
+            ⏱️ {helper}
+          </p>
+        )}
       </div>
-    </div>
+    </motion.div>
   );
 }
 

@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
-import { Apple, Coffee, Salad, Soup } from "lucide-react";
+import { Apple, Coffee, Salad, Soup, Clock, Flame } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type MealPlanMeal, type PlannerDay } from "@/lib/meal-planner";
+import { Button } from "@/components/ui/button";
 
 interface PlannerDayCardProps {
   day: PlannerDay;
@@ -16,86 +17,147 @@ function getMealIcon(meal: MealPlanMeal) {
   return Apple;
 }
 
-function MacroPill({ value }: { value: string }) {
-  return (
-    <span className="inline-flex items-center rounded-full border border-slate-200/80 bg-white/84 px-3 py-1 text-xs font-semibold text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] dark:border-slate-700/70 dark:bg-white/10">
-      {value}
-    </span>
-  );
+function getMealTypeColor(mealType: string) {
+  const colors = {
+    breakfast: "border-amber-200 bg-amber-100 text-amber-700 dark:border-amber-400/20 dark:bg-amber-500/15 dark:text-amber-200",
+    lunch: "border-emerald-200 bg-emerald-100 text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-500/15 dark:text-emerald-200",
+    dinner: "border-indigo-200 bg-indigo-100 text-indigo-700 dark:border-indigo-400/20 dark:bg-indigo-500/15 dark:text-indigo-200",
+    snack: "border-rose-200 bg-rose-100 text-rose-700 dark:border-rose-400/20 dark:bg-rose-500/15 dark:text-rose-200",
+  };
+  return colors[mealType as keyof typeof colors] || colors.snack;
 }
 
 export function PlannerDayCard({ day, selected = false, onOpen }: PlannerDayCardProps) {
+  const totalCalories = day.nutrition.calories;
+  const totalProtein = day.nutrition.protein;
+
   return (
     <motion.button
       type="button"
       layout
-      initial={{ opacity: 0, y: 14 }}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -2 }}
-      whileTap={{ scale: 0.995 }}
+      whileHover={{ y: -4, transition: { duration: 0.2 } }}
+      whileTap={{ scale: 0.98 }}
       onClick={onOpen}
       dir="rtl"
       className={cn(
-        "w-full rounded-[1.65rem] border p-5 text-right shadow-[0_18px_42px_rgba(15,23,42,0.08)] transition-all dark:shadow-[0_22px_52px_rgba(2,6,23,0.44)]",
+        "group relative w-full overflow-hidden rounded-3xl border-2 shadow-lg transition-all duration-300",
         selected
-          ? "border-indigo-300/80 bg-[radial-gradient(circle_at_top_right,rgba(129,140,248,0.16),transparent_22%),linear-gradient(180deg,rgba(255,255,255,0.98),rgba(238,242,255,0.92))] shadow-[0_22px_54px_rgba(99,102,241,0.14)] dark:border-indigo-400/25 dark:bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.18),transparent_18%),linear-gradient(180deg,rgba(49,46,129,0.22),rgba(15,23,42,0.88))]"
-          : "border-white/60 bg-[radial-gradient(circle_at_top_right,rgba(129,140,248,0.08),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.92))] hover:border-indigo-200/80 hover:shadow-[0_22px_54px_rgba(15,23,42,0.1)] dark:border-white/10 dark:bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.08),transparent_18%),linear-gradient(180deg,rgba(30,41,59,0.9),rgba(15,23,42,0.82))]",
+          ? "border-lime-400 bg-gradient-to-br from-lime-50 to-white shadow-xl dark:border-lime-500/50 dark:from-slate-900 dark:to-slate-800"
+          : "border-slate-200 bg-white hover:border-lime-300 hover:shadow-2xl dark:border-slate-700 dark:bg-slate-800 dark:hover:border-lime-500/50"
       )}
     >
-      <div className="space-y-4">
-        <div className="flex items-center justify-between gap-4">
-          <div className="text-xs font-semibold text-muted-foreground">{day.busyDay ? "إيقاع أخف لهذا اليوم" : "خطة يومية واضحة"}</div>
-          <div className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_0_6px_rgba(16,185,129,0.08)]" />
-        </div>
+      {/* Decorative accent bar */}
+      <div className={cn("absolute inset-x-0 top-0 h-1 bg-gradient-to-r", selected ? "from-lime-400 to-lime-500" : "from-slate-300 to-slate-200")} />
 
+      <div className="space-y-5 p-6 text-right">
+        {/* Day Header */}
         <div className="flex items-start justify-between gap-4">
-          <div className="space-y-1 text-right">
-            <h3 className="text-xl font-black tracking-tight text-foreground">{day.dayName}</h3>
-            {day.busyDay ? <p className="text-xs text-muted-foreground">يوم خفيف التحضير ومناسب للضغط اليومي.</p> : null}
+          <div className="flex-1 space-y-2">
+            <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white">{day.dayName}</h3>
+            {day.busyDay && (
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">
+                <Clock className="h-3 w-3" />
+                يوم مزدحم
+              </div>
+            )}
           </div>
-          <div className="rounded-full border border-indigo-200/70 bg-white/84 px-3 py-1 text-xs font-semibold text-slate-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] dark:border-indigo-400/20 dark:bg-white/10 dark:text-slate-300">
+          <div className="rounded-xl border-2 border-lime-300 bg-lime-100 px-3 py-2 text-xs font-bold text-lime-700 dark:border-lime-500/50 dark:bg-lime-950/50 dark:text-lime-300">
             {day.dateLabel}
           </div>
         </div>
 
-        <div className="space-y-2 rounded-[1.15rem] border border-slate-200/70 bg-white/70 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] dark:border-slate-700/60 dark:bg-white/[0.04]">
+        {/* Meals List */}
+        <div className="space-y-2 rounded-2xl border-2 border-slate-100 bg-gradient-to-br from-slate-50 to-white p-4 dark:border-slate-700/50 dark:from-slate-700/30 dark:to-slate-800/20">
           {day.meals.map((meal, index) => {
             const Icon = getMealIcon(meal);
+            const mealTypeLabels = {
+              breakfast: "فطور",
+              lunch: "غداء",
+              dinner: "عشاء",
+              snack: "سناك",
+            };
+            const label = mealTypeLabels[meal.mealType as keyof typeof mealTypeLabels] || "وجبة";
+
             return (
-              <div
+              <motion.div
                 key={meal.id}
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.05 }}
                 className={cn(
-                  "flex items-center justify-between gap-3 rounded-[0.95rem] px-2 py-2",
-                  index !== day.meals.length - 1 && "border-b border-dashed border-slate-200/70 dark:border-slate-700/60",
+                  "flex items-center justify-between gap-3 rounded-xl px-3 py-2.5",
+                  index !== day.meals.length - 1 && "border-b border-slate-200 dark:border-slate-600/50"
                 )}
               >
-                <p className="line-clamp-1 text-sm font-semibold text-foreground">{meal.title}</p>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <span className="text-xs font-semibold">{meal.mealType === "breakfast" ? "فطور" : meal.mealType === "lunch" ? "غداء" : meal.mealType === "dinner" ? "عشاء" : "سناك"}</span>
-                  <span
-                    className={cn(
-                      "flex h-8 w-8 items-center justify-center rounded-full border shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]",
-                      meal.mealType === "breakfast" && "border-amber-200/80 bg-amber-100 text-amber-700 dark:border-amber-400/20 dark:bg-amber-500/15 dark:text-amber-200",
-                      meal.mealType === "lunch" && "border-emerald-200/80 bg-emerald-100 text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-500/15 dark:text-emerald-200",
-                      meal.mealType === "dinner" && "border-indigo-200/80 bg-indigo-100 text-indigo-700 dark:border-indigo-400/20 dark:bg-indigo-500/15 dark:text-indigo-200",
-                      meal.mealType === "snack" && "border-rose-200/80 bg-rose-100 text-rose-700 dark:border-rose-400/20 dark:bg-rose-500/15 dark:text-rose-200",
-                    )}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </span>
+                <div className="flex-1 text-right">
+                  <p className="line-clamp-1 font-semibold text-slate-900 dark:text-white">{meal.title}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{label}</p>
                 </div>
-              </div>
+                <div className={cn("flex h-9 w-9 items-center justify-center rounded-full border-2 shadow-md", getMealTypeColor(meal.mealType))}>
+                  <Icon className="h-4 w-4" />
+                </div>
+              </motion.div>
             );
           })}
         </div>
 
-        <div className="flex flex-wrap justify-end gap-2">
-          <MacroPill value={`${day.meals.length} وجبات`} />
-          <MacroPill value={`${day.nutrition.calories} kcal`} />
-          <MacroPill value={`${day.nutrition.protein}غ بروتين`} />
-          <MacroPill value={`${day.nutrition.carbs}غ كربوهيدرات`} />
-          <MacroPill value={`${day.nutrition.fat}غ دهون`} />
+        {/* Nutrition Stats - Prominent Display */}
+        <div className="grid grid-cols-3 gap-3">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 }}
+            className="rounded-2xl border-2 border-slate-200 bg-gradient-to-br from-red-50 to-orange-50 p-3 text-center dark:border-slate-700 dark:from-red-950/30 dark:to-orange-950/30"
+          >
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500 text-white shadow-md mx-auto mb-1">
+              <Flame className="h-4 w-4" />
+            </div>
+            <p className="text-xs text-slate-600 dark:text-slate-400">السعرات</p>
+            <p className="text-lg font-extrabold text-slate-900 dark:text-white">{totalCalories}</p>
+            <p className="text-xs text-slate-500">kcal</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.25 }}
+            className="rounded-2xl border-2 border-slate-200 bg-gradient-to-br from-lime-50 to-emerald-50 p-3 text-center dark:border-slate-700 dark:from-lime-950/30 dark:to-emerald-950/30"
+          >
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-lime-500 text-white shadow-md mx-auto mb-1">
+              <span className="text-xs font-bold">P</span>
+            </div>
+            <p className="text-xs text-slate-600 dark:text-slate-400">البروتين</p>
+            <p className="text-lg font-extrabold text-slate-900 dark:text-white">{totalProtein}</p>
+            <p className="text-xs text-slate-500">غرام</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.3 }}
+            className="rounded-2xl border-2 border-slate-200 bg-gradient-to-br from-indigo-50 to-blue-50 p-3 text-center dark:border-slate-700 dark:from-indigo-950/30 dark:to-blue-950/30"
+          >
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500 text-white shadow-md mx-auto mb-1">
+              <span className="text-xs font-bold">C</span>
+            </div>
+            <p className="text-xs text-slate-600 dark:text-slate-400">الكربوهيدرات</p>
+            <p className="text-lg font-extrabold text-slate-900 dark:text-white">{day.nutrition.carbs}</p>
+            <p className="text-xs text-slate-500">غرام</p>
+          </motion.div>
         </div>
+
+        {/* CTA Button */}
+        <Button
+          className={cn(
+            "w-full rounded-xl font-bold text-base transition-all duration-300",
+            "bg-gradient-to-r from-lime-400 to-lime-500 text-slate-900 hover:from-lime-500 hover:to-lime-600 hover:shadow-lg"
+          )}
+          size="lg"
+        >
+          {selected ? "تعديل اليوم" : "عرض التفاصيل"}
+        </Button>
       </div>
     </motion.button>
   );
