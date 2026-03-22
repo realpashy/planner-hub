@@ -255,9 +255,9 @@ async function loadMealPlannerRuntime(): Promise<MealPlannerRuntime> {
   if (!mealPlannerRuntimePromise) {
     mealPlannerRuntimePromise = (async () => {
       const [{ initializeDatabase }, persistenceModule, serviceModule] = await Promise.all([
-        import("../server/db"),
-        import("../server/persistence"),
-        import("../server/meal-planner/service"),
+        import("../server/db.ts"),
+        import("../server/persistence.ts"),
+        import("../server/meal-planner/service.ts"),
       ]);
 
       return {
