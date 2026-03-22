@@ -1,5 +1,4 @@
-import { BrainCircuit, Leaf, Pill } from "lucide-react";
-import { PlannerMetaBadge } from "@/components/meal-planner/PlannerMetaBadge";
+import { BrainCircuit, Leaf, Sparkles } from "lucide-react";
 
 interface PlannerSuggestionModuleProps {
   suggestions: {
@@ -10,34 +9,32 @@ interface PlannerSuggestionModuleProps {
 }
 
 const ITEMS = [
-  { key: "nutritionInsight", icon: BrainCircuit, label: "رؤية غذائية" },
-  { key: "habitSuggestion", icon: Leaf, label: "اقتراح عادة" },
-  { key: "supplementPlaceholder", icon: Pill, label: "قسم المكملات لاحقًا" },
+  { key: "nutritionInsight", icon: BrainCircuit },
+  { key: "habitSuggestion", icon: Leaf },
+  { key: "supplementPlaceholder", icon: Sparkles },
 ] as const;
 
 export function PlannerSuggestionModule({ suggestions }: PlannerSuggestionModuleProps) {
   return (
-    <section className="rounded-[1.85rem] border border-white/60 bg-white/75 p-5 shadow-[0_18px_60px_rgba(15,23,42,0.05)] dark:border-white/10 dark:bg-slate-950/70" dir="rtl">
-      <div className="flex items-center justify-between gap-3">
-        <PlannerMetaBadge icon={BrainCircuit} label="اقتراحات ذكية" tone="accent" />
+    <section
+      className="rounded-[1.5rem] border border-white/60 bg-white/82 p-5 shadow-[0_14px_36px_rgba(15,23,42,0.05)] dark:border-white/10 dark:bg-slate-950/78 dark:shadow-[0_18px_46px_rgba(2,6,23,0.42)]"
+      dir="rtl"
+    >
+      <div className="flex items-center justify-between gap-4">
+        <div className="text-xs font-semibold text-primary">اقتراحات ذكية</div>
         <div className="text-right">
-          <p className="text-lg font-black text-foreground">إشارات لتحسين الأسبوع</p>
-          <p className="text-xs text-muted-foreground">خفيفة وواضحة وقابلة للتوسع لاحقًا</p>
+          <h3 className="text-lg font-bold text-foreground">ملاحظات خفيفة لهذا الأسبوع</h3>
+          <p className="text-sm text-muted-foreground">مختصرة، عملية، وغير مشتتة.</p>
         </div>
       </div>
 
-      <div className="mt-4 grid gap-3">
-        {ITEMS.map(({ key, icon: Icon, label }) => (
-          <div key={key} className="rounded-[1.35rem] border border-border/55 bg-background/70 p-4 dark:bg-white/5">
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                <Icon className="h-4 w-4" />
-              </div>
-              <div className="flex-1 text-right">
-                <p className="text-xs font-semibold text-muted-foreground">{label}</p>
-                <p className="mt-1 text-sm leading-7 text-foreground">{suggestions[key]}</p>
-              </div>
-            </div>
+      <div className="mt-4 space-y-3">
+        {ITEMS.map(({ key, icon: Icon }) => (
+          <div key={key} className="flex items-start gap-3 rounded-[1rem] px-1 py-1">
+            <p className="flex-1 text-right text-sm leading-7 text-foreground">{suggestions[key]}</p>
+            <span className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Icon className="h-4 w-4" />
+            </span>
           </div>
         ))}
       </div>

@@ -187,6 +187,7 @@ export interface WeeklyPlanRecord {
   days: PlannerDay[];
   grocery: GroceryGroup[];
   suggestions: PlannerSuggestionBundle;
+  removedGroceryKeys?: string[];
   usage: {
     monthlyGenerationsUsed: number;
     swapsUsed: number;
@@ -240,12 +241,10 @@ export interface PlannerDayMeta {
 }
 
 export interface PlannerDashboardSummary {
-  totalCalories: number;
   averageCalories: number;
-  totalProtein: number;
-  totalWater: number;
-  completionPercent: number;
-  remainingDays: number;
+  averageProtein: number;
+  averageMealsPerDay: number;
+  plannedDays: number;
 }
 
 export interface MealPlannerSummary {
@@ -449,17 +448,39 @@ export function getBMIFeedback(bmi: number | null) {
 
 function detectGroup(label: string) {
   const value = label.toLowerCase();
-  if (/(chicken|beef|turkey|tuna|salmon|fish|eggs|protein|yogurt|cheese)/.test(value)) return "protein";
-  if (/(rice|bread|oats|pasta|potato|quinoa|tortilla)/.test(value)) return "carbs";
-  if (/(tomato|cucumber|spinach|lettuce|broccoli|pepper|onion|avocado|banana|berries|fruit)/.test(value)) return "produce";
+  if (/(طماطم|خيار|بصل|فلفل|سبانخ|خس|بروكلي|موز|تفاح|برتقال|فواكه|خضار|tomato|cucumber|spinach|lettuce|broccoli|pepper|onion|banana|berries|fruit|vegetable)/.test(value)) {
+    return "produce";
+  }
+  if (/(لبن|حليب|زبادي|جبن|زبدة|كريمة|بيض|yogurt|milk|cheese|butter|cream|egg)/.test(value)) {
+    return "dairy_fridge";
+  }
+  if (/(دجاج|لحم|سمك|تونة|سلمون|حبش|روبيان|chicken|beef|fish|tuna|salmon|turkey|shrimp)/.test(value)) {
+    return "meats";
+  }
+  if (/(خبز|توست|صمون|كعك|لفائف|مخبوزات|bread|toast|bun|bagel|bakery)/.test(value)) {
+    return "bakery";
+  }
+  if (/(مجم|فروزن|مجمدة|frozen)/.test(value)) {
+    return "frozen";
+  }
+  if (/(شيبس|بار|بسكويت|سناك|snack|chips|cracker|bar)/.test(value)) {
+    return "snacks";
+  }
+  if (/(بهار|صلصة|كاتشب|خردل|زيت|خل|ملح|فلفل أسود|paprika|spice|sauce|ketchup|mustard|oil|vinegar|salt|pepper)/.test(value)) {
+    return "spices";
+  }
   return "pantry";
 }
 
 const GROUP_LABELS: Record<string, string> = {
-  protein: "البروتينات",
-  carbs: "الحبوب والكربوهيدرات",
-  produce: "الخضار والفواكه",
-  pantry: "أساسيات المطبخ",
+  produce: "خضار وفواكه",
+  dairy_fridge: "ألبان وبراد",
+  meats: "لحوم ودجاج وأسماك",
+  pantry: "مواد جافة ومؤن",
+  bakery: "خبز ومخبوزات",
+  frozen: "مجمدات",
+  snacks: "سناكات",
+  spices: "بهارات وصلصات",
 };
 
 function toEmojiForMealType(mealType: MealType) {
@@ -557,14 +578,16 @@ function markRepeats(days: PlannerDay[]) {
   }));
 }
 
-export function buildGroceryGroups(days: PlannerDay[]) {
+export function buildGroceryGroups(days: PlannerDay[], removedKeys: string[] = []) {
   const merged = new Map<string, GroceryListItem>();
+  const hidden = new Set(removedKeys);
   for (const day of days) {
     for (const meal of day.meals) {
       for (const ingredient of meal.ingredients) {
         const label = ingredient.trim();
         if (!label) continue;
         const key = label.toLowerCase();
+        if (hidden.has(key)) continue;
         const existing = merged.get(key);
         if (existing) {
           existing.count += 1;
@@ -613,10 +636,12 @@ export function enrichPlan(plan: WeeklyPlanRecord): WeeklyPlanRecord {
     ? plan.days.map((day, index) => normalizeDay((day ?? {}) as unknown as Record<string, unknown>, index))
     : [];
   const days = markRepeats(normalizedDays.filter((day) => activeDates.has(day.dateISO)));
+  const removedGroceryKeys = Array.isArray(plan.removedGroceryKeys) ? plan.removedGroceryKeys.map(String) : [];
   return {
     ...plan,
     days,
-    grocery: buildGroceryGroups(days),
+    removedGroceryKeys,
+    grocery: buildGroceryGroups(days, removedGroceryKeys),
     suggestions: plan.suggestions ?? buildPlanSuggestions({ ...plan, days, grocery: [], suggestions: { nutritionInsight: "", habitSuggestion: "", supplementPlaceholder: "" } }),
   };
 }
@@ -624,32 +649,26 @@ export function enrichPlan(plan: WeeklyPlanRecord): WeeklyPlanRecord {
 export function getDashboardSummary(plan: WeeklyPlanRecord | null): PlannerDashboardSummary {
   if (!plan) {
     return {
-      totalCalories: 0,
       averageCalories: 0,
-      totalProtein: 0,
-      totalWater: 0,
-      completionPercent: 0,
-      remainingDays: 0,
+      averageProtein: 0,
+      averageMealsPerDay: 0,
+      plannedDays: 0,
     };
   }
   const totals = plan.days.reduce(
     (acc, day) => {
       acc.totalCalories += day.nutrition.calories;
       acc.totalProtein += day.nutrition.protein;
-      acc.totalWater += day.nutrition.waterCups;
       acc.mealCount += day.meals.length;
-      acc.filled += day.meals.filter((meal) => Boolean(meal.title.trim())).length;
       return acc;
     },
-    { totalCalories: 0, totalProtein: 0, totalWater: 0, mealCount: 0, filled: 0 },
+    { totalCalories: 0, totalProtein: 0, mealCount: 0 },
   );
   return {
-    totalCalories: totals.totalCalories,
     averageCalories: plan.days.length ? Math.round(totals.totalCalories / plan.days.length) : 0,
-    totalProtein: totals.totalProtein,
-    totalWater: totals.totalWater,
-    completionPercent: totals.mealCount ? Math.round((totals.filled / totals.mealCount) * 100) : 0,
-    remainingDays: plan.days.length,
+    averageProtein: plan.days.length ? Math.round(totals.totalProtein / plan.days.length) : 0,
+    averageMealsPerDay: plan.days.length ? Number((totals.mealCount / plan.days.length).toFixed(1)) : 0,
+    plannedDays: plan.days.length,
   };
 }
 

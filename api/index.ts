@@ -35,6 +35,7 @@ type MealPlannerRuntime = {
   generateWeekForUser: (userId: string, body: unknown) => Promise<unknown>;
   editMealForUser: (userId: string, body: unknown) => Promise<unknown>;
   regenerateDayForUser: (userId: string, body: unknown) => Promise<unknown>;
+  updateGroceryItemForUser: (userId: string, body: unknown) => Promise<unknown>;
   deleteMealPlanForUser: (userId: string, mode: "meals" | "all") => Promise<unknown>;
 };
 
@@ -270,6 +271,7 @@ async function loadMealPlannerRuntime(): Promise<MealPlannerRuntime> {
         generateWeekForUser: serviceModule.generateWeekForUser,
         editMealForUser: serviceModule.editMealForUser,
         regenerateDayForUser: serviceModule.regenerateDayForUser,
+        updateGroceryItemForUser: serviceModule.updateGroceryItemForUser,
         deleteMealPlanForUser: serviceModule.deleteMealPlanForUser,
       };
     })().catch((error) => {
@@ -604,6 +606,19 @@ app.post("/api/meal-planner/regenerate-day", async (req, res, next) => {
         quota: (error as { quota?: unknown }).quota,
       });
     }
+    return next(error);
+  }
+});
+
+app.post("/api/meal-planner/grocery-item", async (req, res, next) => {
+  const auth = readAuthFromRequest(req);
+  if (!auth?.userId) return res.status(401).json({ message: "غير مصرح" });
+  try {
+    await ensureMealPlannerInit();
+    const runtime = await loadMealPlannerRuntime();
+    const result = await runtime.updateGroceryItemForUser(auth.userId, req.body);
+    return res.json(result);
+  } catch (error) {
     return next(error);
   }
 });

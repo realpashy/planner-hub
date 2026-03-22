@@ -22,6 +22,7 @@ import {
   generateWeekWithAi,
   regenerateDayWithAi,
   saveMealPlannerPreferences,
+  updateGroceryItemVisibility,
 } from "@/lib/ai/meal-planner-ai";
 
 type AdminDebugEntry = {
@@ -245,6 +246,23 @@ export function useMealPlanner() {
     }
   };
 
+  const updateGroceryItem = async (itemKey: string, removed: boolean) => {
+    setWorkingAction("delete");
+    try {
+      const result = await updateGroceryItemVisibility({ itemKey, removed });
+      setState(applyServerState(result.state));
+      setLimits(result.state.limits);
+      return result;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "تعذر تحديث قائمة التسوق.";
+      setState((prev) => ({ ...prev, lastError: message }));
+      pushDebug("delete", message);
+      throw error;
+    } finally {
+      setWorkingAction(null);
+    }
+  };
+
   return {
     state,
     setState,
@@ -262,6 +280,7 @@ export function useMealPlanner() {
     generatePlan,
     regenerateDay,
     swapMeal,
+    updateGroceryItem,
     deletePlan,
     refreshFromServer,
   };

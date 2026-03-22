@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertTriangle, DatabaseZap, RefreshCcw, Settings2, Sparkles, Trash2 } from "lucide-react";
+import { AlertTriangle, DatabaseZap, RefreshCcw, Settings2, ShoppingBasket, Sparkles, Trash2 } from "lucide-react";
 import { ConversationalMealOnboarding } from "@/components/meal-planner/ConversationalMealOnboarding";
 import { PlannerDayCard } from "@/components/meal-planner/PlannerDayCard";
 import { PlannerDayDrawer } from "@/components/meal-planner/PlannerDayDrawer";
@@ -30,6 +30,7 @@ export default function MealPlanner() {
     generatePlan,
     regenerateDay,
     swapMeal,
+    updateGroceryItem,
     deletePlan,
   } = useMealPlanner();
 
@@ -46,7 +47,7 @@ export default function MealPlanner() {
   const plannerDays = plan?.days ?? [];
   const currentDay = (selectedDayISO ? plannerDays.find((day) => day.dateISO === selectedDayISO) : null) ?? plannerDays[0] ?? null;
   const shellClass =
-    "mx-auto max-w-7xl space-y-6 rounded-[2.25rem] border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.86),rgba(248,250,252,0.92))] p-4 shadow-[0_36px_120px_rgba(15,23,42,0.07)] backdrop-blur-xl dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.82),rgba(15,23,42,0.94))] dark:shadow-[0_36px_120px_rgba(2,6,23,0.56)] md:p-6";
+    "mx-auto max-w-6xl space-y-6 rounded-[2rem] border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.88),rgba(248,250,252,0.94))] p-4 shadow-[0_32px_90px_rgba(15,23,42,0.06)] backdrop-blur-xl dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.84),rgba(15,23,42,0.94))] dark:shadow-[0_34px_90px_rgba(2,6,23,0.52)] md:p-6";
 
   const toastError = (title: string, error: unknown) =>
     showFeedbackToast({
@@ -94,6 +95,19 @@ export default function MealPlanner() {
     }
   };
 
+  const handleRemoveGroceryItem = async (itemKey: string) => {
+    try {
+      await updateGroceryItem(itemKey, true);
+      showFeedbackToast({
+        title: "تم تحديث القائمة",
+        description: "أخفينا العنصر من قائمة هذا الأسبوع.",
+        tone: "success",
+      });
+    } catch (error) {
+      toastError("تعذر تحديث قائمة التسوق", error);
+    }
+  };
+
   if (!plan) {
     return (
       <ConversationalMealOnboarding
@@ -114,58 +128,50 @@ export default function MealPlanner() {
       <PlannerTopBar title="مخطط الوجبات الذكي" subtitle="نطاق الأيام الحالية حتى نهاية الأسبوع" onOpenSettings={() => setSettingsOpen(true)} />
       <main className="px-4 pt-6 md:px-6">
         <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className={shellClass} dir="rtl">
-          <PlannerHeroOverview plan={plan} summary={dashboardSummary} usage={usage} generating={generating} onRegenerateWeek={() => setReplaceDialog(true)} />
+          <PlannerHeroOverview plan={plan} summary={dashboardSummary} />
+
           <div className="space-y-4">
-            <div className="flex items-center justify-between gap-3">
-              <InteractiveButton type="button" variant="outline" className="rounded-[1.2rem] px-4" onClick={() => setSettingsOpen(true)}>
-                إدارة الخطة
-                <Settings2 className="h-4 w-4" />
-              </InteractiveButton>
+            <div className="flex items-start justify-between gap-4">
+              <div className="rounded-full border border-border/60 bg-background/80 px-3 py-2 text-xs font-semibold text-muted-foreground dark:bg-white/5">
+                افتح أي يوم لمراجعة الوجبات والتعديل الخفيف
+              </div>
               <div className="text-right">
-                <p className="text-xl font-black text-foreground">أيام الأسبوع الحالية</p>
-                <p className="text-sm text-muted-foreground">بطاقات مضغوطة للقراءة السريعة وتفاصيل أعمق داخل السحب الجانبي.</p>
+                <p className="text-xl font-black text-foreground">الخطة الأسبوعية</p>
+                <p className="text-sm text-muted-foreground">تدفق عمودي واضح لقراءة أيام الأسبوع من الأعلى إلى الأسفل.</p>
               </div>
             </div>
-            <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+            <div className="space-y-4">
               {plannerDays.map((day) => (
-                <PlannerDayCard key={day.dateISO} day={day} selected={selectedDayISO === day.dateISO && dayOpen} onOpen={() => openDay(day)} onRegenerate={() => handleRegenerateDay(day.dateISO)} regenerating={workingAction === "regenerate"} />
+                <PlannerDayCard key={day.dateISO} day={day} selected={selectedDayISO === day.dateISO && dayOpen} onOpen={() => openDay(day)} />
               ))}
             </div>
           </div>
-          <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
-            <PlannerGroceryModule grocery={plan.grocery} open={groceryOpen} onOpenChange={setGroceryOpen} />
+
+          <div className="space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="rounded-full border border-border/60 bg-background/80 px-3 py-2 text-xs font-semibold text-muted-foreground dark:bg-white/5">
+                مرتبة حسب أقسام السوبرماركت
+              </div>
+              <div className="text-right">
+                <p className="text-xl font-black text-foreground">التسوق لهذا الأسبوع</p>
+                <p className="text-sm text-muted-foreground">استخدم القائمة كما هي أو أرسلها مباشرة إلى واتساب.</p>
+              </div>
+            </div>
+            <PlannerGroceryModule grocery={plan.grocery} open={groceryOpen} onOpenChange={setGroceryOpen} onRemoveItem={handleRemoveGroceryItem} />
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="rounded-full border border-border/60 bg-background/80 px-3 py-2 text-xs font-semibold text-muted-foreground dark:bg-white/5">
+                ملاحظات خفيفة فقط
+              </div>
+              <div className="text-right">
+                <p className="text-xl font-black text-foreground">إرشادات الأسبوع</p>
+                <p className="text-sm text-muted-foreground">تحسينات بسيطة تبقي الخطة واضحة وغير مزدحمة.</p>
+              </div>
+            </div>
             <PlannerSuggestionModule suggestions={plan.suggestions} />
           </div>
-          {isAdmin ? (
-            <div className="rounded-[1.85rem] border border-dashed border-border/60 bg-background/55 p-5 dark:bg-slate-950/45">
-              <button type="button" className="flex w-full items-center justify-between gap-3 text-right" onClick={() => setDebugOpen((value) => !value)}>
-                <InteractiveButton type="button" variant="ghost" size="sm" className="rounded-2xl">
-                  {debugOpen ? "إخفاء" : "عرض"}
-                </InteractiveButton>
-                <div className="text-right">
-                  <p className="text-lg font-black text-foreground">لوحة تشخيص الإدارة</p>
-                  <p className="text-xs text-muted-foreground">لأخطاء الذكاء الاصطناعي أو التحميل فقط.</p>
-                </div>
-              </button>
-              <AnimatePresence initial={false}>
-                {debugOpen ? (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-                    <div className="mt-4 grid gap-3">
-                      {adminDebug.length ? adminDebug.map((entry) => (
-                        <div key={entry.id} className="rounded-[1.25rem] border border-border/60 bg-background/75 p-3 text-right dark:bg-slate-950/60">
-                          <div className="flex items-center justify-between gap-3">
-                            <PlannerMetaBadge icon={DatabaseZap} label={entry.kind} />
-                            <p className="text-xs text-muted-foreground">{new Date(entry.createdAt).toLocaleString("en-GB")}</p>
-                          </div>
-                          <p className="mt-2 text-sm leading-7 text-foreground">{entry.message}</p>
-                        </div>
-                      )) : <div className="rounded-[1.25rem] border border-border/60 bg-background/75 p-4 text-sm text-muted-foreground dark:bg-slate-950/60">لا توجد رسائل تشخيص حالية.</div>}
-                    </div>
-                  </motion.div>
-                ) : null}
-              </AnimatePresence>
-            </div>
-          ) : null}
         </motion.section>
       </main>
 
@@ -200,6 +206,13 @@ export default function MealPlanner() {
                 توليد نسخة جديدة
                 <RefreshCcw className="h-4 w-4" />
               </InteractiveButton>
+              <div className="rounded-[1.2rem] border border-border/60 bg-background/70 p-4 text-right text-sm leading-7 text-muted-foreground dark:bg-slate-950/60">
+                <div className="mb-2 inline-flex items-center gap-2 text-sm font-bold text-foreground">
+                  <ShoppingBasket className="h-4 w-4 text-primary" />
+                  إدارة القائمة
+                </div>
+                حذف عناصر التسوق يتم من داخل القائمة نفسها، بينما إعادة توليد الأسبوع أو حذف الخطة تبقى هنا في الإعدادات.
+              </div>
               <InteractiveButton type="button" variant="outline" className="min-h-12 rounded-[1.2rem]" onClick={() => setDeleteMode("meals")}>
                 حذف الخطة الحالية فقط
                 <Trash2 className="h-4 w-4" />
@@ -209,6 +222,36 @@ export default function MealPlanner() {
                 <AlertTriangle className="h-4 w-4" />
               </InteractiveButton>
             </div>
+            {isAdmin ? (
+              <div className="rounded-[1.5rem] border border-dashed border-border/60 bg-background/55 p-4 dark:bg-slate-950/45">
+                <button type="button" className="flex w-full items-center justify-between gap-3 text-right" onClick={() => setDebugOpen((value) => !value)}>
+                  <InteractiveButton type="button" variant="ghost" size="sm" className="rounded-2xl">
+                    {debugOpen ? "إخفاء" : "عرض"}
+                  </InteractiveButton>
+                  <div className="text-right">
+                    <p className="text-base font-black text-foreground">لوحة تشخيص الإدارة</p>
+                    <p className="text-xs text-muted-foreground">أثر الخادم وأخطاء التوليد يظهر هنا فقط للمشرف.</p>
+                  </div>
+                </button>
+                <AnimatePresence initial={false}>
+                  {debugOpen ? (
+                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                      <div className="mt-4 grid gap-3">
+                        {adminDebug.length ? adminDebug.map((entry) => (
+                          <div key={entry.id} className="rounded-[1rem] border border-border/60 bg-background/75 p-3 text-right dark:bg-slate-950/60">
+                            <div className="flex items-center justify-between gap-3">
+                              <PlannerMetaBadge icon={DatabaseZap} label={entry.kind} />
+                              <p className="text-xs text-muted-foreground">{new Date(entry.createdAt).toLocaleString("en-GB")}</p>
+                            </div>
+                            <p className="mt-2 text-sm leading-7 text-foreground">{entry.message}</p>
+                          </div>
+                        )) : <div className="rounded-[1rem] border border-border/60 bg-background/75 p-4 text-sm text-muted-foreground dark:bg-slate-950/60">لا توجد رسائل تشخيص حالية.</div>}
+                      </div>
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
+              </div>
+            ) : null}
           </div>
         </SheetContent>
       </Sheet>

@@ -42,6 +42,11 @@ const regenerateDayInputSchema = z.object({
   preferences: z.record(z.unknown()),
 });
 
+const updateGroceryItemInputSchema = z.object({
+  itemKey: z.string().min(1),
+  removed: z.boolean(),
+});
+
 function todayKey() {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Jerusalem",
@@ -158,6 +163,7 @@ function planRowToClient(
           habitSuggestion: "",
           supplementPlaceholder: "مكان مخصص لاحقًا لاقتراحات المكملات.",
         },
+    removedGroceryKeys: Array.isArray(planData.removedGroceryKeys) ? planData.removedGroceryKeys.map(String) : [],
     usage: {
       monthlyGenerationsUsed: monthlyUsage?.fullGenerationsUsed ?? Number(row.usageData.monthlyGenerationsUsed ?? 0),
       swapsUsed: monthlyUsage?.mealSwapsUsed ?? Number(row.usageData.swapsUsed ?? 0),
@@ -270,6 +276,7 @@ function buildStoredPlan(plan: Record<string, unknown>) {
     summary: String(plan.summary ?? ""),
     days: Array.isArray(plan.days) ? plan.days : [],
     grocery: [],
+    removedGroceryKeys: [],
     suggestions: buildSuggestions(plan),
   };
 }
@@ -598,6 +605,33 @@ export async function regenerateDayForUser(userId: string, body: unknown) {
       profile.role === "admin" || profile.role === "super_admin"
         ? `OpenAI ${result.usage.inputTokens}/${result.usage.outputTokens} tokens • ${result.meta.elapsedMs}ms`
         : null,
+  };
+}
+
+export async function updateGroceryItemForUser(userId: string, body: unknown) {
+  const parsed = updateGroceryItemInputSchema.parse(body);
+  const weekStart = currentWeekStart();
+  const plan = await getActiveMealPlan(userId, weekStart);
+  if (!plan) throw Object.assign(new Error("No active plan"), { status: 404 });
+
+  const nextPlanData = { ...(plan.planData as Record<string, any>) };
+  const currentRemoved = Array.isArray(nextPlanData.removedGroceryKeys)
+    ? nextPlanData.removedGroceryKeys.map(String)
+    : [];
+  const nextRemoved = parsed.removed
+    ? Array.from(new Set([...currentRemoved, parsed.itemKey.toLowerCase()]))
+    : currentRemoved.filter((itemKey: string) => itemKey !== parsed.itemKey.toLowerCase());
+
+  nextPlanData.removedGroceryKeys = nextRemoved;
+
+  const updated = await updateMealPlanVersion(plan.id, {
+    planData: nextPlanData,
+    usageData: plan.usageData,
+  });
+
+  return {
+    state: await buildPlannerStateForUser(userId),
+    activePlan: planRowToClient(updated),
   };
 }
 

@@ -139,6 +139,14 @@ export async function regenerateDayWithAi(payload: {
   }>(response, "تعذر قراءة استجابة إعادة توليد اليوم.");
 }
 
+export async function updateGroceryItemVisibility(payload: { itemKey: string; removed: boolean }) {
+  const response = await apiRequest("POST", "/api/meal-planner/grocery-item", payload);
+  return await readJsonBody<{
+    state: PlannerServerState;
+    activePlan: WeeklyPlanRecord | null;
+  }>(response, "تعذر تحديث عنصر قائمة التسوق.");
+}
+
 export async function deleteMealPlanRemote(mode: "meals" | "all") {
   const response = await apiRequest("POST", "/api/meal-planner/delete-plan", { mode });
   return await readJsonBody<{ ok: true; state: PlannerServerState }>(response, "Failed to delete meal plan");
