@@ -545,12 +545,29 @@ export default function MealPlanner() {
     return (
       <div className="space-y-4 text-right">
         <h3 className="text-xl font-extrabold text-foreground">التأكيد النهائي</h3>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-2xl border border-border/70 bg-background/75 p-3"><p className="text-xs text-muted-foreground">النظام</p><p className="mt-1 text-sm font-bold text-foreground">{DIET_LABELS[state.preferences.dietType]}</p></div>
-          <div className="rounded-2xl border border-border/70 bg-background/75 p-3"><p className="text-xs text-muted-foreground">السعرات</p><p className="mt-1 text-sm font-bold text-foreground">{state.preferences.caloriesTarget} kcal</p></div>
-          <div className="rounded-2xl border border-border/70 bg-background/75 p-3"><p className="text-xs text-muted-foreground">الهدف</p><p className="mt-1 text-sm font-bold text-foreground">{GOAL_LABELS[state.preferences.goal]}</p></div>
-          <div className="rounded-2xl border border-border/70 bg-background/75 p-3"><p className="text-xs text-muted-foreground">BMI</p><p className="mt-1 text-sm font-bold text-foreground">{bmi ?? "غير مكتمل"}</p></div>
-        </div>
+        <InteractiveCard className="p-4">
+          <div className="space-y-4 text-right">
+            <div>
+              <p className="text-xs text-muted-foreground">النظام</p>
+              <p className="mt-1 text-sm font-bold text-foreground">{DIET_LABELS[state.preferences.dietType]}</p>
+            </div>
+            <Separator className="bg-border/60" />
+            <div>
+              <p className="text-xs text-muted-foreground">السعرات</p>
+              <p className="mt-1 text-sm font-bold text-foreground">{state.preferences.caloriesTarget} kcal</p>
+            </div>
+            <Separator className="bg-border/60" />
+            <div>
+              <p className="text-xs text-muted-foreground">الهدف</p>
+              <p className="mt-1 text-sm font-bold text-foreground">{GOAL_LABELS[state.preferences.goal]}</p>
+            </div>
+            <Separator className="bg-border/60" />
+            <div>
+              <p className="text-xs text-muted-foreground">BMI</p>
+              <p className="mt-1 text-sm font-bold text-foreground">{bmi ?? "غير مكتمل"}</p>
+            </div>
+          </div>
+        </InteractiveCard>
         {plan ? <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm leading-7 text-amber-800 dark:text-amber-200">سيتم إنشاء نسخة جديدة نشطة لهذا الأسبوع مع تصفير عدادات التبديل وإعادة توليد الأيام للنسخة الجديدة.</div> : null}
       </div>
     );
@@ -734,7 +751,7 @@ export default function MealPlanner() {
                   </div>
                 </InteractiveCard>
               </motion.div>
-            ) : state.viewState === "planner" && plan ? (
+            ) : plan ? (
               plannerView
             ) : (
               <motion.div key="onboarding" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mx-auto max-w-5xl space-y-6">
