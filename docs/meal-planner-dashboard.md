@@ -95,6 +95,7 @@ should render as one normalized chicken entry with a combined approximate quanti
 - meal blocks with clean macro visibility
 - actions remain contextual and secondary
 - close and action placement must follow RTL conventions deliberately
+- day-level regeneration should not dominate the drawer header
 
 ## Settings containment rules
 

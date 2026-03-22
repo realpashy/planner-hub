@@ -1,7 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { CalendarDays, Flame, RefreshCcw, Sparkles } from "lucide-react";
+import { CalendarDays, Flame, Sparkles } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { InteractiveButton } from "@/components/ui/interactive-button";
 import { PlannerMealCard } from "@/components/meal-planner/PlannerMealCard";
 import { type MealSwapMode, type PlannerDay } from "@/lib/meal-planner";
 
@@ -11,10 +10,9 @@ interface PlannerDayDrawerProps {
   onOpenChange: (open: boolean) => void;
   expandedMealId: string | null;
   onToggleMeal: (mealId: string) => void;
-  onRegenerateDay: (dateISO: string) => void;
   onSwapMeal: (dateISO: string, mealType: string, mode: MealSwapMode) => void;
   onRegenerateMeal: (dateISO: string, mealType: string) => void;
-  workingAction: "swap" | "regenerate" | "delete" | null;
+  workingAction: "swap" | "delete" | "regenerate" | null;
 }
 
 function SummaryChip({ value }: { value: string }) {
@@ -31,7 +29,6 @@ export function PlannerDayDrawer({
   onOpenChange,
   expandedMealId,
   onToggleMeal,
-  onRegenerateDay,
   onSwapMeal,
   onRegenerateMeal,
   workingAction,
@@ -47,29 +44,17 @@ export function PlannerDayDrawer({
           <div className="min-h-full">
             <div className="sticky top-0 z-20 border-b border-indigo-200/60 bg-white/90 px-5 py-5 backdrop-blur-xl dark:border-indigo-400/20 dark:bg-slate-950/86">
               <div className="space-y-4 text-right">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="space-y-2 text-right">
-                    <div className="flex justify-end">
-                      <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200/70 bg-indigo-500/10 px-3 py-1 text-xs font-semibold text-indigo-700 dark:border-indigo-400/20 dark:text-indigo-200">
-                        <CalendarDays className="h-3.5 w-3.5" />
-                        {day.dayName}
-                      </span>
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-black text-foreground">{day.dateLabel}</h3>
-                      <p className="mt-1 text-sm leading-7 text-muted-foreground">{day.notes || day.aiTip}</p>
-                    </div>
+                <div className="space-y-2 text-right">
+                  <div className="flex justify-end">
+                    <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200/70 bg-indigo-500/10 px-3 py-1 text-xs font-semibold text-indigo-700 dark:border-indigo-400/20 dark:text-indigo-200">
+                      {day.dayName}
+                      <CalendarDays className="h-3.5 w-3.5" />
+                    </span>
                   </div>
-                  <InteractiveButton
-                    type="button"
-                    variant="outline"
-                    className="rounded-full border-indigo-200/70 bg-white/80 px-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] dark:border-indigo-400/20 dark:bg-white/10"
-                    loading={workingAction === "regenerate"}
-                    onClick={() => onRegenerateDay(day.dateISO)}
-                  >
-                    إعادة توليد اليوم
-                    <RefreshCcw className="h-4 w-4" />
-                  </InteractiveButton>
+                  <div>
+                    <h3 className="text-2xl font-black text-foreground">{day.dateLabel}</h3>
+                    <p className="mt-1 text-sm leading-7 text-muted-foreground">{day.notes || day.aiTip}</p>
+                  </div>
                 </div>
 
                 <div className="flex flex-wrap justify-end gap-2">
@@ -94,7 +79,7 @@ export function PlannerDayDrawer({
                     <Flame className="h-4 w-4 text-indigo-500" />
                     تفاصيل الوجبات
                   </div>
-                  <div className="text-xs font-semibold text-muted-foreground">تسلسل اليوم</div>
+                  <div className="text-xs font-semibold text-muted-foreground">{day.meals.length} وجبات</div>
                 </div>
 
                 <div className="relative pr-5">

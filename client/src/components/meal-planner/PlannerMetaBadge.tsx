@@ -25,8 +25,8 @@ export function PlannerMetaBadge({
         className,
       )}
     >
-      <Icon className="h-3.5 w-3.5" />
       {label}
+      <Icon className="h-3.5 w-3.5" />
     </span>
   );
 }

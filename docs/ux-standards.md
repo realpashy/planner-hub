@@ -12,6 +12,7 @@ RTL is not a mirrored LTR layout. It must be designed intentionally.
 - Arabic subtitles and helper text under those titles must also align right
 - card titles, modal titles, drawer titles, and settings titles default to `text-right`
 - long inline content blocks should not drift left just because the container is flex-based
+- manual visual inspection is required for stubborn rows; utility classes alone are not enough
 
 ### Opposite-side meta pattern
 
@@ -34,6 +35,7 @@ When a row contains a title block plus count/meta/action:
 - contextual utility action opposite it on the left when applicable
 - settings sheet close control on the left in RTL
 - modal title and description align right
+- disclosure rows must place the Arabic label first and the chevron/icon after it when that reads more naturally
 
 ## Input hierarchy
 

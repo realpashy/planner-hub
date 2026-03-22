@@ -135,8 +135,8 @@ export function PlannerMealCard({
         <div className="flex items-center justify-between">
           {meal.shortTip ? <p className="text-xs text-muted-foreground">{meal.shortTip}</p> : <span />}
           <button type="button" onClick={onToggle} className="inline-flex items-center gap-2 text-sm font-semibold text-indigo-600 dark:text-indigo-300">
-            <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
             {expanded ? "إخفاء التفاصيل" : "عرض التفاصيل"}
+            <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
           </button>
         </div>
 
@@ -150,7 +150,12 @@ export function PlannerMealCard({
               exit={{ opacity: 0, height: 0 }}
               className="overflow-hidden"
             >
-              <div className="grid gap-4 border-t border-indigo-100/80 pt-4 md:grid-cols-[1fr_1fr] dark:border-indigo-400/10">
+              <div className="space-y-4 border-t border-indigo-100/80 pt-4 dark:border-indigo-400/10">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="text-sm font-black text-foreground">تفاصيل الوجبة</div>
+                  <div className="text-xs font-semibold text-muted-foreground">المكونات والخطوات والمغذيات</div>
+                </div>
+                <div className="grid gap-4 md:grid-cols-[1fr_1fr]">
                 <div className="space-y-3 text-right">
                   <div>
                     <p className="text-sm font-bold text-foreground">المكونات</p>
@@ -185,6 +190,7 @@ export function PlannerMealCard({
                       <MiniStat value={`${meal.fat}غ دهون`} />
                     </div>
                   </div>
+                </div>
                 </div>
               </div>
             </motion.div>

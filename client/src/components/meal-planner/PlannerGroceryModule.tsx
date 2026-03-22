@@ -122,8 +122,8 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
                   className="rounded-full border-0 bg-[#25D366] px-4 text-white shadow-[0_16px_34px_rgba(37,211,102,0.28)] hover:bg-[#1ebe5b]"
                   onClick={() => setShareOpen(true)}
                 >
-                  <WhatsappIcon className="h-4 w-4" />
                   <span>إرسال القائمة إلى واتساب</span>
+                  <WhatsappIcon className="h-4 w-4" />
                 </InteractiveButton>
               </div>
             </div>
@@ -134,8 +134,8 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
                 <p className="text-xs text-muted-foreground">{open ? "يمكن حذف أي عنصر غير مطلوب لهذا الأسبوع." : "القائمة مرتبة بأسلوب قريب من أقسام السوبرماركت."}</p>
               </div>
               <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200/70 bg-white/80 px-3 py-1.5 text-xs font-semibold text-emerald-800 dark:border-emerald-400/20 dark:bg-white/10 dark:text-emerald-100">
-                <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
                 {open ? "إخفاء" : "عرض"}
+                <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
               </span>
             </CollapsibleTrigger>
 
@@ -257,8 +257,8 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
               disabled={!normalizedPhone}
             >
               <a href={whatsappHref} target="_blank" rel="noreferrer">
-                <WhatsappIcon className="h-4 w-4" />
                 <span>فتح واتساب وإرسال القائمة</span>
+                <WhatsappIcon className="h-4 w-4" />
               </a>
             </InteractiveButton>
           </DialogFooter>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertTriangle, DatabaseZap, RefreshCcw, Sparkles, Trash2 } from "lucide-react";
+import { AlertTriangle, DatabaseZap, RefreshCcw, Trash2 } from "lucide-react";
 import { ConversationalMealOnboarding } from "@/components/meal-planner/ConversationalMealOnboarding";
 import { PlannerDayCard } from "@/components/meal-planner/PlannerDayCard";
 import { PlannerDayDrawer } from "@/components/meal-planner/PlannerDayDrawer";
@@ -28,7 +28,6 @@ export default function MealPlanner() {
     adminDebug,
     patchPreferences,
     generatePlan,
-    regenerateDay,
     swapMeal,
     updateGroceryItem,
     deletePlan,
@@ -60,15 +59,6 @@ export default function MealPlanner() {
     setSelectedDayISO(day.dateISO);
     setExpandedMealId(null);
     setDayOpen(true);
-  };
-
-  const handleRegenerateDay = async (dateISO: string) => {
-    try {
-      await regenerateDay(dateISO);
-      showFeedbackToast({ title: "تم تحديث اليوم", description: "حافظنا على بقية الأسبوع كما هي.", tone: "success" });
-    } catch (error) {
-      toastError("تعذر إعادة توليد اليوم", error);
-    }
   };
 
   const handleSwapMeal = async (dateISO: string, mealType: string, mode: MealSwapMode) => {
@@ -181,7 +171,6 @@ export default function MealPlanner() {
         onOpenChange={setDayOpen}
         expandedMealId={expandedMealId}
         onToggleMeal={(mealId) => setExpandedMealId((current) => (current === mealId ? null : mealId))}
-        onRegenerateDay={handleRegenerateDay}
         onSwapMeal={handleSwapMeal}
         onRegenerateMeal={(dateISO, mealType) => handleSwapMeal(dateISO, mealType, "refresh")}
         workingAction={workingAction}
@@ -191,7 +180,7 @@ export default function MealPlanner() {
         <SheetContent side="right" className="w-full overflow-y-auto bg-[radial-gradient(circle_at_top_right,rgba(148,163,184,0.14),transparent_22%),linear-gradient(180deg,rgba(248,250,252,0.98),rgba(255,255,255,0.96))] p-0 sm:max-w-lg dark:bg-[radial-gradient(circle_at_top_right,rgba(100,116,139,0.2),transparent_20%),linear-gradient(180deg,rgba(2,6,23,0.96),rgba(15,23,42,0.96))]" dir="rtl">
           <div className="space-y-5 p-5">
             <SheetHeader className="text-right">
-              <SheetTitle className="text-right text-2xl font-black">إدارة الخطة</SheetTitle>
+              <SheetTitle className="text-right text-2xl font-black">إعدادات المخطط</SheetTitle>
               <p className="text-sm leading-7 text-muted-foreground">كل الإجراءات الإدارية تبقى هنا حتى تظل شاشة الخطة نفسها هادئة وواضحة.</p>
             </SheetHeader>
             <div className="rounded-[1.5rem] border border-slate-200/70 bg-white/72 p-4 shadow-[0_12px_28px_rgba(15,23,42,0.05)] dark:border-slate-700/70 dark:bg-slate-950/60">

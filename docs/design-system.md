@@ -69,6 +69,13 @@ Rules:
 
 Every card family should feel related but not identical. Summary, day, grocery, guidance, and settings surfaces should not all look like the same template block.
 
+## Stat card family rules
+
+- all cards in one stat row must share the same height logic
+- all cards in one stat row must share the same padding, radius, shadow, and typography hierarchy
+- variation should come from icon-chip tint or a subtle accent, not from unrelated card bodies
+- if one stat card looks more premium than the others, upgrade the others to match it
+
 ## Chip rules
 
 - chips should be content-signaling, not decorative noise
