@@ -6,8 +6,8 @@ import type {
   EditMealAiInput,
   GenerateWeekAiInput,
   RegenerateDayAiInput,
-} from "../../shared/ai/ai-types";
-import { getMealDataset, type DatasetMeal } from "./catalog";
+} from "../../shared/ai/ai-types.ts";
+import { getMealDataset, type DatasetMeal } from "./catalog.ts";
 
 function normalizeList(input: unknown) {
   return Array.isArray(input)

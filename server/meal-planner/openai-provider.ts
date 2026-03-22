@@ -9,9 +9,9 @@ import {
   type EditMealAiInput,
   type GenerateWeekAiInput,
   type RegenerateDayAiInput,
-} from "../../shared/ai/ai-types";
-import { buildDayRegenerationPrompt, buildMealEditPrompt, buildWeeklyGenerationPrompt } from "./prompts";
-import { getPlanTierConfig } from "../../shared/plans/feature-access";
+} from "../../shared/ai/ai-types.ts";
+import { buildDayRegenerationPrompt, buildMealEditPrompt, buildWeeklyGenerationPrompt } from "./prompts.ts";
+import { getPlanTierConfig } from "../../shared/plans/feature-access.ts";
 
 const OPENAI_CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions";
 const OPENAI_MEAL_MODEL = process.env.OPENAI_MEAL_MODEL || "gpt-5-mini";

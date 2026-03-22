@@ -1,9 +1,9 @@
 import { z } from "zod";
-import type { AiActionType, GenerateWeekAiInput, MealPlannerUserContext } from "../../shared/ai/ai-types";
-import { estimateAiCostUsd } from "../../shared/ai/ai-costs";
-import { getPlanTierConfig } from "../../shared/plans/feature-access";
-import { getModuleEntitlements } from "../../shared/modules/module-entitlements";
-import { DEFAULT_AI_FEATURE_FLAGS } from "../../shared/ai/ai-feature-flags";
+import type { AiActionType, GenerateWeekAiInput, MealPlannerUserContext } from "../../shared/ai/ai-types.ts";
+import { estimateAiCostUsd } from "../../shared/ai/ai-costs.ts";
+import { getPlanTierConfig } from "../../shared/plans/feature-access.ts";
+import { getModuleEntitlements } from "../../shared/modules/module-entitlements.ts";
+import { DEFAULT_AI_FEATURE_FLAGS } from "../../shared/ai/ai-feature-flags.ts";
 import {
   consumeAiCreditPack,
   createMealPlanVersion,
@@ -20,9 +20,9 @@ import {
   saveMealPlannerPreferences,
   updateMealPlanVersion,
   countMealPlanVersionsForWeek,
-} from "../persistence";
-import { editMealLocal, generateWeeklyPlanLocal, regenerateDayLocal } from "./local-provider";
-import { editMealAI, generateWeeklyPlanAI, regenerateDayAI } from "./openai-provider";
+} from "../persistence.ts";
+import { editMealLocal, generateWeeklyPlanLocal, regenerateDayLocal } from "./local-provider.ts";
+import { editMealAI, generateWeeklyPlanAI, regenerateDayAI } from "./openai-provider.ts";
 
 const generateWeekInputSchema = z.object({
   preferences: z.record(z.unknown()),

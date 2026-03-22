@@ -71,10 +71,10 @@ function SplitInput({ value, placeholder, onChange }: { value: string[]; placeho
 function StepChip({ index, current, title, onClick }: { index: number; current: number; title: string; onClick: () => void }) {
   const state = index < current ? "done" : index === current ? "current" : "upcoming";
   return (
-    <button type="button" disabled={state !== "done"} onClick={state === "done" ? onClick : undefined} className="text-right">
-      <InteractiveCard interactive={state === "done"} selected={state === "current"} className="min-w-[8.5rem] px-3 py-3">
-        <div className="flex items-center justify-between gap-3">
-          <div>
+    <button type="button" disabled={state !== "done"} onClick={state === "done" ? onClick : undefined} className="shrink-0 text-right">
+      <InteractiveCard interactive={state === "done"} selected={state === "current"} className="flex h-24 w-[11.5rem] items-center px-4 py-3 md:w-[12.5rem]">
+        <div className="flex w-full flex-row-reverse items-center justify-between gap-3 text-right">
+          <div className="min-w-0 flex-1">
             <p className="text-xs font-bold text-foreground">{title}</p>
             <p className="text-[11px] text-muted-foreground">الخطوة {index + 1}</p>
           </div>
@@ -146,6 +146,8 @@ export default function MealPlanner() {
   const plan = state.activePlan;
   const plannerDays = plan?.days ?? [];
   const currentDay = selectedDay ?? plannerDays[0] ?? null;
+  const nextStepTitle = step < STEPS.length - 1 ? STEPS[step + 1] : null;
+  const previousStepTitle = step > 0 ? STEPS[step - 1] : null;
 
   const nextEnabled = useMemo(() => {
     if (step === 4) return Boolean(state.preferences.heightCm && state.preferences.weightKg);
@@ -596,7 +598,7 @@ export default function MealPlanner() {
             ) : state.viewState === "planner" && plan ? (
               plannerView
             ) : (
-              <motion.div key="onboarding" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mx-auto max-w-4xl space-y-6">
+              <motion.div key="onboarding" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mx-auto max-w-5xl space-y-6">
                 <InteractiveCard className="space-y-6 p-5 md:p-6">
                   <div className="space-y-4">
                     <div className="flex items-center justify-between gap-3">
@@ -607,22 +609,47 @@ export default function MealPlanner() {
                       </div>
                     </div>
                     <Progress value={((step + 1) / STEPS.length) * 100} className="h-2" />
-                    <div className="flex gap-3 overflow-x-auto pb-1">
+                    <div className="flex flex-row-reverse justify-start gap-3 overflow-x-auto pb-1">
                       {STEPS.map((title, index) => (
                         <StepChip key={title} title={title} index={index} current={step} onClick={() => setStep(index)} />
                       ))}
                     </div>
                   </div>
                   <Separator />
-                  <motion.div key={step} initial={{ opacity: 0, x: -14 }} animate={{ opacity: 1, x: 0 }}>
+                  <motion.div key={step} initial={{ opacity: 0, x: -14 }} animate={{ opacity: 1, x: 0 }} className="min-h-[30rem]">
                     {renderStep()}
                   </motion.div>
                   {state.lastError ? <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-4 text-right text-sm text-rose-700 dark:text-rose-300">{state.lastError}</div> : null}
                   <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-5">
                     <div className="text-right text-xs text-muted-foreground">{step === 8 ? "لن تظهر عملية التوليد إلا في الخطوة النهائية." : "نعرض فقط ما تحتاجه في هذه الخطوة."}</div>
                     <div className="flex flex-wrap gap-3">
-                      {step > 0 ? <InteractiveButton type="button" variant="outline" className="min-h-12 rounded-2xl px-5" onClick={() => setStep((current) => Math.max(0, current - 1))}><ChevronRight className="h-4 w-4" />السابق</InteractiveButton> : null}
-                      {step < 8 ? <InteractiveButton type="button" className="min-h-12 rounded-2xl px-5" disabled={!nextEnabled} onClick={() => setStep((current) => Math.min(8, current + 1))}>التالي<ChevronLeft className="h-4 w-4" /></InteractiveButton> : <InteractiveButton type="button" className="min-h-12 rounded-2xl px-5" loading={generating} onClick={() => (plan ? setReplaceDialog(true) : handleGenerate(false))}><Wand2 className="h-4 w-4" />توليد خطة أسبوعية</InteractiveButton>}
+                      {step > 0 ? (
+                        <InteractiveButton
+                          type="button"
+                          variant="outline"
+                          className="min-h-12 rounded-2xl px-5"
+                          onClick={() => setStep((current) => Math.max(0, current - 1))}
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                          {previousStepTitle ? `العودة إلى ${previousStepTitle}` : "العودة"}
+                        </InteractiveButton>
+                      ) : null}
+                      {step < 8 ? (
+                        <InteractiveButton
+                          type="button"
+                          className="min-h-12 rounded-2xl px-5"
+                          disabled={!nextEnabled}
+                          onClick={() => setStep((current) => Math.min(8, current + 1))}
+                        >
+                          {nextStepTitle ? `المتابعة إلى ${nextStepTitle}` : "المتابعة"}
+                          <ChevronLeft className="h-4 w-4" />
+                        </InteractiveButton>
+                      ) : (
+                        <InteractiveButton type="button" className="min-h-12 rounded-2xl px-5" loading={generating} onClick={() => (plan ? setReplaceDialog(true) : handleGenerate(false))}>
+                          توليد خطة أسبوعية
+                          <Wand2 className="h-4 w-4" />
+                        </InteractiveButton>
+                      )}
                     </div>
                   </div>
                 </InteractiveCard>
