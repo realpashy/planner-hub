@@ -460,6 +460,70 @@ function toEmojiForMealType(mealType: MealType) {
   return "🥤";
 }
 
+function normalizeMeal(rawMeal: Partial<MealPlanMeal> & Record<string, unknown>, index: number): MealPlanMeal {
+  const mealType = (rawMeal.mealType as MealType | undefined) ?? "lunch";
+  return {
+    id: String(rawMeal.id ?? `${mealType}_${index}_${Math.random().toString(36).slice(2, 8)}`),
+    mealType,
+    title: String(rawMeal.title ?? ""),
+    icon:
+      typeof rawMeal.icon === "string" && rawMeal.icon.trim()
+        ? rawMeal.icon
+        : typeof rawMeal.image === "string" && rawMeal.imageType === "emoji"
+          ? rawMeal.image
+          : toEmojiForMealType(mealType),
+    ingredients: Array.isArray(rawMeal.ingredients) ? rawMeal.ingredients.map(String).filter(Boolean) : [],
+    steps: Array.isArray(rawMeal.steps) ? rawMeal.steps.map(String).filter(Boolean) : [],
+    calories: Number(rawMeal.calories ?? 0),
+    protein: Number(rawMeal.protein ?? 0),
+    carbs: Number(rawMeal.carbs ?? 0),
+    fat: Number(rawMeal.fat ?? 0),
+    waterCups: Number(rawMeal.waterCups ?? 2),
+    tags: Array.isArray(rawMeal.tags) ? rawMeal.tags.map(String).filter(Boolean).slice(0, 4) : [],
+    reason: String(rawMeal.reason ?? ""),
+    shortTip: String(rawMeal.shortTip ?? ""),
+    source: rawMeal.source === "manual" ? "manual" : rawMeal.source === "basic" ? "basic" : "ai",
+    image: typeof rawMeal.image === "string" && rawMeal.image.trim() ? rawMeal.image : toEmojiForMealType(mealType),
+    imageType:
+      rawMeal.imageType === "static" || rawMeal.imageType === "generated" || rawMeal.imageType === "upload" || rawMeal.imageType === "local"
+        ? rawMeal.imageType
+        : "emoji",
+    imageSource: typeof rawMeal.imageSource === "string" ? rawMeal.imageSource : "planner-generated",
+    repeated: Boolean(rawMeal.repeated),
+    reusedIngredient: Boolean(rawMeal.reusedIngredient),
+  };
+}
+
+function normalizeDay(rawDay: Partial<PlannerDay> & Record<string, unknown>, index: number): PlannerDay {
+  const dateISO = String(rawDay.dateISO ?? getActiveWeekDates(getJerusalemTodayISO())[index]?.dateISO ?? getJerusalemTodayISO());
+  const date = isoToUtcDate(dateISO);
+  const meals = Array.isArray(rawDay.meals)
+    ? rawDay.meals.map((meal, mealIndex) => normalizeMeal((meal ?? {}) as unknown as Record<string, unknown>, mealIndex))
+    : [];
+  const nutrition = {
+    calories: meals.reduce((sum, meal) => sum + meal.calories, 0),
+    protein: meals.reduce((sum, meal) => sum + meal.protein, 0),
+    carbs: meals.reduce((sum, meal) => sum + meal.carbs, 0),
+    fat: meals.reduce((sum, meal) => sum + meal.fat, 0),
+    waterCups: Number(rawDay.nutrition && typeof rawDay.nutrition === "object" ? (rawDay.nutrition as unknown as Record<string, unknown>).waterCups : rawDay.waterTargetCups ?? 8),
+  };
+  const busyDay = Boolean(rawDay.busyDay);
+  return {
+    dateISO,
+    dayName: typeof rawDay.dayName === "string" && rawDay.dayName.trim() ? rawDay.dayName : ARABIC_WEEKDAY_LABELS[date.getUTCDay()],
+    dateLabel:
+      typeof rawDay.dateLabel === "string" && rawDay.dateLabel.trim()
+        ? rawDay.dateLabel
+        : `${date.getUTCDate()} ${ARABIC_MONTHS[date.getUTCMonth()]}`,
+    busyDay,
+    aiTip: String(rawDay.aiTip ?? rawDay.tip ?? ""),
+    notes: String(rawDay.notes ?? ""),
+    status: busyDay ? "busy" : meals.length >= 3 ? "ready" : "light",
+    meals,
+    nutrition,
+  };
+}
+
 function markRepeats(days: PlannerDay[]) {
   const mealCounts = new Map<string, number>();
   const ingredientCounts = new Map<string, number>();
@@ -536,7 +600,10 @@ function buildPlanSuggestions(plan: WeeklyPlanRecord): PlannerSuggestionBundle {
 
 export function enrichPlan(plan: WeeklyPlanRecord): WeeklyPlanRecord {
   const activeDates = new Set(getActiveWeekDates(getJerusalemTodayISO()).map((day) => day.dateISO));
-  const days = markRepeats(plan.days.filter((day) => activeDates.has(day.dateISO)));
+  const normalizedDays = Array.isArray(plan.days)
+    ? plan.days.map((day, index) => normalizeDay((day ?? {}) as unknown as Record<string, unknown>, index))
+    : [];
+  const days = markRepeats(normalizedDays.filter((day) => activeDates.has(day.dateISO)));
   return {
     ...plan,
     days,
