@@ -1,4 +1,4 @@
-import { hasFeatureAccess } from "../plans/feature-access";
+import { hasFeatureAccess } from "../plans/feature-access.ts";
 
 export function getModuleEntitlements(tier: unknown) {
   return {

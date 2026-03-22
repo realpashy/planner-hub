@@ -1,5 +1,5 @@
-import { getPlanTierConfig } from "../plans/feature-access";
-import type { AiActionType } from "./ai-types";
+import { getPlanTierConfig } from "../plans/feature-access.ts";
+import type { AiActionType } from "./ai-types.ts";
 
 export function isFullGenerationAction(action: AiActionType) {
   return action === "generate_week" || action === "regenerate_week";

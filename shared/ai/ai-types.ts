@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { ProductPlanTier } from "../plans/plan-tiers";
+import type { ProductPlanTier } from "../plans/plan-tiers.ts";
 
 export type AiActionType =
   | "generate_week"

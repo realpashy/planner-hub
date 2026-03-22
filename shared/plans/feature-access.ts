@@ -1,4 +1,4 @@
-import { DEFAULT_PLAN_TIER, PLAN_TIER_CONFIG, type ProductPlanTier } from "./plan-tiers";
+import { DEFAULT_PLAN_TIER, PLAN_TIER_CONFIG, type ProductPlanTier } from "./plan-tiers.ts";
 
 export function resolvePlanTier(value: unknown): ProductPlanTier {
   return value === "free" || value === "pro" || value === "admin" ? value : DEFAULT_PLAN_TIER;

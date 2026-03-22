@@ -70,24 +70,39 @@ function SplitInput({ value, placeholder, onChange }: { value: string[]; placeho
 
 function StepChip({ index, current, title, onClick }: { index: number; current: number; title: string; onClick: () => void }) {
   const state = index < current ? "done" : index === current ? "current" : "upcoming";
+  const isCurrent = state === "current";
+  const isDone = state === "done";
   return (
     <button type="button" disabled={state !== "done"} onClick={state === "done" ? onClick : undefined} className="shrink-0 text-right">
-      <InteractiveCard interactive={state === "done"} selected={state === "current"} className="flex h-24 w-[11.5rem] items-center px-4 py-3 md:w-[12.5rem]">
+      <InteractiveCard
+        interactive={isDone}
+        selected={isCurrent}
+        className={`flex h-20 items-center px-3 py-3 transition-all md:h-24 md:px-4 ${
+          isCurrent ? "w-[10.75rem] md:w-[12.5rem]" : "w-[4.75rem] md:w-[8.5rem]"
+        }`}
+      >
         <div className="flex w-full flex-row-reverse items-center justify-between gap-3 text-right">
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-bold text-foreground">{title}</p>
-            <p className="text-[11px] text-muted-foreground">الخطوة {index + 1}</p>
-          </div>
+          {(isCurrent || isDone) ? (
+            <div className="min-w-0 flex-1">
+              <p className="line-clamp-2 text-xs font-bold text-foreground md:line-clamp-1">{title}</p>
+              <p className="text-[11px] text-muted-foreground">الخطوة {index + 1}</p>
+            </div>
+          ) : (
+            <div className="min-w-0 flex-1 text-center md:text-right">
+              <p className="text-[11px] text-muted-foreground">الخطوة</p>
+              <p className="text-xs font-bold text-foreground">{index + 1}</p>
+            </div>
+          )}
           <div
             className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
-              state === "done"
+              isDone
                 ? "bg-emerald-500 text-white"
-                : state === "current"
+                : isCurrent
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted text-muted-foreground"
             }`}
           >
-            {state === "done" ? <CheckCircle2 className="h-4 w-4" /> : index + 1}
+            {isDone ? <CheckCircle2 className="h-4 w-4" /> : index + 1}
           </div>
         </div>
       </InteractiveCard>
@@ -609,7 +624,7 @@ export default function MealPlanner() {
                       </div>
                     </div>
                     <Progress value={((step + 1) / STEPS.length) * 100} className="h-2" />
-                    <div className="flex flex-row-reverse justify-start gap-3 overflow-x-auto pb-1">
+                    <div className="flex flex-row-reverse justify-start gap-2 overflow-x-auto pb-1 md:gap-3">
                       {STEPS.map((title, index) => (
                         <StepChip key={title} title={title} index={index} current={step} onClick={() => setStep(index)} />
                       ))}
