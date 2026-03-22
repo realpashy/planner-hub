@@ -141,7 +141,6 @@ async function requestStructuredJson<T>({
     },
     body: JSON.stringify({
       model: OPENAI_MEAL_MODEL,
-      temperature: 0.45,
       max_completion_tokens: schemaName === "weekly_plan" ? 2800 : schemaName === "single_day" ? 1200 : 600,
       messages: [
         {
