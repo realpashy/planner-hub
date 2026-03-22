@@ -33,6 +33,7 @@ const app = express();
 
 let startupError: string | null = null;
 let initPromise: Promise<void> | null = null;
+let mealPlannerInitPromise: Promise<void> | null = null;
 let dbPoolInstance: Pool | null = null;
 
 function getDebugPayload() {
@@ -236,7 +237,7 @@ async function initializeDatabase() {
 
 async function ensureInit() {
   if (!initPromise) {
-    initPromise = Promise.all([initializeDatabase(), initializeSharedDatabase()]).then(() => {
+    initPromise = initializeDatabase().then(() => {
       startupError = null;
     }).catch((error) => {
       startupError = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
@@ -244,6 +245,16 @@ async function ensureInit() {
     });
   }
   return initPromise;
+}
+
+async function ensureMealPlannerInit() {
+  if (!mealPlannerInitPromise) {
+    mealPlannerInitPromise = initializeSharedDatabase().catch((error) => {
+      mealPlannerInitPromise = null;
+      throw error;
+    });
+  }
+  return mealPlannerInitPromise;
 }
 
 async function getUserById(id: string): Promise<AuthUser | null> {
@@ -471,6 +482,7 @@ app.get("/api/meal/catalog", async (req, res) => {
 app.get("/api/meal-planner/quota", async (req, res) => {
   const auth = readAuthFromRequest(req);
   if (!auth?.userId) return res.status(401).json({ message: "غير مصرح" });
+  await ensureMealPlannerInit();
   const quota = await getAiQuotaStatus(auth.userId);
   return res.json(quota);
 });
@@ -479,6 +491,7 @@ app.post("/api/meal-planner/generate-week", async (req, res, next) => {
   const auth = readAuthFromRequest(req);
   if (!auth?.userId) return res.status(401).json({ message: "غير مصرح" });
   try {
+    await ensureMealPlannerInit();
     const result = await generateWeekForUser(auth.userId, req.body);
     return res.json(result);
   } catch (error) {
@@ -498,6 +511,7 @@ app.post("/api/meal-planner/edit-meal", async (req, res, next) => {
   const auth = readAuthFromRequest(req);
   if (!auth?.userId) return res.status(401).json({ message: "غير مصرح" });
   try {
+    await ensureMealPlannerInit();
     const result = await editMealForUser(auth.userId, req.body);
     return res.json(result);
   } catch (error) {
@@ -517,6 +531,7 @@ app.post("/api/meal-planner/regenerate-day", async (req, res, next) => {
   const auth = readAuthFromRequest(req);
   if (!auth?.userId) return res.status(401).json({ message: "غير مصرح" });
   try {
+    await ensureMealPlannerInit();
     const result = await regenerateDayForUser(auth.userId, req.body);
     return res.json(result);
   } catch (error) {
@@ -535,6 +550,7 @@ app.post("/api/meal-planner/regenerate-day", async (req, res, next) => {
 app.post("/api/meal-planner/delete-plan", async (req, res) => {
   const auth = readAuthFromRequest(req);
   if (!auth?.userId) return res.status(401).json({ message: "غير مصرح" });
+  await ensureMealPlannerInit();
   const mode = req.body?.mode === "all" ? "all" : "meals";
   const cloud = await getCloudData(auth.userId);
   const currentMealData =
@@ -559,6 +575,7 @@ app.get("/api/admin/ai-usage", async (req, res) => {
   if (auth.role !== "admin" && auth.role !== "super_admin") {
     return res.status(403).json({ message: "غير مصرح بهذه العملية" });
   }
+  await ensureMealPlannerInit();
   const summary = await getAdminUsageSummary();
   return res.json(summary);
 });
