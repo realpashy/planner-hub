@@ -15,7 +15,7 @@ import { getPlanTierConfig } from "../../shared/plans/feature-access.ts";
 
 const OPENAI_CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions";
 const OPENAI_MEAL_MODEL = process.env.OPENAI_MEAL_MODEL || "gpt-5-mini";
-const OPENAI_REQUEST_TIMEOUT_MS = 40_000;
+const OPENAI_REQUEST_TIMEOUT_MS = 30_000;
 
 type JsonSchemaName = "weekly_plan" | "single_day" | "single_meal";
 
@@ -186,7 +186,7 @@ async function requestStructuredJson<T>({
   let lastError: Error | null = null;
   const completionBudgets =
     schemaName === "weekly_plan"
-      ? [2200]
+      ? [2400, 3400]
       : schemaName === "single_day"
         ? [1100]
         : [650];
@@ -269,6 +269,14 @@ async function requestStructuredJson<T>({
       };
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
+      const finishReason = body.choices?.[0]?.finish_reason ?? "unknown";
+      const shouldRetryForLength =
+        schemaName === "weekly_plan" &&
+        attempt < completionBudgets.length - 1 &&
+        finishReason === "length";
+      if (shouldRetryForLength) {
+        continue;
+      }
     }
   }
 
