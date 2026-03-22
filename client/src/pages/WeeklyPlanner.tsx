@@ -264,10 +264,10 @@ export default function WeeklyPlanner() {
                       data-testid="textarea-notes"
                     />
                   </div>
-                </div>
-              </motion.div>
-            </div>
-
+                </CardContent>
+              </div>
+            </motion.div>
+          </div>
           <div className="lg:col-span-4 space-y-5 md:space-y-6">
             <HabitTracker habits={data.habits} weekStart={weekDays[0]} />
             <TaskList tasks={data.tasks} selectedDate={weekDays[0]} isWeeklyMode={true} />
