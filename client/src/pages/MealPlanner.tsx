@@ -174,6 +174,7 @@ export default function MealPlanner() {
         onToggleMeal={(mealId) => setExpandedMealId((current) => (current === mealId ? null : mealId))}
         onSwapMeal={handleSwapMeal}
         onRegenerateMeal={(dateISO, mealType) => handleSwapMeal(dateISO, mealType, "refresh")}
+        remainingMealActions={usage.swapsLeft}
         workingAction={workingAction}
       />
 

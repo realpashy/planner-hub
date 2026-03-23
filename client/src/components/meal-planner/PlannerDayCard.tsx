@@ -43,11 +43,11 @@ export function PlannerDayCard({ day, selected = false, onOpen }: PlannerDayCard
       )}
     >
       <div className="space-y-3.5">
-        <div className="rtl-meta-row">
+        <div className="flex items-center justify-start gap-2">
+          <div className="h-2.5 w-2.5 rounded-full bg-primary shadow-[0_0_0_6px_rgba(149,223,30,0.08)]" />
           <div className="meal-label-surface text-muted-foreground">
             {day.busyDay ? "إيقاع أخف لهذا اليوم" : "خطة يومية واضحة"}
           </div>
-          <div className="h-2.5 w-2.5 rounded-full bg-primary shadow-[0_0_0_6px_rgba(149,223,30,0.08)]" />
         </div>
 
         <div className="grid grid-cols-[1fr_auto] items-start gap-3 text-right">
@@ -67,15 +67,11 @@ export function PlannerDayCard({ day, selected = false, onOpen }: PlannerDayCard
               <div
                 key={meal.id}
                 className={cn(
-                  "grid grid-cols-[1fr_auto] items-center gap-3 rounded-[calc(var(--radius)+0.25rem)] px-2 py-2 text-right",
+                  "flex items-center justify-start gap-3 rounded-[calc(var(--radius)+0.25rem)] px-2 py-2 text-right",
                   index !== day.meals.length - 1 && "border-b border-dashed border-slate-200/70 dark:border-slate-700/60",
                 )}
               >
-                <div className="min-w-0 flex-1">
-                  <p className="line-clamp-1 text-sm font-semibold text-foreground">{meal.title}</p>
-                </div>
                 <div className="inline-flex shrink-0 items-center gap-2 text-muted-foreground">
-                  <span className="text-[11px] font-semibold">{meal.mealType === "breakfast" ? "فطور" : meal.mealType === "lunch" ? "غداء" : meal.mealType === "dinner" ? "عشاء" : "سناك"}</span>
                   <span
                     className={cn(
                       "inline-flex h-8 w-8 items-center justify-center rounded-[calc(var(--radius)+0.25rem)] border shadow-[var(--app-shadow)]",
@@ -87,6 +83,10 @@ export function PlannerDayCard({ day, selected = false, onOpen }: PlannerDayCard
                   >
                     <Icon className="h-4 w-4" />
                   </span>
+                  <span className="text-[11px] font-semibold">{meal.mealType === "breakfast" ? "فطور" : meal.mealType === "lunch" ? "غداء" : meal.mealType === "dinner" ? "عشاء" : "سناك"}</span>
+                </div>
+                <div className="min-w-0 flex-1 text-right">
+                  <p className="line-clamp-1 text-sm font-semibold text-foreground">{meal.title}</p>
                 </div>
               </div>
             );
@@ -101,13 +101,13 @@ export function PlannerDayCard({ day, selected = false, onOpen }: PlannerDayCard
           <MacroPill value={`${day.nutrition.fat}غ دهون`} />
         </div>
 
-        <div className="grid grid-cols-[1fr_auto] gap-3 rounded-[5px] border border-primary/15 bg-primary/[0.08] px-3 py-2.5 text-right">
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-foreground">عرض اليوم والتعديل الخفيف</p>
-            <p className="text-[11px] leading-5 text-muted-foreground">افتح التفاصيل لمراجعة الوجبات بسرعة.</p>
-          </div>
+        <div className="flex items-center justify-start gap-3 rounded-[5px] border border-primary/15 bg-primary/[0.08] px-3 py-2.5 text-right">
           <div className="inline-flex h-9 w-9 items-center justify-center rounded-[5px] border border-primary/20 bg-primary text-primary-foreground shadow-[var(--app-shadow)]">
             <Soup className="h-4 w-4" />
+          </div>
+          <div className="min-w-0 flex-1 text-right">
+            <p className="text-sm font-semibold text-foreground">عرض اليوم والتعديل الخفيف</p>
+            <p className="text-[11px] leading-5 text-muted-foreground">افتح التفاصيل لمراجعة الوجبات بسرعة.</p>
           </div>
         </div>
       </div>
