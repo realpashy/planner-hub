@@ -122,11 +122,11 @@ export default function MealPlanner() {
           <PlannerHeroOverview plan={plan} summary={dashboardSummary} />
 
           <div className="space-y-4">
-            <div className="flex items-start justify-start gap-3 text-right">
-              <div className="meal-label-surface text-primary">
-                افتح أي يوم لمراجعة الوجبات والتعديل الخفيف
-              </div>
-              <div className="rtl-title-stack flex-1">
+            <div className="meal-header-row">
+              <div className="meal-header-cluster">
+                <span className="meal-label-surface meal-header-kicker text-primary">
+                  افتح أي يوم لمراجعة الوجبات والتعديل الخفيف
+                </span>
                 <p className="text-xl font-black text-foreground">الخطة الأسبوعية</p>
                 <p className="text-sm text-muted-foreground">تدفق عمودي واضح لقراءة أيام الأسبوع من الأعلى إلى الأسفل.</p>
               </div>
@@ -139,11 +139,11 @@ export default function MealPlanner() {
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-start justify-start gap-3 text-right">
-              <div className="meal-label-surface text-primary">
-                مرتبة حسب أقسام السوبرماركت
-              </div>
-              <div className="rtl-title-stack flex-1">
+            <div className="meal-header-row">
+              <div className="meal-header-cluster">
+                <span className="meal-label-surface meal-header-kicker text-primary">
+                  مرتبة حسب أقسام السوبرماركت
+                </span>
                 <p className="text-xl font-black text-foreground">التسوق لهذا الأسبوع</p>
                 <p className="text-sm text-muted-foreground">استخدم القائمة كما هي أو أرسلها مباشرة إلى واتساب.</p>
               </div>
@@ -152,11 +152,11 @@ export default function MealPlanner() {
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-start justify-start gap-3 text-right">
-              <div className="meal-label-surface text-primary">
-                ملاحظات خفيفة فقط
-              </div>
-              <div className="rtl-title-stack flex-1">
+            <div className="meal-header-row">
+              <div className="meal-header-cluster">
+                <span className="meal-label-surface meal-header-kicker text-primary">
+                  ملاحظات خفيفة فقط
+                </span>
                 <p className="text-xl font-black text-foreground">إرشادات الأسبوع</p>
                 <p className="text-sm text-muted-foreground">تحسينات بسيطة تبقي الخطة واضحة وغير مزدحمة.</p>
               </div>

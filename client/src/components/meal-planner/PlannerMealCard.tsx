@@ -76,8 +76,8 @@ export function PlannerMealCard({
     <>
       <motion.article layout className="meal-surface-card rounded-[calc(var(--radius)+0.65rem)] p-4 shadow-lg">
         <div className="space-y-3.5 text-right">
-          <div className="flex items-start justify-start gap-3">
-            <div className="min-w-0 flex-1 space-y-2 text-right">
+          <div className="meal-header-row">
+            <div className="meal-header-cluster">
               <div className="rtl-chip-row">
                 <span className="meal-label-surface border-primary/20 bg-primary/[0.12] text-primary">{labelForMealType(meal.mealType)}</span>
                 {meal.repeated ? <span className="meal-label-surface border-amber-500/20 bg-amber-500/[0.12] text-amber-700 dark:text-amber-300">مكرر</span> : null}
@@ -264,8 +264,8 @@ export function PlannerMealCard({
                 onClick={() => setSelectedMode("refresh")}
                 className={`rounded-[5px] border px-3 py-3 text-right transition-all sm:col-span-2 ${selectedMode === "refresh" ? "border-primary/35 bg-primary/[0.12] text-foreground shadow-[var(--app-shadow)]" : "border-border/80 bg-background/75 text-foreground hover:border-primary/20 hover:bg-primary/[0.05]"}`}
               >
-                <div className="flex items-start justify-start gap-3 text-right">
-                  <div className="min-w-0 flex-1 space-y-1 text-right">
+                <div className="meal-leading-row items-start">
+                  <div className="meal-header-cluster space-y-1">
                     <div className="text-sm font-bold">تجديد الوجبة الحالية</div>
                     <div className="text-xs leading-6 text-muted-foreground">ينشئ اقتراحًا جديدًا لنفس نوع الوجبة داخل هذا اليوم.</div>
                   </div>

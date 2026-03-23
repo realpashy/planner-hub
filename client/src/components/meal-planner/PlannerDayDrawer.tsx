@@ -49,7 +49,7 @@ export function PlannerDayDrawer({
       >
         {day ? (
           <div className="premium-scrollbar min-h-full overflow-y-auto">
-            <div className="sticky top-0 z-20 border-b border-border/80 bg-background/[0.92] px-5 py-5 backdrop-blur-xl">
+            <div className="sticky top-0 z-20 border-b border-border/75 bg-background/[0.96] px-5 py-5 backdrop-blur-xl">
               <div className="space-y-4 text-right">
                 <div className="space-y-2 text-right">
                   <div className="flex justify-start">
@@ -80,7 +80,7 @@ export function PlannerDayDrawer({
 
             <div className="p-5">
               <div className="space-y-4">
-                <div className="flex items-center justify-start gap-3 text-right">
+                <div className="meal-leading-row">
                   <div className="meal-label-surface text-muted-foreground">
                     {day.meals.length} وجبات
                   </div>
@@ -90,14 +90,18 @@ export function PlannerDayDrawer({
                   </div>
                 </div>
 
-                <div className="relative pr-8">
-                  <div className="absolute bottom-4 right-4 top-4 w-px bg-border/70" />
+                <div className="meal-timeline">
+                  <div className="meal-timeline-lane">
+                    <div className="meal-timeline-rail" />
+                  </div>
                   <div className="space-y-4">
                     <AnimatePresence initial={false}>
                       {day.meals.map((meal) => (
                         <motion.div key={meal.id} layout className="relative">
-                          <div className="absolute right-[9.5px] top-7 z-10 h-3 w-3 rounded-full bg-primary ring-4 ring-primary/10" />
-                          <div className="pr-8">
+                          <div className="meal-timeline-lane">
+                            <div className="meal-timeline-dot" />
+                          </div>
+                          <div className="pr-6">
                             <PlannerMealCard
                               meal={meal}
                               expanded={expandedMealId === meal.id}

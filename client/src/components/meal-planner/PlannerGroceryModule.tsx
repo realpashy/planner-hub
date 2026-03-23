@@ -161,8 +161,8 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
           dir="rtl"
         >
           <div className="space-y-4">
-            <div className="flex flex-col gap-3 text-right lg:flex-row lg:items-start lg:justify-start">
-              <div className="inline-flex shrink-0 items-center gap-2 lg:order-1">
+            <div className="flex flex-col gap-3 text-right lg:flex-row lg:items-start lg:justify-between">
+              <div className="inline-flex shrink-0 items-center gap-2 lg:self-start">
                 <div className="meal-label-surface text-primary">
                   {grocery.length} فئات • {totalItems} عناصر
                 </div>
@@ -175,7 +175,7 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
                   <span>إرسال القائمة إلى واتساب</span>
                 </InteractiveButton>
               </div>
-              <div className="space-y-2 text-right flex-1 lg:order-2">
+              <div className="meal-header-cluster lg:max-w-[34rem]">
                 <h3 className="text-lg font-black text-foreground">قائمة التسوق</h3>
                 <p className="text-sm leading-7 text-muted-foreground">
                   قائمة موحدة ونظيفة مبنية على نموذج تسوق منظم، لا على أسطر المكونات الخام.
@@ -203,11 +203,11 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
                       key={group.key}
                       className="space-y-3 rounded-[5px] border border-primary/15 bg-background/38 p-4 shadow-[var(--app-shadow)]"
                     >
-                      <div className="flex items-center justify-start gap-3 text-right">
+                      <div className="meal-leading-row">
                         <span className="icon-chip h-10 w-10 rounded-[5px] border-primary/25 bg-primary text-primary-foreground dark:border-primary/20 dark:bg-primary/[0.12] dark:text-primary">
                           <Icon className="h-4 w-4" />
                         </span>
-                        <div className="space-y-1 text-right flex-1">
+                        <div className="meal-header-cluster space-y-1">
                           <h4 className="text-sm font-black text-foreground">{group.title}</h4>
                           <p className="text-xs text-muted-foreground">{group.items.length} عناصر مجمعة بقراءة أوضح</p>
                         </div>
@@ -217,7 +217,7 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
                         {group.items.map((item, index) => (
                           <div
                             key={item.key}
-                            className={`flex items-center justify-start gap-3 px-4 py-3 text-right ${index !== group.items.length - 1 ? "border-b border-dashed border-primary/15" : ""}`}
+                            className={`meal-grocery-row px-4 py-3 ${index !== group.items.length - 1 ? "border-b border-dashed border-primary/15" : ""}`}
                           >
                             <div className="min-w-0 flex-1 text-right">
                               <div className="inline-flex max-w-full items-center gap-2">
@@ -225,7 +225,7 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
                                 <p className="truncate text-sm font-semibold text-foreground">{item.label}</p>
                               </div>
                             </div>
-                            <div className="inline-flex shrink-0 items-center gap-2 text-primary">
+                            <div className="meal-grocery-quantity">
                               <span className="text-xs font-black">×</span>
                               <span className="text-xs font-bold">{item.quantity}</span>
                             </div>

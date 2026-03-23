@@ -52,10 +52,17 @@
   --warning-foreground: 0 0% 100%;
   --app-shadow: 2px 2px 1px 1px #0000000d;
   --surface-canvas: linear-gradient(180deg, rgba(255,255,255,0.99), rgba(249,250,251,0.99));
-  --surface-card: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(250,252,246,0.97));
-  --surface-muted: linear-gradient(180deg, rgba(249,250,251,0.99), rgba(244,248,238,0.96));
-  --surface-accent: linear-gradient(180deg, rgba(234,255,207,0.9), rgba(149,223,30,0.14));
-  --surface-glow: radial-gradient(circle at top right, rgba(149,223,30,0.1), transparent 38%);
+  --surface-card: linear-gradient(180deg, rgba(255,255,255,1), rgba(252,253,250,0.985));
+  --surface-muted: linear-gradient(180deg, rgba(251,252,253,1), rgba(247,249,244,0.985));
+  --surface-accent: linear-gradient(180deg, rgba(245,252,232,0.95), rgba(231,247,205,0.72));
+  --surface-glow: radial-gradient(circle at top right, rgba(149,223,30,0.06), transparent 44%);
+  --meal-card-overlay: radial-gradient(circle at top right, rgba(149,223,30,0.045), transparent 28%);
+  --meal-card-selected-overlay: radial-gradient(circle at top right, rgba(149,223,30,0.09), transparent 30%);
+  --meal-soft-overlay: radial-gradient(circle at top right, rgba(149,223,30,0.03), transparent 26%);
+  --meal-grocery-overlay: radial-gradient(circle at top right, rgba(16,185,129,0.06), transparent 30%);
+  --meal-guidance-overlay: radial-gradient(circle at top right, rgba(245,158,11,0.06), transparent 28%);
+  --meal-popup-overlay: radial-gradient(circle at top right, rgba(149,223,30,0.05), transparent 24%);
+  --meal-popup-shadow: 0 24px 56px rgba(20, 24, 15, 0.12);
 
   --font-sans: 'Tajawal', sans-serif;
   --font-hebrew: 'Heebo', sans-serif;
@@ -134,6 +141,13 @@
   --surface-muted: linear-gradient(180deg, rgba(33,33,33,0.98), rgba(27,27,27,0.98));
   --surface-accent: linear-gradient(180deg, rgba(149,223,30,0.18), rgba(149,223,30,0.08));
   --surface-glow: radial-gradient(circle at top right, rgba(157,223,54,0.14), transparent 38%);
+  --meal-card-overlay: radial-gradient(circle at top right, rgba(149,223,30,0.1), transparent 26%);
+  --meal-card-selected-overlay: radial-gradient(circle at top right, rgba(149,223,30,0.14), transparent 28%);
+  --meal-soft-overlay: radial-gradient(circle at top right, rgba(149,223,30,0.06), transparent 24%);
+  --meal-grocery-overlay: radial-gradient(circle at top right, rgba(16,185,129,0.12), transparent 26%);
+  --meal-guidance-overlay: radial-gradient(circle at top right, rgba(245,158,11,0.12), transparent 24%);
+  --meal-popup-overlay: radial-gradient(circle at top right, rgba(149,223,30,0.1), transparent 22%);
+  --meal-popup-shadow: 0 28px 80px rgba(0,0,0,0.34);
 }
 
 @layer base {
@@ -282,40 +296,40 @@
 
   .meal-surface-card {
     @apply border border-border/80 bg-card text-card-foreground;
-    background-image: radial-gradient(circle at top right, rgba(149,223,30,0.1), transparent 26%), var(--surface-card);
+    background-image: var(--meal-card-overlay), var(--surface-card);
     box-shadow: var(--app-shadow);
   }
 
   .meal-surface-card-selected {
     @apply border border-primary/25 bg-card text-card-foreground;
-    background-image: radial-gradient(circle at top right, rgba(149,223,30,0.14), transparent 28%), var(--surface-card);
+    background-image: var(--meal-card-selected-overlay), var(--surface-card);
     box-shadow: var(--app-shadow);
   }
 
   .meal-surface-soft {
     @apply border border-border/70 bg-card text-card-foreground;
-    background-image: radial-gradient(circle at top right, rgba(149,223,30,0.06), transparent 24%), var(--surface-muted);
+    background-image: var(--meal-soft-overlay), var(--surface-muted);
     box-shadow: var(--app-shadow);
   }
 
   .meal-surface-grocery {
     @apply border bg-card text-card-foreground;
     border-color: rgba(16, 185, 129, 0.18);
-    background-image: radial-gradient(circle at top right, rgba(16,185,129,0.12), transparent 26%), var(--surface-card);
+    background-image: var(--meal-grocery-overlay), var(--surface-card);
     box-shadow: var(--app-shadow);
   }
 
   .meal-surface-guidance {
     @apply border bg-card text-card-foreground;
     border-color: rgba(245, 158, 11, 0.18);
-    background-image: radial-gradient(circle at top right, rgba(245,158,11,0.12), transparent 24%), var(--surface-card);
+    background-image: var(--meal-guidance-overlay), var(--surface-card);
     box-shadow: var(--app-shadow);
   }
 
   .meal-surface-popup {
     @apply border border-border/80 bg-card text-card-foreground;
-    background-image: radial-gradient(circle at top right, rgba(149,223,30,0.1), transparent 22%), var(--surface-card);
-    box-shadow: 0 28px 80px rgba(0,0,0,0.34);
+    background-image: var(--meal-popup-overlay), var(--surface-card);
+    box-shadow: var(--meal-popup-shadow);
   }
 
   .meal-label-surface {
@@ -335,6 +349,57 @@
     display: inline-flex;
     line-height: 1;
     transform: translateY(-1px);
+  }
+
+  .meal-header-cluster {
+    @apply min-w-0 flex-1 space-y-2 text-right;
+  }
+
+  .meal-header-kicker {
+    @apply inline-flex w-fit items-center gap-2;
+  }
+
+  .meal-header-row {
+    @apply flex items-start gap-3 text-right;
+  }
+
+  .meal-leading-row {
+    @apply flex items-center gap-3 text-right;
+  }
+
+  .meal-preview-row {
+    @apply flex items-center gap-3 text-right;
+  }
+
+  .meal-preview-leading {
+    @apply inline-flex shrink-0 items-center gap-2 text-muted-foreground;
+  }
+
+  .meal-grocery-row {
+    @apply flex items-center gap-3 text-right;
+  }
+
+  .meal-grocery-quantity {
+    @apply inline-flex shrink-0 items-center gap-2 text-primary;
+  }
+
+  .meal-timeline {
+    @apply relative pr-10;
+  }
+
+  .meal-timeline-lane {
+    @apply absolute bottom-4 right-3 top-4 w-4;
+  }
+
+  .meal-timeline-rail {
+    @apply absolute bottom-0 top-0 w-px bg-border/70;
+    right: calc(50% - 0.5px);
+  }
+
+  .meal-timeline-dot {
+    @apply absolute top-7 z-10 h-3 w-3 rounded-full bg-primary ring-4 ring-primary/10;
+    right: 50%;
+    transform: translateX(50%);
   }
 
   .budget-rtl-select-trigger {

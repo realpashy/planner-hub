@@ -19,7 +19,7 @@ export function PlannerStatPill({
   return (
     <div
       className={cn(
-        "meal-surface-soft flex min-h-[98px] items-center justify-start gap-4 rounded-[5px] px-4 py-3 text-right backdrop-blur-sm transition-colors duration-200 hover:border-primary/15",
+        "meal-surface-soft flex min-h-[102px] items-center justify-start gap-4 rounded-[5px] px-4 py-3.5 text-right backdrop-blur-sm transition-colors duration-200 hover:border-primary/15",
         className,
       )}
     >

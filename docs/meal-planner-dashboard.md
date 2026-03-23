@@ -29,6 +29,14 @@ It must not feel like:
 - a pile of identical cards
 - default shadcn dark mode
 
+In light theme, the same module should feel:
+
+- bright
+- calm
+- editorial
+- cleaner and whiter than the dark theme
+- inspired by premium SaaS reference cards rather than dark surfaces simply recolored
+
 ## Top bar
 
 - back action is a clear RTL-first control on the right
@@ -70,6 +78,7 @@ Rules:
 - day pill, date title, and helper copy stacked clearly in RTL
 - compact macro chips
 - meal timeline flow with stronger editorial hierarchy
+- timeline rail and dot must come from a shared anchored lane pattern so the dot sits exactly on the rail in every meal row
 
 Meal cards inside the drawer should:
 
@@ -157,6 +166,7 @@ Remove from the main planner surface:
 - supporting subtitles on the right
 - counts/meta opposite on the left only when helpful
 - date pills, helper badges, and category chips that lead the row should appear first on the right in RTL, not as the trailing element of a mirrored LTR grid
+- section helper badges that belong to the title context should live inside the right-hand content cluster, not as a detached sibling on the left
 - shopping rows: label right, quantity left
 - generic RTL helper rows must not encode the meaning of the layout; meal planner rows should use explicit Arabic-first DOM order instead of `row-reverse` tricks
 - drawer title block right

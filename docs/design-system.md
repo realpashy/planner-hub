@@ -69,6 +69,19 @@ This file is the visual source of truth for Planner Hub. New UI must match this 
 - sidebar border: `#95df1e`
 - sidebar ring: `#ffffff`
 
+### Meal module light-theme surfaces
+
+For the meal module in light theme, prefer a bright editorial hierarchy:
+
+- page canvas: white with a faint neutral wash
+- main shell: white card with subtle border and the base soft shadow
+- overview and summary: white elevated panel with restrained lime wash only
+- weekly cards: white elevated cards with lighter inner meal containers
+- grocery and guidance: white shells with soft differentiated tint, not dark-first overlays copied into light mode
+- popup: focused white detail surface with a softer modal shadow than dark mode
+
+Lime green should stay a high-signal accent in light mode, not the fill color for every surface.
+
 ## Spacing scale
 
 Use this scale first:
@@ -153,6 +166,7 @@ Do not make every surface the same charcoal block.
   - same icon-chip treatment
   - same border/radius/shadow logic
   - same label/value hierarchy
+- in the meal module light theme, summary cards should read as clean white SaaS cards first, with accent only in icon chips and active highlights
 
 ## Chips and badges
 

@@ -27,6 +27,12 @@ Apply the design system directly to the rendered UI.
 Do not ship “mostly RTL-correct” UI.
 Manually verify title alignment, subtitle alignment, opposite-side meta placement, and icon/button ordering in every affected row.
 
+Do not fix meal-module RTL or timeline issues with Radix-generated ID selectors or page-instance CSS hacks.
+Prefer stable component-level layout patterns:
+- right-anchored content clusters for Arabic headers
+- badge-inside-title-stack composition instead of floating sibling badges
+- shared timeline lane wrappers for popup rails and dots
+
 Do not over-plan.
 Do not ask for confirmation for normal implementation work.
 Inspect the real codebase first and treat it as the source of truth.

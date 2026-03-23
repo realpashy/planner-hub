@@ -25,6 +25,7 @@ For rows with a title block and secondary content:
 - do not rely on `justify-between` alone
 - when a badge, date pill, icon chip, or quantity block is meant to lead the row in Arabic, place it first in the DOM and use an explicit RTL-first flex row instead of `grid-cols-[1fr_auto]`
 - do not hide RTL meaning inside generic helper classes like `row-reverse`, mirrored `grid-cols-[1fr_auto]`, or helper rows that hardcode `justify-between`; helpers should stay neutral and the row itself should define its real Arabic reading order
+- when a section header has a supporting badge or label, keep that badge inside the right-hand content cluster unless it is true opposite-side meta
 
 ### Icons and controls
 
@@ -87,6 +88,12 @@ Use the least-friction control first:
 - supporting meta or chips placed intentionally, not generically
 - repeated card families must share the same internal rhythm
 - if a card contains a leading icon chip, date pill, or quantity block, it must appear on the right side first in the DOM for Arabic rows
+- do not create meal-planner headers from `floating badge + separate text sibling` when the badge belongs to the title context; use one right-anchored content cluster instead
+
+### Timeline and anchored detail layouts
+
+- timeline rails and dots must be built from stable component-level wrappers, not absolute positions tied to Radix IDs or one screen instance
+- a timeline dot should be centered on the rail mathematically by the shared wrapper, not visually nudged beside it
 
 ### Modals
 
