@@ -140,7 +140,7 @@ export default function MealPlanner() {
 
           <div className="space-y-4">
             <div className="flex items-start justify-start gap-3 text-right">
-              <div className="meal-label-surface text-emerald-400 dark:text-emerald-300">
+              <div className="meal-label-surface text-primary">
                 مرتبة حسب أقسام السوبرماركت
               </div>
               <div className="rtl-title-stack flex-1">
@@ -153,7 +153,7 @@ export default function MealPlanner() {
 
           <div className="space-y-4">
             <div className="flex items-start justify-start gap-3 text-right">
-              <div className="meal-label-surface text-amber-400 dark:text-amber-300">
+              <div className="meal-label-surface text-primary">
                 ملاحظات خفيفة فقط
               </div>
               <div className="rtl-title-stack flex-1">

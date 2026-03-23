@@ -485,15 +485,14 @@ const GROUP_LABELS: Record<string, string> = {
 
 const GROUP_ORDER = ["produce", "dairy_fridge", "meats", "pantry", "bakery", "frozen", "snacks", "spices"] as const;
 
-export const GROCERY_NORMALIZATION_EXAMPLES = [
-  ["120غ صدر دجاج مشوي", "150غ صدر دجاج بدون جلد", "صدور دجاج 150غ"],
-  ["طماطم كرزية", "2 حبة طماطم", "طماطم مقطعة"],
-  ["زبادي يوناني 170غ", "170 غ زبادي", "علبة زبادي"],
-] as const;
-
 function normalizeIngredientText(label: string) {
   return label
     .toLowerCase()
+    .replace(/[أإآٱ]/g, "ا")
+    .replace(/[ى]/g, "ي")
+    .replace(/[ة]/g, "ه")
+    .replace(/[^\u0590-\u05FF\u0600-\u06FFa-z0-9.,،:;()/\s-]/g, " ")
+    .replace(/[\u064b-\u065f\u0670\u06d6-\u06ed]/g, "")
     .replace(/[.,،:;()]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -520,7 +519,7 @@ function canonicalIngredientLabel(rawLabel: string) {
   const value = normalizeIngredientText(rawLabel)
     .replace(/(\d+(?:\.\d+)?)\s*(غ|غم|جرام|جرامًا|جرامات|g|gm|gram|grams)/gi, " ")
     .replace(/\d+(?:\.\d+)?/g, " ")
-    .replace(/(مشوي|المشوي|مسلوق|المسلوق|مقلي|مفروم|طازج|بدون جلد|قليل الدسم|كامل الدسم|شرائح|مكعبات|مقطع|مقطعة|صغير|صغيرة|متوسط|متوسطة|كبير|كبيرة|حسب الحاجة|يوناني|كرزية)/g, " ")
+    .replace(/(مشوي|المشوي|مسلوق|المسلوق|مقلي|مفروم|طازج|بدون جلد|قليل الدسم|كامل الدسم|شرائح|مكعبات|مقطع|مقطعة|صغير|صغيرة|متوسط|متوسطة|كبير|كبيرة|حسب الحاجة|يوناني|كرزية|معلب|معلب|مصفى|مصفي|مغسول|مطبوخ|مخفف|قليل|جاهز|مصفي|مصفاه)/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 
@@ -537,6 +536,8 @@ function canonicalIngredientLabel(rawLabel: string) {
   if (/(خبز|توست|bread)/.test(value)) return "خبز";
   if (/(حليب|milk)/.test(value)) return "حليب";
   if (/(جبن|cheese)/.test(value)) return "جبن";
+  if (/(بصل|onion)/.test(value)) return "بصل";
+  if (/(عدس|lentil)/.test(value)) return "عدس";
   return value || rawLabel.trim();
 }
 
@@ -695,6 +696,39 @@ export function buildGroceryGroups(days: PlannerDay[], removedKeys: string[] = [
   });
 }
 
+function normalizeStoredGroceryGroups(rawGroups: unknown[], removedKeys: string[] = []) {
+  const hidden = new Set(removedKeys.map((key) => key.toLowerCase()));
+  return rawGroups
+    .map((group) => {
+      const record = group && typeof group === "object" ? (group as Record<string, unknown>) : {};
+      const items = Array.isArray(record.items)
+        ? record.items
+            .map((item) => {
+              const itemRecord = item && typeof item === "object" ? (item as Record<string, unknown>) : {};
+              const key = String(itemRecord.key ?? itemRecord.label ?? "").trim().toLowerCase();
+              const label = String(itemRecord.label ?? "").trim();
+              const quantity = String(itemRecord.quantity ?? "").trim();
+              if (!key || !label || hidden.has(key)) return null;
+              return {
+                key,
+                label,
+                quantity: quantity || "حصة واحدة",
+                checked: false,
+                count: 1,
+              } satisfies GroceryListItem;
+            })
+            .filter(Boolean) as GroceryListItem[]
+        : [];
+
+      return {
+        key: String(record.key ?? "").trim(),
+        title: String(record.title ?? "").trim(),
+        items,
+      } satisfies GroceryGroup;
+    })
+    .filter((group) => group.key && group.title && group.items.length > 0);
+}
+
 function buildPlanSuggestions(plan: WeeklyPlanRecord): PlannerSuggestionBundle {
   const proteinHeavy = plan.days.some((day) => day.nutrition.protein >= 100);
   const hydrationLow = plan.days.some((day) => day.nutrition.waterCups < 8);
@@ -716,7 +750,10 @@ export function enrichPlan(plan: WeeklyPlanRecord): WeeklyPlanRecord {
     ...plan,
     days,
     removedGroceryKeys,
-    grocery: buildGroceryGroups(days, removedGroceryKeys),
+    grocery:
+      Array.isArray(plan.grocery) && plan.grocery.length > 0
+        ? normalizeStoredGroceryGroups(plan.grocery, removedGroceryKeys)
+        : buildGroceryGroups(days, removedGroceryKeys),
     suggestions: plan.suggestions ?? buildPlanSuggestions({ ...plan, days, grocery: [], suggestions: { nutritionInsight: "", habitSuggestion: "", supplementPlaceholder: "" } }),
   };
 }

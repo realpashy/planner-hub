@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { CalendarDays, Flame, Sparkles } from "lucide-react";
+import { CalendarDays, Flame } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { PlannerMealCard } from "@/components/meal-planner/PlannerMealCard";
 import { type MealSwapMode, type PlannerDay } from "@/lib/meal-planner";
@@ -48,8 +48,8 @@ export function PlannerDayDrawer({
                 <div className="space-y-2 text-right">
                   <div className="flex justify-start">
                     <span className="meal-label-surface border-primary/20 bg-primary/[0.12] text-primary">
-                      {day.dayName}
                       <CalendarDays className="h-3.5 w-3.5" />
+                      {day.dayName}
                     </span>
                   </div>
                   <div>
@@ -67,10 +67,7 @@ export function PlannerDayDrawer({
                 </div>
 
                 <div className="flex justify-start">
-                  <p className="meal-note-surface inline-flex items-center gap-2 py-2">
-                    افتح أي وجبة لتعديلها أو تبديلها بسرعة.
-                    <Sparkles className="h-4 w-4 text-primary" />
-                  </p>
+                  <p className="meal-note-surface py-2">افتح أي وجبة لتعديلها أو تبديلها بسرعة.</p>
                 </div>
               </div>
             </div>
@@ -93,7 +90,7 @@ export function PlannerDayDrawer({
                     <AnimatePresence initial={false}>
                       {day.meals.map((meal) => (
                         <motion.div key={meal.id} layout className="relative">
-                          <div className="absolute right-[10px] top-7 z-10 h-3 w-3 rounded-full bg-primary ring-4 ring-primary/10" />
+                          <div className="absolute right-[calc(1rem-6px)] top-7 z-10 h-3 w-3 rounded-full bg-primary ring-4 ring-primary/10" />
                           <div className="pr-8">
                             <PlannerMealCard
                               meal={meal}

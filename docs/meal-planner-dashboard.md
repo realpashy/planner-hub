@@ -80,25 +80,32 @@ Meal cards inside the drawer should:
 
 ## Shopping list structure
 
-The grocery UI must render from a normalized shopping model, not raw ingredient strings.
+The grocery UI must render from an AI-organized shopping model, not raw ingredient strings.
 
 Rules:
 
 - grouped by supermarket-style sections
 - item name on the right
-- quantity on the left
-- delete hover action never overlaps text
+- a compact quantity block appears before the text in Arabic rows and reads as `×` then quantity
+- the remove action stays visible and never overlaps text
 - removed items persist for the active weekly plan only
 
 ### Grocery normalization behavior
 
-Normalize before rendering:
+Primary source:
+
+- GPT-5 mini organizes the weekly grocery list into grouped supermarket sections
+- the AI prompt must consolidate equivalent ingredient variants into one shopper-friendly item
+- the AI output language should follow the active app language when language context is available
+
+Fallback only if AI grocery data is missing:
 
 - strip noisy descriptors
 - detect a canonical grocery base item
 - merge equivalent phrasing and unit order variants
 - aggregate grams, counts, or approximate quantities
 - keep only distinctions that matter in real shopping
+- respect the current app language for shopping-friendly ingredient naming whenever language context is available
 
 Example:
 
@@ -149,6 +156,7 @@ Remove from the main planner surface:
 - counts/meta opposite on the left only when helpful
 - date pills, helper badges, and category chips that lead the row should appear first on the right in RTL, not as the trailing element of a mirrored LTR grid
 - shopping rows: label right, quantity left
+- generic RTL helper rows must not encode the meaning of the layout; meal planner rows should use explicit Arabic-first DOM order instead of `row-reverse` tricks
 - drawer title block right
 - drawer and modal helper text right
 - settings and modal close controls follow explicit RTL placement, not defaults

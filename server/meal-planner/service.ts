@@ -22,7 +22,7 @@ import {
   saveSavedMealPlan,
   updateMealPlanVersion,
 } from "../persistence.ts";
-import { editMealAI, generateWeeklyPlanAI, regenerateDayAI } from "./openai-provider.ts";
+import { editMealAI, generateWeeklyPlanAI, organizeGroceryAIFromDays, regenerateDayAI } from "./openai-provider.ts";
 
 const generateWeekInputSchema = z.object({
   preferences: z.record(z.unknown()),
@@ -200,6 +200,9 @@ async function buildUserContext(userId: string, timezoneFallback = "Asia/Jerusal
   const savedPlanSummaries = await getSavedMealPlanContext(userId);
   const latestPlan = await getLatestMealPlan(userId);
   const mealData = (cloudData.mealData && typeof cloudData.mealData === "object" ? cloudData.mealData : {}) as Record<string, any>;
+  const cloudSettings = (cloudData && typeof cloudData === "object" && "settings" in cloudData && cloudData.settings && typeof cloudData.settings === "object"
+    ? cloudData.settings
+    : {}) as Record<string, unknown>;
   const favorites = Array.isArray(mealData.favorites) ? mealData.favorites : [];
   const recentMeals = latestPlan?.planData?.days && Array.isArray((latestPlan.planData as Record<string, any>).days)
     ? ((latestPlan.planData as Record<string, any>).days as Array<Record<string, any>>)
@@ -212,6 +215,10 @@ async function buildUserContext(userId: string, timezoneFallback = "Asia/Jerusal
   return {
     timezone: profile.timezone || timezoneFallback,
     tier: profile.planTier,
+    language:
+      (typeof mealData.settings?.language === "string" && mealData.settings.language) ||
+      (typeof cloudSettings.language === "string" && cloudSettings.language) ||
+      "ar",
     dietaryNotes: [
       typeof mealData.preferences?.foodRules?.join === "function" ? mealData.preferences.foodRules.join(", ") : "",
       typeof mealData.preferences?.additionalNotes === "string" ? mealData.preferences.additionalNotes : "",
@@ -275,7 +282,7 @@ function buildStoredPlan(plan: Record<string, unknown>) {
   return {
     summary: String(plan.summary ?? ""),
     days: Array.isArray(plan.days) ? plan.days : [],
-    grocery: [],
+    grocery: Array.isArray(plan.grocery) ? plan.grocery : [],
     removedGroceryKeys: [],
     suggestions: buildSuggestions(plan),
   };
@@ -503,6 +510,9 @@ export async function editMealForUser(userId: string, body: unknown) {
         };
       })
     : [];
+  nextPlanData.grocery = await organizeGroceryAIFromDays(nextPlanData.days as any[], userContext)
+    .then((result) => result.grocery)
+    .catch(() => (Array.isArray(nextPlanData.grocery) ? nextPlanData.grocery : []));
 
   const updated = await updateMealPlanVersion(plan.id, {
     planData: nextPlanData,
@@ -573,6 +583,9 @@ export async function regenerateDayForUser(userId: string, body: unknown) {
   nextPlanData.days = Array.isArray(nextPlanData.days)
     ? nextPlanData.days.map((day: Record<string, any>) => (String(day.dateISO) === parsed.dateISO ? result.day : day))
     : [];
+  nextPlanData.grocery = await organizeGroceryAIFromDays(nextPlanData.days as any[], userContext)
+    .then((result) => result.grocery)
+    .catch(() => (Array.isArray(nextPlanData.grocery) ? nextPlanData.grocery : []));
 
   const updated = await updateMealPlanVersion(plan.id, {
     planData: nextPlanData,

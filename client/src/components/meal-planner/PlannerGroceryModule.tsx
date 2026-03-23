@@ -68,8 +68,38 @@ function normalizeWhatsappNumber(countryCode: string, phoneNumber: string) {
   return `${normalizedCode}${trimmedLocal}`;
 }
 
-function buildWhatsappMessage(groups: GroceryGroup[]) {
-  const lines = ["🛒 قائمة التسوق الأسبوعية", "مرتبة حسب أقسام السوبرماركت", ""];
+function detectAppLanguage() {
+  if (typeof document !== "undefined") {
+    const htmlLang = document.documentElement.lang?.toLowerCase();
+    if (htmlLang?.startsWith("he")) return "he";
+    if (htmlLang?.startsWith("en")) return "en";
+    if (htmlLang?.startsWith("ar")) return "ar";
+  }
+  if (typeof navigator !== "undefined") {
+    const locale = (navigator.language || "").toLowerCase();
+    if (locale.startsWith("he")) return "he";
+    if (locale.startsWith("en")) return "en";
+  }
+  return "ar";
+}
+
+function buildWhatsappMessage(groups: GroceryGroup[], language: "ar" | "he" | "en") {
+  const copy =
+    language === "he"
+      ? {
+          title: "🛒 רשימת קניות שבועית",
+          subtitle: "מסודרת לפי מחלקות הסופר",
+        }
+      : language === "en"
+        ? {
+            title: "🛒 Weekly shopping list",
+            subtitle: "Organized by supermarket sections",
+          }
+        : {
+            title: "🛒 قائمة التسوق الأسبوعية",
+            subtitle: "مرتبة حسب أقسام السوبرماركت",
+          };
+  const lines = [copy.title, copy.subtitle, ""];
 
   for (const group of groups) {
     if (!group.items.length) continue;
@@ -87,15 +117,17 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
   const [shareOpen, setShareOpen] = useState(false);
   const [countryCode, setCountryCode] = useState<string>(COUNTRY_PRESETS[0].code);
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [appLanguage, setAppLanguage] = useState<"ar" | "he" | "en">("ar");
   const totalItems = useMemo(() => grocery.reduce((sum, group) => sum + group.items.length, 0), [grocery]);
   const selectedCountry = useMemo(() => resolveCountryByCode(countryCode), [countryCode]);
   const normalizedPhone = useMemo(() => normalizeWhatsappNumber(countryCode, phoneNumber), [countryCode, phoneNumber]);
   const whatsappHref = normalizedPhone
-    ? `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(buildWhatsappMessage(grocery))}`
+    ? `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(buildWhatsappMessage(grocery, appLanguage))}`
     : "#";
 
   useEffect(() => {
     setCountryCode(detectCountryCode());
+    setAppLanguage(detectAppLanguage());
   }, []);
 
   return (
@@ -108,7 +140,7 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
           <div className="space-y-4">
             <div className="flex flex-col gap-3 text-right lg:flex-row lg:items-start lg:justify-start">
               <div className="inline-flex shrink-0 items-center gap-2 lg:order-1">
-                <div className="meal-label-surface text-emerald-400 dark:text-emerald-300">
+                <div className="meal-label-surface text-primary">
                   {grocery.length} فئات • {totalItems} عناصر
                 </div>
                 <InteractiveButton
@@ -116,8 +148,8 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
                   className="rounded-full border-0 bg-[#25D366] px-4 text-white shadow-[0_16px_34px_rgba(37,211,102,0.28)] hover:bg-[#1ebe5b]"
                   onClick={() => setShareOpen(true)}
                 >
-                  <span>إرسال القائمة إلى واتساب</span>
                   <WhatsappIcon className="h-4 w-4" />
+                  <span>إرسال القائمة إلى واتساب</span>
                 </InteractiveButton>
               </div>
               <div className="space-y-2 text-right flex-1 lg:order-2">
@@ -128,8 +160,8 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
               </div>
             </div>
 
-            <CollapsibleTrigger className="flex w-full flex-col gap-3 rounded-[5px] border border-emerald-500/15 bg-background/45 px-4 py-3 text-right shadow-[var(--app-shadow)] transition hover:border-emerald-500/25 sm:flex-row sm:items-center sm:justify-start">
-              <span className="meal-label-surface inline-flex items-center gap-2 text-emerald-400 dark:text-emerald-300">
+            <CollapsibleTrigger className="flex w-full flex-col gap-3 rounded-[5px] border border-primary/15 bg-background/45 px-4 py-3 text-right shadow-[var(--app-shadow)] transition hover:border-primary/25 sm:flex-row sm:items-center sm:justify-start">
+              <span className="meal-label-surface inline-flex items-center gap-2 text-primary">
                 {open ? "إخفاء" : "عرض"}
                 <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
               </span>
@@ -146,7 +178,7 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
                   return (
                     <section
                       key={group.key}
-                      className="space-y-3 rounded-[5px] border border-emerald-500/15 bg-background/38 p-4 shadow-[var(--app-shadow)]"
+                      className="space-y-3 rounded-[5px] border border-primary/15 bg-background/38 p-4 shadow-[var(--app-shadow)]"
                     >
                       <div className="flex items-center justify-start gap-3 text-right">
                         <span className="icon-chip h-10 w-10 rounded-[5px] border-primary/25 bg-primary text-primary-foreground dark:border-primary/20 dark:bg-primary/[0.12] dark:text-primary">
@@ -158,26 +190,30 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
                         </div>
                       </div>
 
-                      <div className="overflow-hidden rounded-[5px] border border-emerald-500/15 bg-card/[0.68]">
+                      <div className="overflow-hidden rounded-[5px] border border-primary/15 bg-card/[0.68]">
                         {group.items.map((item, index) => (
                           <div
                             key={item.key}
-                            className={`group flex items-center justify-start gap-3 px-4 py-3 text-right ${index !== group.items.length - 1 ? "border-b border-dashed border-emerald-500/15" : ""}`}
+                            className={`flex items-center justify-start gap-3 px-4 py-3 text-right ${index !== group.items.length - 1 ? "border-b border-dashed border-primary/15" : ""}`}
                           >
-                            <div className="inline-flex shrink-0 items-center gap-3">
-                              <span className="text-xs font-bold text-emerald-400 dark:text-emerald-300">{item.quantity}</span>
-                              <button
-                                type="button"
-                                onClick={() => onRemoveItem(item.key)}
-                                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-transparent text-muted-foreground opacity-0 transition group-hover:opacity-100 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 dark:hover:border-rose-400/20 dark:hover:bg-rose-500/10 dark:hover:text-rose-200"
-                                aria-label={`حذف ${item.label}`}
-                              >
-                                <X className="h-3.5 w-3.5" />
-                              </button>
-                            </div>
                             <div className="min-w-0 flex-1 text-right">
-                              <p className="truncate text-sm font-semibold text-foreground">{item.label}</p>
+                              <div className="inline-flex max-w-full items-center gap-2">
+                                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                                <p className="truncate text-sm font-semibold text-foreground">{item.label}</p>
+                              </div>
                             </div>
+                            <div className="inline-flex shrink-0 items-center gap-2 text-primary">
+                              <span className="text-xs font-black">×</span>
+                              <span className="text-xs font-bold">{item.quantity}</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => onRemoveItem(item.key)}
+                              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/70 bg-background/75 text-muted-foreground transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 dark:hover:border-rose-400/20 dark:hover:bg-rose-500/10 dark:hover:text-rose-200"
+                              aria-label={`حذف ${item.label}`}
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
                           </div>
                         ))}
                       </div>
@@ -193,12 +229,12 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
       <Dialog open={shareOpen} onOpenChange={setShareOpen}>
         <DialogContent
           dir="rtl"
-          className="premium-scrollbar meal-surface-popup rounded-[calc(var(--radius)+0.85rem)] border-emerald-500/15 shadow-[0_30px_72px_rgba(0,0,0,0.3)]"
+          className="premium-scrollbar meal-surface-popup rounded-[calc(var(--radius)+0.85rem)] border-primary/15 shadow-[0_30px_72px_rgba(0,0,0,0.3)]"
         >
           <DialogHeader className="text-right">
             <DialogTitle className="inline-flex items-center justify-start gap-2 text-right text-xl font-black">
-              <span>إرسال القائمة إلى واتساب</span>
               <WhatsappIcon className="h-5 w-5 text-[#25D366]" />
+              <span>إرسال القائمة إلى واتساب</span>
             </DialogTitle>
             <DialogDescription className="text-right leading-7">
               حدّد الدولة وأدخل الرقم بصيغته المحلية، وسنجهز لك رابط واتساب جاهزًا بالقائمة المجمعة.
@@ -209,7 +245,7 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
             <div className="grid gap-3 sm:grid-cols-[1fr_1.2fr]">
               <div className="space-y-2 text-right">
                 <label className="text-sm font-bold text-foreground">مفتاح الدولة</label>
-                <div className="flex h-12 items-center gap-3 rounded-[5px] border border-emerald-500/15 bg-background/55 px-3 shadow-[var(--app-shadow)]">
+                <div className="flex h-12 items-center gap-3 rounded-[5px] border border-primary/15 bg-background/55 px-3 shadow-[var(--app-shadow)]">
                   <select
                     value={countryCode}
                     onChange={(event) => setCountryCode(event.target.value)}
@@ -232,13 +268,13 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
                   value={phoneNumber}
                   onChange={(event) => setPhoneNumber(event.target.value)}
                   placeholder="أدخل رقمًا محليًا"
-                  className="h-12 rounded-[5px] border-emerald-500/15 bg-background/55 text-right"
+                  className="h-12 rounded-[5px] border-primary/15 bg-background/55 text-right"
                   dir="ltr"
                 />
               </div>
             </div>
 
-            <div className="rounded-[5px] border border-emerald-500/15 bg-background/55 p-4 text-right shadow-[var(--app-shadow)]">
+            <div className="rounded-[5px] border border-primary/15 bg-background/55 p-4 text-right shadow-[var(--app-shadow)]">
               <p className="text-xs font-semibold text-muted-foreground">المعاينة بعد التطبيع</p>
               <p className="mt-1 text-base font-black text-foreground" dir="ltr">
                 {normalizedPhone || `${selectedCountry.code.replace("+", "")}...`}
@@ -257,8 +293,8 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
               disabled={!normalizedPhone}
             >
               <a href={whatsappHref} target="_blank" rel="noreferrer">
-                <span>فتح واتساب وإرسال القائمة</span>
                 <WhatsappIcon className="h-4 w-4" />
+                <span>فتح واتساب وإرسال القائمة</span>
               </a>
             </InteractiveButton>
           </DialogFooter>

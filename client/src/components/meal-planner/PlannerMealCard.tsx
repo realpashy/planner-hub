@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Apple, BadgeInfo, ChevronDown, Coffee, RefreshCcw, Salad, Soup, Sparkles, Wand2 } from "lucide-react";
+import { BadgeInfo, ChevronDown, RefreshCcw, Sparkles, Wand2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { InteractiveButton } from "@/components/ui/interactive-button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -22,13 +22,6 @@ const SWAP_OPTIONS: Array<{ key: MealSwapMode; label: string; description: strin
   { key: "faster", label: "تحضير أسرع", description: "نسخة أسرع وأسهل عندما يكون اليوم مزدحمًا." },
   { key: "vegetarian", label: "خيار نباتي", description: "بديل نباتي يحافظ على توازن اليوم." },
 ];
-
-function getMealIcon(mealType: MealPlanMeal["mealType"]) {
-  if (mealType === "breakfast") return Coffee;
-  if (mealType === "lunch") return Salad;
-  if (mealType === "dinner") return Soup;
-  return Apple;
-}
 
 function labelForMealType(mealType: MealPlanMeal["mealType"]) {
   if (mealType === "breakfast") return "فطور";
@@ -55,7 +48,6 @@ export function PlannerMealCard({
   remainingActions,
   loading = false,
 }: PlannerMealCardProps) {
-  const Icon = getMealIcon(meal.mealType);
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
   const [selectedMode, setSelectedMode] = useState<MealSwapMode | null>(null);
 
@@ -75,10 +67,6 @@ export function PlannerMealCard({
       <motion.article layout className="meal-surface-card rounded-[calc(var(--radius)+0.65rem)] p-4 shadow-lg">
         <div className="space-y-3.5 text-right">
           <div className="flex items-start justify-start gap-3">
-            <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[5px] border border-primary/25 bg-primary text-primary-foreground shadow-[var(--app-shadow)] dark:border-border/80 dark:bg-background/70 dark:text-primary">
-              <Icon className="h-5 w-5" />
-            </span>
-
             <div className="min-w-0 flex-1 space-y-2 text-right">
               <div className="rtl-chip-row">
                 <span className="meal-label-surface border-primary/20 bg-primary/[0.12] text-primary">{labelForMealType(meal.mealType)}</span>
@@ -129,8 +117,8 @@ export function PlannerMealCard({
           <div className="grid gap-2 text-right sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center">
             <div className="flex justify-start">
               <button type="button" onClick={onToggle} className="inline-flex items-center gap-2 rounded-[5px] px-2 py-1 text-sm font-semibold text-primary hover:bg-primary/[0.08]">
-                {expanded ? "إخفاء التفاصيل" : "عرض التفاصيل"}
                 <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
+                {expanded ? "إخفاء التفاصيل" : "عرض التفاصيل"}
               </button>
             </div>
             {meal.shortTip ? <p className="meal-note-surface py-2 text-xs leading-6">{meal.shortTip}</p> : null}
@@ -180,7 +168,7 @@ export function PlannerMealCard({
                         <p className="text-sm font-bold text-foreground">لماذا هذه الوجبة؟</p>
                         <p className="mt-2 text-sm leading-7 text-muted-foreground">{meal.reason}</p>
                       </div>
-                      <div className="rounded-[5px] border border-emerald-500/15 bg-emerald-500/[0.06] p-4">
+                      <div className="rounded-[5px] border border-primary/15 bg-primary/[0.06] p-4">
                         <p className="text-sm font-bold text-foreground">نظرة سريعة</p>
                         <div className="rtl-chip-row mt-3">
                           <MiniStat icon="💪" value={`${meal.protein}غ بروتين`} />
@@ -209,8 +197,8 @@ export function PlannerMealCard({
             <DialogHeader className="space-y-2 text-right">
               <div className="flex items-center justify-start gap-2">
                 <span className="meal-label-surface border-primary/20 bg-primary/[0.12] text-primary">
-                  تعديل الوجبة
                   <Sparkles className="h-3.5 w-3.5" />
+                  تعديل الوجبة
                 </span>
               </div>
               <DialogTitle className="text-right text-xl font-black">اختر طريقة التبديل أو التجديد</DialogTitle>
@@ -242,14 +230,14 @@ export function PlannerMealCard({
                 onClick={() => setSelectedMode("refresh")}
                 className={`rounded-[5px] border px-3 py-3 text-right transition-all sm:col-span-2 ${selectedMode === "refresh" ? "border-primary/35 bg-primary/[0.12] text-foreground shadow-[var(--app-shadow)]" : "border-border/80 bg-background/75 text-foreground hover:border-primary/20 hover:bg-primary/[0.05]"}`}
               >
-                <div className="flex items-start justify-start gap-3">
-                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[5px] border border-primary/20 bg-primary/[0.12] text-primary">
-                    <RefreshCcw className="h-4 w-4" />
-                  </span>
+                <div className="flex items-start justify-start gap-3 text-right">
                   <div className="min-w-0 flex-1 space-y-1 text-right">
                     <div className="text-sm font-bold">تجديد الوجبة الحالية</div>
                     <div className="text-xs leading-6 text-muted-foreground">ينشئ اقتراحًا جديدًا لنفس نوع الوجبة داخل هذا اليوم.</div>
                   </div>
+                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[5px] border border-primary/20 bg-primary text-primary-foreground shadow-[var(--app-shadow)] dark:bg-primary/[0.12] dark:text-primary">
+                    <RefreshCcw className="h-4 w-4" />
+                  </span>
                 </div>
               </button>
             </div>

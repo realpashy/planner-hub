@@ -127,6 +127,7 @@ Major zones should have restrained differentiation:
 - grocery section: fresh market tint
 - guidance section: warm insight tint
 - drawers and dialogs: tighter focused dark surfaces
+- meal planner popup details use a centered dialog with the same system scrollbar and do not fall back to a sidebar sheet
 
 Do not make every surface the same charcoal block.
 
@@ -164,6 +165,7 @@ Do not make every surface the same charcoal block.
   - warning/shared/repeated flags
 - selected chips must not look identical to the app’s primary CTA unless selection is the main action
 - in light theme, icon chips and key small-status chips may use the primary green background with black foreground when that improves scanability
+- note surfaces such as helper reminders use the same `5px` radius, no visible border, smaller muted text, and a leading water-drop emoji marker instead of a heavy icon treatment
 
 ## Icon system
 
@@ -171,6 +173,7 @@ Do not make every surface the same charcoal block.
 - keep icon size and stroke visually consistent
 - use custom brand icons only for actual brand actions, like WhatsApp
 - emoji are allowed only for content semantics, not navigation or product chrome
+- inside the meal planner, structural icon chips should use one consistent primary-green family rather than mixing unrelated accent colors across similar rows
 
 ## Motion
 

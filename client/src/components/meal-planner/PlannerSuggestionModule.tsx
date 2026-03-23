@@ -21,7 +21,7 @@ export function PlannerSuggestionModule({ suggestions }: PlannerSuggestionModule
       dir="rtl"
     >
       <div className="flex items-center justify-start gap-3 text-right">
-        <div className="meal-label-surface text-amber-400 dark:text-amber-300">
+        <div className="meal-label-surface text-primary">
           اقتراحات ذكية
         </div>
         <div className="text-right flex-1">

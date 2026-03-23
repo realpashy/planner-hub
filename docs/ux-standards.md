@@ -24,6 +24,7 @@ For rows with a title block and secondary content:
 - DOM order should match the visual RTL reading order
 - do not rely on `justify-between` alone
 - when a badge, date pill, icon chip, or quantity block is meant to lead the row in Arabic, place it first in the DOM and use an explicit RTL-first flex row instead of `grid-cols-[1fr_auto]`
+- do not hide RTL meaning inside generic helper classes like `row-reverse`, mirrored `grid-cols-[1fr_auto]`, or helper rows that hardcode `justify-between`; helpers should stay neutral and the row itself should define its real Arabic reading order
 
 ### Icons and controls
 
@@ -69,6 +70,7 @@ Use the least-friction control first:
 - prefer fewer, stronger zones over many similar boxes
 - keep planner flows vertical when that improves weekly scanning
 - keep shopping lists human-readable and grouped like real supermarket lists
+- if a module uses AI-generated shopping organization, the prompt output language should follow the active app language instead of being hardcoded to Arabic
 - remove low-value metrics before adding more
 
 ## Component conventions
@@ -84,6 +86,7 @@ Use the least-friction control first:
 - title block right
 - supporting meta or chips placed intentionally, not generically
 - repeated card families must share the same internal rhythm
+- if a card contains a leading icon chip, date pill, or quantity block, it must appear on the right side first in the DOM for Arabic rows
 
 ### Modals
 

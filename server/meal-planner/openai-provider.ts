@@ -1,9 +1,11 @@
 import { z } from "zod";
 import {
   aiDaySchema,
+  aiGroceryGroupSchema,
   aiMealSchema,
   aiWeekPlanSchema,
   type AiDayPlan,
+  type AiGroceryGroup,
   type AiMeal,
   type AiProviderUsage,
   type EditMealAiInput,
@@ -12,6 +14,7 @@ import {
 } from "../../shared/ai/ai-types.ts";
 import {
   buildDayRegenerationPrompt,
+  buildGroceryOrganizationPrompt,
   buildMealEditPrompt,
   buildSingleDayGenerationPrompt,
   buildWeeklyGenerationPrompt,
@@ -24,7 +27,7 @@ const OPENAI_REQUEST_TIMEOUT_MS = 30_000;
 const SINGLE_DAY_WEEKLY_TIMEOUT_MS = 15_000;
 const WEEKLY_DAY_BATCH_SIZE = 3;
 
-type JsonSchemaName = "weekly_plan" | "single_day" | "single_meal";
+type JsonSchemaName = "weekly_plan" | "single_day" | "single_meal" | "grocery_groups";
 type WeeklyGenerationProgress = {
   stage: string;
   message: string;
@@ -144,6 +147,46 @@ function getJsonSchema(name: JsonSchemaName) {
     };
   }
 
+  if (name === "grocery_groups") {
+    return {
+      name,
+      schema: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          grocery: {
+            type: "array",
+            items: {
+              type: "object",
+              additionalProperties: false,
+              properties: {
+                key: { type: "string", enum: ["produce", "dairy_fridge", "meats", "pantry", "bakery", "frozen", "snacks", "spices"] },
+                title: { type: "string", maxLength: 32 },
+                items: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    additionalProperties: false,
+                    properties: {
+                      key: { type: "string", maxLength: 48 },
+                      label: { type: "string", maxLength: 48 },
+                      quantity: { type: "string", maxLength: 32 },
+                    },
+                    required: ["key", "label", "quantity"],
+                  },
+                  maxItems: 32,
+                },
+              },
+              required: ["key", "title", "items"],
+            },
+            maxItems: 8,
+          },
+        },
+        required: ["grocery"],
+      },
+    };
+  }
+
   return {
     name,
     schema: {
@@ -151,6 +194,33 @@ function getJsonSchema(name: JsonSchemaName) {
       additionalProperties: false,
       properties: {
         summary: { type: "string" },
+        grocery: {
+          type: "array",
+          items: {
+            type: "object",
+            additionalProperties: false,
+            properties: {
+              key: { type: "string", enum: ["produce", "dairy_fridge", "meats", "pantry", "bakery", "frozen", "snacks", "spices"] },
+              title: { type: "string", maxLength: 32 },
+              items: {
+                type: "array",
+                items: {
+                  type: "object",
+                  additionalProperties: false,
+                  properties: {
+                    key: { type: "string", maxLength: 48 },
+                    label: { type: "string", maxLength: 48 },
+                    quantity: { type: "string", maxLength: 32 },
+                  },
+                  required: ["key", "label", "quantity"],
+                },
+                maxItems: 32,
+              },
+            },
+            required: ["key", "title", "items"],
+          },
+          maxItems: 8,
+        },
         days: {
           type: "array",
           items: {
@@ -203,6 +273,8 @@ async function requestStructuredJson<T>({
   const completionBudgets =
     schemaName === "weekly_plan"
       ? [2400, 3400]
+      : schemaName === "grocery_groups"
+        ? [700, 1100]
       : schemaName === "single_day"
         ? [1100, 1500]
         : [650, 900];
@@ -317,6 +389,33 @@ async function generateSingleDayFromScratch(input: GenerateWeekAiInput, dateISO:
       ...result.data,
       dateISO,
     }) as AiDayPlan,
+    usage: result.usage,
+    meta: result.meta,
+  };
+}
+
+export async function organizeGroceryAIFromDays(days: AiDayPlan[], userContext: GenerateWeekAiInput["userContext"]) {
+  const result = await requestStructuredJson({
+    prompt: buildGroceryOrganizationPrompt(
+      days.map((day) => ({
+        dateISO: day.dateISO,
+        meals: day.meals.map((meal) => ({
+          mealType: meal.mealType,
+          title: meal.title,
+          ingredients: meal.ingredients,
+        })),
+      })),
+      userContext,
+    ),
+    schemaName: "grocery_groups",
+    validator: z.object({
+      grocery: z.array(aiGroceryGroupSchema).max(8).default([]),
+    }),
+    timeoutMs: 12_000,
+  });
+
+  return {
+    grocery: result.data.grocery as AiGroceryGroup[],
     usage: result.usage,
     meta: result.meta,
   };
@@ -437,10 +536,27 @@ export async function generateWeeklyPlanAI(
       totalDays: activeDates.length,
       dateISO: activeDates[activeDates.length - 1],
     });
-    return { plan: result.data, usage: result.usage, meta: result.meta };
+    const groceryResult = await organizeGroceryAIFromDays(result.data.days as AiDayPlan[], compactInput.userContext);
+    return {
+      plan: aiWeekPlanSchema.parse({
+        ...result.data,
+        grocery: groceryResult.grocery,
+      }),
+      usage: {
+        inputTokens: result.usage.inputTokens + groceryResult.usage.inputTokens,
+        outputTokens: result.usage.outputTokens + groceryResult.usage.outputTokens,
+      },
+      meta: {
+        ...result.meta,
+        elapsedMs: result.meta.elapsedMs + groceryResult.meta.elapsedMs,
+        completionBudget: Math.max(result.meta.completionBudget, groceryResult.meta.completionBudget),
+        attempts: result.meta.attempts + groceryResult.meta.attempts,
+      },
+    };
   }
 
   const result = await runWeeklyDayBatches(compactInput, options?.onProgress);
+  const groceryResult = await organizeGroceryAIFromDays(result.plan.days as AiDayPlan[], compactInput.userContext);
   await options?.onProgress?.({
     stage: "weekly_generation_completed",
     message: `Completed weekly generation in ${result.meta.elapsedMs}ms`,
@@ -448,7 +564,22 @@ export async function generateWeeklyPlanAI(
     totalDays: activeDates.length,
     dateISO: activeDates[activeDates.length - 1],
   });
-  return result;
+  return {
+    plan: aiWeekPlanSchema.parse({
+      ...result.plan,
+      grocery: groceryResult.grocery,
+    }),
+    usage: {
+      inputTokens: result.usage.inputTokens + groceryResult.usage.inputTokens,
+      outputTokens: result.usage.outputTokens + groceryResult.usage.outputTokens,
+    },
+    meta: {
+      ...result.meta,
+      elapsedMs: result.meta.elapsedMs + groceryResult.meta.elapsedMs,
+      completionBudget: Math.max(result.meta.completionBudget, groceryResult.meta.completionBudget),
+      attempts: result.meta.attempts + groceryResult.meta.attempts,
+    },
+  };
 }
 
 export async function editMealAI(input: EditMealAiInput) {

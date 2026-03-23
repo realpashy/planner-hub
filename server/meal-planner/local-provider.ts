@@ -178,6 +178,7 @@ export async function generateWeeklyPlanLocal(input: GenerateWeekAiInput): Promi
         "ركّز على الماء بين الوجبات لدعم الاستمرارية.",
       ],
       days,
+      grocery: [],
     },
     usage: { inputTokens: 0, outputTokens: 0 },
   };

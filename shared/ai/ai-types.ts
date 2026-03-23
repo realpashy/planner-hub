@@ -35,6 +35,7 @@ export interface AiQuotaDecision {
 export interface MealPlannerUserContext {
   timezone: string;
   tier: ProductPlanTier;
+  language?: string;
   dietaryNotes?: string;
   avoidIngredients?: string[];
   recentMeals: string[];
@@ -82,14 +83,28 @@ export const aiDaySchema = z.object({
   meals: z.array(aiMealSchema).min(1).max(5),
 });
 
+export const aiGroceryItemSchema = z.object({
+  key: z.string().min(1).max(48),
+  label: z.string().min(1).max(48),
+  quantity: z.string().min(1).max(32),
+});
+
+export const aiGroceryGroupSchema = z.object({
+  key: z.enum(["produce", "dairy_fridge", "meats", "pantry", "bakery", "frozen", "snacks", "spices"]),
+  title: z.string().min(1).max(32),
+  items: z.array(aiGroceryItemSchema).max(32).default([]),
+});
+
 export const aiWeekPlanSchema = z.object({
   summary: z.string().max(220),
   insights: z.array(z.string().max(90)).max(2).default([]),
   days: z.array(aiDaySchema).min(1).max(7),
+  grocery: z.array(aiGroceryGroupSchema).max(8).optional().default([]),
 });
 
 export type AiMeal = z.infer<typeof aiMealSchema>;
 export type AiDayPlan = z.infer<typeof aiDaySchema>;
+export type AiGroceryGroup = z.infer<typeof aiGroceryGroupSchema>;
 export type AiWeekPlan = z.infer<typeof aiWeekPlanSchema>;
 
 export interface AiProviderUsage {
