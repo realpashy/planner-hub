@@ -199,7 +199,7 @@ function answerGridClass(optionCount: number, centered = false) {
   if (optionCount <= 3) {
     return cn("grid gap-3", optionCount === 2 ? "grid-cols-2" : "grid-cols-3");
   }
-  return cn("flex flex-wrap gap-3", centered ? "justify-center" : "justify-end");
+  return cn("flex flex-wrap gap-3", centered ? "justify-center" : "justify-start");
 }
 
 function answerButtonClass(active: boolean, fillWidth = false) {
@@ -652,7 +652,7 @@ export function ConversationalMealOnboarding({
               className="h-12 rounded-[1.35rem] border-white/60 bg-white/75 text-right shadow-[0_18px_36px_rgba(15,23,42,0.05)] dark:border-white/10 dark:bg-slate-950/55"
               dir="rtl"
             />
-            <div className="flex min-h-10 flex-wrap justify-end gap-2">
+            <div className="flex min-h-10 flex-wrap justify-start gap-2">
               {selectedValues.length ? (
                 selectedValues.map((value) => (
                   <button
@@ -675,7 +675,7 @@ export function ConversationalMealOnboarding({
                 <p className="text-xs leading-6 text-muted-foreground">اختر مطابخك المفضلة إن وُجدت، أو اتركها مفتوحة لنطاق أوسع.</p>
               )}
             </div>
-            <div className="flex flex-wrap justify-end gap-3">
+            <div className="flex flex-wrap justify-start gap-3">
               {filteredOptions.map((option) => {
                 const active = shouldShowCurrentSelection && selectedValues.includes(option.value);
                 return (
@@ -823,7 +823,7 @@ export function ConversationalMealOnboarding({
           dir="rtl"
         />
         {chips.length ? (
-          <div className="flex flex-wrap justify-end gap-2">
+          <div className="flex flex-wrap justify-start gap-2">
             {chips.map((chip) => (
               <button key={chip} type="button" onClick={() => updateDraft(activeQuestion.id, rawDraft ? `${rawDraft}${rawDraft.endsWith(" ") ? "" : " "}${chip}` : chip)} className="rounded-full border border-border/60 bg-white/70 px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:border-primary/20 hover:text-primary dark:bg-slate-950/55">
                 {chip}
@@ -832,7 +832,7 @@ export function ConversationalMealOnboarding({
           </div>
         ) : null}
         {committedItems.length ? (
-          <div className="flex flex-wrap justify-end gap-2">
+          <div className="flex flex-wrap justify-start gap-2">
             {committedItems.map((item) => (
               <span key={item} className="rounded-full border border-slate-300/60 bg-slate-900/[0.04] px-3 py-1.5 text-xs font-semibold text-foreground dark:border-white/10 dark:bg-white/[0.05]">
                 {item}

@@ -277,7 +277,7 @@
   }
 
   .rtl-chip-row {
-    @apply flex flex-row-reverse flex-wrap justify-start gap-2;
+    @apply flex flex-wrap justify-start gap-2;
   }
 
   .meal-surface-card {

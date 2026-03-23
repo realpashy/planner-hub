@@ -103,7 +103,7 @@ export function PlannerMealCard({
               <DropdownMenuContent align="start" className="min-w-44 rounded-2xl">
                 <div dir="rtl">
                   {SWAP_OPTIONS.map((option) => (
-                    <DropdownMenuItem key={option.key} onClick={() => onSwap(option.key)} className="cursor-pointer justify-end text-right">
+                    <DropdownMenuItem key={option.key} onClick={() => onSwap(option.key)} className="cursor-pointer justify-start text-right">
                       {option.label}
                     </DropdownMenuItem>
                   ))}

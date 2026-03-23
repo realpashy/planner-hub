@@ -44,7 +44,7 @@ export function PlannerDayDrawer({
             <div className="sticky top-0 z-20 border-b border-border/80 bg-background/[0.92] px-5 py-5 backdrop-blur-xl">
               <div className="space-y-4 text-right">
                 <div className="space-y-2 text-right">
-                  <div className="flex justify-end">
+                  <div className="flex justify-start">
                     <span className="meal-label-surface border-primary/20 bg-primary/[0.12] text-primary">
                       {day.dayName}
                       <CalendarDays className="h-3.5 w-3.5" />
@@ -64,7 +64,7 @@ export function PlannerDayDrawer({
                   <SummaryChip value={`${day.meals.length} وجبات`} />
                 </div>
 
-                <div className="flex justify-end">
+                <div className="flex justify-start">
                   <p className="meal-note-surface inline-flex items-center gap-2 py-2">
                     افتح أي وجبة لتعديلها أو تبديلها بسرعة.
                     <Sparkles className="h-4 w-4 text-primary" />

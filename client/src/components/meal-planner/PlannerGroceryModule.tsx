@@ -196,7 +196,7 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
           className="premium-scrollbar meal-surface-popup rounded-[calc(var(--radius)+0.85rem)] border-emerald-500/15 shadow-[0_30px_72px_rgba(0,0,0,0.3)]"
         >
           <DialogHeader className="text-right">
-            <DialogTitle className="inline-flex items-center justify-end gap-2 text-right text-xl font-black">
+            <DialogTitle className="inline-flex items-center justify-start gap-2 text-right text-xl font-black">
               <span>إرسال القائمة إلى واتساب</span>
               <WhatsappIcon className="h-5 w-5 text-[#25D366]" />
             </DialogTitle>
