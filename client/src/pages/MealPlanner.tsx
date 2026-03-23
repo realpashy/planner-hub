@@ -122,7 +122,7 @@ export default function MealPlanner() {
           <PlannerHeroOverview plan={plan} summary={dashboardSummary} />
 
           <div className="space-y-4">
-            <div className="rtl-title-row items-start">
+            <div className="grid grid-cols-[1fr_auto] items-start gap-3 text-right">
               <div className="rtl-title-stack flex-1">
                 <p className="text-xl font-black text-foreground">الخطة الأسبوعية</p>
                 <p className="text-sm text-muted-foreground">تدفق عمودي واضح لقراءة أيام الأسبوع من الأعلى إلى الأسفل.</p>
@@ -139,7 +139,7 @@ export default function MealPlanner() {
           </div>
 
           <div className="space-y-4">
-            <div className="rtl-title-row items-start">
+            <div className="grid grid-cols-[1fr_auto] items-start gap-3 text-right">
               <div className="rtl-title-stack flex-1">
                 <p className="text-xl font-black text-foreground">التسوق لهذا الأسبوع</p>
                 <p className="text-sm text-muted-foreground">استخدم القائمة كما هي أو أرسلها مباشرة إلى واتساب.</p>
@@ -152,7 +152,7 @@ export default function MealPlanner() {
           </div>
 
           <div className="space-y-4">
-            <div className="rtl-title-row items-start">
+            <div className="grid grid-cols-[1fr_auto] items-start gap-3 text-right">
               <div className="rtl-title-stack flex-1">
                 <p className="text-xl font-black text-foreground">إرشادات الأسبوع</p>
                 <p className="text-sm text-muted-foreground">تحسينات بسيطة تبقي الخطة واضحة وغير مزدحمة.</p>

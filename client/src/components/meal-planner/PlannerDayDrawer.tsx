@@ -75,7 +75,7 @@ export function PlannerDayDrawer({
 
             <div className="p-5">
               <div className="space-y-4">
-                <div className="rtl-title-row items-center">
+                <div className="grid grid-cols-[1fr_auto] items-center gap-3 text-right">
                   <div className="inline-flex items-center gap-2 text-sm font-bold text-foreground">
                     <Flame className="h-4 w-4 text-primary" />
                     تفاصيل الوجبات

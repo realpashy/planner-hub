@@ -50,7 +50,7 @@ export function PlannerDayCard({ day, selected = false, onOpen }: PlannerDayCard
           <div className="h-2.5 w-2.5 rounded-full bg-primary shadow-[0_0_0_6px_rgba(149,223,30,0.08)]" />
         </div>
 
-        <div className="rtl-title-row items-start">
+        <div className="grid grid-cols-[1fr_auto] items-start gap-3 text-right">
           <div className="space-y-1 text-right flex-1">
             <h3 className="text-xl font-black tracking-tight text-foreground">{day.dayName}</h3>
             {day.busyDay ? <p className="text-xs text-muted-foreground">يوم خفيف التحضير ومناسب للضغط اليومي.</p> : null}
@@ -67,7 +67,7 @@ export function PlannerDayCard({ day, selected = false, onOpen }: PlannerDayCard
               <div
                 key={meal.id}
                 className={cn(
-                  "rtl-title-row items-center rounded-[calc(var(--radius)+0.25rem)] px-2 py-2",
+                  "grid grid-cols-[1fr_auto] items-center gap-3 rounded-[calc(var(--radius)+0.25rem)] px-2 py-2 text-right",
                   index !== day.meals.length - 1 && "border-b border-dashed border-slate-200/70 dark:border-slate-700/60",
                 )}
               >
@@ -101,7 +101,7 @@ export function PlannerDayCard({ day, selected = false, onOpen }: PlannerDayCard
           <MacroPill value={`${day.nutrition.fat}غ دهون`} />
         </div>
 
-        <div className="rtl-title-row rounded-[5px] border border-primary/15 bg-primary/[0.08] px-3 py-2.5">
+        <div className="grid grid-cols-[1fr_auto] gap-3 rounded-[5px] border border-primary/15 bg-primary/[0.08] px-3 py-2.5 text-right">
           <div className="flex-1">
             <p className="text-sm font-semibold text-foreground">عرض اليوم والتعديل الخفيف</p>
             <p className="text-[11px] leading-5 text-muted-foreground">افتح التفاصيل لمراجعة الوجبات بسرعة.</p>

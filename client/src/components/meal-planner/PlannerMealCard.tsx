@@ -132,12 +132,14 @@ export function PlannerMealCard({
           </TooltipProvider>
         </div>
 
-        <div className="rtl-title-row items-center">
-          {meal.shortTip ? <p className="meal-note-surface flex-1 py-2 text-xs leading-6">{meal.shortTip}</p> : <span className="flex-1" />}
-          <button type="button" onClick={onToggle} className="inline-flex items-center gap-2 rounded-[5px] px-2 py-1 text-sm font-semibold text-primary hover:bg-primary/[0.08]">
-            {expanded ? "إخفاء التفاصيل" : "عرض التفاصيل"}
-            <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
-          </button>
+        <div className="grid gap-2 text-right sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center">
+          <div className="flex justify-start">
+            <button type="button" onClick={onToggle} className="inline-flex items-center gap-2 rounded-[5px] px-2 py-1 text-sm font-semibold text-primary hover:bg-primary/[0.08]">
+              {expanded ? "إخفاء التفاصيل" : "عرض التفاصيل"}
+              <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
+            </button>
+          </div>
+          {meal.shortTip ? <p className="meal-note-surface py-2 text-xs leading-6">{meal.shortTip}</p> : null}
         </div>
 
         <AnimatePresence initial={false}>
@@ -151,7 +153,7 @@ export function PlannerMealCard({
               className="overflow-hidden"
             >
               <div className="space-y-4 border-t border-border/70 pt-4">
-                <div className="rtl-title-row items-center">
+                <div className="space-y-1 text-right">
                   <div className="text-sm font-black text-foreground">تفاصيل الوجبة</div>
                   <div className="text-xs font-semibold text-muted-foreground">المكونات والخطوات والمغذيات</div>
                 </div>

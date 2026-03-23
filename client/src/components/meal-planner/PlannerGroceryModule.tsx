@@ -106,7 +106,7 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
           dir="rtl"
         >
           <div className="space-y-4">
-            <div className="rtl-title-row items-start">
+            <div className="grid gap-3 text-right lg:grid-cols-[1fr_auto]">
               <div className="space-y-2 text-right flex-1">
                 <h3 className="text-lg font-black text-foreground">قائمة التسوق</h3>
                 <p className="text-sm leading-7 text-muted-foreground">
@@ -128,7 +128,7 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
               </div>
             </div>
 
-            <CollapsibleTrigger className="rtl-title-row w-full rounded-[5px] border border-emerald-500/15 bg-background/45 px-4 py-3 text-right shadow-[var(--app-shadow)] transition hover:border-emerald-500/25">
+            <CollapsibleTrigger className="grid w-full gap-3 rounded-[5px] border border-emerald-500/15 bg-background/45 px-4 py-3 text-right shadow-[var(--app-shadow)] transition hover:border-emerald-500/25 sm:grid-cols-[1fr_auto] sm:items-center">
               <div className="space-y-1 text-right flex-1">
                 <p className="text-sm font-bold text-foreground">{open ? "تفاصيل المشتريات مفتوحة" : "افتح القائمة لمراجعة العناصر"}</p>
                 <p className="text-xs text-muted-foreground">{open ? "يمكن حذف أي عنصر غير مطلوب لهذا الأسبوع." : "القائمة مرتبة بأسلوب قريب من أقسام السوبرماركت."}</p>
@@ -148,7 +148,7 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
                       key={group.key}
                       className="space-y-3 rounded-[5px] border border-emerald-500/15 bg-background/38 p-4 shadow-[var(--app-shadow)]"
                     >
-                      <div className="rtl-title-row items-center">
+                      <div className="grid grid-cols-[1fr_auto] items-center gap-3 text-right">
                         <div className="space-y-1 text-right flex-1">
                           <h4 className="text-sm font-black text-foreground">{group.title}</h4>
                           <p className="text-xs text-muted-foreground">{group.items.length} عناصر مجمعة بقراءة أوضح</p>
@@ -162,7 +162,7 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
                         {group.items.map((item, index) => (
                           <div
                             key={item.key}
-                            className={`group rtl-title-row items-center px-4 py-3 ${index !== group.items.length - 1 ? "border-b border-dashed border-emerald-500/15" : ""}`}
+                            className={`group grid grid-cols-[1fr_auto] items-center gap-3 px-4 py-3 text-right ${index !== group.items.length - 1 ? "border-b border-dashed border-emerald-500/15" : ""}`}
                           >
                             <div className="min-w-0 flex-1 text-right">
                               <p className="truncate text-sm font-semibold text-foreground">{item.label}</p>

@@ -15,7 +15,7 @@ export function PlannerHeroOverview({ plan, summary }: PlannerHeroOverviewProps)
       dir="rtl"
     >
       <div className="space-y-5 text-right">
-        <div className="rtl-title-row items-start">
+        <div className="grid grid-cols-[1fr_auto] items-start gap-3 text-right">
           <div className="space-y-3 flex-1">
             <PlannerMetaBadge icon={Sparkles} label="ملخص الأسبوع" tone="accent" className="w-fit" />
             <div className="space-y-1">
