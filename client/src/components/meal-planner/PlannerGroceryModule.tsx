@@ -102,7 +102,7 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
     <>
       <Collapsible open={open} onOpenChange={onOpenChange}>
         <section
-          className="rounded-[calc(var(--radius)+0.9rem)] border border-emerald-500/15 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.12),transparent_26%),linear-gradient(180deg,rgba(37,44,35,0.98),rgba(27,31,27,0.98))] p-5 shadow-xl"
+          className="meal-surface-grocery rounded-[calc(var(--radius)+0.9rem)] p-5 shadow-xl"
           dir="rtl"
         >
           <div className="space-y-4">
@@ -114,7 +114,7 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
                 </p>
               </div>
               <div className="inline-flex shrink-0 items-center gap-2">
-                <div className="stat-chip rounded-full px-3 py-2 text-xs font-semibold text-emerald-400 dark:text-emerald-300">
+                <div className="meal-label-surface text-emerald-400 dark:text-emerald-300">
                   {grocery.length} فئات • {totalItems} عناصر
                 </div>
                 <InteractiveButton
@@ -128,12 +128,12 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
               </div>
             </div>
 
-            <CollapsibleTrigger className="rtl-title-row w-full rounded-[calc(var(--radius)+0.5rem)] border border-emerald-500/15 bg-background/45 px-4 py-3 text-right shadow-[var(--app-shadow)] transition hover:border-emerald-500/25">
+            <CollapsibleTrigger className="rtl-title-row w-full rounded-[5px] border border-emerald-500/15 bg-background/45 px-4 py-3 text-right shadow-[var(--app-shadow)] transition hover:border-emerald-500/25">
               <div className="space-y-1 text-right flex-1">
                 <p className="text-sm font-bold text-foreground">{open ? "تفاصيل المشتريات مفتوحة" : "افتح القائمة لمراجعة العناصر"}</p>
                 <p className="text-xs text-muted-foreground">{open ? "يمكن حذف أي عنصر غير مطلوب لهذا الأسبوع." : "القائمة مرتبة بأسلوب قريب من أقسام السوبرماركت."}</p>
               </div>
-              <span className="stat-chip inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold text-emerald-400 dark:text-emerald-300">
+              <span className="meal-label-surface inline-flex items-center gap-2 text-emerald-400 dark:text-emerald-300">
                 {open ? "إخفاء" : "عرض"}
                 <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
               </span>
@@ -146,19 +146,19 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
                   return (
                     <section
                       key={group.key}
-                      className="space-y-3 rounded-[calc(var(--radius)+0.625rem)] border border-emerald-500/15 bg-background/38 p-4 shadow-[var(--app-shadow)]"
+                      className="space-y-3 rounded-[5px] border border-emerald-500/15 bg-background/38 p-4 shadow-[var(--app-shadow)]"
                     >
                       <div className="rtl-title-row items-center">
                         <div className="space-y-1 text-right flex-1">
                           <h4 className="text-sm font-black text-foreground">{group.title}</h4>
                           <p className="text-xs text-muted-foreground">{group.items.length} عناصر مجمعة بقراءة أوضح</p>
                         </div>
-                        <span className="icon-chip h-10 w-10 rounded-[calc(var(--radius)+0.375rem)] border-emerald-500/20 bg-emerald-500/[0.12] text-emerald-400 dark:text-emerald-300">
+                        <span className="icon-chip h-10 w-10 rounded-[5px] border-emerald-500/20 bg-emerald-500/[0.12] text-emerald-400 dark:text-emerald-300">
                           <Icon className="h-4 w-4" />
                         </span>
                       </div>
 
-                      <div className="overflow-hidden rounded-[calc(var(--radius)+0.5rem)] border border-emerald-500/15 bg-card/[0.68]">
+                      <div className="overflow-hidden rounded-[5px] border border-emerald-500/15 bg-card/[0.68]">
                         {group.items.map((item, index) => (
                           <div
                             key={item.key}
@@ -193,7 +193,7 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
       <Dialog open={shareOpen} onOpenChange={setShareOpen}>
         <DialogContent
           dir="rtl"
-          className="rounded-[calc(var(--radius)+0.85rem)] border-emerald-500/15 bg-[radial-gradient(circle_at_top_right,rgba(37,211,102,0.14),transparent_22%),linear-gradient(180deg,rgba(34,39,34,0.98),rgba(23,27,23,0.98))] shadow-[0_30px_72px_rgba(0,0,0,0.3)]"
+          className="premium-scrollbar meal-surface-popup rounded-[calc(var(--radius)+0.85rem)] border-emerald-500/15 shadow-[0_30px_72px_rgba(0,0,0,0.3)]"
         >
           <DialogHeader className="text-right">
             <DialogTitle className="inline-flex items-center justify-end gap-2 text-right text-xl font-black">
@@ -209,7 +209,7 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
             <div className="grid gap-3 sm:grid-cols-[1fr_1.2fr]">
               <div className="space-y-2 text-right">
                 <label className="text-sm font-bold text-foreground">مفتاح الدولة</label>
-                <div className="flex h-12 items-center gap-3 rounded-[calc(var(--radius)+0.375rem)] border border-emerald-500/15 bg-background/55 px-3 shadow-[var(--app-shadow)]">
+                <div className="flex h-12 items-center gap-3 rounded-[5px] border border-emerald-500/15 bg-background/55 px-3 shadow-[var(--app-shadow)]">
                   <select
                     value={countryCode}
                     onChange={(event) => setCountryCode(event.target.value)}
@@ -232,13 +232,13 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
                   value={phoneNumber}
                   onChange={(event) => setPhoneNumber(event.target.value)}
                   placeholder="أدخل رقمًا محليًا"
-                  className="h-12 rounded-[calc(var(--radius)+0.375rem)] border-emerald-500/15 bg-background/55 text-right"
+                  className="h-12 rounded-[5px] border-emerald-500/15 bg-background/55 text-right"
                   dir="ltr"
                 />
               </div>
             </div>
 
-            <div className="rounded-[calc(var(--radius)+0.375rem)] border border-emerald-500/15 bg-background/55 p-4 text-right shadow-[var(--app-shadow)]">
+            <div className="rounded-[5px] border border-emerald-500/15 bg-background/55 p-4 text-right shadow-[var(--app-shadow)]">
               <p className="text-xs font-semibold text-muted-foreground">المعاينة بعد التطبيع</p>
               <p className="mt-1 text-base font-black text-foreground" dir="ltr">
                 {normalizedPhone || `${selectedCountry.code.replace("+", "")}...`}

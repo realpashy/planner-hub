@@ -127,7 +127,7 @@ export default function MealPlanner() {
                 <p className="text-xl font-black text-foreground">الخطة الأسبوعية</p>
                 <p className="text-sm text-muted-foreground">تدفق عمودي واضح لقراءة أيام الأسبوع من الأعلى إلى الأسفل.</p>
               </div>
-              <div className="stat-chip rounded-full px-3 py-2 text-xs font-semibold text-primary">
+              <div className="meal-label-surface text-primary">
                 افتح أي يوم لمراجعة الوجبات والتعديل الخفيف
               </div>
             </div>
@@ -144,7 +144,7 @@ export default function MealPlanner() {
                 <p className="text-xl font-black text-foreground">التسوق لهذا الأسبوع</p>
                 <p className="text-sm text-muted-foreground">استخدم القائمة كما هي أو أرسلها مباشرة إلى واتساب.</p>
               </div>
-              <div className="stat-chip rounded-full px-3 py-2 text-xs font-semibold text-emerald-400 dark:text-emerald-300">
+              <div className="meal-label-surface text-emerald-400 dark:text-emerald-300">
                 مرتبة حسب أقسام السوبرماركت
               </div>
             </div>
@@ -157,7 +157,7 @@ export default function MealPlanner() {
                 <p className="text-xl font-black text-foreground">إرشادات الأسبوع</p>
                 <p className="text-sm text-muted-foreground">تحسينات بسيطة تبقي الخطة واضحة وغير مزدحمة.</p>
               </div>
-              <div className="stat-chip rounded-full px-3 py-2 text-xs font-semibold text-amber-400 dark:text-amber-300">
+              <div className="meal-label-surface text-amber-400 dark:text-amber-300">
                 ملاحظات خفيفة فقط
               </div>
             </div>
@@ -178,7 +178,7 @@ export default function MealPlanner() {
       />
 
       <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
-        <SheetContent side="right" className="w-full overflow-y-auto border-border/80 bg-[radial-gradient(circle_at_top_right,rgba(149,223,30,0.08),transparent_24%),linear-gradient(180deg,rgba(29,29,29,0.98),rgba(23,23,23,0.98))] p-0 sm:max-w-lg" dir="rtl">
+        <SheetContent side="right" className="meal-surface-popup premium-scrollbar w-full overflow-y-auto p-0 sm:max-w-lg" dir="rtl">
           <div className="space-y-5 p-5">
             <SheetHeader className="text-right">
               <SheetTitle className="text-right text-2xl font-black">إعدادات المخطط</SheetTitle>

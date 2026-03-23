@@ -17,7 +17,7 @@ const ITEMS = [
 export function PlannerSuggestionModule({ suggestions }: PlannerSuggestionModuleProps) {
   return (
     <section
-      className="rounded-[calc(var(--radius)+0.75rem)] border border-amber-500/15 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.12),transparent_24%),linear-gradient(180deg,rgba(39,35,27,0.98),rgba(29,27,23,0.98))] p-5 shadow-xl"
+      className="meal-surface-guidance rounded-[calc(var(--radius)+0.75rem)] p-5 shadow-xl"
       dir="rtl"
     >
       <div className="rtl-title-row items-center">
@@ -25,7 +25,7 @@ export function PlannerSuggestionModule({ suggestions }: PlannerSuggestionModule
           <h3 className="text-lg font-black text-foreground">ملاحظات خفيفة لهذا الأسبوع</h3>
           <p className="text-sm text-muted-foreground">مختصرة، عملية، وتبقي الخطة سهلة التنفيذ.</p>
         </div>
-        <div className="stat-chip rounded-full px-3 py-1 text-xs font-semibold text-amber-400 dark:text-amber-300">
+        <div className="meal-label-surface text-amber-400 dark:text-amber-300">
           اقتراحات ذكية
         </div>
       </div>

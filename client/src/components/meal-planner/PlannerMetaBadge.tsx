@@ -17,7 +17,7 @@ export function PlannerMetaBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-semibold shadow-[var(--app-shadow)] backdrop-blur-sm",
+        "inline-flex items-center gap-2 border px-3 py-1.5 text-[11px] font-semibold shadow-[var(--app-shadow)] backdrop-blur-sm rounded-[5px]",
         tone === "accent" && "border-primary/25 bg-primary/[0.12] text-primary",
         tone === "success" && "border-emerald-500/20 bg-emerald-500/[0.12] text-emerald-700 dark:text-emerald-300",
         tone === "warning" && "border-amber-500/20 bg-amber-500/[0.12] text-amber-700 dark:text-amber-300",

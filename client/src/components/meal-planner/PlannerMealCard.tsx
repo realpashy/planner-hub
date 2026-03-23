@@ -37,7 +37,7 @@ function labelForMealType(mealType: MealPlanMeal["mealType"]) {
 
 function MiniStat({ value }: { value: string }) {
   return (
-    <span className="inline-flex items-center rounded-full border border-border/70 bg-muted px-2.5 py-1 text-[11px] font-semibold text-foreground shadow-[var(--app-shadow)]">
+    <span className="inline-flex items-center border border-border/70 bg-muted px-2.5 py-1 text-[11px] font-semibold text-foreground shadow-[var(--app-shadow)] rounded-[5px]">
       {value}
     </span>
   );
@@ -56,23 +56,23 @@ export function PlannerMealCard({
   return (
     <motion.article
       layout
-      className="rounded-[calc(var(--radius)+0.65rem)] border border-border/80 bg-[radial-gradient(circle_at_top_right,rgba(149,223,30,0.08),transparent_22%),linear-gradient(180deg,rgba(40,40,40,0.98),rgba(31,31,31,0.98))] p-4 shadow-lg"
+      className="meal-surface-card rounded-[calc(var(--radius)+0.65rem)] p-4 shadow-lg"
     >
       <div className="space-y-3.5 text-right">
         <div className="rtl-title-row items-start">
           <div className="flex flex-1 items-start gap-3">
             <div className="space-y-2 text-right flex-1">
-              <div className="flex flex-wrap justify-end gap-2">
-                <span className="rounded-full border border-primary/20 bg-primary/[0.12] px-3 py-1 text-xs font-semibold text-primary">{labelForMealType(meal.mealType)}</span>
-                {meal.repeated ? <span className="rounded-full border border-amber-500/20 bg-amber-500/[0.12] px-3 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300">مكرر</span> : null}
-                {meal.reusedIngredient ? <span className="rounded-full border border-emerald-500/20 bg-emerald-500/[0.12] px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">مكونات مشتركة</span> : null}
+              <div className="rtl-chip-row">
+                <span className="meal-label-surface border-primary/20 bg-primary/[0.12] text-primary">{labelForMealType(meal.mealType)}</span>
+                {meal.repeated ? <span className="meal-label-surface border-amber-500/20 bg-amber-500/[0.12] text-amber-700 dark:text-amber-300">مكرر</span> : null}
+                {meal.reusedIngredient ? <span className="meal-label-surface border-emerald-500/20 bg-emerald-500/[0.12] text-emerald-700 dark:text-emerald-300">مكونات مشتركة</span> : null}
               </div>
               <div>
                 <h4 className="text-lg font-black text-foreground">{meal.title}</h4>
                 <p className="mt-1 text-sm leading-7 text-muted-foreground">{meal.ingredients.slice(0, 3).join(" • ")}</p>
               </div>
             </div>
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-[calc(var(--radius)+0.375rem)] border border-border/80 bg-background/70 text-primary shadow-[var(--app-shadow)]">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-[5px] border border-border/80 bg-background/70 text-primary shadow-[var(--app-shadow)]">
               <Icon className="h-5 w-5" />
             </span>
           </div>
@@ -94,7 +94,7 @@ export function PlannerMealCard({
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="rounded-full border-border/80 bg-background/75 px-3"
+                  className="rounded-[5px] border-border/80 bg-background/75 px-3"
                 >
                   تبديل
                   <Wand2 className="h-4 w-4" />
@@ -113,7 +113,7 @@ export function PlannerMealCard({
           </div>
         </div>
 
-        <div className="flex flex-wrap justify-end gap-2">
+        <div className="rtl-chip-row">
           <MiniStat value={`${meal.calories} kcal`} />
           <MiniStat value={`${meal.protein}غ بروتين`} />
           <MiniStat value={`${meal.carbs}غ كربوهيدرات`} />
@@ -133,8 +133,8 @@ export function PlannerMealCard({
         </div>
 
         <div className="rtl-title-row items-center">
-          {meal.shortTip ? <p className="text-xs text-muted-foreground flex-1">{meal.shortTip}</p> : <span className="flex-1" />}
-          <button type="button" onClick={onToggle} className="inline-flex items-center gap-2 text-sm font-semibold text-primary">
+          {meal.shortTip ? <p className="meal-note-surface flex-1 py-2 text-xs leading-6">{meal.shortTip}</p> : <span className="flex-1" />}
+          <button type="button" onClick={onToggle} className="inline-flex items-center gap-2 rounded-[5px] px-2 py-1 text-sm font-semibold text-primary hover:bg-primary/[0.08]">
             {expanded ? "إخفاء التفاصيل" : "عرض التفاصيل"}
             <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
           </button>
@@ -159,9 +159,9 @@ export function PlannerMealCard({
                   <div className="space-y-3 text-right">
                     <div>
                       <p className="text-sm font-bold text-foreground">المكونات</p>
-                      <div className="mt-2 flex flex-wrap justify-end gap-2">
+                      <div className="rtl-chip-row mt-2">
                         {meal.ingredients.map((ingredient) => (
-                          <span key={ingredient} className="rounded-full border border-border/70 bg-background/70 px-3 py-1 text-xs font-medium text-foreground shadow-[var(--app-shadow)]">
+                          <span key={ingredient} className="rounded-[5px] border border-border/70 bg-background/70 px-3 py-1 text-xs font-medium text-foreground shadow-[var(--app-shadow)]">
                             {ingredient}
                           </span>
                         ))}
@@ -178,13 +178,13 @@ export function PlannerMealCard({
                   </div>
 
                   <div className="space-y-3 text-right">
-                    <div className="rounded-[calc(var(--radius)+0.375rem)] border border-primary/15 bg-primary/[0.08] p-4">
+                    <div className="rounded-[5px] border border-primary/15 bg-primary/[0.08] p-4">
                       <p className="text-sm font-bold text-foreground">لماذا هذه الوجبة؟</p>
                       <p className="mt-2 text-sm leading-7 text-muted-foreground">{meal.reason}</p>
                     </div>
-                    <div className="rounded-[calc(var(--radius)+0.375rem)] border border-emerald-500/15 bg-emerald-500/[0.06] p-4">
+                    <div className="rounded-[5px] border border-emerald-500/15 bg-emerald-500/[0.06] p-4">
                       <p className="text-sm font-bold text-foreground">نظرة سريعة</p>
-                      <div className="mt-3 flex flex-wrap justify-end gap-1.5">
+                      <div className="rtl-chip-row mt-3">
                         <MiniStat value={`${meal.protein}غ بروتين`} />
                         <MiniStat value={`${meal.carbs}غ كربوهيدرات`} />
                         <MiniStat value={`${meal.fat}غ دهون`} />

@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { Sun, Moon } from "lucide-react";
 import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 const THEME_EVENT = "planner-theme-change";
 
-export function ThemeToggle() {
+export function ThemeToggle({ className }: { className?: string }) {
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('planner_hub_theme');
@@ -51,7 +52,10 @@ export function ThemeToggle() {
   return (
     <button
       onClick={() => setIsDark(!isDark)}
-      className="inline-flex h-10 w-10 items-center justify-center rounded-[calc(var(--radius)+0.25rem)] border border-border/80 bg-card/[0.88] text-muted-foreground shadow-[var(--app-shadow)] transition-all duration-200 hover:border-primary/20 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/75 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      className={cn(
+        "inline-flex h-10 w-10 items-center justify-center rounded-[calc(var(--radius)+0.25rem)] border border-border/80 bg-card/[0.88] text-muted-foreground shadow-[var(--app-shadow)] transition-all duration-200 hover:border-primary/20 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/75 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        className,
+      )}
       data-testid="button-theme-toggle"
     >
       <motion.div

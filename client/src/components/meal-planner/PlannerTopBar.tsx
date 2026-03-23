@@ -25,7 +25,7 @@ export function PlannerTopBar({
               <InteractiveButton
                 variant="ghost"
                 size="icon"
-                className="h-11 w-11 rounded-[calc(var(--radius)+0.375rem)] border-border/80 bg-card/[0.88] text-foreground"
+                className="h-11 w-11 rounded-[5px] border-0 bg-transparent text-foreground shadow-none hover:bg-background/70"
                 asChild
               >
                 <Link href={backHref} data-testid="link-back-dashboard">
@@ -38,17 +38,17 @@ export function PlannerTopBar({
               </div>
             </div>
 
-            <div className="surface-subtle rtl-actions-inline shrink-0 rounded-full px-2 py-1">
+            <div className="rtl-actions-inline shrink-0 rounded-[5px] bg-transparent px-0 py-0 shadow-none">
               <InteractiveButton
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="h-10 w-10 rounded-[calc(var(--radius)+0.25rem)] bg-background/75 text-muted-foreground hover:text-foreground"
+                className="h-10 w-10 rounded-[5px] border-0 bg-transparent text-muted-foreground shadow-none hover:bg-background/70 hover:text-foreground"
                 onClick={onOpenSettings}
               >
                 <Settings2 className="h-5 w-5" />
               </InteractiveButton>
-              <ThemeToggle />
+              <ThemeToggle className="rounded-[5px] border-0 bg-transparent shadow-none hover:bg-background/70" />
             </div>
           </div>
         </div>

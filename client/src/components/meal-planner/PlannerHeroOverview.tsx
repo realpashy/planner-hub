@@ -23,7 +23,7 @@ export function PlannerHeroOverview({ plan, summary }: PlannerHeroOverviewProps)
               <p className="mt-1 text-sm leading-7 text-muted-foreground">{plan.summary}</p>
             </div>
           </div>
-          <div className="stat-chip shrink-0 rounded-full px-3 py-2 text-xs font-semibold text-foreground">
+          <div className="meal-label-surface shrink-0 text-foreground">
             {summary.plannedDays} أيام مخططة
           </div>
         </div>
@@ -35,7 +35,7 @@ export function PlannerHeroOverview({ plan, summary }: PlannerHeroOverviewProps)
           <PlannerStatPill icon={Salad} label="متوسط الوجبات" value={`${summary.averageMealsPerDay} يوميًا`} tone="soft" />
         </div>
 
-        <p className="rounded-[calc(var(--radius)+0.375rem)] border border-border/70 bg-background/50 px-4 py-3 text-sm leading-7 text-muted-foreground shadow-[var(--app-shadow)]">
+        <p className="meal-note-surface">
           تذكير: احرص على شرب الماء يوميًا — التوصية العامة غالبًا 6–8 أكواب أو حسب احتياجك.
         </p>
       </div>
