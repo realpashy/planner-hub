@@ -88,11 +88,10 @@ function detectCountryIso2(countryOptions: CountryOption[]) {
 
 async function detectCountryIso2ByIp(signal?: AbortSignal) {
   try {
-    const response = await fetch("https://ipwho.is/", { signal });
+    const response = await fetch("/api/geo/country", { signal, credentials: "include" });
     if (!response.ok) return null;
-    const data = await response.json() as { success?: boolean; country_code?: string };
-    if (data.success === false) return null;
-    return data.country_code?.toUpperCase() ?? null;
+    const data = await response.json() as { countryIso2?: string | null };
+    return data.countryIso2?.toUpperCase() ?? null;
   } catch {
     return null;
   }

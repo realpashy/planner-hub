@@ -57,6 +57,64 @@ function getDebugPayload() {
   };
 }
 
+function extractCountryFromHeaders(req: express.Request) {
+  const candidates = [
+    req.headers["x-vercel-ip-country"],
+    req.headers["cf-ipcountry"],
+    req.headers["x-country-code"],
+  ];
+
+  for (const candidate of candidates) {
+    const value = Array.isArray(candidate) ? candidate[0] : candidate;
+    if (typeof value === "string" && /^[A-Za-z]{2}$/.test(value.trim())) {
+      return value.trim().toUpperCase();
+    }
+  }
+
+  return null;
+}
+
+function extractClientIp(req: express.Request) {
+  const forwarded = req.headers["x-forwarded-for"];
+  const forwardedValue = Array.isArray(forwarded) ? forwarded[0] : forwarded;
+  const firstForwarded = forwardedValue?.split(",")[0]?.trim();
+  if (firstForwarded) return firstForwarded.replace(/^::ffff:/, "");
+
+  const realIpHeader = req.headers["x-real-ip"];
+  const realIp = Array.isArray(realIpHeader) ? realIpHeader[0] : realIpHeader;
+  if (realIp) return realIp.replace(/^::ffff:/, "");
+
+  return req.socket.remoteAddress?.replace(/^::ffff:/, "") ?? null;
+}
+
+function isPublicIp(ip: string | null) {
+  if (!ip) return false;
+  const normalized = ip.toLowerCase();
+  if (normalized === "127.0.0.1" || normalized === "::1" || normalized.startsWith("10.") || normalized.startsWith("192.168.") || normalized.startsWith("169.254.")) {
+    return false;
+  }
+  if (normalized.startsWith("172.")) {
+    const second = Number(normalized.split(".")[1]);
+    if (second >= 16 && second <= 31) return false;
+  }
+  return true;
+}
+
+async function detectCountryFromIp(ip: string | null, signal?: AbortSignal) {
+  if (!isPublicIp(ip)) return null;
+
+  try {
+    const response = await fetch(`https://ipapi.co/${encodeURIComponent(ip!)}/json/`, { signal });
+    if (!response.ok) return null;
+    const data = await response.json() as { country_code?: string; error?: boolean };
+    if (data.error) return null;
+    const code = data.country_code?.toUpperCase();
+    return code && /^[A-Z]{2}$/.test(code) ? code : null;
+  } catch {
+    return null;
+  }
+}
+
 function getSessionSecret() {
   return process.env.SESSION_SECRET || "planner-hub-dev-session";
 }
@@ -414,8 +472,22 @@ app.get("/api/health", (_req, res) => {
   res.status(payload.ok ? 200 : 503).json({ status: payload.ok ? "ok" : "boot_error", ...payload });
 });
 
+app.get("/api/geo/country", async (req, res) => {
+  const headerCountry = extractCountryFromHeaders(req);
+  if (headerCountry) {
+    return res.json({ countryIso2: headerCountry, source: "header" });
+  }
+
+  const ipCountry = await detectCountryFromIp(extractClientIp(req));
+  if (ipCountry) {
+    return res.json({ countryIso2: ipCountry, source: "ipapi" });
+  }
+
+  return res.json({ countryIso2: null, source: "unknown" });
+});
+
 app.use(async (req, res, next) => {
-  if (req.path === "/api/debug/startup" || req.path === "/api/health") {
+  if (req.path === "/api/debug/startup" || req.path === "/api/health" || req.path === "/api/geo/country") {
     return next();
   }
 
