@@ -45,7 +45,7 @@ export function PlannerDayDrawer({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         dir="rtl"
-        className="meal-surface-popup flex max-h-[88vh] w-[min(92vw,68rem)] max-w-[68rem] flex-col gap-0 overflow-hidden rounded-[calc(var(--radius)+0.8rem)] p-0"
+        className="dark meal-surface-popup flex max-h-[88vh] w-[min(92vw,68rem)] max-w-[68rem] flex-col gap-0 overflow-hidden rounded-[calc(var(--radius)+0.8rem)] p-0"
       >
         {day ? (
           <div className="premium-scrollbar min-h-full overflow-y-auto">

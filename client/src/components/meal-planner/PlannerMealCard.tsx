@@ -202,7 +202,7 @@ export function PlannerMealCard({
           if (!open) setSelectedMode(null);
         }}
       >
-        <DialogContent dir="rtl" className="meal-surface-popup max-w-xl rounded-[5px] p-0">
+        <DialogContent dir="rtl" className="dark meal-surface-popup max-w-xl rounded-[5px] p-0">
           <div className="space-y-5 p-5 text-right">
             <DialogHeader className="space-y-2 text-right">
               <div className="flex items-center justify-start gap-2">

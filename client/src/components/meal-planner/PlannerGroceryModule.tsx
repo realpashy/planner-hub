@@ -86,6 +86,18 @@ function detectCountryIso2(countryOptions: CountryOption[]) {
     ?? "IL";
 }
 
+async function detectCountryIso2ByIp(signal?: AbortSignal) {
+  try {
+    const response = await fetch("https://ipwho.is/", { signal });
+    if (!response.ok) return null;
+    const data = await response.json() as { success?: boolean; country_code?: string };
+    if (data.success === false) return null;
+    return data.country_code?.toUpperCase() ?? null;
+  } catch {
+    return null;
+  }
+}
+
 function normalizeWhatsappNumber(countryCode: string, phoneNumber: string) {
   const code = countryCode.replace(/[^\d+]/g, "");
   const number = phoneNumber.replace(/\D/g, "");
@@ -163,6 +175,21 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
   useEffect(() => {
     if (!countryOptions.length) return;
     setSelectedCountryIso2(detectCountryIso2(countryOptions));
+  }, [countryOptions]);
+
+  useEffect(() => {
+    if (!countryOptions.length) return;
+    const controller = new AbortController();
+
+    void detectCountryIso2ByIp(controller.signal).then((iso2) => {
+      if (!iso2) return;
+      const found = countryOptions.find((country) => country.iso2 === iso2);
+      if (found) {
+        setSelectedCountryIso2(found.iso2);
+      }
+    });
+
+    return () => controller.abort();
   }, [countryOptions]);
 
   return (
@@ -264,7 +291,7 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
       <Dialog open={shareOpen} onOpenChange={setShareOpen}>
         <DialogContent
           dir="rtl"
-          className="premium-scrollbar meal-surface-popup rounded-[calc(var(--radius)+0.85rem)] border-primary/15 shadow-[0_30px_72px_rgba(0,0,0,0.3)]"
+          className="dark premium-scrollbar meal-surface-popup rounded-[calc(var(--radius)+0.85rem)] border-primary/15 shadow-[0_30px_72px_rgba(0,0,0,0.3)]"
         >
           <DialogHeader className="text-right">
             <DialogTitle className="inline-flex items-center justify-start gap-2 text-right text-xl font-black">

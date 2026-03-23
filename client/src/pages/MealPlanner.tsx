@@ -181,7 +181,7 @@ export default function MealPlanner() {
       />
 
       <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
-        <SheetContent side="right" className="meal-surface-popup premium-scrollbar w-full overflow-y-auto p-0 sm:max-w-lg" dir="rtl">
+        <SheetContent side="right" className="dark meal-surface-popup premium-scrollbar w-full overflow-y-auto p-0 sm:max-w-lg" dir="rtl">
           <div className="space-y-5 p-5">
             <SheetHeader className="text-right">
               <SheetTitle className="text-right text-2xl font-black">إعدادات المخطط</SheetTitle>
@@ -259,7 +259,7 @@ export default function MealPlanner() {
       </Sheet>
 
       <AlertDialog open={replaceDialog} onOpenChange={setReplaceDialog}>
-        <AlertDialogContent dir="rtl">
+        <AlertDialogContent dir="rtl" className="dark">
           <AlertDialogHeader className="text-right">
             <AlertDialogTitle className="text-right">استبدال النسخة الحالية؟</AlertDialogTitle>
             <AlertDialogDescription className="text-right leading-7">سننشئ نسخة جديدة لهذا الأسبوع ونبقيها هي النسخة النشطة فقط.</AlertDialogDescription>
@@ -281,7 +281,7 @@ export default function MealPlanner() {
       </AlertDialog>
 
       <AlertDialog open={Boolean(deleteMode)} onOpenChange={(open) => (!open ? setDeleteMode(null) : null)}>
-        <AlertDialogContent dir="rtl">
+        <AlertDialogContent dir="rtl" className="dark">
           <AlertDialogHeader className="text-right">
             <AlertDialogTitle className="text-right">تأكيد الحذف</AlertDialogTitle>
             <AlertDialogDescription className="text-right leading-7">{deleteMode === "all" ? "سيتم حذف الخطة الحالية وإعادة التفضيلات إلى الإعدادات الافتراضية." : "سيتم حذف الخطة الحالية مع الاحتفاظ بالتفضيلات المحفوظة."}</AlertDialogDescription>
