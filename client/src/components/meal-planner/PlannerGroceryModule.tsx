@@ -154,8 +154,18 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
   const [shareOpen, setShareOpen] = useState(false);
   const [selectedCountryIso2, setSelectedCountryIso2] = useState("IL");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [countrySearch, setCountrySearch] = useState("");
   const [appLanguage, setAppLanguage] = useState<AppLanguage>("ar");
   const countryOptions = useMemo(() => buildCountryOptions(appLanguage), [appLanguage]);
+  const filteredCountryOptions = useMemo(() => {
+    const query = countrySearch.trim().toLowerCase();
+    if (!query) return countryOptions;
+    return countryOptions.filter((country) =>
+      country.label.toLowerCase().includes(query)
+      || country.code.toLowerCase().includes(query)
+      || country.iso2.toLowerCase().includes(query),
+    );
+  }, [countryOptions, countrySearch]);
   const totalItems = useMemo(() => grocery.reduce((sum, group) => sum + group.items.length, 0), [grocery]);
   const selectedCountry = useMemo(
     () => countryOptions.find((country) => country.iso2 === selectedCountryIso2) ?? countryOptions.find((country) => country.code === "+972") ?? countryOptions[0],
@@ -306,16 +316,40 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
             <div className="grid grid-cols-[minmax(0,0.8fr)_minmax(0,2.2fr)] gap-3 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,2.1fr)]">
               <div className="space-y-2 text-right">
                 <label className="text-sm font-bold text-foreground">مفتاح الدولة</label>
-                <Select value={selectedCountry?.iso2 ?? ""} onValueChange={setSelectedCountryIso2}>
+                <Select
+                  value={selectedCountry?.iso2 ?? ""}
+                  onValueChange={(value) => {
+                    setSelectedCountryIso2(value);
+                    setCountrySearch("");
+                  }}
+                  onOpenChange={(isOpen) => {
+                    if (!isOpen) setCountrySearch("");
+                  }}
+                >
                   <SelectTrigger className="h-12 rounded-[5px] border-primary/15 bg-background/75 px-3 text-left text-foreground shadow-[var(--app-shadow)] [&>span]:text-left" dir="ltr">
                     <SelectValue placeholder="Select country" />
                   </SelectTrigger>
                   <SelectContent className="rounded-[5px] border-primary/15 bg-card text-card-foreground">
-                    {countryOptions.map((country) => (
+                    <div className="p-1.5">
+                      <Input
+                        value={countrySearch}
+                        onChange={(event) => setCountrySearch(event.target.value)}
+                        placeholder="Search country"
+                        className="h-10 rounded-[5px] border-border/80 bg-background/75 text-left placeholder:text-muted-foreground/60"
+                        dir="ltr"
+                        onKeyDown={(event) => event.stopPropagation()}
+                      />
+                    </div>
+                    {filteredCountryOptions.map((country) => (
                       <SelectItem key={country.iso2} value={country.iso2} className="rounded-[5px] text-left" dir="ltr">
                         {country.flag} {country.code} {country.label}
                       </SelectItem>
                     ))}
+                    {!filteredCountryOptions.length ? (
+                      <div className="px-3 py-2 text-left text-sm text-muted-foreground" dir="ltr">
+                        No matching countries
+                      </div>
+                    ) : null}
                   </SelectContent>
                 </Select>
               </div>

@@ -389,11 +389,20 @@
 
   .meal-timeline-lane {
     @apply absolute bottom-4 right-3 top-4 w-4;
+    margin-right: -20px;
   }
 
   .meal-timeline-rail {
     @apply absolute bottom-0 top-0 w-px bg-border/70;
     right: calc(50% - 0.5px);
+  }
+
+  .meal-timeline-entry {
+    margin-right: -45px;
+  }
+
+  .meal-timeline-entry > .meal-timeline-lane {
+    margin-right: -15px;
   }
 
   .meal-timeline-dot {

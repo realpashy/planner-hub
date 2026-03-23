@@ -97,7 +97,7 @@ export function PlannerDayDrawer({
                   <div className="space-y-4">
                     <AnimatePresence initial={false}>
                       {day.meals.map((meal) => (
-                        <motion.div key={meal.id} layout className="relative">
+                        <motion.div key={meal.id} layout className="meal-timeline-entry relative">
                           <div className="meal-timeline-lane">
                             <div className="meal-timeline-dot" />
                           </div>
