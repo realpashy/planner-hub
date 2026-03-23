@@ -12,6 +12,11 @@ interface PlannerMealCardProps {
   onToggle: () => void;
   onSwap: (mode: MealSwapMode) => void;
   onRegenerateMeal: () => void;
+  usageSummary: {
+    generationsLeft: number | null;
+    dayRegenerationsLeft: number | null;
+    swapsLeft: number | null;
+  };
   remainingActions: number | null;
   loading?: boolean;
 }
@@ -45,6 +50,7 @@ export function PlannerMealCard({
   onToggle,
   onSwap,
   onRegenerateMeal,
+  usageSummary,
   remainingActions,
   loading = false,
 }: PlannerMealCardProps) {
@@ -61,6 +67,10 @@ export function PlannerMealCard({
     setActionDialogOpen(false);
     setSelectedMode(null);
   };
+
+  const actionTypeLabel = selectedMode === "refresh" ? "تبديل الوجبات" : "تبديل الوجبات";
+  const currentRemaining = usageSummary.swapsLeft;
+  const nextRemaining = currentRemaining === null ? "∞" : Math.max(0, currentRemaining - 1);
 
   return (
     <>
@@ -206,6 +216,30 @@ export function PlannerMealCard({
                 المتبقي من التعديلات السريعة هذا الشهر: <span className="font-black text-foreground">{remainingActions ?? "غير محدود"}</span>
               </DialogDescription>
             </DialogHeader>
+
+            <div className="surface-subtle rounded-[calc(var(--radius)+0.65rem)] p-4 text-right">
+              <p className="text-sm font-black text-foreground">رصيد الشهر الحالي</p>
+              <div className="mt-3 grid gap-2">
+                <div className="flex items-center justify-between rounded-[5px] bg-background/70 px-3 py-2">
+                  <span className="text-sm text-muted-foreground">توليد الأسبوع</span>
+                  <span className="font-black text-foreground">{usageSummary.generationsLeft ?? "∞"}</span>
+                </div>
+                <div className="flex items-center justify-between rounded-[5px] bg-background/70 px-3 py-2">
+                  <span className="text-sm text-muted-foreground">إعادة الأيام</span>
+                  <span className="font-black text-foreground">{usageSummary.dayRegenerationsLeft ?? "∞"}</span>
+                </div>
+                <div className="flex items-center justify-between rounded-[5px] bg-background/70 px-3 py-2">
+                  <span className="text-sm text-muted-foreground">تبديل الوجبات</span>
+                  <span className="font-black text-foreground">{usageSummary.swapsLeft ?? "∞"}</span>
+                </div>
+              </div>
+              {selectedMode ? (
+                <p className="meal-note-surface mt-3 w-full">
+                  هذا الإجراء سيخصم 1 من {actionTypeLabel}. بعد التنفيذ سيتبقى {nextRemaining}.
+                  هل أنت متأكد؟
+                </p>
+              ) : null}
+            </div>
 
             <div className="grid gap-2 sm:grid-cols-2">
               {SWAP_OPTIONS.map((option) => {

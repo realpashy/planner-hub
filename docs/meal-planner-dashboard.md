@@ -120,10 +120,12 @@ should consolidate into one human-friendly chicken entry.
 
 - share button lives inside the grocery zone
 - button uses WhatsApp styling, not generic primary styling
+- country selection should cover the full world country list
 - country selection should update the flag instantly
 - default country is detected from browser locale when possible
 - fallback stays sensible
 - phone preview updates live
+- on compact screens the country selector stays roughly one quarter width and the phone input stays roughly three quarters width
 - output uses `wa.me`
 - message is grouped by grocery category
 
@@ -158,5 +160,6 @@ Remove from the main planner surface:
 - shopping rows: label right, quantity left
 - generic RTL helper rows must not encode the meaning of the layout; meal planner rows should use explicit Arabic-first DOM order instead of `row-reverse` tricks
 - drawer title block right
+- timeline anchors should be centered on the timeline line, not offset visually beside it
 - drawer and modal helper text right
 - settings and modal close controls follow explicit RTL placement, not defaults

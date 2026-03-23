@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { getCountryDataList, getEmojiFlag } from "countries-list";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { InteractiveButton } from "@/components/ui/interactive-button";
@@ -24,14 +25,14 @@ const GROUP_ICONS = {
   spices: ChefHat,
 } as const;
 
-const COUNTRY_PRESETS = [
-  { code: "+972", flag: "🇮🇱", label: "إسرائيل / فلسطين", regions: ["IL", "PS"] },
-  { code: "+966", flag: "🇸🇦", label: "السعودية", regions: ["SA"] },
-  { code: "+971", flag: "🇦🇪", label: "الإمارات", regions: ["AE"] },
-  { code: "+20", flag: "🇪🇬", label: "مصر", regions: ["EG"] },
-  { code: "+962", flag: "🇯🇴", label: "الأردن", regions: ["JO"] },
-  { code: "+965", flag: "🇰🇼", label: "الكويت", regions: ["KW"] },
-] as const;
+type AppLanguage = "ar" | "he" | "en";
+
+type CountryOption = {
+  iso2: string;
+  code: string;
+  flag: string;
+  label: string;
+};
 
 function WhatsappIcon({ className }: { className?: string }) {
   return (
@@ -41,12 +42,25 @@ function WhatsappIcon({ className }: { className?: string }) {
   );
 }
 
-function resolveCountryByCode(countryCode: string) {
-  return COUNTRY_PRESETS.find((item) => item.code === countryCode) ?? COUNTRY_PRESETS[0];
+function buildCountryOptions(language: AppLanguage) {
+  const displayNames =
+    typeof Intl !== "undefined" && typeof Intl.DisplayNames !== "undefined"
+      ? new Intl.DisplayNames([language], { type: "region" })
+      : null;
+
+  return getCountryDataList()
+    .filter((country) => Array.isArray(country.phone) && country.phone.length > 0)
+    .map((country) => ({
+      iso2: country.iso2,
+      code: `+${country.phone[0]}`,
+      flag: getEmojiFlag(country.iso2),
+      label: displayNames?.of(country.iso2) || country.native || country.name,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label, language));
 }
 
-function detectCountryCode() {
-  if (typeof navigator === "undefined") return COUNTRY_PRESETS[0].code;
+function detectCountryIso2(countryOptions: CountryOption[]) {
+  if (typeof navigator === "undefined") return countryOptions[0]?.iso2 ?? "IL";
   const localeCandidates = [
     ...navigator.languages,
     navigator.language,
@@ -54,10 +68,10 @@ function detectCountryCode() {
   ].filter(Boolean);
 
   const upperCandidates = localeCandidates.map((value) => value.toUpperCase());
-  const matched = COUNTRY_PRESETS.find((preset) =>
-    preset.regions.some((region) => upperCandidates.some((candidate) => candidate.includes(`-${region}`) || candidate.endsWith(region))),
+  const matched = countryOptions.find((country) =>
+    upperCandidates.some((candidate) => candidate.includes(`-${country.iso2}`) || candidate.endsWith(country.iso2)),
   );
-  return matched?.code ?? COUNTRY_PRESETS[0].code;
+  return matched?.iso2 ?? countryOptions.find((country) => country.code === "+972")?.iso2 ?? countryOptions[0]?.iso2 ?? "IL";
 }
 
 function normalizeWhatsappNumber(countryCode: string, phoneNumber: string) {
@@ -68,7 +82,7 @@ function normalizeWhatsappNumber(countryCode: string, phoneNumber: string) {
   return `${normalizedCode}${trimmedLocal}`;
 }
 
-function detectAppLanguage() {
+function detectAppLanguage(): AppLanguage {
   if (typeof document !== "undefined") {
     const htmlLang = document.documentElement.lang?.toLowerCase();
     if (htmlLang?.startsWith("he")) return "he";
@@ -115,20 +129,29 @@ function buildWhatsappMessage(groups: GroceryGroup[], language: "ar" | "he" | "e
 
 export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem }: PlannerGroceryModuleProps) {
   const [shareOpen, setShareOpen] = useState(false);
-  const [countryCode, setCountryCode] = useState<string>(COUNTRY_PRESETS[0].code);
+  const [selectedCountryIso2, setSelectedCountryIso2] = useState("IL");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [appLanguage, setAppLanguage] = useState<"ar" | "he" | "en">("ar");
+  const [appLanguage, setAppLanguage] = useState<AppLanguage>("ar");
+  const countryOptions = useMemo(() => buildCountryOptions(appLanguage), [appLanguage]);
   const totalItems = useMemo(() => grocery.reduce((sum, group) => sum + group.items.length, 0), [grocery]);
-  const selectedCountry = useMemo(() => resolveCountryByCode(countryCode), [countryCode]);
-  const normalizedPhone = useMemo(() => normalizeWhatsappNumber(countryCode, phoneNumber), [countryCode, phoneNumber]);
+  const selectedCountry = useMemo(
+    () => countryOptions.find((country) => country.iso2 === selectedCountryIso2) ?? countryOptions.find((country) => country.code === "+972") ?? countryOptions[0],
+    [countryOptions, selectedCountryIso2],
+  );
+  const normalizedPhone = useMemo(() => normalizeWhatsappNumber(selectedCountry?.code ?? "+972", phoneNumber), [selectedCountry, phoneNumber]);
   const whatsappHref = normalizedPhone
     ? `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(buildWhatsappMessage(grocery, appLanguage))}`
     : "#";
 
   useEffect(() => {
-    setCountryCode(detectCountryCode());
-    setAppLanguage(detectAppLanguage());
+    const detectedLanguage = detectAppLanguage();
+    setAppLanguage(detectedLanguage);
   }, []);
+
+  useEffect(() => {
+    if (!countryOptions.length) return;
+    setSelectedCountryIso2(detectCountryIso2(countryOptions));
+  }, [countryOptions]);
 
   return (
     <>
@@ -242,23 +265,23 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="grid gap-3 sm:grid-cols-[1fr_1.2fr]">
+            <div className="grid grid-cols-[minmax(0,0.8fr)_minmax(0,2.2fr)] gap-3 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,2.1fr)]">
               <div className="space-y-2 text-right">
                 <label className="text-sm font-bold text-foreground">مفتاح الدولة</label>
                 <div className="flex h-12 items-center gap-3 rounded-[5px] border border-primary/15 bg-background/55 px-3 shadow-[var(--app-shadow)]">
                   <select
-                    value={countryCode}
-                    onChange={(event) => setCountryCode(event.target.value)}
+                    value={selectedCountry?.iso2 ?? ""}
+                    onChange={(event) => setSelectedCountryIso2(event.target.value)}
                     className="h-full flex-1 bg-transparent text-left text-sm font-semibold text-foreground outline-none"
                     dir="ltr"
                   >
-                    {COUNTRY_PRESETS.map((country) => (
-                      <option key={country.code} value={country.code}>
-                        {country.code} {country.label}
+                    {countryOptions.map((country) => (
+                      <option key={country.iso2} value={country.iso2}>
+                        {country.flag} {country.code} {country.label}
                       </option>
                     ))}
                   </select>
-                  <span className="text-xl leading-none">{selectedCountry.flag}</span>
+                  <span className="text-xl leading-none">{selectedCountry?.flag ?? "🌍"}</span>
                 </div>
               </div>
 
@@ -277,7 +300,7 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
             <div className="rounded-[5px] border border-primary/15 bg-background/55 p-4 text-right shadow-[var(--app-shadow)]">
               <p className="text-xs font-semibold text-muted-foreground">المعاينة بعد التطبيع</p>
               <p className="mt-1 text-base font-black text-foreground" dir="ltr">
-                {normalizedPhone || `${selectedCountry.code.replace("+", "")}...`}
+                {normalizedPhone || `${(selectedCountry?.code ?? "+972").replace("+", "")}...`}
               </p>
               <p className="mt-2 text-xs leading-6 text-muted-foreground">
                 إذا كان الرقم المحلي يبدأ بصفر، سنحوّله تلقائيًا لصيغة مناسبة للرابط.
@@ -285,11 +308,11 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
             </div>
           </div>
 
-          <DialogFooter className="sm:justify-start">
+          <DialogFooter className="justify-stretch sm:justify-stretch">
             <InteractiveButton
               type="button"
               asChild
-              className="min-h-12 rounded-[1rem] border-0 bg-[#25D366] px-5 text-white shadow-[0_16px_34px_rgba(37,211,102,0.28)] hover:bg-[#1ebe5b]"
+              className="min-h-12 w-full justify-center rounded-[1rem] border-0 bg-[#25D366] px-5 text-white shadow-[0_16px_34px_rgba(37,211,102,0.28)] hover:bg-[#1ebe5b]"
               disabled={!normalizedPhone}
             >
               <a href={whatsappHref} target="_blank" rel="noreferrer">

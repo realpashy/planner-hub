@@ -12,6 +12,11 @@ interface PlannerDayDrawerProps {
   onToggleMeal: (mealId: string) => void;
   onSwapMeal: (dateISO: string, mealType: string, mode: MealSwapMode) => void;
   onRegenerateMeal: (dateISO: string, mealType: string) => void;
+  usageSummary: {
+    generationsLeft: number | null;
+    dayRegenerationsLeft: number | null;
+    swapsLeft: number | null;
+  };
   remainingMealActions: number | null;
   workingAction: "swap" | "delete" | "regenerate" | null;
 }
@@ -32,6 +37,7 @@ export function PlannerDayDrawer({
   onToggleMeal,
   onSwapMeal,
   onRegenerateMeal,
+  usageSummary,
   remainingMealActions,
   workingAction,
 }: PlannerDayDrawerProps) {
@@ -90,7 +96,7 @@ export function PlannerDayDrawer({
                     <AnimatePresence initial={false}>
                       {day.meals.map((meal) => (
                         <motion.div key={meal.id} layout className="relative">
-                          <div className="absolute right-[calc(1rem-6px)] top-7 z-10 h-3 w-3 rounded-full bg-primary ring-4 ring-primary/10" />
+                          <div className="absolute right-[9.5px] top-7 z-10 h-3 w-3 rounded-full bg-primary ring-4 ring-primary/10" />
                           <div className="pr-8">
                             <PlannerMealCard
                               meal={meal}
@@ -98,6 +104,7 @@ export function PlannerDayDrawer({
                               onToggle={() => onToggleMeal(meal.id)}
                               onSwap={(mode) => onSwapMeal(day.dateISO, meal.mealType, mode)}
                               onRegenerateMeal={() => onRegenerateMeal(day.dateISO, meal.mealType)}
+                              usageSummary={usageSummary}
                               remainingActions={remainingMealActions}
                               loading={workingAction === "swap"}
                             />

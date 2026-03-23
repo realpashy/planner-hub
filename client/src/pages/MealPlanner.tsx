@@ -174,6 +174,7 @@ export default function MealPlanner() {
         onToggleMeal={(mealId) => setExpandedMealId((current) => (current === mealId ? null : mealId))}
         onSwapMeal={handleSwapMeal}
         onRegenerateMeal={(dateISO, mealType) => handleSwapMeal(dateISO, mealType, "refresh")}
+        usageSummary={usage}
         remainingMealActions={usage.swapsLeft}
         workingAction={workingAction}
       />
@@ -188,9 +189,9 @@ export default function MealPlanner() {
             <div className="surface-subtle rounded-[calc(var(--radius)+0.75rem)] p-4">
               <p className="text-sm font-black text-foreground">رصيد الشهر الحالي</p>
               <div className="mt-3 grid gap-3">
-                <div className="rtl-meta-row rounded-[calc(var(--radius)+0.375rem)] bg-background/70 px-3 py-2"><span className="text-sm text-muted-foreground">توليد الأسبوع</span><span className="font-black text-foreground">{usage.generationsLeft ?? "∞"}</span></div>
-                <div className="rtl-meta-row rounded-[calc(var(--radius)+0.375rem)] bg-background/70 px-3 py-2"><span className="text-sm text-muted-foreground">إعادة الأيام</span><span className="font-black text-foreground">{usage.dayRegenerationsLeft ?? "∞"}</span></div>
-                <div className="rtl-meta-row rounded-[calc(var(--radius)+0.375rem)] bg-background/70 px-3 py-2"><span className="text-sm text-muted-foreground">تبديل الوجبات</span><span className="font-black text-foreground">{usage.swapsLeft ?? "∞"}</span></div>
+                <div className="flex items-center justify-between rounded-[calc(var(--radius)+0.375rem)] bg-background/70 px-3 py-2"><span className="text-sm text-muted-foreground">توليد الأسبوع</span><span className="font-black text-foreground">{usage.generationsLeft ?? "∞"}</span></div>
+                <div className="flex items-center justify-between rounded-[calc(var(--radius)+0.375rem)] bg-background/70 px-3 py-2"><span className="text-sm text-muted-foreground">إعادة الأيام</span><span className="font-black text-foreground">{usage.dayRegenerationsLeft ?? "∞"}</span></div>
+                <div className="flex items-center justify-between rounded-[calc(var(--radius)+0.375rem)] bg-background/70 px-3 py-2"><span className="text-sm text-muted-foreground">تبديل الوجبات</span><span className="font-black text-foreground">{usage.swapsLeft ?? "∞"}</span></div>
               </div>
             </div>
             <div className="space-y-4">
@@ -262,6 +263,18 @@ export default function MealPlanner() {
             <AlertDialogTitle className="text-right">استبدال النسخة الحالية؟</AlertDialogTitle>
             <AlertDialogDescription className="text-right leading-7">سننشئ نسخة جديدة لهذا الأسبوع ونبقيها هي النسخة النشطة فقط.</AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="space-y-3 rounded-[calc(var(--radius)+0.65rem)] border border-border/70 bg-background/55 p-4 text-right shadow-[var(--app-shadow)]">
+            <p className="text-sm font-black text-foreground">رصيد الشهر الحالي</p>
+            <div className="grid gap-2">
+              <div className="flex items-center justify-between rounded-[5px] bg-background/70 px-3 py-2"><span className="text-sm text-muted-foreground">توليد الأسبوع</span><span className="font-black text-foreground">{usage.generationsLeft ?? "∞"}</span></div>
+              <div className="flex items-center justify-between rounded-[5px] bg-background/70 px-3 py-2"><span className="text-sm text-muted-foreground">إعادة الأيام</span><span className="font-black text-foreground">{usage.dayRegenerationsLeft ?? "∞"}</span></div>
+              <div className="flex items-center justify-between rounded-[5px] bg-background/70 px-3 py-2"><span className="text-sm text-muted-foreground">تبديل الوجبات</span><span className="font-black text-foreground">{usage.swapsLeft ?? "∞"}</span></div>
+            </div>
+            <p className="meal-note-surface w-full">
+              هذا الإجراء سيخصم 1 من توليد الأسبوع. بعد التوليد سيتبقى {usage.generationsLeft === null ? "∞" : Math.max(0, usage.generationsLeft - 1)}.
+              هل أنت متأكد؟
+            </p>
+          </div>
           <AlertDialogFooter><AlertDialogCancel>إلغاء</AlertDialogCancel><AlertDialogAction onClick={() => generatePlan(true, state.preferences)}>متابعة التوليد</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
