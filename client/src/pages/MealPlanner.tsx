@@ -122,13 +122,13 @@ export default function MealPlanner() {
           <PlannerHeroOverview plan={plan} summary={dashboardSummary} />
 
           <div className="space-y-4">
-            <div className="grid grid-cols-[1fr_auto] items-start gap-3 text-right">
+            <div className="flex items-start justify-start gap-3 text-right">
+              <div className="meal-label-surface text-primary">
+                افتح أي يوم لمراجعة الوجبات والتعديل الخفيف
+              </div>
               <div className="rtl-title-stack flex-1">
                 <p className="text-xl font-black text-foreground">الخطة الأسبوعية</p>
                 <p className="text-sm text-muted-foreground">تدفق عمودي واضح لقراءة أيام الأسبوع من الأعلى إلى الأسفل.</p>
-              </div>
-              <div className="meal-label-surface text-primary">
-                افتح أي يوم لمراجعة الوجبات والتعديل الخفيف
               </div>
             </div>
             <div className="space-y-4">
@@ -139,26 +139,26 @@ export default function MealPlanner() {
           </div>
 
           <div className="space-y-4">
-            <div className="grid grid-cols-[1fr_auto] items-start gap-3 text-right">
+            <div className="flex items-start justify-start gap-3 text-right">
+              <div className="meal-label-surface text-emerald-400 dark:text-emerald-300">
+                مرتبة حسب أقسام السوبرماركت
+              </div>
               <div className="rtl-title-stack flex-1">
                 <p className="text-xl font-black text-foreground">التسوق لهذا الأسبوع</p>
                 <p className="text-sm text-muted-foreground">استخدم القائمة كما هي أو أرسلها مباشرة إلى واتساب.</p>
-              </div>
-              <div className="meal-label-surface text-emerald-400 dark:text-emerald-300">
-                مرتبة حسب أقسام السوبرماركت
               </div>
             </div>
             <PlannerGroceryModule grocery={plan.grocery} open={groceryOpen} onOpenChange={setGroceryOpen} onRemoveItem={handleRemoveGroceryItem} />
           </div>
 
           <div className="space-y-4">
-            <div className="grid grid-cols-[1fr_auto] items-start gap-3 text-right">
+            <div className="flex items-start justify-start gap-3 text-right">
+              <div className="meal-label-surface text-amber-400 dark:text-amber-300">
+                ملاحظات خفيفة فقط
+              </div>
               <div className="rtl-title-stack flex-1">
                 <p className="text-xl font-black text-foreground">إرشادات الأسبوع</p>
                 <p className="text-sm text-muted-foreground">تحسينات بسيطة تبقي الخطة واضحة وغير مزدحمة.</p>
-              </div>
-              <div className="meal-label-surface text-amber-400 dark:text-amber-300">
-                ملاحظات خفيفة فقط
               </div>
             </div>
             <PlannerSuggestionModule suggestions={plan.suggestions} />

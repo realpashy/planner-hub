@@ -75,7 +75,7 @@ export function PlannerMealCard({
       <motion.article layout className="meal-surface-card rounded-[calc(var(--radius)+0.65rem)] p-4 shadow-lg">
         <div className="space-y-3.5 text-right">
           <div className="flex items-start justify-start gap-3">
-            <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[5px] border border-border/80 bg-background/70 text-primary shadow-[var(--app-shadow)]">
+            <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[5px] border border-primary/25 bg-primary text-primary-foreground shadow-[var(--app-shadow)] dark:border-border/80 dark:bg-background/70 dark:text-primary">
               <Icon className="h-5 w-5" />
             </span>
 

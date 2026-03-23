@@ -50,13 +50,13 @@ export function PlannerDayCard({ day, selected = false, onOpen }: PlannerDayCard
           </div>
         </div>
 
-        <div className="grid grid-cols-[1fr_auto] items-start gap-3 text-right">
+        <div className="flex items-start justify-start gap-3 text-right">
+          <div className="meal-label-surface shrink-0 border-primary/15 bg-primary/[0.1] text-primary">
+            {day.dateLabel}
+          </div>
           <div className="space-y-1 text-right flex-1">
             <h3 className="text-xl font-black tracking-tight text-foreground">{day.dayName}</h3>
             {day.busyDay ? <p className="text-xs text-muted-foreground">يوم خفيف التحضير ومناسب للضغط اليومي.</p> : null}
-          </div>
-          <div className="meal-label-surface border-primary/15 bg-primary/[0.1] text-primary">
-            {day.dateLabel}
           </div>
         </div>
 
@@ -75,10 +75,7 @@ export function PlannerDayCard({ day, selected = false, onOpen }: PlannerDayCard
                   <span
                     className={cn(
                       "inline-flex h-8 w-8 items-center justify-center rounded-[calc(var(--radius)+0.25rem)] border shadow-[var(--app-shadow)]",
-                      meal.mealType === "breakfast" && "border-amber-500/20 bg-amber-500/[0.12] text-amber-700 dark:text-amber-300",
-                      meal.mealType === "lunch" && "border-emerald-500/20 bg-emerald-500/[0.12] text-emerald-700 dark:text-emerald-300",
-                      meal.mealType === "dinner" && "border-primary/20 bg-primary/[0.12] text-primary",
-                      meal.mealType === "snack" && "border-rose-500/20 bg-rose-500/[0.12] text-rose-700 dark:text-rose-300",
+                      "border-primary/25 bg-primary text-primary-foreground dark:bg-primary/[0.12] dark:text-primary",
                     )}
                   >
                     <Icon className="h-4 w-4" />

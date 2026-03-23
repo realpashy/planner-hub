@@ -11,51 +11,51 @@
   --elevate-1: rgba(0, 0, 0, 0.025);
   --elevate-2: rgba(0, 0, 0, 0.06);
 
-  --background: 210 25% 96%;
-  --foreground: 0 0% 12%;
-  --border: 0 0% 84%;
+  --background: 0 0% 100%;
+  --foreground: 0 0% 20%;
+  --border: 220 13% 91%;
   --card: 0 0% 100%;
-  --card-foreground: 0 0% 12%;
-  --card-border: 0 0% 84%;
-  --sidebar: 210 25% 95%;
-  --sidebar-foreground: 0 0% 12%;
-  --sidebar-border: 0 0% 84%;
+  --card-foreground: 0 0% 20%;
+  --card-border: 220 13% 91%;
+  --sidebar: 210 20% 98%;
+  --sidebar-foreground: 0 0% 20%;
+  --sidebar-border: 84 76% 50%;
   --sidebar-primary: 84 76% 50%;
   --sidebar-primary-foreground: 0 0% 0%;
   --sidebar-accent: 84 76% 50%;
   --sidebar-accent-foreground: 0 0% 0%;
-  --sidebar-ring: 84 76% 50%;
+  --sidebar-ring: 0 0% 100%;
   --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 12%;
-  --popover-border: 0 0% 84%;
+  --popover-foreground: 0 0% 20%;
+  --popover-border: 220 13% 91%;
   --primary: 84 76% 50%;
   --primary-foreground: 0 0% 0%;
-  --secondary: 0 0% 15%;
-  --secondary-foreground: 0 0% 90%;
-  --muted: 0 0% 96%;
-  --muted-foreground: 0 0% 44%;
+  --secondary: 220 14% 96%;
+  --secondary-foreground: 87 17% 30%;
+  --muted: 210 20% 98%;
+  --muted-foreground: 220 9% 46%;
   --accent: 84 76% 50%;
   --accent-foreground: 0 0% 0%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
-  --input: 0 0% 84%;
-  --ring: 83 72% 55%;
-  --chart-1: 84 71% 37%;
-  --chart-2: 83 87% 56%;
-  --chart-3: 84 68% 36%;
-  --chart-4: 84 94% 33%;
-  --chart-5: 83 86% 74%;
+  --input: 220 13% 91%;
+  --ring: 84 76% 50%;
+  --chart-1: 83 100% 55%;
+  --chart-2: 84 75% 48%;
+  --chart-3: 83 74% 61%;
+  --chart-4: 84 70% 39%;
+  --chart-5: 84 64% 35%;
 
   --success: 142 71% 45%;
   --success-foreground: 0 0% 100%;
   --warning: 38 92% 50%;
   --warning-foreground: 0 0% 100%;
-  --app-shadow: 2px 2px 5px 2px #0000000d;
-  --surface-canvas: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(246,247,242,0.98));
-  --surface-card: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(247,248,244,0.96));
-  --surface-muted: linear-gradient(180deg, rgba(249,250,246,0.98), rgba(242,244,237,0.96));
-  --surface-accent: linear-gradient(180deg, rgba(149,223,30,0.18), rgba(149,223,30,0.08));
-  --surface-glow: radial-gradient(circle at top right, rgba(149,223,30,0.12), transparent 35%);
+  --app-shadow: 2px 2px 1px 1px #0000000d;
+  --surface-canvas: linear-gradient(180deg, rgba(255,255,255,0.99), rgba(249,250,251,0.99));
+  --surface-card: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(250,252,246,0.97));
+  --surface-muted: linear-gradient(180deg, rgba(249,250,251,0.99), rgba(244,248,238,0.96));
+  --surface-accent: linear-gradient(180deg, rgba(234,255,207,0.9), rgba(149,223,30,0.14));
+  --surface-glow: radial-gradient(circle at top right, rgba(149,223,30,0.1), transparent 38%);
 
   --font-sans: 'Tajawal', sans-serif;
   --font-hebrew: 'Heebo', sans-serif;
@@ -128,7 +128,7 @@
   --success-foreground: 0 0% 100%;
   --warning: 38 92% 55%;
   --warning-foreground: 0 0% 100%;
-  --app-shadow: 2px 2px 5px 2px #0000000d;
+  --app-shadow: 2px 2px 1px 1px #0000000d;
   --surface-canvas: linear-gradient(180deg, rgba(23,23,23,0.98), rgba(20,20,20,1));
   --surface-card: linear-gradient(180deg, rgba(40,40,40,0.98), rgba(32,32,32,0.98));
   --surface-muted: linear-gradient(180deg, rgba(33,33,33,0.98), rgba(27,27,27,0.98));
@@ -220,7 +220,7 @@
   }
 
   .icon-chip {
-    @apply inline-flex h-9 w-9 items-center justify-center rounded-[calc(var(--radius)+0.25rem)] border border-border/80 bg-background/80 text-foreground;
+    @apply inline-flex h-9 w-9 items-center justify-center rounded-[5px] border border-primary/25 bg-primary text-primary-foreground dark:border-border/80 dark:bg-background/80 dark:text-primary;
     box-shadow: var(--app-shadow);
   }
 
@@ -282,7 +282,7 @@
 
   .meal-surface-card {
     @apply border border-border/80 bg-card text-card-foreground;
-    background-image: radial-gradient(circle at top right, rgba(149,223,30,0.08), transparent 26%), var(--surface-card);
+    background-image: radial-gradient(circle at top right, rgba(149,223,30,0.1), transparent 26%), var(--surface-card);
     box-shadow: var(--app-shadow);
   }
 
@@ -319,7 +319,7 @@
   }
 
   .meal-label-surface {
-    @apply inline-flex items-center gap-2 border border-border/70 bg-background/60 px-3 py-1.5 text-xs font-semibold text-foreground;
+    @apply inline-flex items-center gap-2 border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary dark:border-border/70 dark:bg-background/60 dark:text-foreground;
     border-radius: 5px;
     box-shadow: var(--app-shadow);
   }

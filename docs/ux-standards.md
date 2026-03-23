@@ -23,6 +23,7 @@ For rows with a title block and secondary content:
 - count, chip, badge, or helper meta belongs on the left only when that improves Arabic scanning
 - DOM order should match the visual RTL reading order
 - do not rely on `justify-between` alone
+- when a badge, date pill, icon chip, or quantity block is meant to lead the row in Arabic, place it first in the DOM and use an explicit RTL-first flex row instead of `grid-cols-[1fr_auto]`
 
 ### Icons and controls
 

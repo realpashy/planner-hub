@@ -19,23 +19,23 @@ export function PlannerStatPill({
   return (
     <div
       className={cn(
-        "meal-surface-soft flex min-h-[98px] items-center justify-between gap-4 rounded-[5px] px-4 py-3 text-right backdrop-blur-sm transition-colors duration-200 hover:border-primary/15",
+        "meal-surface-soft flex min-h-[98px] items-center justify-start gap-4 rounded-[5px] px-4 py-3 text-right backdrop-blur-sm transition-colors duration-200 hover:border-primary/15",
         className,
       )}
     >
-      <div className="space-y-1.5 text-right flex-1">
-        <p className="text-[11px] font-bold text-muted-foreground">{label}</p>
-        <p className="text-xl font-black tracking-tight text-foreground">{value}</p>
-      </div>
       <div
         className={cn(
-          "inline-flex h-11 w-11 items-center justify-center rounded-[calc(var(--radius)+0.375rem)] border shadow-[var(--app-shadow)]",
-          tone === "accent" && "border-primary/25 bg-primary/[0.12] text-primary",
-          tone === "soft" && "border-emerald-500/20 bg-emerald-500/[0.1] text-emerald-300",
-          tone === "neutral" && "border-sky-500/20 bg-sky-500/[0.1] text-sky-300",
+          "inline-flex h-11 w-11 items-center justify-center rounded-[5px] border border-primary/25 bg-primary text-primary-foreground shadow-[var(--app-shadow)] dark:border-primary/20 dark:bg-primary/[0.12] dark:text-primary",
+          tone === "accent" && "bg-primary text-primary-foreground dark:bg-primary/[0.12] dark:text-primary",
+          tone === "soft" && "bg-primary text-primary-foreground dark:bg-primary/[0.12] dark:text-primary",
+          tone === "neutral" && "bg-primary text-primary-foreground dark:bg-primary/[0.12] dark:text-primary",
         )}
       >
         <Icon className="h-4 w-4" />
+      </div>
+      <div className="space-y-1.5 text-right flex-1">
+        <p className="text-[11px] font-bold text-muted-foreground">{label}</p>
+        <p className="text-xl font-black tracking-tight text-foreground">{value}</p>
       </div>
     </div>
   );

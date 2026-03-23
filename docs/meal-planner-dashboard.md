@@ -59,6 +59,7 @@ Rules:
 - premium but compact
 - tighter vertical spacing than early versions
 - distinct meal-type icon chips
+- in light theme, the main icon chips use the primary green background with black foreground
 - macro chips visually related but secondary to the meals
 - no detached `تفاصيل اليوم` button
 
@@ -146,6 +147,7 @@ Remove from the main planner surface:
 - section titles on the right
 - supporting subtitles on the right
 - counts/meta opposite on the left only when helpful
+- date pills, helper badges, and category chips that lead the row should appear first on the right in RTL, not as the trailing element of a mirrored LTR grid
 - shopping rows: label right, quantity left
 - drawer title block right
 - drawer and modal helper text right

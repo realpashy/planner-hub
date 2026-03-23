@@ -45,6 +45,30 @@ This file is the visual source of truth for Planner Hub. New UI must match this 
 - sidebar border: `#404040`
 - sidebar ring: `#95df1e`
 
+### Light palette
+
+- primary: `#95df1e`
+- primary foreground: `#000000`
+- secondary: `#f3f4f6`
+- secondary foreground: `#4e583f`
+- accent: `#eaffcf`
+- accent foreground: `#000000`
+- background: `#ffffff`
+- foreground: `#333333`
+- card: `#ffffff`
+- card foreground: `#333333`
+- popover: `#ffffff`
+- popover foreground: `#333333`
+- muted: `#f9fafb`
+- muted foreground: `#6b7280`
+- border: `#e5e7eb`
+- input: `#e5e7eb`
+- ring: `#95df1e`
+- sidebar: `#f9fafb`
+- sidebar foreground: `#333333`
+- sidebar border: `#95df1e`
+- sidebar ring: `#ffffff`
+
 ## Spacing scale
 
 Use this scale first:
@@ -69,7 +93,7 @@ Avoid one-off spacing unless a real layout constraint requires it.
 
 Base system shadow:
 
-- `2px 2px 5px 2px #0000000d`
+- `2px 2px 1px 1px #0000000d`
 
 Use it as the standard soft elevation layer. Larger shadows are allowed only for major hover states, modals, and drawers.
 
@@ -139,6 +163,7 @@ Do not make every surface the same charcoal block.
   - meal-type chips
   - warning/shared/repeated flags
 - selected chips must not look identical to the app’s primary CTA unless selection is the main action
+- in light theme, icon chips and key small-status chips may use the primary green background with black foreground when that improves scanability
 
 ## Icon system
 

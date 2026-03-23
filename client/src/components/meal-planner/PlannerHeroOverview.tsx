@@ -15,16 +15,16 @@ export function PlannerHeroOverview({ plan, summary }: PlannerHeroOverviewProps)
       dir="rtl"
     >
       <div className="space-y-5 text-right">
-        <div className="grid grid-cols-[1fr_auto] items-start gap-3 text-right">
+        <div className="flex items-start justify-start gap-3 text-right">
+          <div className="meal-label-surface shrink-0 text-foreground">
+            {summary.plannedDays} أيام مخططة
+          </div>
           <div className="space-y-3 flex-1">
             <PlannerMetaBadge icon={Sparkles} label="ملخص الأسبوع" tone="accent" className="w-fit" />
             <div className="space-y-1">
               <h2 className="text-2xl font-black tracking-tight text-foreground">نظرة سريعة على أسبوعك الغذائي</h2>
               <p className="mt-1 text-sm leading-7 text-muted-foreground">{plan.summary}</p>
             </div>
-          </div>
-          <div className="meal-label-surface shrink-0 text-foreground">
-            {summary.plannedDays} أيام مخططة
           </div>
         </div>
 

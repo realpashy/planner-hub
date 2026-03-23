@@ -106,14 +106,8 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
           dir="rtl"
         >
           <div className="space-y-4">
-            <div className="grid gap-3 text-right lg:grid-cols-[1fr_auto]">
-              <div className="space-y-2 text-right flex-1">
-                <h3 className="text-lg font-black text-foreground">قائمة التسوق</h3>
-                <p className="text-sm leading-7 text-muted-foreground">
-                  قائمة موحدة ونظيفة مبنية على نموذج تسوق منظم، لا على أسطر المكونات الخام.
-                </p>
-              </div>
-              <div className="inline-flex shrink-0 items-center gap-2">
+            <div className="flex flex-col gap-3 text-right lg:flex-row lg:items-start lg:justify-start">
+              <div className="inline-flex shrink-0 items-center gap-2 lg:order-1">
                 <div className="meal-label-surface text-emerald-400 dark:text-emerald-300">
                   {grocery.length} فئات • {totalItems} عناصر
                 </div>
@@ -126,17 +120,23 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
                   <WhatsappIcon className="h-4 w-4" />
                 </InteractiveButton>
               </div>
+              <div className="space-y-2 text-right flex-1 lg:order-2">
+                <h3 className="text-lg font-black text-foreground">قائمة التسوق</h3>
+                <p className="text-sm leading-7 text-muted-foreground">
+                  قائمة موحدة ونظيفة مبنية على نموذج تسوق منظم، لا على أسطر المكونات الخام.
+                </p>
+              </div>
             </div>
 
-            <CollapsibleTrigger className="grid w-full gap-3 rounded-[5px] border border-emerald-500/15 bg-background/45 px-4 py-3 text-right shadow-[var(--app-shadow)] transition hover:border-emerald-500/25 sm:grid-cols-[1fr_auto] sm:items-center">
-              <div className="space-y-1 text-right flex-1">
-                <p className="text-sm font-bold text-foreground">{open ? "تفاصيل المشتريات مفتوحة" : "افتح القائمة لمراجعة العناصر"}</p>
-                <p className="text-xs text-muted-foreground">{open ? "يمكن حذف أي عنصر غير مطلوب لهذا الأسبوع." : "القائمة مرتبة بأسلوب قريب من أقسام السوبرماركت."}</p>
-              </div>
+            <CollapsibleTrigger className="flex w-full flex-col gap-3 rounded-[5px] border border-emerald-500/15 bg-background/45 px-4 py-3 text-right shadow-[var(--app-shadow)] transition hover:border-emerald-500/25 sm:flex-row sm:items-center sm:justify-start">
               <span className="meal-label-surface inline-flex items-center gap-2 text-emerald-400 dark:text-emerald-300">
                 {open ? "إخفاء" : "عرض"}
                 <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
               </span>
+              <div className="space-y-1 text-right flex-1">
+                <p className="text-sm font-bold text-foreground">{open ? "تفاصيل المشتريات مفتوحة" : "افتح القائمة لمراجعة العناصر"}</p>
+                <p className="text-xs text-muted-foreground">{open ? "يمكن حذف أي عنصر غير مطلوب لهذا الأسبوع." : "القائمة مرتبة بأسلوب قريب من أقسام السوبرماركت."}</p>
+              </div>
             </CollapsibleTrigger>
 
             <CollapsibleContent>
@@ -148,25 +148,22 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
                       key={group.key}
                       className="space-y-3 rounded-[5px] border border-emerald-500/15 bg-background/38 p-4 shadow-[var(--app-shadow)]"
                     >
-                      <div className="grid grid-cols-[1fr_auto] items-center gap-3 text-right">
+                      <div className="flex items-center justify-start gap-3 text-right">
+                        <span className="icon-chip h-10 w-10 rounded-[5px] border-primary/25 bg-primary text-primary-foreground dark:border-primary/20 dark:bg-primary/[0.12] dark:text-primary">
+                          <Icon className="h-4 w-4" />
+                        </span>
                         <div className="space-y-1 text-right flex-1">
                           <h4 className="text-sm font-black text-foreground">{group.title}</h4>
                           <p className="text-xs text-muted-foreground">{group.items.length} عناصر مجمعة بقراءة أوضح</p>
                         </div>
-                        <span className="icon-chip h-10 w-10 rounded-[5px] border-emerald-500/20 bg-emerald-500/[0.12] text-emerald-400 dark:text-emerald-300">
-                          <Icon className="h-4 w-4" />
-                        </span>
                       </div>
 
                       <div className="overflow-hidden rounded-[5px] border border-emerald-500/15 bg-card/[0.68]">
                         {group.items.map((item, index) => (
                           <div
                             key={item.key}
-                            className={`group grid grid-cols-[1fr_auto] items-center gap-3 px-4 py-3 text-right ${index !== group.items.length - 1 ? "border-b border-dashed border-emerald-500/15" : ""}`}
+                            className={`group flex items-center justify-start gap-3 px-4 py-3 text-right ${index !== group.items.length - 1 ? "border-b border-dashed border-emerald-500/15" : ""}`}
                           >
-                            <div className="min-w-0 flex-1 text-right">
-                              <p className="truncate text-sm font-semibold text-foreground">{item.label}</p>
-                            </div>
                             <div className="inline-flex shrink-0 items-center gap-3">
                               <span className="text-xs font-bold text-emerald-400 dark:text-emerald-300">{item.quantity}</span>
                               <button
@@ -177,6 +174,9 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
                               >
                                 <X className="h-3.5 w-3.5" />
                               </button>
+                            </div>
+                            <div className="min-w-0 flex-1 text-right">
+                              <p className="truncate text-sm font-semibold text-foreground">{item.label}</p>
                             </div>
                           </div>
                         ))}
