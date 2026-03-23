@@ -83,7 +83,7 @@ export function PlannerMealCard({
                 {meal.repeated ? <span className="meal-label-surface border-amber-500/20 bg-amber-500/[0.12] text-amber-700 dark:text-amber-300">مكرر</span> : null}
                 {meal.reusedIngredient ? <span className="meal-label-surface border-emerald-500/20 bg-emerald-500/[0.12] text-emerald-700 dark:text-emerald-300">مكونات مشتركة</span> : null}
               </div>
-              <div>
+              <div className="min-w-0 w-full">
                 <h4 className="text-lg font-black text-foreground">{meal.title}</h4>
                 <p className="mt-1 text-sm leading-7 text-muted-foreground">{meal.ingredients.slice(0, 3).join(" • ")}</p>
               </div>
