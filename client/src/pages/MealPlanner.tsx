@@ -113,10 +113,11 @@ export default function MealPlanner() {
   }
 
   return (
+    <div className="dark">
     <div className="app-shell relative pb-14" dir="rtl">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(circle_at_top,rgba(149,223,30,0.12),transparent_28%),radial-gradient(circle_at_top_right,rgba(255,255,255,0.03),transparent_24%)] dark:bg-[radial-gradient(circle_at_top,rgba(149,223,30,0.12),transparent_22%),radial-gradient(circle_at_top_right,rgba(255,255,255,0.02),transparent_22%)]" />
       {hydrating ? <div className="h-1 w-full bg-primary/10"><motion.div initial={{ width: "20%" }} animate={{ width: ["18%", "56%", "18%"] }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }} className="h-full bg-[linear-gradient(90deg,rgba(109,160,27,0.92),rgba(149,223,30,0.92))]" /></div> : null}
-      <PlannerTopBar title="مخطط الوجبات الذكي" subtitle="نطاق الأيام الحالية حتى نهاية الأسبوع" onOpenSettings={() => setSettingsOpen(true)} />
+      <PlannerTopBar title="مخطط الوجبات الذكي" subtitle="نطاق الأيام الحالية حتى نهاية الأسبوع" onOpenSettings={() => setSettingsOpen(true)} showThemeToggle={false} />
       <main className="relative px-4 pt-6 md:px-6">
         <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className={shellClass} dir="rtl">
           <PlannerHeroOverview plan={plan} summary={dashboardSummary} />
@@ -288,6 +289,7 @@ export default function MealPlanner() {
           <AlertDialogFooter><AlertDialogCancel>إلغاء</AlertDialogCancel><AlertDialogAction onClick={handleDelete}>تأكيد</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
     </div>
   );
 }

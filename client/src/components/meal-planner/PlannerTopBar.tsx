@@ -8,6 +8,7 @@ interface PlannerTopBarProps {
   subtitle: string;
   onOpenSettings: () => void;
   backHref?: string;
+  showThemeToggle?: boolean;
 }
 
 export function PlannerTopBar({
@@ -15,6 +16,7 @@ export function PlannerTopBar({
   subtitle,
   onOpenSettings,
   backHref = "/",
+  showThemeToggle = true,
 }: PlannerTopBarProps) {
   return (
     <header className="sticky top-0 z-40" dir="rtl">
@@ -45,7 +47,7 @@ export function PlannerTopBar({
               >
                 <Settings2 className="h-5 w-5" />
               </InteractiveButton>
-              <ThemeToggle className="rounded-[5px] border-0 bg-transparent shadow-none hover:bg-background/70" />
+              {showThemeToggle ? <ThemeToggle className="rounded-[5px] border-0 bg-transparent shadow-none hover:bg-background/70" /> : null}
             </div>
           </div>
         </div>

@@ -4,6 +4,7 @@ import { getCountryDataList, getEmojiFlag } from "countries-list";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { InteractiveButton } from "@/components/ui/interactive-button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Carrot, ChevronDown, ChefHat, Fish, Milk, Package, Snowflake, Store, Wheat, X } from "lucide-react";
 import type { GroceryGroup } from "@/lib/meal-planner";
 
@@ -71,7 +72,18 @@ function detectCountryIso2(countryOptions: CountryOption[]) {
   const matched = countryOptions.find((country) =>
     upperCandidates.some((candidate) => candidate.includes(`-${country.iso2}`) || candidate.endsWith(country.iso2)),
   );
-  return matched?.iso2 ?? countryOptions.find((country) => country.code === "+972")?.iso2 ?? countryOptions[0]?.iso2 ?? "IL";
+  if (matched?.iso2) return matched.iso2;
+
+  const htmlLang = typeof document !== "undefined" ? document.documentElement.lang?.toLowerCase() : "";
+  const timeZone = typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone?.toLowerCase() : "";
+  if (htmlLang?.startsWith("ar") || htmlLang?.startsWith("he") || timeZone?.includes("jerusalem")) {
+    return countryOptions.find((country) => country.iso2 === "IL")?.iso2 ?? "IL";
+  }
+
+  return countryOptions.find((country) => country.iso2 === "IL")?.iso2
+    ?? countryOptions.find((country) => country.code === "+972")?.iso2
+    ?? countryOptions[0]?.iso2
+    ?? "IL";
 }
 
 function normalizeWhatsappNumber(countryCode: string, phoneNumber: string) {
@@ -162,6 +174,12 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
         >
           <div className="space-y-4">
             <div className="flex flex-col gap-3 text-right lg:flex-row lg:items-start lg:justify-between">
+              <div className="meal-header-cluster lg:max-w-[34rem]">
+                <h3 className="text-lg font-black text-foreground">قائمة التسوق</h3>
+                <p className="text-sm leading-7 text-muted-foreground">
+                  قائمة موحدة ونظيفة مبنية على نموذج تسوق منظم، لا على أسطر المكونات الخام.
+                </p>
+              </div>
               <div className="inline-flex shrink-0 items-center gap-2 lg:self-start">
                 <div className="meal-label-surface text-primary">
                   {grocery.length} فئات • {totalItems} عناصر
@@ -174,12 +192,6 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
                   <WhatsappIcon className="h-4 w-4" />
                   <span>إرسال القائمة إلى واتساب</span>
                 </InteractiveButton>
-              </div>
-              <div className="meal-header-cluster lg:max-w-[34rem]">
-                <h3 className="text-lg font-black text-foreground">قائمة التسوق</h3>
-                <p className="text-sm leading-7 text-muted-foreground">
-                  قائمة موحدة ونظيفة مبنية على نموذج تسوق منظم، لا على أسطر المكونات الخام.
-                </p>
               </div>
             </div>
 
@@ -268,21 +280,18 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
             <div className="grid grid-cols-[minmax(0,0.8fr)_minmax(0,2.2fr)] gap-3 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,2.1fr)]">
               <div className="space-y-2 text-right">
                 <label className="text-sm font-bold text-foreground">مفتاح الدولة</label>
-                <div className="flex h-12 items-center gap-3 rounded-[5px] border border-primary/15 bg-background/55 px-3 shadow-[var(--app-shadow)]">
-                  <select
-                    value={selectedCountry?.iso2 ?? ""}
-                    onChange={(event) => setSelectedCountryIso2(event.target.value)}
-                    className="h-full flex-1 bg-transparent text-left text-sm font-semibold text-foreground outline-none"
-                    dir="ltr"
-                  >
+                <Select value={selectedCountry?.iso2 ?? ""} onValueChange={setSelectedCountryIso2}>
+                  <SelectTrigger className="h-12 rounded-[5px] border-primary/15 bg-background/75 px-3 text-left text-foreground shadow-[var(--app-shadow)] [&>span]:text-left" dir="ltr">
+                    <SelectValue placeholder="Select country" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-[5px] border-primary/15 bg-card text-card-foreground">
                     {countryOptions.map((country) => (
-                      <option key={country.iso2} value={country.iso2}>
+                      <SelectItem key={country.iso2} value={country.iso2} className="rounded-[5px] text-left" dir="ltr">
                         {country.flag} {country.code} {country.label}
-                      </option>
+                      </SelectItem>
                     ))}
-                  </select>
-                  <span className="text-xl leading-none">{selectedCountry?.flag ?? "🌍"}</span>
-                </div>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2 text-right">
@@ -290,9 +299,10 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
                 <Input
                   value={phoneNumber}
                   onChange={(event) => setPhoneNumber(event.target.value)}
-                  placeholder="أدخل رقمًا محليًا"
-                  className="h-12 rounded-[5px] border-primary/15 bg-background/55 text-right"
+                  placeholder="000 000 0000"
+                  className="h-12 rounded-[5px] border-primary/15 bg-background/75 text-left placeholder:text-muted-foreground/70"
                   dir="ltr"
+                  inputMode="tel"
                 />
               </div>
             </div>
@@ -308,14 +318,14 @@ export function PlannerGroceryModule({ grocery, open, onOpenChange, onRemoveItem
             </div>
           </div>
 
-          <DialogFooter className="justify-stretch sm:justify-stretch">
+          <DialogFooter className="items-stretch justify-stretch sm:flex-row-reverse sm:justify-stretch">
             <InteractiveButton
               type="button"
               asChild
-              className="min-h-12 w-full justify-center rounded-[1rem] border-0 bg-[#25D366] px-5 text-white shadow-[0_16px_34px_rgba(37,211,102,0.28)] hover:bg-[#1ebe5b]"
+              className="min-h-12 w-full justify-center rounded-[1rem] border-0 bg-[#25D366] px-5 text-white shadow-[0_16px_34px_rgba(37,211,102,0.28)] hover:bg-[#1ebe5b] [&>span]:w-full [&>span]:justify-center [&>span>span]:inline-flex [&>span>span]:items-center [&>span>span]:justify-center"
               disabled={!normalizedPhone}
             >
-              <a href={whatsappHref} target="_blank" rel="noreferrer">
+              <a href={whatsappHref} target="_blank" rel="noreferrer" className="inline-flex w-full items-center justify-center gap-2">
                 <WhatsappIcon className="h-4 w-4" />
                 <span>فتح واتساب وإرسال القائمة</span>
               </a>
