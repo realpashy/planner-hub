@@ -49,7 +49,7 @@ export function PlannerDayDrawer({
       >
         {day ? (
           <div className="premium-scrollbar min-h-full overflow-y-auto">
-            <div className="sticky top-0 z-20 border-b border-border/75 bg-background/[0.96] px-5 py-5 backdrop-blur-xl">
+            <div className="border-b border-border/75 bg-background/[0.96] px-5 py-5 backdrop-blur-xl">
               <div className="space-y-4 text-right">
                 <div className="space-y-2 text-right">
                   <div className="flex justify-start">
