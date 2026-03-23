@@ -2,6 +2,8 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useLocation } from "wouter";
 import { Eye, EyeOff, Loader2, ShieldCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth";
 
 export default function AuthPage() {
@@ -135,30 +137,33 @@ export default function AuthPage() {
 
   return (
     <div
-      className="auth-page relative min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4 overflow-hidden"
+      className="app-shell auth-page relative flex min-h-screen items-center justify-center overflow-hidden p-4"
       dir="rtl"
     >
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(56,189,248,0.16),_transparent_55%),radial-gradient(ellipse_at_bottom,_rgba(14,165,233,0.13),_transparent_60%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(149,223,30,0.14),transparent_55%),radial-gradient(ellipse_at_bottom,rgba(255,255,255,0.03),transparent_60%)]" />
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative z-10 w-full max-w-md rounded-3xl border border-slate-200/70 dark:border-slate-800 bg-white/90 dark:bg-slate-900/80 backdrop-blur p-6 shadow-xl"
+        className="surface-shell relative z-10 w-full max-w-md rounded-[calc(var(--radius)+0.95rem)] p-6 shadow-xl"
       >
-        <div className="flex items-center justify-center gap-2">
-          <ShieldCheck className="h-5 w-5 text-primary" />
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 text-center">Planner Hub</h1>
+        <div className="text-right">
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/[0.1] px-3 py-1 text-xs font-semibold text-primary shadow-[var(--app-shadow)]">
+            <ShieldCheck className="h-3.5 w-3.5" />
+            دخول آمن إلى Planner Hub
+          </div>
+          <h1 className="mt-4 text-2xl font-black tracking-tight text-foreground">Planner Hub</h1>
+          <p className="mt-1 text-sm leading-7 text-muted-foreground">
+            حسابك يحفظ كل بياناتك بأمان على السحابة داخل واجهة عربية واضحة ومريحة.
+          </p>
         </div>
-        <p className="text-sm text-slate-500 dark:text-slate-400 text-center mt-1">
-          حسابك يحفظ كل بياناتك بأمان على السحابة
-        </p>
 
-        <div className="mt-5 grid grid-cols-2 gap-2 rounded-xl bg-slate-100 dark:bg-slate-800 p-1">
+        <div className="mt-5 grid grid-cols-2 gap-2 rounded-[calc(var(--radius)+0.375rem)] border border-border/70 bg-background/60 p-1">
           <button
             onClick={() => {
               setMode("login");
               setError("");
             }}
-            className={`rounded-lg py-2 text-sm font-semibold ${mode === "login" ? "bg-primary text-white" : "text-slate-600 dark:text-slate-300"}`}
+            className={`rounded-[calc(var(--radius)+0.25rem)] py-2 text-sm font-semibold transition-colors ${mode === "login" ? "bg-primary text-primary-foreground shadow-[var(--app-shadow)]" : "text-muted-foreground hover:text-foreground"}`}
           >
             تسجيل الدخول
           </button>
@@ -167,7 +172,7 @@ export default function AuthPage() {
               setMode("register");
               setError("");
             }}
-            className={`rounded-lg py-2 text-sm font-semibold ${mode === "register" ? "bg-primary text-white" : "text-slate-600 dark:text-slate-300"}`}
+            className={`rounded-[calc(var(--radius)+0.25rem)] py-2 text-sm font-semibold transition-colors ${mode === "register" ? "bg-primary text-primary-foreground shadow-[var(--app-shadow)]" : "text-muted-foreground hover:text-foreground"}`}
           >
             إنشاء حساب
           </button>
@@ -175,38 +180,38 @@ export default function AuthPage() {
 
         <form className="mt-4 space-y-3" onSubmit={onSubmit}>
           {mode === "register" && (
-            <input
+            <Input
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder="الاسم (اختياري)"
-              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 outline-none transition-all focus:ring-2 focus:ring-primary/35"
+              className="h-12 rounded-[calc(var(--radius)+0.375rem)] border-border/80 bg-background/70 text-right"
             />
           )}
 
-          <input
+          <Input
             type="email"
             dir="ltr"
             style={{ direction: "ltr", textAlign: "left" }}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="البريد الإلكتروني"
-            className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 text-left [direction:ltr] outline-none transition-all focus:ring-2 focus:ring-primary/35"
+            className="h-12 rounded-[calc(var(--radius)+0.375rem)] border-border/80 bg-background/70 text-left [direction:ltr]"
           />
 
           <div className="relative">
-            <input
+            <Input
               type={showPassword ? "text" : "password"}
               dir="ltr"
               style={{ direction: "ltr", textAlign: "left" }}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="كلمة المرور"
-              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 ps-10 text-left [direction:ltr] outline-none transition-all focus:ring-2 focus:ring-primary/35"
+              className="h-12 rounded-[calc(var(--radius)+0.375rem)] border-border/80 bg-background/70 ps-10 text-left [direction:ltr]"
             />
             <button
               type="button"
               onClick={() => setShowPassword((v) => !v)}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
               aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -215,19 +220,19 @@ export default function AuthPage() {
 
           {mode === "register" && (
             <div className="relative">
-              <input
+              <Input
                 type={showConfirmPassword ? "text" : "password"}
                 dir="ltr"
                 style={{ direction: "ltr", textAlign: "left" }}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="تأكيد كلمة المرور"
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 ps-10 text-left [direction:ltr] outline-none transition-all focus:ring-2 focus:ring-primary/35"
+                className="h-12 rounded-[calc(var(--radius)+0.375rem)] border-border/80 bg-background/70 ps-10 text-left [direction:ltr]"
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword((v) => !v)}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
                 aria-label={showConfirmPassword ? "إخفاء تأكيد كلمة المرور" : "إظهار تأكيد كلمة المرور"}
               >
                 {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -235,21 +240,21 @@ export default function AuthPage() {
             </div>
           )}
 
-          {error && <p className="text-sm text-rose-600 dark:text-rose-400 text-center">{error}</p>}
+          {error && <p className="text-center text-sm text-rose-400">{error}</p>}
           {debugInfo ? (
-            <p className="rounded-xl border border-amber-300/50 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-200">
+            <p className="rounded-[calc(var(--radius)+0.375rem)] border border-amber-500/20 bg-amber-500/[0.08] px-3 py-2 text-xs text-amber-200">
               {debugInfo}
             </p>
           ) : null}
 
-          <button
+          <Button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl bg-primary text-white font-semibold py-2.5 disabled:opacity-60 inline-flex items-center justify-center gap-2"
+            className="min-h-12 w-full rounded-[calc(var(--radius)+0.4rem)]"
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             {submitLabel}
-          </button>
+          </Button>
         </form>
       </motion.div>
     </div>

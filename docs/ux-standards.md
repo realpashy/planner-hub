@@ -1,91 +1,110 @@
 # Planner Hub UX Standards
 
-This file is the default UX reference for current and future Planner Hub modules.
+This file is the UX reference for current and future Planner Hub modules.
 
-## RTL system rules
+## RTL is manual, not automatic
 
-RTL is not a mirrored LTR layout. It must be designed intentionally.
+Setting `dir="rtl"` is not enough. Each visible row must still be tuned intentionally.
 
-### Text alignment
+## RTL layout rules
 
-- Arabic section titles must align right
-- Arabic subtitles and helper text under those titles must also align right
-- card titles, modal titles, drawer titles, and settings titles default to `text-right`
-- long inline content blocks should not drift left just because the container is flex-based
-- manual visual inspection is required for stubborn rows; utility classes alone are not enough
+### Titles and subtitles
+
+- Arabic page titles align right
+- Arabic section titles align right
+- subtitles, helper text, and supporting copy under Arabic titles also align right
+- long descriptive copy must stay visually anchored to the right edge, not drift because of flex layout
 
 ### Opposite-side meta pattern
 
-When a row contains a title block plus count/meta/action:
+For rows with a title block and secondary content:
 
 - title block belongs on the right
-- count, badge, or secondary meta belongs on the left
-- do not rely on `justify-between` alone; DOM order must also match RTL reading order
+- count, chip, badge, or helper meta belongs on the left only when that improves Arabic scanning
+- DOM order should match the visual RTL reading order
+- do not rely on `justify-between` alone
 
-### Icon placement
+### Icons and controls
 
-- back actions must be intentionally placed on the right edge in RTL headers
-- close buttons in drawers and dialogs should respect RTL conventions explicitly
-- button icons must be placed inline with the label, not floating or stacked awkwardly
-- icon order must be visually checked, not assumed
+- back buttons belong on the right edge in RTL headers
+- close buttons belong where the drawer/modal convention defines them, not wherever the default component puts them
+- icon + text buttons must be visually checked in Arabic
+- chevrons, expand icons, and disclosure icons must be manually verified row by row
 
-### Drawer and header conventions
+### Dialogs and drawers
 
-- drawer title block on the right
-- contextual utility action opposite it on the left when applicable
-- settings sheet close control on the left in RTL
-- modal title and description align right
-- disclosure rows must place the Arabic label first and the chevron/icon after it when that reads more naturally
+- title and description align right
+- header actions are intentionally placed, not mirrored by accident
+- dialog and drawer footers should keep the primary action visually coherent in RTL
+- settings and admin sheets use a lighter utility hierarchy than main content surfaces
 
 ## Input hierarchy
 
-Use the lowest-friction control first:
+Use the least-friction control first:
 
-1. yes/no control or toggle
+1. toggle / yes-no
 2. chips / segmented controls
 3. dropdown / searchable select
-4. short numeric input
-5. free text only when structured input is not practical
+4. numeric input
+5. free text only when structure is not practical
 
 ## Interaction rules
 
 - full-card click is preferred when the whole card opens a detail view
-- hover states should clarify interactivity, not add noise
-- destructive or advanced actions should move to settings
-- contextual actions should stay inside the component they affect
+- keep hover states subtle and useful
+- selected and active states should feel intentional, not browser-default
+- advanced or destructive actions belong in settings or deeper layers
+- contextual actions stay close to the content they affect
 
 ## Progressive disclosure
 
-- keep the main weekly dashboard simple
-- move editing and detail into drawers, dialogs, and settings
-- do not show heavy management UI in the main planner surface
+- keep main surfaces simple and easy to scan
+- move detail and editing into drawers, dialogs, and secondary layers
+- do not crowd primary dashboards with management UI
 
 ## Scanability principles
 
-- a user should understand the page in seconds
-- use fewer, stronger zones
-- preserve vertical rhythm for planner timelines and weekly flows
-- shopping lists must feel like supermarket lists, not raw ingredient dumps
-- remove repeated low-value widgets before adding more UI
+- the page should be understandable in a few seconds
+- prefer fewer, stronger zones over many similar boxes
+- keep planner flows vertical when that improves weekly scanning
+- keep shopping lists human-readable and grouped like real supermarket lists
+- remove low-value metrics before adding more
 
-## Modal conventions
+## Component conventions
 
-- title and helper text align right
-- field labels align right
-- country/phone or similar paired inputs must keep RTL readability while allowing LTR number entry where needed
-- CTA icon and label must remain inline and balanced
+### Headers
 
-## Settings panel conventions
+- top bars should separate primary identity from utility controls
+- utility controls must stay visually secondary
+- avoid grouping every control around the title block
 
-- clean grouping by purpose
-- normal actions separated from destructive actions
-- diagnostics are secondary and collapsible
-- no redundant informational cards that merely explain other visible UI
+### Cards
+
+- title block right
+- supporting meta or chips placed intentionally, not generically
+- repeated card families must share the same internal rhythm
+
+### Modals
+
+- labels align right
+- helper text aligns right
+- phone/email fields may remain LTR internally, but their surrounding labels and structure remain RTL
+- CTA text and icons stay inline and balanced
+
+### Settings panels
+
+- group by purpose:
+  - generation / workflow
+  - normal plan actions
+  - destructive actions
+  - diagnostics
+- diagnostics stay secondary
+- avoid redundant explainer cards
 
 ## Mandatory reuse rule
 
 Whenever building or modifying UI:
 
-1. Check this file first.
-2. Match the same RTL, interaction, disclosure, and scanability patterns.
-3. Fix the component if it still feels LTR-adapted or template-like.
+1. Read this file first.
+2. Apply RTL manually to the visible rows, not just the container.
+3. Fix any component that still feels mirrored-LTR instead of truly Arabic-native.

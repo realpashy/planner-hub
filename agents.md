@@ -10,6 +10,20 @@ Before changing UI, read and follow:
 - `docs/ux-standards.md`
 - `docs/meal-planner-dashboard.md`
 
+Planner Hub now uses a dark-first v0 visual system.
+Treat these values as the default source of truth for UI work:
+- background: `#171717`
+- card / muted: `#262626`
+- foreground: `#e5e5e5`
+- primary / accent: `#95df1e`
+- border / input: `#404040`
+- ring: `#9ddf36`
+- radius: `0.375rem`
+- shadow: `2px 2px 5px 2px #0000000d`
+
+Do not leave default shadcn styling in visible screens.
+Apply the design system directly to the rendered UI.
+
 Do not ship “mostly RTL-correct” UI.
 Manually verify title alignment, subtitle alignment, opposite-side meta placement, and icon/button ordering in every affected row.
 

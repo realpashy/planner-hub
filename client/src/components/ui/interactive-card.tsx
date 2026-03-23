@@ -13,10 +13,10 @@ export const InteractiveCard = React.forwardRef<HTMLDivElement, InteractiveCardP
     <Card
       ref={ref}
       className={cn(
-        "rounded-[1.6rem] border-border/70 bg-card/95 transition-all duration-200",
-        compact ? "shadow-sm" : "shadow-md",
-        interactive && "cursor-pointer hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-xl active:translate-y-0 active:scale-[0.997]",
-        selected && "border-primary/40 bg-primary/5 shadow-lg ring-1 ring-primary/15",
+        "rounded-[calc(var(--radius)+0.5rem)] border-border/80 bg-card/95 transition-all duration-200",
+        compact ? "shadow-[var(--app-shadow)]" : "shadow-lg",
+        interactive && "cursor-pointer hover:-translate-y-0.5 hover:border-primary/25 hover:bg-muted/70 hover:shadow-xl active:translate-y-0 active:scale-[0.997]",
+        selected && "border-primary/35 bg-primary/[0.08] shadow-lg ring-1 ring-primary/[0.12]",
         className,
       )}
       {...props}

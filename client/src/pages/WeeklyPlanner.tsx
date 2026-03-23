@@ -56,7 +56,7 @@ export default function WeeklyPlanner() {
 
   if (isLoading || !data) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="app-shell flex min-h-screen items-center justify-center">
         <div className="w-10 h-10 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
       </div>
     );
@@ -73,86 +73,94 @@ export default function WeeklyPlanner() {
   const allDayDone = totalDayTasks > 0 && completedDayTasks === totalDayTasks;
 
   return (
-    <div className="min-h-screen bg-background pb-24 md:pb-8" dir="rtl">
-      <header className="sticky top-0 z-30 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 md:py-4">
-          <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between lg:flex-1">
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon" asChild>
-                  <Link href="/" data-testid="link-back-dashboard">
-                    <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
-                  </Link>
-                </Button>
-                <ThemeToggle />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setTemplatePickerOpen(true)}
-                  title="اختيار قالب"
-                >
-                  <WandSparkles className="w-4 h-4 md:w-5 md:h-5" />
-                </Button>
-              </div>
-
-              <div className="flex items-center justify-start gap-3 rounded-[1.75rem] border border-border/80 bg-background/75 px-4 py-3 text-right shadow-sm">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                  <CalendarIcon className="w-5 h-5" />
+    <div className="app-shell relative pb-24 md:pb-8" dir="rtl">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_top,rgba(149,223,30,0.12),transparent_25%),radial-gradient(circle_at_top_left,rgba(255,255,255,0.02),transparent_22%)]" />
+      <header className="sticky top-0 z-30">
+        <div className="mx-auto max-w-7xl px-4 py-4 md:px-6">
+          <div className="surface-shell rounded-[calc(var(--radius)+0.9rem)] p-4 backdrop-blur-xl">
+            <div className="space-y-4">
+              <div className="rtl-title-row items-start">
+                <div className="flex min-w-0 flex-1 items-start gap-3">
+                  <Button variant="ghost" size="icon" className="mt-0.5 shrink-0" asChild>
+                    <Link href="/" data-testid="link-back-dashboard">
+                      <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
+                    </Link>
+                  </Button>
+                  <div className="rtl-title-stack min-w-0 flex-1">
+                    <div className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-primary/[0.1] px-3 py-1 text-xs font-semibold text-primary shadow-[var(--app-shadow)]">
+                      <CalendarIcon className="h-3.5 w-3.5" />
+                      مساحة تخطيط أسبوعية
+                    </div>
+                    <h1 className="mt-3 text-2xl font-black tracking-tight text-foreground md:text-3xl">المخطط الأسبوعي</h1>
+                    <p className="mt-1 text-sm leading-7 text-muted-foreground">
+                      تنظيم الأيام، المهام، العادات، والملاحظات من واجهة واحدة واضحة ومصقولة.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-bold text-foreground md:text-base">المخطط الأسبوعي</p>
-                  <p className="text-xs leading-5 text-muted-foreground md:text-sm">
-                    تنظيم الأيام، المهام، العادات، والملاحظات من نفس المساحة.
-                  </p>
-                </div>
-              </div>
-            </div>
 
-            <div className="flex items-center justify-between gap-3 rounded-[1.75rem] border border-border/80 bg-background/75 p-2 shadow-sm">
-              <Popover>
-                <PopoverTrigger asChild>
+                <div className="surface-subtle rtl-actions-inline shrink-0 rounded-full px-2 py-1">
                   <Button
                     variant="ghost"
-                    className="h-auto justify-start rounded-2xl px-3 py-2 text-right"
-                    data-testid="button-open-calendar"
+                    size="icon"
+                    onClick={() => setTemplatePickerOpen(true)}
+                    title="اختيار قالب"
                   >
-                    <span className="flex items-center gap-1.5 text-sm font-bold text-foreground md:text-base">
-                      {getWeekHeader(selectedDate)}
-                      <CalendarIcon className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
-                    </span>
+                    <WandSparkles className="w-4 h-4 md:w-5 md:h-5" />
                   </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="center" sideOffset={8} dir="rtl">
-                  <MonthCalendar selectedDate={selectedDate} onSelectDate={setSelectedDate} />
-                </PopoverContent>
-              </Popover>
-
-              <div className="flex items-center gap-0.5 rounded-2xl bg-background/70 px-1 py-1" dir="ltr">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setSelectedDate(subWeeks(selectedDate, 1))}
-                  data-testid="button-prev-week"
-                >
-                  <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setSelectedDate(addWeeks(selectedDate, 1))}
-                  data-testid="button-next-week"
-                >
-                  <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
-                </Button>
+                  <ThemeToggle />
+                </div>
               </div>
+
+              <div className="grid gap-3 lg:grid-cols-[1.25fr_auto]">
+                <div className="surface-subtle rtl-title-row rounded-[calc(var(--radius)+0.6rem)] px-4 py-3">
+                  <div className="rtl-title-stack flex-1">
+                    <p className="text-sm font-black text-foreground md:text-base">{getWeekHeader(selectedDate)}</p>
+                    <p className="text-xs leading-6 text-muted-foreground">اختر الأسبوع أو حرّك العرض بين الأسابيع بدون مغادرة الصفحة.</p>
+                  </div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="min-h-10 rounded-[calc(var(--radius)+0.3rem)] px-3 text-sm"
+                        data-testid="button-open-calendar"
+                      >
+                        <span>{getWeekHeader(selectedDate)}</span>
+                        <CalendarIcon className="w-4 h-4 text-muted-foreground" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start" sideOffset={8} dir="rtl">
+                      <MonthCalendar selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div className="surface-subtle flex items-center justify-between gap-2 rounded-[calc(var(--radius)+0.6rem)] px-2 py-2 sm:justify-start" dir="ltr">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setSelectedDate(subWeeks(selectedDate, 1))}
+                    data-testid="button-prev-week"
+                  >
+                    <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setSelectedDate(addWeeks(selectedDate, 1))}
+                    data-testid="button-next-week"
+                  >
+                    <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
+                  </Button>
+                </div>
+              </div>
+
+              <DayStrip days={weekDays} selectedDate={selectedDate} onSelect={setSelectedDate} tasks={data.tasks} />
             </div>
           </div>
-
-          <DayStrip days={weekDays} selectedDate={selectedDate} onSelect={setSelectedDate} tasks={data.tasks} />
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 md:px-6 pt-5 md:pt-6 pb-4">
+      <main className="relative mx-auto max-w-7xl px-4 pb-4 pt-5 md:px-6 md:pt-6">
         <div className="mb-5 md:mb-6">
           <WeeklySummary tasks={data.tasks} habits={data.habits} events={data.events} selectedDate={selectedDate} />
         </div>
@@ -167,20 +175,23 @@ export default function WeeklyPlanner() {
             >
               <Card
                 className={cn(
-                  "lg:sticky lg:top-24 transition-all duration-300",
-                  allDayDone && "border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-500/10"
+                  "surface-shell lg:sticky lg:top-24 transition-all duration-300",
+                  allDayDone && "border-emerald-500/25 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.12),transparent_24%),linear-gradient(180deg,rgba(39,39,39,0.98),rgba(28,28,28,0.98))]"
                 )}
                 data-testid="selected-day-card"
               >
                 <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
-                    <div>
+                  <div className="rtl-title-row items-start">
+                    <div className="rtl-title-stack flex-1">
                       <h3 className="text-lg md:text-xl font-bold text-foreground">{getArabicDayFull(selectedDate)}</h3>
                       <p className="text-sm md:text-base text-muted-foreground font-semibold tabular-nums">{formatDayDate(selectedDate)}</p>
                     </div>
                     {totalDayTasks > 0 && (
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 bg-muted h-2 rounded-full overflow-hidden">
+                      <div className="surface-subtle flex items-center gap-2 rounded-full px-3 py-2">
+                        <span className={cn("text-sm font-bold", allDayDone ? "text-emerald-400" : "text-muted-foreground")}>
+                          {dayProgress}%
+                        </span>
+                        <div className="h-2 w-24 overflow-hidden rounded-full bg-muted">
                           <motion.div
                             initial={{ width: 0 }}
                             animate={{ width: `${dayProgress}%` }}
@@ -188,9 +199,6 @@ export default function WeeklyPlanner() {
                             className={cn("h-full rounded-full", allDayDone ? "bg-emerald-500" : "bg-primary")}
                           />
                         </div>
-                        <span className={cn("text-sm font-bold", allDayDone ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground")}>
-                          {dayProgress}%
-                        </span>
                       </div>
                     )}
                   </div>
@@ -218,11 +226,11 @@ export default function WeeklyPlanner() {
                   <Separator />
 
                   <div data-testid="notes-section">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+                    <div className="rtl-title-row mb-3 items-center">
+                      <h3 className="font-bold text-base md:text-lg text-foreground">ملاحظات</h3>
+                      <div className="icon-chip h-9 w-9 rounded-full border-primary/20 bg-primary/[0.1] text-primary">
                         <FileText className="w-4 h-4 text-primary" />
                       </div>
-                      <h3 className="font-bold text-base md:text-lg text-foreground">ملاحظات</h3>
                     </div>
                     <Textarea
                       value={currentNote}

@@ -51,7 +51,7 @@ export function ThemeToggle() {
   return (
     <button
       onClick={() => setIsDark(!isDark)}
-      className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+      className="inline-flex h-10 w-10 items-center justify-center rounded-[calc(var(--radius)+0.25rem)] border border-border/80 bg-card/[0.88] text-muted-foreground shadow-[var(--app-shadow)] transition-all duration-200 hover:border-primary/20 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/75 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       data-testid="button-theme-toggle"
     >
       <motion.div

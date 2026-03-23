@@ -1601,14 +1601,15 @@ export default function BudgetPlanner() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-12" dir="rtl">
-      <header className="sticky top-0 z-30 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 py-4">
-          <div className="relative flex min-h-[48px] items-center justify-between gap-3 md:min-h-[56px]">
+    <div className="app-shell relative min-h-screen pb-12" dir="rtl">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(circle_at_top,rgba(149,223,30,0.11),transparent_26%),radial-gradient(circle_at_top_left,rgba(255,255,255,0.025),transparent_22%)]" />
+      <header className="sticky top-0 z-30">
+        <div className="mx-auto max-w-7xl px-4 py-4 md:px-6">
+          <div className="surface-shell relative min-h-[48px] rounded-[calc(var(--radius)+0.9rem)] px-4 py-4 md:min-h-[56px] md:px-5">
             <div className="absolute left-0 flex items-center gap-2 md:hidden">
               <Button
                 variant="outline"
-                className="h-10 rounded-2xl px-4 text-sm font-medium shadow-sm"
+                className="me-4 h-10 rounded-[calc(var(--radius)+0.3rem)] px-4 text-sm font-medium"
                 onClick={() => setMobileMenuOpen(true)}
               >
                 <Menu className="h-4 w-4" />
@@ -1657,18 +1658,22 @@ export default function BudgetPlanner() {
                 <Settings2 className="w-4 h-4" />
               </Button>
             </div>
-            <h1 className="mx-auto hidden items-center gap-2 text-center text-base font-bold text-foreground sm:text-lg md:absolute md:left-1/2 md:flex md:mx-0 md:-translate-x-1/2 md:px-0 md:text-2xl">
-              <Wallet className="w-5 h-5 md:w-6 md:h-6 text-emerald-500" />
-              الميزانيّة الشهرية
-            </h1>
+            <div className="mx-auto hidden text-right md:absolute md:right-5 md:flex md:flex-col">
+              <div className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-primary/[0.1] px-3 py-1 text-[11px] font-semibold text-primary shadow-[var(--app-shadow)]">
+                <PiggyBank className="h-3.5 w-3.5" />
+                لوحة مالية شهرية
+              </div>
+              <h1 className="mt-3 text-2xl font-black tracking-tight text-foreground">الميزانيّة الشهرية</h1>
+              <p className="mt-1 text-sm text-muted-foreground">تخطيط مالي أوضح، بترتيب أدق، وبنبرة بصرية أكثر هدوءًا.</p>
+            </div>
             <div className="absolute right-0 flex items-center justify-end gap-2 md:hidden">
-              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-2xl bg-background/75 shadow-sm backdrop-blur" asChild>
+              <Button variant="ghost" size="icon" className="me-4 h-10 w-10 rounded-[calc(var(--radius)+0.3rem)] bg-background/75 shadow-sm backdrop-blur" asChild>
                 <Link href="/">
                   <ArrowRight className="w-5 h-5" />
                 </Link>
               </Button>
               <div className="flex items-center gap-2 px-1 py-2">
-                <Wallet className="h-4 w-4 text-emerald-500" />
+                <Wallet className="h-4 w-4 text-primary" />
                 <span className="text-sm font-semibold text-foreground whitespace-nowrap">الميزانيّة الشهرية</span>
               </div>
             </div>
@@ -1679,11 +1684,11 @@ export default function BudgetPlanner() {
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
         <SheetContent
           side="left"
-          className="w-[92vw] max-w-[26rem] p-0 [&>button]:left-5 [&>button]:right-auto [&>button]:top-5 [&>button]:h-9 [&>button]:w-9 [&>button]:rounded-full"
+          className="w-[92vw] max-w-[26rem] border-border/80 bg-[radial-gradient(circle_at_top_right,rgba(149,223,30,0.08),transparent_24%),linear-gradient(180deg,rgba(32,32,32,0.98),rgba(24,24,24,0.98))] p-0 [&>button]:left-5 [&>button]:right-auto [&>button]:top-5 [&>button]:h-9 [&>button]:w-9 [&>button]:rounded-full"
           dir="rtl"
         >
           <div className="flex h-full flex-col">
-            <SheetHeader className="border-b px-6 pb-4 pt-6 pe-14 text-right">
+            <SheetHeader className="border-b border-border/80 px-6 pb-4 pt-6 pe-14 text-right">
               <SheetTitle className="text-xl">الخيارات</SheetTitle>
               <SheetDescription className="text-sm leading-6">إعدادات الميزانية والوصول السريع من الجوال.</SheetDescription>
             </SheetHeader>
@@ -1719,7 +1724,7 @@ export default function BudgetPlanner() {
                 </Select>
               </div>
 
-              <div className="rounded-3xl border border-slate-200/80 bg-slate-50/80 p-4 dark:border-border dark:bg-muted/30">
+              <div className="surface-subtle rounded-[calc(var(--radius)+0.75rem)] p-4">
                 <div className="text-right">
                   <p className="text-sm font-semibold text-foreground">المظهر</p>
                   <p className="mt-1 text-sm text-muted-foreground">{`المظهر الحالي: ${themeMode === "dark" ? "داكن" : "فاتح"}`}</p>
@@ -1768,7 +1773,7 @@ export default function BudgetPlanner() {
         </SheetContent>
       </Sheet>
 
-      <main className="max-w-7xl mx-auto px-4 md:px-6 pt-5 md:pt-6">
+      <main className="relative mx-auto max-w-7xl px-4 pt-5 md:px-6 md:pt-6">
         <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-6">
           <SummaryCard title="دخل" amount={monthlyTotals.income} currency={data.settings.currency} tone="income" onClick={() => setOverviewDetailType("income")} />
           <SummaryCard title="مصروفات" amount={monthlyTotals.expenses} currency={data.settings.currency} tone="expense" onClick={() => setOverviewDetailType("expense")} />
@@ -1780,7 +1785,7 @@ export default function BudgetPlanner() {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-5 space-y-6">
-              <Card>
+              <Card className="surface-shell">
                 <CardHeader>
                   <CardTitle className="text-base budget-icon-title">
                     <Plus className="w-4 h-4 text-primary" />
@@ -1882,7 +1887,7 @@ export default function BudgetPlanner() {
                   <Button className="w-full" onClick={saveTransaction}>إضافة معاملة</Button>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="surface-shell">
                 <CardHeader>
                   <CardTitle className="text-base budget-icon-title">
                     <PiggyBank className="w-4 h-4 text-emerald-500" />
@@ -1954,7 +1959,7 @@ export default function BudgetPlanner() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="surface-shell">
                 <CardHeader>
                   <CardTitle className="text-base budget-icon-title">
                     <PiggyBank className="w-4 h-4 text-emerald-500" />
@@ -2058,7 +2063,7 @@ export default function BudgetPlanner() {
             </div>
 
             <div className="lg:col-span-7 space-y-6">
-              <Card>
+              <Card className="surface-shell">
                 <CardHeader>
                   <CardTitle className="text-base budget-icon-title">
                     <Wallet className="w-4 h-4 text-primary" />
@@ -2204,7 +2209,7 @@ export default function BudgetPlanner() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="surface-shell">
                 <CardHeader>
                   <CardTitle className="text-base budget-icon-title">
                     <CalendarClock className="w-4 h-4 text-primary" />
@@ -2737,23 +2742,23 @@ function SummaryCard({
 }) {
   const config = {
     income: {
-      text: "text-emerald-600 dark:text-emerald-400",
-      soft: "bg-emerald-100/80 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
+      text: "text-emerald-300",
+      soft: "border-emerald-500/20 bg-emerald-500/[0.1] text-emerald-300",
       icon: Wallet,
     },
     expense: {
-      text: "text-rose-600 dark:text-rose-400",
-      soft: "bg-rose-100/80 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300",
+      text: "text-rose-300",
+      soft: "border-rose-500/20 bg-rose-500/[0.1] text-rose-300",
       icon: ReceiptText,
     },
     bill: {
-      text: "text-amber-600 dark:text-amber-400",
-      soft: "bg-amber-100/80 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300",
+      text: "text-amber-300",
+      soft: "border-amber-500/20 bg-amber-500/[0.1] text-amber-300",
       icon: Landmark,
     },
     saving: {
-      text: "text-indigo-600 dark:text-indigo-400",
-      soft: "bg-indigo-100/80 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300",
+      text: "text-primary",
+      soft: "border-primary/20 bg-primary/[0.1] text-primary",
       icon: TrendingUp,
     },
   } as const;
@@ -2763,21 +2768,21 @@ function SummaryCard({
 
   return (
     <Card
-      className={cn("p-5 transition-all hover:shadow-md", onClick && "cursor-pointer hover:border-primary/30", className)}
+      className={cn("surface-shell p-4 transition-all duration-200 hover:border-primary/20 hover:shadow-xl", onClick && "cursor-pointer", className)}
       onClick={onClick}
       role={onClick ? "button" : undefined}
     >
       <CardContent className="p-0">
-        <div className="rtl-row items-center">
+        <div className="rtl-title-row items-center">
           <div className="flex-1 text-right">
             <p className="text-xs font-semibold tracking-wide text-muted-foreground">{title}</p>
-            <p className={cn("text-2xl md:text-[28px] font-bold leading-tight mt-1", entry.text)}>
+            <p className={cn("mt-1 text-2xl font-black leading-tight md:text-[28px]", entry.text)}>
               <span className="inline-block tabular-nums whitespace-nowrap" style={{ direction: "ltr", unicodeBidi: "bidi-override" }}>
                 {formatAmount(amount, currency)}
               </span>
             </p>
           </div>
-          <span className={cn("inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg p-1.5", entry.soft)}>
+          <span className={cn("inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[calc(var(--radius)+0.3rem)] border p-1.5 shadow-[var(--app-shadow)]", entry.soft)}>
             <Icon className="w-4 h-4" />
           </span>
         </div>

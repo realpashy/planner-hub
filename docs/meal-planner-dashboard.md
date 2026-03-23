@@ -1,10 +1,10 @@
 # Meal Planner Dashboard Reference
 
-This file defines the generated Meal Planner dashboard as the reference implementation for future Planner Hub modules.
+This file defines the generated Meal Planner dashboard as the reference implementation for Planner Hub’s premium dark planner UI.
 
 ## Final information architecture
 
-The generated dashboard contains 4 primary zones only:
+The generated dashboard keeps 4 primary zones:
 
 1. top bar
 2. weekly planner
@@ -13,110 +13,140 @@ The generated dashboard contains 4 primary zones only:
 
 The day drawer is the secondary detail layer.
 
+## Visual direction
+
+The dashboard should feel:
+
+- premium
+- dark-first
+- calm
+- clearly layered
+- highly readable in Arabic
+
+It must not feel like:
+
+- a generic admin dashboard
+- a pile of identical cards
+- default shadcn dark mode
+
+## Top bar
+
+- back action is a clear RTL-first control on the right
+- title and subtitle stay right-aligned
+- utility controls stay secondary and visually lighter
+- the shell is elevated and distinct from the page background
+
 ## Weekly planner structure
 
-- the weekly planner is always a single vertical stacked flow
-- no multi-column day grid
-- each day is one planner card
-- cards should scan naturally from top to bottom in RTL
+- weekly plan is a single vertical stack
+- no day grid
+- each day is one full-width planner card
+- cards scan top-to-bottom naturally in RTL
 
 ## Day card structure
 
-Each card contains:
+Each day card contains:
 
-- day title
-- date
+- small contextual status/meta row
+- day title + date pill
 - meal preview list
-- compact macro / nutrition row
-
-Day cards should be:
-
-- full-card clickable
-- visually rich but not cluttered
-- clearly differentiated from summary and grocery surfaces
-
-Remove from unopened cards:
-
-- progress widgets
-- AI tip boxes
-- loud gradients
-- regenerate controls
-- detached detail buttons
-
-## Shopping list structure
-
-The shopping list must render from a normalized shopping model, not raw ingredient strings.
+- compact macro row
+- integrated bottom CTA area
 
 Rules:
 
-- group by supermarket-style categories
+- full-card clickable
+- premium but compact
+- tighter vertical spacing than early versions
+- distinct meal-type icon chips
+- macro chips visually related but secondary to the meals
+- no detached `تفاصيل اليوم` button
+
+## Day drawer structure
+
+- focused dark detail surface
+- sticky header
+- day pill, date title, and helper copy stacked clearly in RTL
+- compact macro chips
+- meal timeline flow with stronger editorial hierarchy
+
+Meal cards inside the drawer should:
+
+- keep title and type cues right-aligned
+- keep actions secondary
+- use chips for ingredients and macros
+- keep detail toggles visually correct in Arabic
+
+## Shopping list structure
+
+The grocery UI must render from a normalized shopping model, not raw ingredient strings.
+
+Rules:
+
+- grouped by supermarket-style sections
 - item name on the right
 - quantity on the left
-- delete action appears cleanly on hover
+- delete hover action never overlaps text
 - removed items persist for the active weekly plan only
 
 ### Grocery normalization behavior
 
-- merge equivalent ingredient phrasing into one human-friendly grocery item
-- aggregate grams or simple counts when possible
-- keep distinctions only when they matter in real shopping
-- output should feel like a supermarket list, not an AI ingredient dump
+Normalize before rendering:
 
-Examples of intended consolidation:
+- strip noisy descriptors
+- detect a canonical grocery base item
+- merge equivalent phrasing and unit order variants
+- aggregate grams, counts, or approximate quantities
+- keep only distinctions that matter in real shopping
+
+Example:
 
 - `120غ صدر دجاج مشوي`
 - `150غ صدر دجاج بدون جلد`
+- `150غ صدر دجاج`
 - `صدور دجاج 150غ`
 
-should render as one normalized chicken entry with a combined approximate quantity.
+should consolidate into one human-friendly chicken entry.
 
 ## WhatsApp flow
 
-- share action lives inside the shopping module
-- button uses WhatsApp styling and iconography
-- modal aligns fully right in RTL
-- changing country code updates the flag immediately
-- default country should be detected from browser locale when possible
-- fallback remains sensible
-- use `wa.me` link flow only
-- the WhatsApp message should be grouped by shopping category
+- share button lives inside the grocery zone
+- button uses WhatsApp styling, not generic primary styling
+- country selection should update the flag instantly
+- default country is detected from browser locale when possible
+- fallback stays sensible
+- phone preview updates live
+- output uses `wa.me`
+- message is grouped by grocery category
 
 ## Guidance widget
 
-- lightweight only
 - maximum 3 suggestions
-- icon + short sentence
-- no heavy boxed cards inside the zone
-
-## Drawer structure
-
-- right-aligned titles and content
-- stronger hierarchy than the day card
-- meal blocks with clean macro visibility
-- actions remain contextual and secondary
-- close and action placement must follow RTL conventions deliberately
-- day-level regeneration should not dominate the drawer header
+- icon + sentence rows only
+- light editorial tone
+- distinct tinted shell from the grocery and planner surfaces
 
 ## Settings containment rules
 
-Keep these inside settings, not the main dashboard:
+Keep these in settings, not the main dashboard:
 
 - regenerate week
-- destructive reset/delete actions
+- destructive delete/reset actions
 - diagnostics/admin controls
 
-Remove from the main dashboard:
+Remove from the main planner surface:
 
 - duplicate management actions
-- version labels
-- hydration widget cards
-- broken or low-value graphs
-- noisy quick actions
+- low-value graphs
+- quick-action clutter
+- redundant labels and version noise
 
 ## RTL conventions for this module
 
-- section titles right, meta/count opposite on the left
-- drawer title block right, utility opposite
-- settings close control left
-- modal titles, labels, and helper text right
-- shopping rows always render item right and quantity left
+- section titles on the right
+- supporting subtitles on the right
+- counts/meta opposite on the left only when helpful
+- shopping rows: label right, quantity left
+- drawer title block right
+- drawer and modal helper text right
+- settings and modal close controls follow explicit RTL placement, not defaults

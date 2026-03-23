@@ -46,7 +46,7 @@ export default function MealPlanner() {
   const plannerDays = plan?.days ?? [];
   const currentDay = (selectedDayISO ? plannerDays.find((day) => day.dateISO === selectedDayISO) : null) ?? plannerDays[0] ?? null;
   const shellClass =
-    "mx-auto max-w-6xl space-y-8 rounded-[2rem] border border-white/60 bg-[radial-gradient(circle_at_top_right,rgba(129,140,248,0.1),transparent_18%),linear-gradient(180deg,rgba(255,255,255,0.9),rgba(248,250,252,0.96))] p-4 shadow-[0_32px_90px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.14),transparent_16%),linear-gradient(180deg,rgba(2,6,23,0.86),rgba(15,23,42,0.96))] dark:shadow-[0_34px_90px_rgba(2,6,23,0.56)] md:p-6";
+    "surface-shell mx-auto max-w-6xl space-y-8 rounded-[calc(var(--radius)+1rem)] border-border/80 p-4 shadow-xl md:p-6";
 
   const toastError = (title: string, error: unknown) =>
     showFeedbackToast({
@@ -113,20 +113,21 @@ export default function MealPlanner() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(129,140,248,0.12),transparent_22%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_48%,#f8fafc_100%)] pb-14 dark:bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.2),transparent_18%),linear-gradient(180deg,#020617_0%,#0f172a_48%,#020617_100%)]" dir="rtl">
-      {hydrating ? <div className="h-1 w-full bg-primary/10"><motion.div initial={{ width: "20%" }} animate={{ width: ["20%", "52%", "20%"] }} transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }} className="h-full bg-[linear-gradient(90deg,rgba(99,102,241,0.92),rgba(56,189,248,0.88))]" /></div> : null}
+    <div className="app-shell relative pb-14" dir="rtl">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(circle_at_top,rgba(149,223,30,0.12),transparent_28%),radial-gradient(circle_at_top_right,rgba(255,255,255,0.03),transparent_24%)] dark:bg-[radial-gradient(circle_at_top,rgba(149,223,30,0.12),transparent_22%),radial-gradient(circle_at_top_right,rgba(255,255,255,0.02),transparent_22%)]" />
+      {hydrating ? <div className="h-1 w-full bg-primary/10"><motion.div initial={{ width: "20%" }} animate={{ width: ["18%", "56%", "18%"] }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }} className="h-full bg-[linear-gradient(90deg,rgba(109,160,27,0.92),rgba(149,223,30,0.92))]" /></div> : null}
       <PlannerTopBar title="مخطط الوجبات الذكي" subtitle="نطاق الأيام الحالية حتى نهاية الأسبوع" onOpenSettings={() => setSettingsOpen(true)} />
-      <main className="px-4 pt-6 md:px-6">
+      <main className="relative px-4 pt-6 md:px-6">
         <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className={shellClass} dir="rtl">
           <PlannerHeroOverview plan={plan} summary={dashboardSummary} />
 
           <div className="space-y-4">
-            <div className="flex items-start justify-between gap-4">
-              <div className="text-right">
+            <div className="rtl-title-row items-start">
+              <div className="rtl-title-stack flex-1">
                 <p className="text-xl font-black text-foreground">الخطة الأسبوعية</p>
                 <p className="text-sm text-muted-foreground">تدفق عمودي واضح لقراءة أيام الأسبوع من الأعلى إلى الأسفل.</p>
               </div>
-              <div className="rounded-full border border-indigo-200/70 bg-white/80 px-3 py-2 text-xs font-semibold text-indigo-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] dark:border-indigo-400/20 dark:bg-white/10 dark:text-indigo-200">
+              <div className="stat-chip rounded-full px-3 py-2 text-xs font-semibold text-primary">
                 افتح أي يوم لمراجعة الوجبات والتعديل الخفيف
               </div>
             </div>
@@ -138,12 +139,12 @@ export default function MealPlanner() {
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-start justify-between gap-4">
-              <div className="text-right">
+            <div className="rtl-title-row items-start">
+              <div className="rtl-title-stack flex-1">
                 <p className="text-xl font-black text-foreground">التسوق لهذا الأسبوع</p>
                 <p className="text-sm text-muted-foreground">استخدم القائمة كما هي أو أرسلها مباشرة إلى واتساب.</p>
               </div>
-              <div className="rounded-full border border-emerald-200/70 bg-white/80 px-3 py-2 text-xs font-semibold text-emerald-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] dark:border-emerald-400/20 dark:bg-white/10 dark:text-emerald-200">
+              <div className="stat-chip rounded-full px-3 py-2 text-xs font-semibold text-emerald-400 dark:text-emerald-300">
                 مرتبة حسب أقسام السوبرماركت
               </div>
             </div>
@@ -151,12 +152,12 @@ export default function MealPlanner() {
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-start justify-between gap-4">
-              <div className="text-right">
+            <div className="rtl-title-row items-start">
+              <div className="rtl-title-stack flex-1">
                 <p className="text-xl font-black text-foreground">إرشادات الأسبوع</p>
                 <p className="text-sm text-muted-foreground">تحسينات بسيطة تبقي الخطة واضحة وغير مزدحمة.</p>
               </div>
-              <div className="rounded-full border border-amber-200/70 bg-white/80 px-3 py-2 text-xs font-semibold text-amber-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] dark:border-amber-400/20 dark:bg-white/10 dark:text-amber-200">
+              <div className="stat-chip rounded-full px-3 py-2 text-xs font-semibold text-amber-400 dark:text-amber-300">
                 ملاحظات خفيفة فقط
               </div>
             </div>
@@ -177,22 +178,22 @@ export default function MealPlanner() {
       />
 
       <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
-        <SheetContent side="right" className="w-full overflow-y-auto bg-[radial-gradient(circle_at_top_right,rgba(148,163,184,0.14),transparent_22%),linear-gradient(180deg,rgba(248,250,252,0.98),rgba(255,255,255,0.96))] p-0 sm:max-w-lg dark:bg-[radial-gradient(circle_at_top_right,rgba(100,116,139,0.2),transparent_20%),linear-gradient(180deg,rgba(2,6,23,0.96),rgba(15,23,42,0.96))]" dir="rtl">
+        <SheetContent side="right" className="w-full overflow-y-auto border-border/80 bg-[radial-gradient(circle_at_top_right,rgba(149,223,30,0.08),transparent_24%),linear-gradient(180deg,rgba(29,29,29,0.98),rgba(23,23,23,0.98))] p-0 sm:max-w-lg" dir="rtl">
           <div className="space-y-5 p-5">
             <SheetHeader className="text-right">
               <SheetTitle className="text-right text-2xl font-black">إعدادات المخطط</SheetTitle>
               <p className="text-sm leading-7 text-muted-foreground">كل الإجراءات الإدارية تبقى هنا حتى تظل شاشة الخطة نفسها هادئة وواضحة.</p>
             </SheetHeader>
-            <div className="rounded-[1.5rem] border border-slate-200/70 bg-white/72 p-4 shadow-[0_12px_28px_rgba(15,23,42,0.05)] dark:border-slate-700/70 dark:bg-slate-950/60">
+            <div className="surface-subtle rounded-[calc(var(--radius)+0.75rem)] p-4">
               <p className="text-sm font-black text-foreground">رصيد الشهر الحالي</p>
               <div className="mt-3 grid gap-3">
-                <div className="flex items-center justify-between rounded-[1rem] bg-background/70 px-3 py-2 dark:bg-slate-950/60"><span className="text-sm text-muted-foreground">توليد الأسبوع</span><span className="font-black text-foreground">{usage.generationsLeft ?? "∞"}</span></div>
-                <div className="flex items-center justify-between rounded-[1rem] bg-background/70 px-3 py-2 dark:bg-slate-950/60"><span className="text-sm text-muted-foreground">إعادة الأيام</span><span className="font-black text-foreground">{usage.dayRegenerationsLeft ?? "∞"}</span></div>
-                <div className="flex items-center justify-between rounded-[1rem] bg-background/70 px-3 py-2 dark:bg-slate-950/60"><span className="text-sm text-muted-foreground">تبديل الوجبات</span><span className="font-black text-foreground">{usage.swapsLeft ?? "∞"}</span></div>
+                <div className="rtl-meta-row rounded-[calc(var(--radius)+0.375rem)] bg-background/70 px-3 py-2"><span className="text-sm text-muted-foreground">توليد الأسبوع</span><span className="font-black text-foreground">{usage.generationsLeft ?? "∞"}</span></div>
+                <div className="rtl-meta-row rounded-[calc(var(--radius)+0.375rem)] bg-background/70 px-3 py-2"><span className="text-sm text-muted-foreground">إعادة الأيام</span><span className="font-black text-foreground">{usage.dayRegenerationsLeft ?? "∞"}</span></div>
+                <div className="rtl-meta-row rounded-[calc(var(--radius)+0.375rem)] bg-background/70 px-3 py-2"><span className="text-sm text-muted-foreground">تبديل الوجبات</span><span className="font-black text-foreground">{usage.swapsLeft ?? "∞"}</span></div>
               </div>
             </div>
             <div className="space-y-4">
-              <section className="rounded-[1.5rem] border border-indigo-200/70 bg-white/72 p-4 shadow-[0_12px_28px_rgba(15,23,42,0.05)] dark:border-indigo-400/15 dark:bg-slate-950/60">
+              <section className="surface-subtle rounded-[calc(var(--radius)+0.75rem)] border-primary/15 p-4">
                 <div className="mb-3 text-right">
                   <p className="text-sm font-black text-foreground">إجراءات التوليد</p>
                   <p className="text-xs leading-6 text-muted-foreground">استخدمها عندما تريد استبدال الأسبوع الحالي بنسخة جديدة.</p>
@@ -203,7 +204,7 @@ export default function MealPlanner() {
                 </InteractiveButton>
               </section>
 
-              <section className="rounded-[1.5rem] border border-rose-200/70 bg-white/72 p-4 shadow-[0_12px_28px_rgba(15,23,42,0.05)] dark:border-rose-400/15 dark:bg-slate-950/60">
+              <section className="surface-subtle rounded-[calc(var(--radius)+0.75rem)] border-rose-500/15 p-4">
                 <div className="mb-3 text-right">
                   <p className="text-sm font-black text-foreground">إجراءات الخطة</p>
                   <p className="text-xs leading-6 text-muted-foreground">إجراءات حساسة، لذلك أبقيناها هنا بعيدًا عن واجهة التخطيط اليومية.</p>
@@ -221,9 +222,9 @@ export default function MealPlanner() {
               </section>
             </div>
             {isAdmin ? (
-              <div className="rounded-[1.5rem] border border-dashed border-slate-300/80 bg-white/55 p-4 dark:border-slate-600/70 dark:bg-slate-950/45">
-                <button type="button" className="flex w-full items-center justify-between gap-3 text-right" onClick={() => setDebugOpen((value) => !value)}>
-                  <div className="text-right">
+              <div className="surface-subtle rounded-[calc(var(--radius)+0.75rem)] border-dashed p-4">
+                <button type="button" className="rtl-title-row w-full text-right" onClick={() => setDebugOpen((value) => !value)}>
+                  <div className="rtl-title-stack flex-1">
                     <p className="text-base font-black text-foreground">لوحة تشخيص الإدارة</p>
                     <p className="text-xs text-muted-foreground">أثر الخادم وأخطاء التوليد يظهر هنا فقط للمشرف.</p>
                   </div>
@@ -236,14 +237,14 @@ export default function MealPlanner() {
                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
                       <div className="mt-4 grid gap-3">
                         {adminDebug.length ? adminDebug.map((entry) => (
-                          <div key={entry.id} className="rounded-[1rem] border border-border/60 bg-background/75 p-3 text-right dark:bg-slate-950/60">
-                            <div className="flex items-center justify-between gap-3">
+                          <div key={entry.id} className="rounded-[calc(var(--radius)+0.375rem)] border border-border/60 bg-background/75 p-3 text-right">
+                            <div className="rtl-meta-row">
                               <PlannerMetaBadge icon={DatabaseZap} label={entry.kind} />
                               <p className="text-xs text-muted-foreground">{new Date(entry.createdAt).toLocaleString("en-GB")}</p>
                             </div>
                             <p className="mt-2 text-sm leading-7 text-foreground">{entry.message}</p>
                           </div>
-                        )) : <div className="rounded-[1rem] border border-border/60 bg-background/75 p-4 text-sm text-muted-foreground dark:bg-slate-950/60">لا توجد رسائل تشخيص حالية.</div>}
+                        )) : <div className="rounded-[calc(var(--radius)+0.375rem)] border border-border/60 bg-background/75 p-4 text-sm text-muted-foreground">لا توجد رسائل تشخيص حالية.</div>}
                       </div>
                     </motion.div>
                   ) : null}

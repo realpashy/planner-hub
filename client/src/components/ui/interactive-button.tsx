@@ -16,10 +16,10 @@ export const InteractiveButton = React.forwardRef<HTMLButtonElement, Interactive
         ref={ref}
         disabled={disabled || loading}
         className={cn(
-          "relative overflow-hidden rounded-2xl transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/40",
+          "relative overflow-hidden rounded-[calc(var(--radius)+0.25rem)] transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/40",
           "hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:scale-[0.99]",
           "whitespace-nowrap",
-          active && "border-primary/50 bg-primary/10 text-primary shadow-md",
+          active && "border-primary/40 bg-primary/[0.12] text-primary shadow-[var(--app-shadow)]",
           feedbackTone === "success" && "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
           feedbackTone === "warning" && "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
           className,
