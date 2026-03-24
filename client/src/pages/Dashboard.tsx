@@ -10,6 +10,7 @@ import {
   Heart,
   LayoutGrid,
   ListTodo,
+  LogOut,
   LucideIcon,
   Map,
   Sparkles,
@@ -86,14 +87,14 @@ function DashboardMetricCard({ metric }: { metric: OverviewMetric }) {
   const Icon = metric.icon;
 
   return (
-    <div className="surface-subtle rounded-[calc(var(--radius)+0.75rem)] p-4 text-right">
+    <div className="surface-shell rounded-[calc(var(--radius)+0.75rem)] p-5 text-right">
       <div className="rtl-title-row">
         <div className="space-y-1.5 flex-1">
           <p className="text-xs font-semibold text-muted-foreground">{metric.label}</p>
-          <p className="text-xl font-black text-foreground md:text-2xl">{metric.value}</p>
-          <p className="text-xs leading-6 text-muted-foreground">{metric.note}</p>
+          <p className="text-2xl font-black text-foreground">{metric.value}</p>
+          <p className="text-xs leading-5 text-muted-foreground">{metric.note}</p>
         </div>
-        <div className={cn("icon-chip h-11 w-11 shrink-0 rounded-[calc(var(--radius)+0.375rem)]", metric.iconClass)}>
+        <div className={cn("icon-chip h-12 w-12 shrink-0 rounded-[calc(var(--radius)+0.5rem)]", metric.iconClass)}>
           <Icon className="h-5 w-5" />
         </div>
       </div>
@@ -117,10 +118,10 @@ function ActiveModuleCard({ module, index }: { module: ActiveModule; index: numb
         className="h-full"
       >
         <Card
-          className="surface-shell relative h-full overflow-hidden rounded-[calc(var(--radius)+0.85rem)] border-border/80 transition-all duration-300 group-hover:-translate-y-1.5 group-hover:border-primary/25 group-hover:shadow-2xl"
+          className="surface-shell relative h-full overflow-hidden rounded-[calc(var(--radius)+0.85rem)] border-border/80 transition-all duration-300 group-hover:-translate-y-1.5 group-hover:border-primary/30 group-hover:shadow-2xl"
           data-testid={`module-card-${module.id}`}
         >
-          <div className={cn("pointer-events-none absolute inset-x-0 top-0 h-28 opacity-100", module.accentClass)} />
+          <div className={cn("pointer-events-none absolute inset-x-0 top-0 h-36 opacity-100", module.accentClass)} />
 
           <CardHeader className="relative gap-5 pb-4 text-right">
             <div className="rtl-title-row">
@@ -159,15 +160,15 @@ function ActiveModuleCard({ module, index }: { module: ActiveModule; index: numb
                 <div key={stat.label} className="surface-subtle rounded-[calc(var(--radius)+0.5rem)] p-4 text-right">
                   <p className="text-xs font-semibold text-muted-foreground">{stat.label}</p>
                   <p className="mt-1 text-lg font-extrabold text-foreground">{stat.value}</p>
-                  <p className="mt-1 text-xs leading-6 text-muted-foreground">{stat.note}</p>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">{stat.note}</p>
                 </div>
               ))}
             </div>
 
-            <div className="rtl-title-row rounded-[calc(var(--radius)+0.5rem)] border border-dashed border-border/70 bg-muted/65 p-4 text-right transition-colors group-hover:border-primary/30">
+            <div className="rtl-title-row rounded-[calc(var(--radius)+0.5rem)] border border-dashed border-border/70 bg-muted/65 p-4 text-right transition-colors group-hover:border-primary/35 group-hover:bg-primary/[0.03]">
               <div className="flex-1">
                 <p className="text-sm font-semibold text-foreground">{module.ctaLabel}</p>
-                <p className="text-xs leading-6 text-muted-foreground">{module.helper}</p>
+                <p className="text-xs leading-5 text-muted-foreground">{module.helper}</p>
               </div>
               <div className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[calc(var(--radius)+0.375rem)] border border-primary/20 bg-primary text-primary-foreground transition-transform duration-300 group-hover:-translate-x-1">
                 <ArrowLeft className="h-5 w-5" />
@@ -190,7 +191,7 @@ function UpcomingModuleCard({ module, index }: { module: UpcomingModule; index: 
       transition={{ delay: 0.32 + index * 0.04 }}
       className="h-full"
     >
-      <Card className="surface-subtle h-full rounded-[calc(var(--radius)+0.75rem)] border-dashed border-border/70">
+      <Card className="surface-subtle h-full rounded-[calc(var(--radius)+0.75rem)] border-dashed border-border/60 transition-colors hover:border-border/90">
         <CardContent className="flex h-full flex-col gap-4 p-5 text-right">
           <div className="rtl-title-row">
             <div className="space-y-2 flex-1">
@@ -390,71 +391,91 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <div className="app-shell relative overflow-hidden px-4 py-6 sm:px-6 lg:px-8" dir="rtl">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(circle_at_top_right,rgba(149,223,30,0.12),transparent_52%),radial-gradient(circle_at_top_left,rgba(255,255,255,0.04),transparent_40%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(149,223,30,0.13),transparent_46%),radial-gradient(circle_at_top_left,rgba(255,255,255,0.02),transparent_42%)]" />
-      <div className="pointer-events-none absolute inset-x-0 top-32 h-72 bg-[linear-gradient(180deg,transparent,rgba(255,255,255,0.2),transparent)] dark:bg-[linear-gradient(180deg,transparent,rgba(255,255,255,0.015),transparent)]" />
+    <div className="app-shell" dir="rtl">
 
-      <div className="relative mx-auto max-w-6xl space-y-8">
-        <div className="rtl-meta-row flex-col gap-3 sm:flex-row">
-          <div className="accent-shell rtl-actions-inline self-start rounded-full px-4 py-2 text-sm font-semibold text-foreground">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span>لوحة تحكم أوضح للوصول السريع إلى أدواتك</span>
-          </div>
-          <div className="surface-shell rtl-actions-inline self-start rounded-[calc(var(--radius)+0.5rem)] p-2">
+      {/* Navbar */}
+      <nav className="sticky top-0 z-50 border-b border-border/60 bg-background/85 backdrop-blur-md">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+
+          {/* Left side: actions */}
+          <div className="flex items-center gap-1.5">
             <ThemeToggle />
             <Button
-              variant="destructive"
+              variant="ghost"
               size="sm"
-              className="rounded-xl px-4"
+              className="h-9 gap-2 rounded-xl px-3 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
               onClick={() => auth.logout()}
             >
-              خروج
+              <LogOut className="h-4 w-4" />
+              <span className="text-sm font-medium">خروج</span>
             </Button>
           </div>
+
+          {/* Right side: brand */}
+          <div className="flex items-center gap-2.5">
+            <span className="text-xl font-black tracking-tight text-foreground">Planner Hub</span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+              <LayoutGrid className="h-4 w-4" />
+            </div>
+          </div>
+
         </div>
+      </nav>
 
-        <motion.section initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-          <Card className="surface-shell overflow-hidden rounded-[calc(var(--radius)+1rem)] border-border/80 shadow-xl">
-            <CardContent className="grid gap-6 p-6 lg:grid-cols-[1.2fr,0.95fr] lg:items-center lg:p-8">
-              <div className="space-y-5 text-right">
-                <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/[0.12] px-3 py-1.5 text-xs font-semibold text-primary">
-                  <LayoutGrid className="h-4 w-4" />
-                  <span>{formatCount(activeModules.length)} موديولات جاهزة الآن</span>
-                </div>
+      <div className="relative mx-auto max-w-6xl space-y-10 px-4 py-10 sm:px-6 lg:px-8">
 
-                <div className="space-y-3">
-                  <h1 className="text-3xl font-extrabold leading-tight text-foreground md:text-5xl">
-                    ابدئي من الموديول المناسب في <span className="text-primary">Planner Hub</span>
-                  </h1>
-                  <p className="max-w-2xl text-base leading-8 text-muted-foreground md:text-lg">
-                    تحسينات الدخول أصبحت تركّز على الوضوح والسرعة: بطاقات أغنى بالمعلومة، تسلسل بصري أقوى،
-                    واختصارات مباشرة للموديولات التي تعمل فعليًا الآن.
-                  </p>
-                </div>
+        {/* Hero */}
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="space-y-5 text-right"
+        >
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/[0.1] px-3.5 py-1.5 text-xs font-semibold text-primary">
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>{formatCount(activeModules.length)} موديولات جاهزة الآن</span>
+          </div>
 
-                <div className="flex flex-wrap justify-end gap-3">
-                  {activeModules.map((module) => (
-                    <Button
-                      key={module.id}
-                      asChild
-                      variant="outline"
-                      className="min-h-11 rounded-[calc(var(--radius)+0.375rem)] border-border/80 bg-background/75 px-4 text-sm font-semibold"
-                    >
-                      <Link href={module.href}>{module.title}</Link>
-                    </Button>
-                  ))}
-                </div>
-              </div>
+          <div className="space-y-3">
+            <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-foreground md:text-5xl lg:text-[3.25rem]">
+              ابدئي من الموديول المناسب في{" "}
+              <span className="text-primary">Planner Hub</span>
+            </h1>
+            <p className="max-w-2xl text-base leading-8 text-muted-foreground md:text-lg">
+              تحسينات الدخول أصبحت تركّز على الوضوح والسرعة: بطاقات أغنى بالمعلومة، تسلسل بصري أقوى،
+              واختصارات مباشرة للموديولات التي تعمل فعليًا الآن.
+            </p>
+          </div>
 
-              <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-                {overviewMetrics.map((metric) => (
-                  <DashboardMetricCard key={metric.label} metric={metric} />
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          {/* Quick-access module links */}
+          <div className="flex flex-wrap justify-end gap-2.5">
+            {activeModules.map((module) => (
+              <Button
+                key={module.id}
+                asChild
+                variant="outline"
+                size="sm"
+                className="rounded-[calc(var(--radius)+0.375rem)] border-border/80 bg-background/75 px-4 font-semibold"
+              >
+                <Link href={module.href}>{module.title}</Link>
+              </Button>
+            ))}
+          </div>
         </motion.section>
 
+        {/* Overview metrics — 3-column strip */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.14, duration: 0.35 }}
+          className="grid grid-cols-1 gap-4 sm:grid-cols-3"
+        >
+          {overviewMetrics.map((metric) => (
+            <DashboardMetricCard key={metric.label} metric={metric} />
+          ))}
+        </motion.div>
+
+        {/* Active modules */}
         <section className="space-y-4">
           <div className="rtl-meta-row flex-col gap-2 sm:flex-row sm:items-end">
             <div className="rtl-title-stack">
@@ -475,7 +496,8 @@ export default function Dashboard() {
           </div>
         </section>
 
-        <section className="space-y-4">
+        {/* Upcoming modules */}
+        <section className="space-y-4 pb-12">
           <div className="rtl-title-stack">
             <h2 className="text-xl font-extrabold text-foreground">لاحقًا في Planner Hub</h2>
             <p className="text-sm leading-6 text-muted-foreground">
@@ -489,6 +511,7 @@ export default function Dashboard() {
             ))}
           </div>
         </section>
+
       </div>
     </div>
   );
