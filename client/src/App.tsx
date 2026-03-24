@@ -10,6 +10,7 @@ import WeeklyPlanner from "./pages/WeeklyPlanner";
 import BudgetPlanner from "./pages/BudgetPlanner";
 import MealPlanner from "./pages/MealPlanner";
 import MealPlannerSetup from "./pages/MealPlannerSetup";
+import CashflowPlanner from "./pages/CashflowPlanner";
 import AuthPage from "./pages/AuthPage";
 import { AuthProvider, useAuth } from "./lib/auth";
 import { pullCloudToLocal, pushLocalToCloud } from "./lib/cloud-sync";
@@ -69,11 +70,13 @@ function Router() {
   const AuthAwareBudget = auth.user ? BudgetPlanner : AuthPage;
   const AuthAwareMeal = auth.user ? MealPlanner : AuthPage;
   const AuthAwareMealSetup = auth.user ? MealPlannerSetup : AuthPage;
+  const AuthAwareCashflow = auth.user ? CashflowPlanner : AuthPage;
 
   return (
     <Switch>
       <Route path="/auth" component={AuthPage} />
       <Route path="/" component={AuthAwareDashboard} />
+      <Route path="/cashflow" component={AuthAwareCashflow} />
       <Route path="/weekly-planner" component={AuthAwareWeekly} />
       <Route path="/weekly-planner/" component={AuthAwareWeekly} />
       <Route path="/planner/weekly-planner" component={AuthAwareWeekly} />

@@ -690,3 +690,18 @@
 .dark .weekly-gantt-scroll::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.6);
 }
+
+/* ── Cashflow module utilities ──────────────────────────────────────────── */
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* Safe area for bottom nav on iOS devices */
+.safe-area-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+/* Cashflow number LTR override helper */
+.cashflow-number {
+  direction: ltr;
+  unicode-bidi: bidi-override;
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+}

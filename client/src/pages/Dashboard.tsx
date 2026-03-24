@@ -15,6 +15,7 @@ import {
   Map,
   Sparkles,
   Target,
+  TrendingUp,
   Utensils,
   Wallet,
 } from "lucide-react";
@@ -39,6 +40,13 @@ import {
   loadBudgetData,
 } from "@/lib/budget";
 import { getMealPlannerSummary, loadMealPlannerState } from "@/lib/meal-planner";
+import {
+  loadCashflowData,
+  getAvailableBalance,
+  getMonthStats,
+  getCurrentMonthKey as getCashflowMonthKey,
+  formatCashflowAmount,
+} from "@/lib/cashflow";
 
 type ModuleStat = {
   label: string;
@@ -230,6 +238,14 @@ export default function Dashboard() {
     const mealState = loadMealPlannerState();
     const mealSummary = getMealPlannerSummary(mealState);
 
+    const cashflowData = loadCashflowData();
+    const cashflowBalance = getAvailableBalance(cashflowData);
+    const cashflowMonthKey = getCashflowMonthKey();
+    const cashflowMonthStats = getMonthStats(cashflowData.transactions, cashflowMonthKey);
+    const pendingPaymentsCount = cashflowData.upcomingPayments.filter(
+      (p) => p.status === "pending" && p.dueDate >= new Date().toISOString().split("T")[0],
+    ).length;
+
     const active: ActiveModule[] = [
       {
         id: "planner",
@@ -308,6 +324,31 @@ export default function Dashboard() {
           },
         ],
         ctaLabel: "افتح الوجبات",
+      },
+      {
+        id: "cashflow",
+        href: "/cashflow",
+        title: "תזרים מזומנים",
+        description: "מרכז תזרים פשוט לעסק הישראלי — יתרה, הכנסות, הוצאות, תשלומים קרובים ושותפים במסך אחד.",
+        helper: "עדכן את היתרה, הוסף הכנסה או הוצאה, ועקוב אחרי התשלומים הקרובים.",
+        icon: TrendingUp,
+        accentClass: "bg-[radial-gradient(circle_at_top_right,rgba(14,165,233,0.07),transparent_56%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(14,165,233,0.18),transparent_56%)]",
+        iconClass: "border-sky-500/20 bg-sky-500/[0.12] text-sky-600 dark:text-sky-300",
+        badgeClass: "border-sky-500/20 bg-sky-500/[0.08] text-sky-700 dark:bg-sky-500/[0.15] dark:text-sky-300",
+        highlights: ["יתרה ותזרים", "הכנסות והוצאות", "תשלומים עתידיים"],
+        stats: [
+          {
+            label: "יתרה זמינה",
+            value: formatCashflowAmount(cashflowBalance, cashflowData.settings.currency),
+            note: `נטו החודש: ${formatCashflowAmount(cashflowMonthStats.net, cashflowData.settings.currency)}`,
+          },
+          {
+            label: "תשלומים ממתינים",
+            value: formatCount(pendingPaymentsCount),
+            note: pendingPaymentsCount > 0 ? "תשלומים עתידיים פתוחים" : "אין תשלומים ממתינים",
+          },
+        ],
+        ctaLabel: "פתח תזרים",
       },
     ];
 
