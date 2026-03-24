@@ -1602,7 +1602,7 @@ export default function BudgetPlanner() {
 
   return (
     <div className="app-shell relative min-h-screen pb-12" dir="rtl">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(circle_at_top,rgba(149,223,30,0.11),transparent_26%),radial-gradient(circle_at_top_left,rgba(255,255,255,0.025),transparent_22%)]" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(circle_at_top,rgba(149,223,30,0.04),transparent_26%)] dark:bg-[radial-gradient(circle_at_top,rgba(149,223,30,0.11),transparent_26%),radial-gradient(circle_at_top_left,rgba(255,255,255,0.025),transparent_22%)]" />
       <header className="sticky top-0 z-30">
         <div className="mx-auto max-w-7xl px-4 py-4 md:px-6">
           <div className="surface-shell relative min-h-[48px] rounded-[calc(var(--radius)+0.9rem)] px-4 py-4 md:min-h-[56px] md:px-5">
@@ -1684,7 +1684,7 @@ export default function BudgetPlanner() {
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
         <SheetContent
           side="left"
-          className="w-[92vw] max-w-[26rem] border-border/80 bg-[radial-gradient(circle_at_top_right,rgba(149,223,30,0.08),transparent_24%),linear-gradient(180deg,rgba(32,32,32,0.98),rgba(24,24,24,0.98))] p-0 [&>button]:left-5 [&>button]:right-auto [&>button]:top-5 [&>button]:h-9 [&>button]:w-9 [&>button]:rounded-full"
+          className="w-[92vw] max-w-[26rem] border-border/80 bg-[radial-gradient(circle_at_top_right,rgba(149,223,30,0.04),transparent_24%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(149,223,30,0.08),transparent_24%),linear-gradient(180deg,rgba(32,32,32,0.98),rgba(24,24,24,0.98))] bg-popover p-0 [&>button]:left-5 [&>button]:right-auto [&>button]:top-5 [&>button]:h-9 [&>button]:w-9 [&>button]:rounded-full"
           dir="rtl"
         >
           <div className="flex h-full flex-col">
@@ -2042,7 +2042,7 @@ export default function BudgetPlanner() {
                             <p className="mt-1 font-semibold text-foreground">{goal.hasTarget ? `${goal.progress}%` : "مرن"}</p>
                           </div>
                         </div>
-                        <div className="mt-5 h-2.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-muted">
+                        <div className="mt-5 h-2 w-full overflow-hidden rounded-full bg-muted">
                           <motion.div initial={{ width: 0 }} animate={{ width: `${goal.progress}%` }} transition={{ duration: 0.35 }} className="h-full bg-emerald-500" />
                         </div>
                         <div className="mt-5 rtl-row items-center">
@@ -2073,9 +2073,9 @@ export default function BudgetPlanner() {
                 <CardContent className="space-y-4">
                 <div className="mb-3 rounded-xl border bg-muted/50 p-3">
                   <div className="rtl-row text-xs mb-1"><span className="flex-1 text-right">الدخل</span><span className="budget-value-left rtl-number tabular-nums">{formatAmount(monthlyTotals.income, data.settings.currency)}</span></div>
-                  <div className="w-full h-2.5 rounded-lg bg-muted overflow-hidden mb-2"><motion.div initial={{ width: 0 }} animate={{ width: "100%" }} className="h-full bg-emerald-500" /></div>
+                  <div className="w-full h-2 rounded-full bg-muted overflow-hidden mb-2"><motion.div initial={{ width: 0 }} animate={{ width: "100%" }} className="h-full bg-emerald-500 rounded-full" /></div>
                   <div className="rtl-row text-xs mb-1"><span className="flex-1 text-right">المصروف الكلي</span><span className="budget-value-left rtl-number tabular-nums">{formatAmount(monthlyTotals.totalOutflow, data.settings.currency)}</span></div>
-                  <div className="w-full h-2.5 rounded-lg bg-muted overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: `${monthlyTotals.income > 0 ? Math.min((monthlyTotals.totalOutflow / monthlyTotals.income) * 100, 100) : 0}%` }} className="h-full bg-rose-500" /></div>
+                  <div className="w-full h-2 rounded-full bg-muted overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: `${monthlyTotals.income > 0 ? Math.min((monthlyTotals.totalOutflow / monthlyTotals.income) * 100, 100) : 0}%` }} className="h-full bg-rose-500 rounded-full" /></div>
                   {hasOverviewData && (
                     <div className={cn(
                       "mt-3 rounded-xl border px-3 py-2 text-right",
@@ -2177,8 +2177,8 @@ export default function BudgetPlanner() {
                           <p className="flex-1 text-right font-medium text-foreground">{`${segment.emoji} ${segment.name}`}</p>
                           <p className="budget-value-left text-muted-foreground tabular-nums"><span className="inline-block rtl-number tabular-nums whitespace-nowrap">{formatAmount(segment.total, data.settings.currency)}</span> • {segment.percent}%</p>
                         </div>
-                        <div className="w-full h-2.5 bg-muted rounded-lg overflow-hidden">
-                          <motion.div initial={{ width: 0 }} animate={{ width: `${segment.percent}%` }} transition={{ duration: 0.35 }} className="h-full" style={{ backgroundColor: segment.color }} />
+                        <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                          <motion.div initial={{ width: 0 }} animate={{ width: `${segment.percent}%` }} transition={{ duration: 0.35 }} className="h-full rounded-full" style={{ backgroundColor: segment.color }} />
                         </div>
                       </div>
                     );
@@ -2742,18 +2742,18 @@ function SummaryCard({
 }) {
   const config = {
     income: {
-      text: "text-emerald-300",
-      soft: "border-emerald-500/20 bg-emerald-500/[0.1] text-emerald-300",
+      text: "text-emerald-600 dark:text-emerald-300",
+      soft: "border-emerald-500/20 bg-emerald-500/[0.1] text-emerald-600 dark:text-emerald-300",
       icon: Wallet,
     },
     expense: {
-      text: "text-rose-300",
-      soft: "border-rose-500/20 bg-rose-500/[0.1] text-rose-300",
+      text: "text-rose-600 dark:text-rose-300",
+      soft: "border-rose-500/20 bg-rose-500/[0.1] text-rose-600 dark:text-rose-300",
       icon: ReceiptText,
     },
     bill: {
-      text: "text-amber-300",
-      soft: "border-amber-500/20 bg-amber-500/[0.1] text-amber-300",
+      text: "text-amber-600 dark:text-amber-300",
+      soft: "border-amber-500/20 bg-amber-500/[0.1] text-amber-600 dark:text-amber-300",
       icon: Landmark,
     },
     saving: {
