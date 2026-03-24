@@ -103,6 +103,7 @@ export interface UpcomingPayment {
   category?: ExpenseCategory;
   amount: number;
   dueDate: string;
+  paidFor?: string;
   note?: string;
   status: UpcomingPaymentStatus;
   recurringMonthly: boolean;
@@ -337,6 +338,7 @@ function sanitizeUpcomingPayment(raw: unknown): UpcomingPayment | null {
         : undefined,
     amount: clampMoney(source.amount),
     dueDate: typeof source.dueDate === "string" && source.dueDate ? source.dueDate : getTodayKey(),
+    paidFor: typeof source.paidFor === "string" && source.paidFor.trim() ? source.paidFor.trim() : undefined,
     note: typeof source.note === "string" && source.note.trim() ? source.note.trim() : undefined,
     status: source.status === "paid" ? "paid" : "pending",
     recurringMonthly: Boolean(source.recurringMonthly ?? source.recurrence === "monthly"),
@@ -430,7 +432,11 @@ export function sanitizeCashflowData(raw: unknown): CashflowData {
     : [];
   const settings = sanitizeSettings(source.settings);
   const derivedPayees = Array.from(
-    new Set([...(transactions.map((transaction) => transaction.paidFor).filter(Boolean) as string[]), ...(settings.savedPayees ?? [])]),
+    new Set([
+      ...(transactions.map((transaction) => transaction.paidFor).filter(Boolean) as string[]),
+      ...(upcomingPayments.map((payment) => payment.paidFor).filter(Boolean) as string[]),
+      ...(settings.savedPayees ?? []),
+    ]),
   );
 
   return {

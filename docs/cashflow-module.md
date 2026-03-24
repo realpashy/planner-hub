@@ -63,6 +63,9 @@ Required fields:
 - `createdAt`
 - `updatedAt`
 
+When a user creates a recurring monthly payment and selects multiple months, the module saves it as separate upcoming payment items.
+Each item keeps the same chosen day-of-month where possible, so one selected setup can be tracked and marked separately month by month.
+
 ### Partners
 
 - `id`

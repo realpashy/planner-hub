@@ -84,7 +84,7 @@ function PaymentCard({
 
   return (
     <Card className={cn("rounded-[calc(var(--radius)+0.625rem)] border transition-all duration-200", cardTone)}>
-      <CardContent className="p-4 pt-5">
+      <CardContent className="p-4 pt-[15px]">
         <div className="grid items-stretch gap-4 md:grid-cols-[15%_1fr_25%]">
           <div className="flex min-h-full items-center justify-center">
             <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-[calc(var(--radius)+0.375rem)] border border-primary/30 bg-background/60 text-xl shadow-[0_0_0_1px_rgba(149,223,30,0.12),0_0_18px_rgba(149,223,30,0.12)]">
@@ -99,17 +99,7 @@ function PaymentCard({
                 <span>{formatHebrewDate(payment.dueDate)}</span>
                 <span>{categoryMeta.label}</span>
               </div>
-              {payment.recurringMonthly && payment.scheduledMonths?.length ? (
-                <p className="pt-1 text-xs text-muted-foreground">
-                  חודשים נבחרים:{" "}
-                  {payment.scheduledMonths
-                    .map((value) => {
-                      const [year, month] = value.split("-").map(Number);
-                      return new Date(year, (month || 1) - 1, 1).toLocaleDateString("he-IL", { month: "long", year: "numeric" });
-                    })
-                    .join(" • ")}
-                </p>
-              ) : null}
+              {payment.paidFor ? <p className="pt-1 text-xs text-muted-foreground">למי שולם: {payment.paidFor}</p> : null}
               {payment.note ? <p className="pt-1 text-xs text-muted-foreground">{payment.note}</p> : null}
             </div>
 
@@ -161,8 +151,13 @@ interface CashflowUpcomingProps {
 export function CashflowUpcoming({ data, onAddUpcoming, onEditUpcoming, onMarkPaid }: CashflowUpcomingProps) {
   const [filter, setFilter] = useState<FilterKey>("all");
   const [search, setSearch] = useState("");
+  const [payeeFilter, setPayeeFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState<CashflowDateFilter>({});
   const [paymentToConfirm, setPaymentToConfirm] = useState<UpcomingPayment | null>(null);
+  const savedPayees = useMemo(
+    () => Array.from(new Set((data.settings.savedPayees ?? []).filter((value) => value.trim().length > 0))),
+    [data.settings.savedPayees],
+  );
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -170,18 +165,21 @@ export function CashflowUpcoming({ data, onAddUpcoming, onEditUpcoming, onMarkPa
     return filterByDateRange([...data.upcomingPayments], dateFilter)
       .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
       .filter((payment) => matchesPeriod(payment, filter))
+      .filter((payment) => (payeeFilter === "all" ? true : payment.paidFor === payeeFilter))
       .filter((payment) => {
         if (!query) return true;
         const amount = String(payment.amount);
         const dateText = formatHebrewDate(payment.dueDate).toLowerCase();
+        const paidFor = (payment.paidFor ?? "").toLowerCase();
         return (
           payment.name.toLowerCase().includes(query) ||
           (payment.note ?? "").toLowerCase().includes(query) ||
+          paidFor.includes(query) ||
           amount.includes(query) ||
           dateText.includes(query)
         );
       });
-  }, [data.upcomingPayments, dateFilter, filter, search]);
+  }, [data.upcomingPayments, dateFilter, filter, payeeFilter, search]);
 
   const totalPending = useMemo(
     () => data.upcomingPayments.filter((payment) => payment.status === "pending").reduce((sum, payment) => sum + payment.amount, 0),
@@ -218,6 +216,24 @@ export function CashflowUpcoming({ data, onAddUpcoming, onEditUpcoming, onMarkPa
       </div>
 
       <CashflowDateRangeFilter from={dateFilter.from} to={dateFilter.to} onChange={setDateFilter} />
+
+      {savedPayees.length > 0 ? (
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-muted-foreground">סינון לפי למי שולם</label>
+          <select
+            value={payeeFilter}
+            onChange={(event) => setPayeeFilter(event.target.value)}
+            className="meal-input modern-select h-12 w-full rounded-[calc(var(--radius)+0.25rem)] border-border/60 bg-muted/40 text-right"
+          >
+            <option value="all">כל הספקים / הגורמים</option>
+            {savedPayees.map((payee) => (
+              <option key={payee} value={payee}>
+                {payee}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : null}
 
       <div className="flex gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
         {FILTERS.map(({ key, label }) => (

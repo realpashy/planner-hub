@@ -43,6 +43,7 @@ interface AddEntrySheetProps {
 interface AddUpcomingSheetProps {
   open: boolean;
   currency: CashflowCurrency;
+  savedPayees?: string[];
   onClose: () => void;
   onSave: (payment: UpcomingPayment) => void;
   initialPayment?: UpcomingPayment | null;
@@ -243,32 +244,47 @@ export function AddEntrySheet({
 
         <div className="space-y-2.5">
           <label className="text-xs font-semibold text-muted-foreground">{isIncome ? "סוג הכנסה" : "סוג הוצאה"}</label>
-          <div className="grid grid-cols-2 gap-2">
-            {categories.map((cat) => {
-              const selected = category === cat;
-              return (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => setCategory(cat)}
-                  className={cn(
-                    "flex items-center gap-2.5 rounded-[calc(var(--radius)+0.375rem)] border px-4 py-3 text-right text-sm font-semibold transition-all",
-                    selected
-                      ? isIncome
+          {isIncome ? (
+            <div className="grid grid-cols-2 gap-2">
+              {categories.map((cat) => {
+                const selected = category === cat;
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setCategory(cat)}
+                    className={cn(
+                      "flex items-center gap-2.5 rounded-[calc(var(--radius)+0.375rem)] border px-4 py-3 text-right text-sm font-semibold transition-all",
+                      selected
                         ? "border-emerald-500/50 bg-emerald-500/[0.15] text-emerald-700 ring-1 ring-emerald-500/30 dark:text-emerald-200"
-                        : "border-rose-500/50 bg-rose-500/[0.15] text-rose-700 ring-1 ring-rose-500/30 dark:text-rose-200"
-                      : "border-border/50 bg-muted/30 text-muted-foreground hover:bg-muted/60",
-                  )}
-                >
-                  <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[5px] border border-primary/30 bg-background/60 shadow-[0_0_0_1px_rgba(149,223,30,0.12),0_0_16px_rgba(149,223,30,0.10)]">
-                    {icons[cat]}
-                  </span>
-                  <span className="flex-1 text-right leading-tight">{labels[cat]}</span>
-                  {selected ? <Check className="h-3.5 w-3.5 shrink-0 opacity-70" /> : null}
-                </button>
-              );
-            })}
-          </div>
+                        : "border-border/50 bg-muted/30 text-muted-foreground hover:bg-muted/60",
+                    )}
+                  >
+                    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[5px] border border-primary/30 bg-background/60 shadow-[0_0_0_1px_rgba(149,223,30,0.12),0_0_16px_rgba(149,223,30,0.10)]">
+                      {icons[cat]}
+                    </span>
+                    <span className="flex-1 text-right leading-tight">{labels[cat]}</span>
+                    {selected ? <Check className="h-3.5 w-3.5 shrink-0 opacity-70" /> : null}
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <select
+              value={category}
+              onChange={(event) => {
+                setCategory(event.target.value as ExpenseCategory);
+                setError("");
+              }}
+              className="meal-input modern-select h-12 w-full rounded-[calc(var(--radius)+0.25rem)] border-border/60 bg-muted/40 text-right"
+            >
+              {EXPENSE_CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {icons[cat]} {labels[cat]}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
 
         {showNote ? (
@@ -372,6 +388,7 @@ export function AddEntrySheet({
 export function AddUpcomingSheet({
   open,
   currency,
+  savedPayees = [],
   onClose,
   onSave,
   initialPayment,
@@ -380,6 +397,7 @@ export function AddUpcomingSheet({
   const [category, setCategory] = useState<(typeof UPCOMING_PAYMENT_CATEGORIES)[number]["value"]>("recurring");
   const [amountStr, setAmountStr] = useState("");
   const [dueDate, setDueDate] = useState(getTodayKey());
+  const [paidFor, setPaidFor] = useState("");
   const [recurringMonthly, setRecurringMonthly] = useState(false);
   const [scheduledMonths, setScheduledMonths] = useState<string[]>([]);
   const [note, setNote] = useState("");
@@ -394,6 +412,7 @@ export function AddUpcomingSheet({
     setCategory(initialPayment?.category ?? "recurring");
     setAmountStr(initialPayment ? String(initialPayment.amount) : "");
     setDueDate(initialPayment?.dueDate ?? nextWeek.toISOString().split("T")[0]);
+    setPaidFor(initialPayment?.paidFor ?? "");
     setRecurringMonthly(initialPayment?.recurringMonthly ?? false);
     setScheduledMonths(initialPayment?.scheduledMonths ?? []);
     setNote(initialPayment?.note ?? "");
@@ -412,11 +431,12 @@ export function AddUpcomingSheet({
       return { value, label };
     });
   }, [dueDate]);
-  const isValid = parsedAmount > 0 && Boolean(dueDate) && (!recurringMonthly || scheduledMonths.length > 0);
+  const requiresMonthSelection = recurringMonthly && !isEditing;
+  const isValid = parsedAmount > 0 && Boolean(dueDate) && (!requiresMonthSelection || scheduledMonths.length > 0);
 
   function handleSave() {
     if (!isValid) {
-      setError(recurringMonthly && scheduledMonths.length === 0 ? "נא לבחור חודשים לתשלום החוזר" : "נא למלא סכום ותאריך");
+      setError(requiresMonthSelection && scheduledMonths.length === 0 ? "נא לבחור חודשים לתשלום החוזר" : "נא למלא סכום ותאריך");
       return;
     }
 
@@ -427,6 +447,7 @@ export function AddUpcomingSheet({
       category,
       amount: parsedAmount,
       dueDate,
+      paidFor: paidFor.trim() || undefined,
       note: note.trim() || undefined,
       status: initialPayment?.status ?? "pending",
       recurringMonthly,
@@ -454,33 +475,20 @@ export function AddUpcomingSheet({
       <div className="space-y-5 px-5 pb-8 pt-3">
         <div className="space-y-2.5">
           <label className="text-xs font-semibold text-muted-foreground">קטגוריית תשלום</label>
-          <div className="grid grid-cols-2 gap-2">
-            {UPCOMING_PAYMENT_CATEGORIES.map((option) => {
-              const selected = category === option.value;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => {
-                    setCategory(option.value);
-                    setError("");
-                  }}
-                  className={cn(
-                    "flex items-center gap-2.5 rounded-[calc(var(--radius)+0.375rem)] border px-4 py-3 text-right text-sm font-semibold transition-all",
-                    selected
-                      ? "border-amber-500/50 bg-amber-500/[0.15] text-amber-700 ring-1 ring-amber-500/30 dark:text-amber-200"
-                      : "border-border/50 bg-muted/30 text-muted-foreground hover:bg-muted/60",
-                  )}
-                >
-                  <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[5px] border border-primary/30 bg-background/60 shadow-[0_0_0_1px_rgba(149,223,30,0.12),0_0_16px_rgba(149,223,30,0.10)]">
-                    {option.icon}
-                  </span>
-                  <span className="flex-1 text-right leading-tight">{option.label}</span>
-                  {selected ? <Check className="h-3.5 w-3.5 shrink-0 opacity-70" /> : null}
-                </button>
-              );
-            })}
-          </div>
+          <select
+            value={category}
+            onChange={(event) => {
+              setCategory(event.target.value as (typeof UPCOMING_PAYMENT_CATEGORIES)[number]["value"]);
+              setError("");
+            }}
+            className="meal-input modern-select h-12 w-full rounded-[calc(var(--radius)+0.25rem)] border-border/60 bg-muted/40 text-right"
+          >
+            {UPCOMING_PAYMENT_CATEGORIES.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.icon} {option.label}
+              </option>
+            ))}
+          </select>
         </div>
 
         <CashflowNumericField
@@ -496,6 +504,25 @@ export function AddUpcomingSheet({
             {formatCashflowAmount(parsedAmount, currency)}
           </p>
         ) : null}
+
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-muted-foreground">למי שולם</label>
+          <Input
+            list="cashflow-upcoming-payees"
+            value={paidFor}
+            onChange={(event) => {
+              setPaidFor(event.target.value);
+              setError("");
+            }}
+            placeholder="בחר או כתוב למי שולם"
+            className="h-12 rounded-[calc(var(--radius)+0.25rem)] border-border/60 bg-muted/40 text-right focus:border-primary/50"
+          />
+          <datalist id="cashflow-upcoming-payees">
+            {savedPayees.map((payee) => (
+              <option key={payee} value={payee} />
+            ))}
+          </datalist>
+        </div>
 
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-muted-foreground">תאריך יעד</label>

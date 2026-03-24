@@ -51,6 +51,16 @@ const SCREEN_TITLES: Record<ScreenKey, string> = {
   settings: "הגדרות",
 };
 
+function buildRecurringDueDate(baseDueDate: string, targetMonth: string) {
+  const [baseYear, baseMonth, baseDay] = baseDueDate.split("-").map(Number);
+  const [targetYear, targetMonthNumber] = targetMonth.split("-").map(Number);
+  const safeDay = Number.isFinite(baseDay) ? baseDay : 1;
+  const lastDayOfTargetMonth = new Date(targetYear, targetMonthNumber, 0).getDate();
+  const finalDay = Math.min(safeDay, lastDayOfTargetMonth);
+  const fallbackMonth = Number.isFinite(baseMonth) ? baseMonth : 1;
+  return `${targetYear || baseYear}-${String(targetMonthNumber || fallbackMonth).padStart(2, "0")}-${String(finalDay).padStart(2, "0")}`;
+}
+
 interface UpdateBalanceSheetProps {
   open: boolean;
   data: CashflowData;
@@ -185,11 +195,36 @@ export default function CashflowPlanner() {
   function handleSaveUpcoming(payment: UpcomingPayment) {
     updateData((previous) => {
       const exists = previous.upcomingPayments.some((item) => item.id === payment.id);
+      const savedPayees = payment.paidFor?.trim()
+        ? Array.from(new Set([...(previous.settings.savedPayees ?? []), payment.paidFor.trim()]))
+        : previous.settings.savedPayees ?? [];
+      const timestamp = new Date().toISOString();
+      const recurringSelections = payment.scheduledMonths?.length ?? 0;
+      const shouldExpandRecurring = payment.recurringMonthly && recurringSelections > 0 && (!exists || recurringSelections > 1);
+
+      const nextPayments =
+        shouldExpandRecurring
+          ? [
+              ...previous.upcomingPayments.filter((item) => item.id !== payment.id),
+              ...(payment.scheduledMonths ?? []).map((monthKey) => ({
+                ...payment,
+                id: `${payment.id}-${monthKey}`,
+                dueDate: buildRecurringDueDate(payment.dueDate, monthKey),
+                scheduledMonths: undefined,
+                updatedAt: timestamp,
+              })),
+            ]
+          : exists
+            ? previous.upcomingPayments.map((item) => (item.id === payment.id ? payment : item))
+            : [...previous.upcomingPayments, payment];
+
       return {
         ...previous,
-        upcomingPayments: exists
-          ? previous.upcomingPayments.map((item) => (item.id === payment.id ? payment : item))
-          : [...previous.upcomingPayments, payment],
+        settings: {
+          ...previous.settings,
+          savedPayees,
+        },
+        upcomingPayments: nextPayments,
       };
     });
     setEditingUpcoming(null);
@@ -216,8 +251,9 @@ export default function CashflowPlanner() {
         type: "expense",
         amount: payment.amount,
         date: payment.dueDate,
-        category: "recurring",
+        category: payment.category ?? "recurring",
         note: payment.note ? `${payment.name} • ${payment.note}` : `נוצר מתשלום עתידי: ${payment.name}`,
+        paidFor: payment.paidFor,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -415,12 +451,14 @@ export default function CashflowPlanner() {
       <AddUpcomingSheet
         open={showAddUpcoming}
         currency={data.settings.currency}
+        savedPayees={data.settings.savedPayees}
         onClose={() => setShowAddUpcoming(false)}
         onSave={handleSaveUpcoming}
       />
       <AddUpcomingSheet
         open={Boolean(editingUpcoming)}
         currency={data.settings.currency}
+        savedPayees={data.settings.savedPayees}
         initialPayment={editingUpcoming}
         onClose={() => setEditingUpcoming(null)}
         onSave={handleSaveUpcoming}
