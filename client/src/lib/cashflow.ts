@@ -106,6 +106,7 @@ export interface UpcomingPayment {
   note?: string;
   status: UpcomingPaymentStatus;
   recurringMonthly: boolean;
+  scheduledMonths?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -130,6 +131,7 @@ export interface CashflowSettings {
   monthlyBaselineExpenses?: number;
   monthlyBaselineIncome?: number;
   cashWarningThreshold?: number;
+  savedPayees?: string[];
 }
 
 export interface CashflowDateFilter {
@@ -287,6 +289,7 @@ export function createEmptyCashflowData(): CashflowData {
     settings: {
       currency: "ILS",
       balanceMode: "split",
+      savedPayees: [],
     },
     transactions: [],
     upcomingPayments: [],
@@ -337,6 +340,9 @@ function sanitizeUpcomingPayment(raw: unknown): UpcomingPayment | null {
     note: typeof source.note === "string" && source.note.trim() ? source.note.trim() : undefined,
     status: source.status === "paid" ? "paid" : "pending",
     recurringMonthly: Boolean(source.recurringMonthly ?? source.recurrence === "monthly"),
+    scheduledMonths: Array.isArray(source.scheduledMonths)
+      ? source.scheduledMonths.filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+      : undefined,
     createdAt: typeof source.createdAt === "string" && source.createdAt ? source.createdAt : nowIso(),
     updatedAt: typeof source.updatedAt === "string" && source.updatedAt ? source.updatedAt : nowIso(),
   };
@@ -395,6 +401,9 @@ function sanitizeSettings(raw: unknown): CashflowSettings {
       source.cashWarningThreshold !== undefined || source.cashflowWarningThreshold !== undefined
         ? clampMoney(source.cashWarningThreshold ?? source.cashflowWarningThreshold)
         : undefined,
+    savedPayees: Array.isArray(source.savedPayees)
+      ? source.savedPayees.filter((value): value is string => typeof value === "string" && value.trim().length > 0).map((value) => value.trim())
+      : [],
   };
 }
 
@@ -419,9 +428,16 @@ export function sanitizeCashflowData(raw: unknown): CashflowData {
   const partners = Array.isArray(source.partners)
     ? source.partners.map((partner) => sanitizePartner(partner, partnerCount)).filter(Boolean) as CashflowPartner[]
     : [];
+  const settings = sanitizeSettings(source.settings);
+  const derivedPayees = Array.from(
+    new Set([...(transactions.map((transaction) => transaction.paidFor).filter(Boolean) as string[]), ...(settings.savedPayees ?? [])]),
+  );
 
   return {
-    settings: sanitizeSettings(source.settings),
+    settings: {
+      ...settings,
+      savedPayees: derivedPayees,
+    },
     transactions: transactions.sort((a, b) => b.date.localeCompare(a.date) || b.updatedAt.localeCompare(a.updatedAt)),
     upcomingPayments: upcomingPayments.sort((a, b) => a.dueDate.localeCompare(b.dueDate) || b.updatedAt.localeCompare(a.updatedAt)),
     partners: normalizePartners(partners),

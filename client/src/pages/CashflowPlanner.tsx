@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "wouter";
 import { AnimatePresence, motion } from "framer-motion";
-import { BarChart3, CalendarClock, Home, ListOrdered, Settings, TrendingUp, Users } from "lucide-react";
+import { ArrowLeft, BarChart3, CalendarClock, Home, ListOrdered, Settings, TrendingUp, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CashflowOverview } from "@/components/cashflow/CashflowOverview";
@@ -163,8 +164,16 @@ export default function CashflowPlanner() {
   function handleSaveTransaction(transaction: CashflowTransaction) {
     updateData((previous) => {
       const exists = previous.transactions.some((item) => item.id === transaction.id);
+      const nextPayees =
+        transaction.type === "expense" && transaction.paidFor?.trim()
+          ? Array.from(new Set([...(previous.settings.savedPayees ?? []), transaction.paidFor.trim()]))
+          : previous.settings.savedPayees ?? [];
       return {
         ...previous,
+        settings: {
+          ...previous.settings,
+          savedPayees: nextPayees,
+        },
         transactions: exists
           ? previous.transactions.map((item) => (item.id === transaction.id ? transaction : item))
           : [transaction, ...previous.transactions],
@@ -208,8 +217,7 @@ export default function CashflowPlanner() {
         amount: payment.amount,
         date: payment.dueDate,
         category: "recurring",
-        note: payment.note ? `${payment.name} • ${payment.note}` : payment.name,
-        paidFor: payment.id,
+        note: payment.note ? `${payment.name} • ${payment.note}` : `נוצר מתשלום עתידי: ${payment.name}`,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -287,6 +295,11 @@ export default function CashflowPlanner() {
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
+            <Link href="/">
+              <button className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted/60 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+            </Link>
           </div>
         </div>
       </nav>
@@ -377,6 +390,7 @@ export default function CashflowPlanner() {
         open={showAddIncome}
         type="income"
         currency={data.settings.currency}
+        savedPayees={data.settings.savedPayees}
         defaultCategory="daily_sales"
         onClose={() => setShowAddIncome(false)}
         onSave={handleSaveTransaction}
@@ -385,6 +399,7 @@ export default function CashflowPlanner() {
         open={showAddExpense}
         type="expense"
         currency={data.settings.currency}
+        savedPayees={data.settings.savedPayees}
         onClose={() => setShowAddExpense(false)}
         onSave={handleSaveTransaction}
       />
@@ -392,6 +407,7 @@ export default function CashflowPlanner() {
         open={Boolean(editingTransaction)}
         type={editingTransaction?.type ?? "income"}
         currency={data.settings.currency}
+        savedPayees={data.settings.savedPayees}
         initialTransaction={editingTransaction}
         onClose={() => setEditingTransaction(null)}
         onSave={handleSaveTransaction}

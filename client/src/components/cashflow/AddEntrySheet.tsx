@@ -33,6 +33,7 @@ interface AddEntrySheetProps {
   open: boolean;
   type: TransactionType;
   currency: CashflowCurrency;
+  savedPayees?: string[];
   onClose: () => void;
   onSave: (transaction: CashflowTransaction) => void;
   initialTransaction?: CashflowTransaction | null;
@@ -82,6 +83,7 @@ export function AddEntrySheet({
   open,
   type,
   currency,
+  savedPayees = [],
   onClose,
   onSave,
   initialTransaction,
@@ -99,6 +101,7 @@ export function AddEntrySheet({
     (defaultCategory as IncomeCategory | ExpenseCategory) ?? (isIncome ? "daily_sales" : "suppliers"),
   );
   const [note, setNote] = useState("");
+  const [paidFor, setPaidFor] = useState("");
   const [showNote, setShowNote] = useState(false);
   const [showAttachment, setShowAttachment] = useState(false);
   const [attachmentId, setAttachmentId] = useState<string | undefined>(undefined);
@@ -120,6 +123,7 @@ export function AddEntrySheet({
         (isIncome ? "daily_sales" : "suppliers"),
     );
     setNote(initialTransaction?.note ?? "");
+    setPaidFor(initialTransaction?.paidFor ?? "");
     setShowNote(Boolean(initialTransaction?.note));
     setShowAttachment(Boolean(initialTransaction?.attachmentId));
     setAttachmentId(initialTransaction?.attachmentId);
@@ -167,8 +171,8 @@ export function AddEntrySheet({
       date,
       category,
       note: note.trim() || undefined,
+      paidFor: !isIncome && paidFor.trim() ? paidFor.trim() : undefined,
       attachmentId,
-      paidFor: initialTransaction?.paidFor,
       createdAt: initialTransaction?.createdAt ?? timestamp,
       updatedAt: timestamp,
     });
@@ -210,6 +214,27 @@ export function AddEntrySheet({
             {formatCashflowAmount(parsedAmount, currency)}
           </p>
         )}
+
+        {!isIncome ? (
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-muted-foreground">למי שולם</label>
+            <Input
+              list="cashflow-payees"
+              value={paidFor}
+              onChange={(event) => {
+                setPaidFor(event.target.value);
+                setError("");
+              }}
+              placeholder="בחר או כתוב למי שולם"
+              className="h-12 rounded-[calc(var(--radius)+0.25rem)] border-border/60 bg-muted/40 text-right focus:border-primary/50"
+            />
+            <datalist id="cashflow-payees">
+              {savedPayees.map((payee) => (
+                <option key={payee} value={payee} />
+              ))}
+            </datalist>
+          </div>
+        ) : null}
 
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-muted-foreground">תאריך</label>
@@ -353,12 +378,11 @@ export function AddUpcomingSheet({
 }: AddUpcomingSheetProps) {
   const isEditing = Boolean(initialPayment);
   const [category, setCategory] = useState<(typeof UPCOMING_PAYMENT_CATEGORIES)[number]["value"]>("recurring");
-  const [name, setName] = useState("");
   const [amountStr, setAmountStr] = useState("");
   const [dueDate, setDueDate] = useState(getTodayKey());
   const [recurringMonthly, setRecurringMonthly] = useState(false);
+  const [scheduledMonths, setScheduledMonths] = useState<string[]>([]);
   const [note, setNote] = useState("");
-  const [showCustomName, setShowCustomName] = useState(false);
   const [showNote, setShowNote] = useState(false);
   const [error, setError] = useState("");
 
@@ -367,38 +391,46 @@ export function AddUpcomingSheet({
 
     const nextWeek = new Date();
     nextWeek.setDate(nextWeek.getDate() + 7);
-    setName(initialPayment?.name ?? "");
     setCategory(initialPayment?.category ?? "recurring");
     setAmountStr(initialPayment ? String(initialPayment.amount) : "");
     setDueDate(initialPayment?.dueDate ?? nextWeek.toISOString().split("T")[0]);
     setRecurringMonthly(initialPayment?.recurringMonthly ?? false);
+    setScheduledMonths(initialPayment?.scheduledMonths ?? []);
     setNote(initialPayment?.note ?? "");
-    setShowCustomName(Boolean(initialPayment?.name && initialPayment?.category));
     setShowNote(Boolean(initialPayment?.note));
     setError("");
   }, [initialPayment, open]);
 
   const parsedAmount = Number.parseFloat(amountStr.replace(/,/g, "")) || 0;
   const selectedCategory = UPCOMING_PAYMENT_CATEGORIES.find((item) => item.value === category) ?? UPCOMING_PAYMENT_CATEGORIES[0];
-  const resolvedName = name.trim() || selectedCategory.label;
-  const isValid = resolvedName.length > 0 && parsedAmount > 0 && Boolean(dueDate);
+  const monthOptions = useMemo(() => {
+    const start = dueDate ? new Date(`${dueDate}T12:00:00`) : new Date();
+    return Array.from({ length: 12 }, (_, index) => {
+      const current = new Date(start.getFullYear(), start.getMonth() + index, 1);
+      const value = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, "0")}`;
+      const label = current.toLocaleDateString("he-IL", { month: "long", year: "numeric" });
+      return { value, label };
+    });
+  }, [dueDate]);
+  const isValid = parsedAmount > 0 && Boolean(dueDate) && (!recurringMonthly || scheduledMonths.length > 0);
 
   function handleSave() {
     if (!isValid) {
-      setError("נא למלא שם, סכום ותאריך");
+      setError(recurringMonthly && scheduledMonths.length === 0 ? "נא לבחור חודשים לתשלום החוזר" : "נא למלא סכום ותאריך");
       return;
     }
 
     const timestamp = new Date().toISOString();
     onSave({
       id: initialPayment?.id ?? generateId(),
-      name: resolvedName,
+      name: selectedCategory.label,
       category,
       amount: parsedAmount,
       dueDate,
       note: note.trim() || undefined,
       status: initialPayment?.status ?? "pending",
       recurringMonthly,
+      scheduledMonths: recurringMonthly ? scheduledMonths : undefined,
       createdAt: initialPayment?.createdAt ?? timestamp,
       updatedAt: timestamp,
     });
@@ -482,7 +514,15 @@ export function AddUpcomingSheet({
                 <button
                   key={String(option.value)}
                   type="button"
-                  onClick={() => setRecurringMonthly(option.value)}
+                  onClick={() => {
+                    setRecurringMonthly(option.value);
+                    if (option.value && scheduledMonths.length === 0) {
+                      setScheduledMonths(monthOptions.slice(0, 3).map((item) => item.value));
+                    }
+                    if (!option.value) {
+                      setScheduledMonths([]);
+                    }
+                  }}
                   className={cn(
                     "rounded-[calc(var(--radius)+0.375rem)] border px-4 py-3 text-sm font-semibold transition-all",
                     selected
@@ -497,18 +537,33 @@ export function AddUpcomingSheet({
           </div>
         </div>
 
-        {showCustomName ? (
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground">שם התשלום</label>
-            <Input
-              placeholder={`ברירת מחדל: ${selectedCategory.label}`}
-              value={name}
-              onChange={(event) => {
-                setName(event.target.value);
-                setError("");
-              }}
-              className="h-12 rounded-[calc(var(--radius)+0.25rem)] border-border/60 bg-muted/40 text-right focus:border-primary/50"
-            />
+        {recurringMonthly ? (
+          <div className="space-y-2.5">
+            <label className="text-xs font-semibold text-muted-foreground">באילו חודשים להציג את התשלום?</label>
+            <div className="flex flex-wrap gap-2">
+              {monthOptions.map((option) => {
+                const selected = scheduledMonths.includes(option.value);
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() =>
+                      setScheduledMonths((current) =>
+                        current.includes(option.value) ? current.filter((value) => value !== option.value) : [...current, option.value],
+                      )
+                    }
+                    className={cn(
+                      "rounded-full border px-3 py-1.5 text-xs font-semibold transition-all",
+                      selected
+                        ? "border-amber-500/50 bg-amber-500/[0.15] text-amber-700 ring-1 ring-amber-500/30 dark:text-amber-200"
+                        : "border-border/50 bg-muted/30 text-muted-foreground hover:bg-muted/60",
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         ) : null}
 
@@ -525,16 +580,6 @@ export function AddUpcomingSheet({
         ) : null}
 
         <div className="flex items-center justify-start gap-3">
-          {!showCustomName ? (
-            <button
-              type="button"
-              onClick={() => setShowCustomName(true)}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <ChevronDown className="h-3.5 w-3.5" />
-              הוסף שם מותאם
-            </button>
-          ) : null}
           {!showNote ? (
             <button
               type="button"

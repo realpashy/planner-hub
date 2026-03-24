@@ -99,6 +99,17 @@ function PaymentCard({
                 <span>{formatHebrewDate(payment.dueDate)}</span>
                 <span>{categoryMeta.label}</span>
               </div>
+              {payment.recurringMonthly && payment.scheduledMonths?.length ? (
+                <p className="pt-1 text-xs text-muted-foreground">
+                  חודשים נבחרים:{" "}
+                  {payment.scheduledMonths
+                    .map((value) => {
+                      const [year, month] = value.split("-").map(Number);
+                      return new Date(year, (month || 1) - 1, 1).toLocaleDateString("he-IL", { month: "long", year: "numeric" });
+                    })
+                    .join(" • ")}
+                </p>
+              ) : null}
               {payment.note ? <p className="pt-1 text-xs text-muted-foreground">{payment.note}</p> : null}
             </div>
 

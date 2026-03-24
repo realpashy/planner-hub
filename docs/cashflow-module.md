@@ -59,6 +59,7 @@ Required fields:
 - `note?`
 - `status`: `pending | paid`
 - `recurringMonthly`
+- `scheduledMonths?`
 - `createdAt`
 - `updatedAt`
 
@@ -82,6 +83,7 @@ Required fields:
 - `monthlyBaselineIncome?`
 - `cashWarningThreshold?`
 - `balanceMode`: `split | overall`
+- `savedPayees?`
 
 ## Settings precedence
 
@@ -173,6 +175,7 @@ They do **not** create fake transactions.
 - name is required after category/default-name resolution
 - amount must be positive
 - due date is required
+- when `recurringMonthly` is enabled, at least one target month must be selected
 
 ### Partners
 

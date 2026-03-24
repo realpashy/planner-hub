@@ -98,6 +98,7 @@ function TransactionRow({
           <span className="text-sm font-semibold leading-tight">{getCategoryLabel(transaction)}</span>
           {transaction.attachmentId ? <Paperclip className="h-3.5 w-3.5 shrink-0 text-muted-foreground" /> : null}
         </div>
+        {transaction.paidFor ? <p className="mt-1 text-xs font-medium text-foreground/85">למי שולם: {transaction.paidFor}</p> : null}
         {transaction.note ? <p className="mt-1 text-xs text-muted-foreground">{transaction.note}</p> : null}
       </div>
 
@@ -138,6 +139,12 @@ export function CashflowTransactions({
   const [tab, setTab] = useState<FilterTab>("all");
   const [search, setSearch] = useState("");
   const [dateFilter, setDateFilter] = useState<CashflowDateFilter>({});
+  const [payeeFilter, setPayeeFilter] = useState("all");
+
+  const payeeOptions = useMemo(
+    () => Array.from(new Set((data.settings.savedPayees ?? []).filter((value) => value.trim().length > 0))),
+    [data.settings.savedPayees],
+  );
 
   const filtered = useMemo(() => {
     let transactions = data.transactions;
@@ -146,17 +153,21 @@ export function CashflowTransactions({
     if (tab === "expense") transactions = transactions.filter((transaction) => transaction.type === "expense");
 
     transactions = filterByDateRange(transactions, dateFilter);
+    if (payeeFilter !== "all") {
+      transactions = transactions.filter((transaction) => transaction.paidFor === payeeFilter);
+    }
     const query = search.trim().toLowerCase();
     if (!query) return transactions;
 
     return transactions.filter((transaction) => {
       const category = getCategoryLabel(transaction).toLowerCase();
       const note = (transaction.note ?? "").toLowerCase();
+      const paidFor = (transaction.paidFor ?? "").toLowerCase();
       const amount = String(transaction.amount);
       const dateText = formatHebrewDate(transaction.date).toLowerCase();
-      return category.includes(query) || note.includes(query) || amount.includes(query) || dateText.includes(query);
+      return category.includes(query) || note.includes(query) || paidFor.includes(query) || amount.includes(query) || dateText.includes(query);
     });
-  }, [data.transactions, dateFilter, search, tab]);
+  }, [data.transactions, dateFilter, payeeFilter, search, tab]);
 
   const grouped = useMemo(() => groupByDate(filtered), [filtered]);
   const totals = useMemo(() => {
@@ -194,6 +205,41 @@ export function CashflowTransactions({
       </div>
 
       <CashflowDateRangeFilter from={dateFilter.from} to={dateFilter.to} onChange={setDateFilter} />
+
+      {payeeOptions.length > 0 ? (
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-muted-foreground">סינון לפי למי שולם</label>
+          <select
+            value={payeeFilter}
+            onChange={(event) => setPayeeFilter(event.target.value)}
+            className="meal-input modern-select h-12 w-full rounded-[calc(var(--radius)+0.375rem)] border-border/60 bg-muted/40 text-right"
+          >
+            <option value="all">כל היעדים</option>
+            {payeeOptions.map((payee) => (
+              <option key={payee} value={payee}>
+                {payee}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : null}
+
+      <div className="grid grid-cols-2 gap-2.5">
+        <button
+          type="button"
+          onClick={onAddIncome}
+          className="rounded-[calc(var(--radius)+0.375rem)] border border-emerald-500/25 bg-emerald-500/[0.1] px-4 py-2.5 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-500/20 dark:text-emerald-300"
+        >
+          הוסף הכנסה
+        </button>
+        <button
+          type="button"
+          onClick={onAddExpense}
+          className="rounded-[calc(var(--radius)+0.375rem)] border border-rose-500/25 bg-rose-500/[0.1] px-4 py-2.5 text-sm font-semibold text-rose-700 transition-colors hover:bg-rose-500/20 dark:text-rose-300"
+        >
+          הוסף הוצאה
+        </button>
+      </div>
 
       {filtered.length > 0 ? (
         <div className="grid grid-cols-2 gap-2.5">
