@@ -181,6 +181,13 @@ Do not make every surface the same charcoal block.
 - in light theme, icon chips and key small-status chips may use the primary green background with black foreground when that improves scanability
 - note surfaces such as helper reminders use the same `5px` radius, no visible border, smaller muted text, and a leading water-drop emoji marker instead of a heavy icon treatment
 
+## Dropdowns and searchable selects
+
+- Planner Hub should not use visible native browser `select` styling on product screens
+- fixed-option dropdowns use the shared `ui/select.tsx` primitive with the same border, shadow, radius, and RTL text alignment as other form controls
+- reusable typed values such as suppliers, payees, and similar saved labels should use a searchable/taggable dropdown pattern instead of raw `datalist`
+- dropdown labels and trigger text remain right-aligned in RTL, while disclosure icons stay visually secondary
+
 ## Icon system
 
 - use `lucide-react` for app structure

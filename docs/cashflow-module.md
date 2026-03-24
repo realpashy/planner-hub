@@ -49,6 +49,8 @@ Required fields:
 - date
 - category
 
+Editing an existing income or expense includes a destructive delete action with explicit confirmation.
+
 ### Upcoming payments
 
 - `id`
@@ -65,6 +67,7 @@ Required fields:
 
 When a user creates a recurring monthly payment and selects multiple months, the module saves it as separate upcoming payment items.
 Each item keeps the same chosen day-of-month where possible, so one selected setup can be tracked and marked separately month by month.
+Editing an existing upcoming payment also includes a destructive delete action with explicit confirmation, and it removes only the currently edited payment item.
 
 ### Partners
 
@@ -87,6 +90,8 @@ Each item keeps the same chosen day-of-month where possible, so one selected set
 - `cashWarningThreshold?`
 - `balanceMode`: `split | overall`
 - `savedPayees?`
+
+Saved payees are reused across expense entry, upcoming payments, and payee filters through a shared searchable/taggable dropdown pattern.
 
 ## Settings precedence
 

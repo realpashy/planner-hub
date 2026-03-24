@@ -13,6 +13,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { SearchableTagSelect } from "@/components/ui/searchable-tag-select";
 import { cn } from "@/lib/utils";
 import { CalendarClock, Check, Pencil, Plus, Search } from "lucide-react";
 import {
@@ -220,18 +221,14 @@ export function CashflowUpcoming({ data, onAddUpcoming, onEditUpcoming, onMarkPa
       {savedPayees.length > 0 ? (
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-muted-foreground">סינון לפי למי שולם</label>
-          <select
-            value={payeeFilter}
-            onChange={(event) => setPayeeFilter(event.target.value)}
-            className="meal-input modern-select h-12 w-full rounded-[calc(var(--radius)+0.25rem)] border-border/60 bg-muted/40 text-right"
-          >
-            <option value="all">כל הספקים / הגורמים</option>
-            {savedPayees.map((payee) => (
-              <option key={payee} value={payee}>
-                {payee}
-              </option>
-            ))}
-          </select>
+          <SearchableTagSelect
+            value={payeeFilter === "all" ? "" : payeeFilter}
+            onChange={(nextValue) => setPayeeFilter(nextValue || "all")}
+            options={savedPayees}
+            placeholder="כל הספקים / הגורמים"
+            searchPlaceholder="חיפוש לפי למי שולם"
+            clearLabel="כל הספקים / הגורמים"
+          />
         </div>
       ) : null}
 

@@ -192,6 +192,14 @@ export default function CashflowPlanner() {
     setEditingTransaction(null);
   }
 
+  function handleDeleteTransaction(transactionId: string) {
+    updateData((previous) => ({
+      ...previous,
+      transactions: previous.transactions.filter((item) => item.id !== transactionId),
+    }));
+    setEditingTransaction(null);
+  }
+
   function handleSaveUpcoming(payment: UpcomingPayment) {
     updateData((previous) => {
       const exists = previous.upcomingPayments.some((item) => item.id === payment.id);
@@ -227,6 +235,14 @@ export default function CashflowPlanner() {
         upcomingPayments: nextPayments,
       };
     });
+    setEditingUpcoming(null);
+  }
+
+  function handleDeleteUpcoming(paymentId: string) {
+    updateData((previous) => ({
+      ...previous,
+      upcomingPayments: previous.upcomingPayments.filter((item) => item.id !== paymentId),
+    }));
     setEditingUpcoming(null);
   }
 
@@ -447,6 +463,7 @@ export default function CashflowPlanner() {
         initialTransaction={editingTransaction}
         onClose={() => setEditingTransaction(null)}
         onSave={handleSaveTransaction}
+        onDelete={handleDeleteTransaction}
       />
       <AddUpcomingSheet
         open={showAddUpcoming}
@@ -462,6 +479,7 @@ export default function CashflowPlanner() {
         initialPayment={editingUpcoming}
         onClose={() => setEditingUpcoming(null)}
         onSave={handleSaveUpcoming}
+        onDelete={handleDeleteUpcoming}
       />
       <UpdateBalanceSheet
         open={showUpdateBalance}

@@ -33,6 +33,7 @@ For rows with a title block and secondary content:
 - close buttons belong where the drawer/modal convention defines them, not wherever the default component puts them
 - icon + text buttons must be visually checked in Arabic
 - when a section label or filter title includes an icon, the icon belongs on the right before the text and both must stay right-aligned as one content cluster
+- searchable dropdown triggers and fixed-option dropdown triggers follow the same RTL rule: value text anchors right, supporting iconography stays secondary, and native browser dropdown chrome should not leak into visible product UI
 - chevrons, expand icons, and disclosure icons must be manually verified row by row
 
 ### Dialogs and drawers

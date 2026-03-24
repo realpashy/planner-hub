@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import {
@@ -95,6 +96,8 @@ const SECTION_ACTION_OPTIONS: Array<{ value: CashflowImportApplyActions[keyof Ca
   { value: "skip", label: "דלג" },
 ];
 
+const EMPTY_SELECT_VALUE = "__empty__";
+
 type DuplicateMode = "skip" | "import";
 
 interface CashflowImportDialogProps {
@@ -102,6 +105,35 @@ interface CashflowImportDialogProps {
   data: CashflowData;
   onClose: () => void;
   onApply: (nextData: CashflowData) => void;
+}
+
+function ImportSelect({
+  value,
+  onChange,
+  options,
+  className,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  options: Array<{ value: string; label: string }>;
+  className?: string;
+}) {
+  const normalizedValue = value === "" ? EMPTY_SELECT_VALUE : value;
+
+  return (
+    <Select value={normalizedValue} onValueChange={(nextValue) => onChange(nextValue === EMPTY_SELECT_VALUE ? "" : nextValue)}>
+      <SelectTrigger className={cn("h-12", className)}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent dir="rtl">
+        {options.map((option) => (
+          <SelectItem key={`${option.value || "empty"}-${option.label}`} value={option.value === "" ? EMPTY_SELECT_VALUE : option.value}>
+            {option.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
 }
 
 function showImportToast(title: string, description: string, tone: "success" | "error" = "success") {
@@ -397,75 +429,66 @@ export function CashflowImportDialog({ open, data, onClose, onApply }: CashflowI
                           <div className="grid gap-3 md:grid-cols-3">
                             <div className="space-y-1.5 text-right">
                               <label className="text-xs font-semibold text-muted-foreground">סוג אזור</label>
-                              <select
+                              <ImportSelect
                                 value={draft?.blockType ?? "unknown"}
-                                onChange={(event) =>
+                                onChange={(nextValue) =>
                                   setDrafts((current) => ({
                                     ...current,
                                     [block.id]: {
                                       ...current[block.id],
-                                      blockType: event.target.value as CashflowImportBlockType,
-                                      mapping: inferCashflowFieldMapping(block.columns, event.target.value as CashflowImportBlockType),
+                                      blockType: nextValue as CashflowImportBlockType,
+                                      mapping: inferCashflowFieldMapping(block.columns, nextValue as CashflowImportBlockType),
                                     },
                                   }))
                                 }
-                                className="meal-input modern-select w-full"
-                              >
-                                {BLOCK_TYPE_OPTIONS.map((option) => (
-                                  <option key={option.value} value={option.value}>
-                                    {option.label}
-                                  </option>
-                                ))}
-                              </select>
+                                options={BLOCK_TYPE_OPTIONS}
+                              />
                             </div>
 
                             <div className="space-y-1.5 text-right">
                               <label className="text-xs font-semibold text-muted-foreground">שורת כותרת</label>
-                              <select
+                              <ImportSelect
                                 value={String(draft?.headerRowOffset ?? 0)}
-                                onChange={(event) =>
+                                onChange={(nextValue) =>
                                   setDrafts((current) => ({
                                     ...current,
                                     [block.id]: {
                                       ...current[block.id],
-                                      headerRowOffset: Number(event.target.value),
+                                      headerRowOffset: Number(nextValue),
                                       mapping: inferCashflowFieldMapping(
-                                        block.preview[Number(event.target.value)]?.map((value, index) => value || `עמודה ${index + 1}`) ?? block.columns,
+                                        block.preview[Number(nextValue)]?.map((value, index) => value || `עמודה ${index + 1}`) ?? block.columns,
                                         current[block.id]?.blockType ?? "unknown",
                                       ),
                                     },
                                   }))
                                 }
-                                className="meal-input modern-select w-full"
-                              >
-                                {block.previewRowNumbers.map((rowNumber, index) => (
-                                  <option key={`${block.id}-header-${rowNumber}`} value={index}>
-                                    שורה {rowNumber}
-                                  </option>
-                                ))}
-                              </select>
+                                options={block.previewRowNumbers.map((rowNumber, index) => ({
+                                  value: String(index),
+                                  label: `שורה ${rowNumber}`,
+                                }))}
+                              />
                             </div>
 
                             {draft?.blockType === "transactions" ? (
                               <div className="space-y-1.5 text-right">
                                 <label className="text-xs font-semibold text-muted-foreground">סוג תנועה בקבוצה</label>
-                                <select
+                                <ImportSelect
                                   value={draft.transactionMode}
-                                  onChange={(event) =>
+                                  onChange={(nextValue) =>
                                     setDrafts((current) => ({
                                       ...current,
                                       [block.id]: {
                                         ...current[block.id],
-                                        transactionMode: event.target.value as "mixed" | "income" | "expense",
+                                        transactionMode: nextValue as "mixed" | "income" | "expense",
                                       },
                                     }))
                                   }
-                                  className="meal-input modern-select w-full"
-                                >
-                                  <option value="mixed">מעורב / לפי הקובץ</option>
-                                  <option value="income">כל השורות הן הכנסה</option>
-                                  <option value="expense">כל השורות הן הוצאה</option>
-                                </select>
+                                  options={[
+                                    { value: "mixed", label: "מעורב / לפי הקובץ" },
+                                    { value: "income", label: "כל השורות הן הכנסה" },
+                                    { value: "expense", label: "כל השורות הן הוצאה" },
+                                  ]}
+                                />
                               </div>
                             ) : (
                               <div />
@@ -477,28 +500,22 @@ export function CashflowImportDialog({ open, data, onClose, onApply }: CashflowI
                               {block.columns.map((column) => (
                                 <div key={`${block.id}-${column}`} className="space-y-1.5 text-right">
                                   <label className="truncate text-xs font-semibold text-muted-foreground">{column}</label>
-                                  <select
+                                  <ImportSelect
                                     value={draft.mapping[column] ?? ""}
-                                    onChange={(event) =>
+                                    onChange={(nextValue) =>
                                       setDrafts((current) => ({
                                         ...current,
                                         [block.id]: {
                                           ...current[block.id],
                                           mapping: {
                                             ...current[block.id].mapping,
-                                            [column]: event.target.value,
+                                            [column]: nextValue,
                                           },
                                         },
                                       }))
                                     }
-                                    className="meal-input modern-select w-full"
-                                  >
-                                    {options.map((option) => (
-                                      <option key={`${block.id}-${column}-${option.value || "ignore"}`} value={option.value}>
-                                        {option.label}
-                                      </option>
-                                    ))}
-                                  </select>
+                                    options={options}
+                                  />
                                 </div>
                               ))}
                             </div>
@@ -582,22 +599,16 @@ export function CashflowImportDialog({ open, data, onClose, onApply }: CashflowI
                         ].map((item) => (
                           <div key={item.key} className="space-y-1.5 text-right">
                             <label className="text-xs font-semibold text-muted-foreground">{item.label}</label>
-                            <select
+                            <ImportSelect
                               value={actions[item.key as keyof CashflowImportApplyActions]}
-                              onChange={(event) =>
+                              onChange={(nextValue) =>
                                 setActions((current) => ({
                                   ...current,
-                                  [item.key]: event.target.value as CashflowImportApplyActions[keyof CashflowImportApplyActions],
+                                  [item.key]: nextValue as CashflowImportApplyActions[keyof CashflowImportApplyActions],
                                 }))
                               }
-                              className="meal-input modern-select w-full"
-                            >
-                              {SECTION_ACTION_OPTIONS.map((option) => (
-                                <option key={`${item.key}-${option.value}`} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
+                              options={SECTION_ACTION_OPTIONS}
+                            />
                           </div>
                         ))}
                       </div>

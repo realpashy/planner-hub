@@ -216,17 +216,11 @@ function PartnerCard({
           </div>
         </div>
 
-        <div className="space-y-1">
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>אחוז בעלות</span>
-            <span>{formatOwnershipPercent(partner.ownershipPercent)}</span>
+        <div className="grid gap-2 sm:grid-cols-3">
+          <div className="surface-subtle rounded-[calc(var(--radius)+0.25rem)] p-2.5 text-right">
+            <p className="text-[10px] font-semibold text-muted-foreground">אחוז בעלות</p>
+            <p className="cashflow-number mt-1 text-sm font-black text-primary">{formatOwnershipPercent(partner.ownershipPercent)}</p>
           </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-            <div className={cn("h-full rounded-full transition-all duration-500", color.bg)} style={{ width: `${partner.ownershipPercent}%` }} />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
           <div className="surface-subtle rounded-[calc(var(--radius)+0.25rem)] p-2.5 text-right">
             <p className="text-[10px] font-semibold text-muted-foreground">השקעה בפועל</p>
             <p className="cashflow-number mt-1 text-sm font-black">{formatCashflowAmount(partner.investedAmount, currency)}</p>

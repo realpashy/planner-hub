@@ -1,9 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { Check, ChevronDown, FileText, Loader2, Paperclip } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableTagSelect } from "@/components/ui/searchable-tag-select";
 import { cn } from "@/lib/utils";
 import {
   type CashflowCurrency,
@@ -36,6 +48,7 @@ interface AddEntrySheetProps {
   savedPayees?: string[];
   onClose: () => void;
   onSave: (transaction: CashflowTransaction) => void;
+  onDelete?: (transactionId: string) => void;
   initialTransaction?: CashflowTransaction | null;
   defaultCategory?: IncomeCategory | ExpenseCategory;
 }
@@ -46,6 +59,7 @@ interface AddUpcomingSheetProps {
   savedPayees?: string[];
   onClose: () => void;
   onSave: (payment: UpcomingPayment) => void;
+  onDelete?: (paymentId: string) => void;
   initialPayment?: UpcomingPayment | null;
 }
 
@@ -87,6 +101,7 @@ export function AddEntrySheet({
   savedPayees = [],
   onClose,
   onSave,
+  onDelete,
   initialTransaction,
   defaultCategory,
 }: AddEntrySheetProps) {
@@ -109,6 +124,7 @@ export function AddEntrySheet({
   const [attachmentName, setAttachmentName] = useState("");
   const [uploadingAttachment, setUploadingAttachment] = useState(false);
   const [error, setError] = useState("");
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const parsedAmount = Number.parseFloat(amountStr.replace(/,/g, "")) || 0;
   const isValid = parsedAmount > 0 && Boolean(category) && Boolean(date);
@@ -219,21 +235,18 @@ export function AddEntrySheet({
         {!isIncome ? (
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground">למי שולם</label>
-            <Input
-              list="cashflow-payees"
+            <SearchableTagSelect
               value={paidFor}
-              onChange={(event) => {
-                setPaidFor(event.target.value);
+              onChange={(nextValue) => {
+                setPaidFor(nextValue);
                 setError("");
               }}
               placeholder="בחר או כתוב למי שולם"
-              className="h-12 rounded-[calc(var(--radius)+0.25rem)] border-border/60 bg-muted/40 text-right focus:border-primary/50"
+              searchPlaceholder="חיפוש או כתיבה של למי שולם"
+              className="text-right"
+              options={savedPayees}
+              allowCreate
             />
-            <datalist id="cashflow-payees">
-              {savedPayees.map((payee) => (
-                <option key={payee} value={payee} />
-              ))}
-            </datalist>
           </div>
         ) : null}
 
@@ -270,20 +283,24 @@ export function AddEntrySheet({
               })}
             </div>
           ) : (
-            <select
+            <Select
               value={category}
-              onChange={(event) => {
-                setCategory(event.target.value as ExpenseCategory);
+              onValueChange={(nextValue) => {
+                setCategory(nextValue as ExpenseCategory);
                 setError("");
               }}
-              className="meal-input modern-select h-12 w-full rounded-[calc(var(--radius)+0.25rem)] border-border/60 bg-muted/40 text-right"
             >
-              {EXPENSE_CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>
-                  {icons[cat]} {labels[cat]}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="h-12">
+                <SelectValue placeholder="בחר סוג הוצאה" />
+              </SelectTrigger>
+              <SelectContent dir="rtl">
+                {EXPENSE_CATEGORIES.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {icons[cat]} {labels[cat]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
         </div>
 
@@ -380,7 +397,46 @@ export function AddEntrySheet({
         >
           {isEditing ? "שמור שינויים" : isIncome ? "שמור הכנסה" : "שמור הוצאה"}
         </Button>
+
+        {isEditing && onDelete && initialTransaction ? (
+          <div className="rounded-[calc(var(--radius)+0.375rem)] border border-rose-500/20 bg-rose-500/[0.05] p-3 text-right">
+            <p className="text-xs font-semibold text-rose-700 dark:text-rose-300">מחיקה לצמיתות</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">פעולה זו תמחק רק את הפריט הנוכחי מהתזרים.</p>
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-3 h-11 w-full rounded-[calc(var(--radius)+0.375rem)] border-rose-500/25 bg-rose-500/[0.08] text-rose-700 hover:bg-rose-500/[0.14] dark:text-rose-300"
+              onClick={() => setShowDeleteDialog(true)}
+            >
+              מחק פריט
+            </Button>
+          </div>
+        ) : null}
       </div>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent dir="rtl" className="max-w-md text-right">
+          <AlertDialogHeader className="text-right">
+            <AlertDialogTitle className="text-right">למחוק את הפריט?</AlertDialogTitle>
+            <AlertDialogDescription className="text-right">
+              הפעולה תמחק רק את {isIncome ? "ההכנסה" : "ההוצאה"} הנוכחית ולא ניתן יהיה לשחזר אותה.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="sm:flex-col sm:space-x-0">
+            <AlertDialogAction
+              className="bg-rose-600 text-white hover:bg-rose-700"
+              onClick={() => {
+                if (initialTransaction) onDelete?.(initialTransaction.id)
+                setShowDeleteDialog(false)
+                onClose()
+              }}
+            >
+              מחק
+            </AlertDialogAction>
+            <AlertDialogCancel>ביטול</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SheetShell>
   );
 }
@@ -391,6 +447,7 @@ export function AddUpcomingSheet({
   savedPayees = [],
   onClose,
   onSave,
+  onDelete,
   initialPayment,
 }: AddUpcomingSheetProps) {
   const isEditing = Boolean(initialPayment);
@@ -403,6 +460,7 @@ export function AddUpcomingSheet({
   const [note, setNote] = useState("");
   const [showNote, setShowNote] = useState(false);
   const [error, setError] = useState("");
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -475,20 +533,24 @@ export function AddUpcomingSheet({
       <div className="space-y-5 px-5 pb-8 pt-3">
         <div className="space-y-2.5">
           <label className="text-xs font-semibold text-muted-foreground">קטגוריית תשלום</label>
-          <select
+          <Select
             value={category}
-            onChange={(event) => {
-              setCategory(event.target.value as (typeof UPCOMING_PAYMENT_CATEGORIES)[number]["value"]);
+            onValueChange={(nextValue) => {
+              setCategory(nextValue as (typeof UPCOMING_PAYMENT_CATEGORIES)[number]["value"]);
               setError("");
             }}
-            className="meal-input modern-select h-12 w-full rounded-[calc(var(--radius)+0.25rem)] border-border/60 bg-muted/40 text-right"
           >
-            {UPCOMING_PAYMENT_CATEGORIES.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.icon} {option.label}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="h-12">
+              <SelectValue placeholder="בחר קטגוריית תשלום" />
+            </SelectTrigger>
+            <SelectContent dir="rtl">
+              {UPCOMING_PAYMENT_CATEGORIES.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.icon} {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <CashflowNumericField
@@ -507,21 +569,18 @@ export function AddUpcomingSheet({
 
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-muted-foreground">למי שולם</label>
-          <Input
-            list="cashflow-upcoming-payees"
+          <SearchableTagSelect
             value={paidFor}
-            onChange={(event) => {
-              setPaidFor(event.target.value);
+            onChange={(nextValue) => {
+              setPaidFor(nextValue);
               setError("");
             }}
             placeholder="בחר או כתוב למי שולם"
-            className="h-12 rounded-[calc(var(--radius)+0.25rem)] border-border/60 bg-muted/40 text-right focus:border-primary/50"
+            searchPlaceholder="חיפוש או כתיבה של למי שולם"
+            className="text-right"
+            options={savedPayees}
+            allowCreate
           />
-          <datalist id="cashflow-upcoming-payees">
-            {savedPayees.map((payee) => (
-              <option key={payee} value={payee} />
-            ))}
-          </datalist>
         </div>
 
         <div className="space-y-1.5">
@@ -629,7 +688,46 @@ export function AddUpcomingSheet({
         >
           {isEditing ? "שמור שינויים" : "שמור תשלום"}
         </Button>
+
+        {isEditing && onDelete && initialPayment ? (
+          <div className="rounded-[calc(var(--radius)+0.375rem)] border border-rose-500/20 bg-rose-500/[0.05] p-3 text-right">
+            <p className="text-xs font-semibold text-rose-700 dark:text-rose-300">מחיקת התשלום הנוכחי</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">המחיקה תסיר רק את כרטיס התשלום הנוכחי, גם אם הוא חלק מסדרה חודשית.</p>
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-3 h-11 w-full rounded-[calc(var(--radius)+0.375rem)] border-rose-500/25 bg-rose-500/[0.08] text-rose-700 hover:bg-rose-500/[0.14] dark:text-rose-300"
+              onClick={() => setShowDeleteDialog(true)}
+            >
+              מחק תשלום
+            </Button>
+          </div>
+        ) : null}
       </div>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent dir="rtl" className="max-w-md text-right">
+          <AlertDialogHeader className="text-right">
+            <AlertDialogTitle className="text-right">למחוק את התשלום?</AlertDialogTitle>
+            <AlertDialogDescription className="text-right">
+              הפעולה תמחק רק את כרטיס התשלום העתידי הנוכחי ולא תיגע בכרטיסים אחרים.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="sm:flex-col sm:space-x-0">
+            <AlertDialogAction
+              className="bg-rose-600 text-white hover:bg-rose-700"
+              onClick={() => {
+                if (initialPayment) onDelete?.(initialPayment.id)
+                setShowDeleteDialog(false)
+                onClose()
+              }}
+            >
+              מחק
+            </AlertDialogAction>
+            <AlertDialogCancel>ביטול</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SheetShell>
   );
 }

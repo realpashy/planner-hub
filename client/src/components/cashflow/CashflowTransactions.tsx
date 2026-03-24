@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowDownLeft, ArrowUpRight, Paperclip, Receipt, Search } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { SearchableTagSelect } from "@/components/ui/searchable-tag-select";
 import { cn } from "@/lib/utils";
 import {
   type CashflowDateFilter,
@@ -209,18 +210,14 @@ export function CashflowTransactions({
       {payeeOptions.length > 0 ? (
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-muted-foreground">סינון לפי למי שולם</label>
-          <select
-            value={payeeFilter}
-            onChange={(event) => setPayeeFilter(event.target.value)}
-            className="meal-input modern-select h-12 w-full rounded-[calc(var(--radius)+0.375rem)] border-border/60 bg-muted/40 text-right"
-          >
-            <option value="all">כל היעדים</option>
-            {payeeOptions.map((payee) => (
-              <option key={payee} value={payee}>
-                {payee}
-              </option>
-            ))}
-          </select>
+          <SearchableTagSelect
+            value={payeeFilter === "all" ? "" : payeeFilter}
+            onChange={(nextValue) => setPayeeFilter(nextValue || "all")}
+            options={payeeOptions}
+            placeholder="כל היעדים"
+            searchPlaceholder="חיפוש לפי למי שולם"
+            clearLabel="כל היעדים"
+          />
         </div>
       ) : null}
 

@@ -112,7 +112,7 @@ export function CashflowOverview({
                 <p className={cn("cashflow-number text-4xl font-black leading-none", isLowBalance ? "text-rose-600 dark:text-rose-300" : "text-foreground")}>
                   {formatCashflowAmount(balance, data.settings.currency)}
                 </p>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 pt-1 text-xs text-muted-foreground">
+                <div className="flex w-full flex-wrap justify-end gap-x-3 gap-y-0.5 pt-1 text-xs text-muted-foreground">
                   {data.settings.bankBalance !== undefined ? (
                     <span>בנק: {formatCashflowAmount(data.settings.bankBalance, data.settings.currency)}</span>
                   ) : null}
