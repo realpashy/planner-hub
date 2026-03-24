@@ -248,8 +248,73 @@ export async function configureApiApp(app: Express) {
       plannerData: req.body?.plannerData,
       budgetData: req.body?.budgetData,
       mealData: req.body?.mealData,
+      cashflowData: req.body?.cashflowData,
     });
     return res.json({ ok: true });
+  });
+
+  app.post("/api/cashflow/attachments", async (req, res) => {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
+
+    const fileName = String(req.body?.fileName || "").trim();
+    const mimeType = String(req.body?.mimeType || "").trim();
+    const dataBase64 = String(req.body?.dataBase64 || "").trim();
+    const sizeBytes = Number(req.body?.sizeBytes || 0);
+
+    if (!fileName || !mimeType || !dataBase64) {
+      return res.status(400).json({ message: "חסר קובץ תקין" });
+    }
+
+    if (!/^image\/|^application\/pdf$/.test(mimeType)) {
+      return res.status(400).json({ message: "ניתן לצרף תמונה או PDF בלבד" });
+    }
+
+    if (sizeBytes > 6 * 1024 * 1024) {
+      return res.status(400).json({ message: "הקובץ גדול מדי" });
+    }
+
+    const inserted = await dbPool.query(
+      `INSERT INTO cashflow_attachments (user_id, file_name, mime_type, size_bytes, data_base64, updated_at)
+       VALUES ($1, $2, $3, $4, $5, NOW())
+       RETURNING id, file_name as "fileName", mime_type as "mimeType", size_bytes as "sizeBytes", created_at as "createdAt"`,
+      [userId, fileName, mimeType, sizeBytes, dataBase64],
+    );
+
+    return res.status(201).json(inserted.rows[0]);
+  });
+
+  app.get("/api/cashflow/attachments/:id", async (req, res) => {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
+
+    const result = await dbPool.query(
+      `SELECT id, file_name as "fileName", mime_type as "mimeType", size_bytes as "sizeBytes", data_base64 as "dataBase64"
+       FROM cashflow_attachments
+       WHERE id = $1 AND user_id = $2
+       LIMIT 1`,
+      [req.params.id, userId],
+    );
+
+    if (!result.rowCount) {
+      return res.status(404).json({ message: "הקובץ לא נמצא" });
+    }
+
+    const row = result.rows[0] as {
+      id: string;
+      fileName: string;
+      mimeType: string;
+      sizeBytes: number;
+      dataBase64: string;
+    };
+
+    return res.json({
+      id: row.id,
+      fileName: row.fileName,
+      mimeType: row.mimeType,
+      sizeBytes: row.sizeBytes,
+      dataUrl: `data:${row.mimeType};base64,${row.dataBase64}`,
+    });
   });
 
   app.get("/api/meal/catalog", async (req, res) => {

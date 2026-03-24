@@ -1,51 +1,56 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// CashflowUpcoming — Upcoming payments screen
-// Hebrew-first, mobile-optimised.
-// Filter chips: הכל / השבוע / החודש / שולם / ממתין
-// ─────────────────────────────────────────────────────────────────────────────
-import { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
+import { useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { CalendarClock, Check, Clock, Pencil, Plus, Search } from "lucide-react";
 import {
   type CashflowData,
   type UpcomingPayment,
   formatCashflowAmount,
   formatHebrewDate,
   getDaysUntil,
-  generateId,
 } from "@/lib/cashflow";
-import { CalendarClock, Check, Clock, Plus, RefreshCw, Zap } from "lucide-react";
 
 type FilterKey = "all" | "week" | "month" | "paid" | "pending";
 
-const FILTERS: { key: FilterKey; label: string }[] = [
+const FILTERS: Array<{ key: FilterKey; label: string }> = [
   { key: "all", label: "הכל" },
-  { key: "pending", label: "ממתין" },
   { key: "week", label: "השבוע" },
   { key: "month", label: "החודש" },
   { key: "paid", label: "שולם" },
+  { key: "pending", label: "ממתין" },
 ];
 
-function isWithinDays(isoDate: string, days: number): boolean {
-  const d = getDaysUntil(isoDate);
-  return d >= 0 && d <= days;
+function matchesPeriod(payment: UpcomingPayment, filter: FilterKey) {
+  if (filter === "all") return true;
+  if (filter === "paid") return payment.status === "paid";
+  if (filter === "pending") return payment.status === "pending";
+
+  const daysUntil = getDaysUntil(payment.dueDate);
+  if (payment.status !== "pending") return false;
+  return filter === "week" ? daysUntil >= 0 && daysUntil <= 7 : daysUntil >= 0 && daysUntil <= 30;
 }
 
-interface UpcomingCardProps {
+function PaymentCard({
+  payment,
+  currency,
+  onEdit,
+  onRequestMarkPaid,
+}: {
   payment: UpcomingPayment;
   currency: CashflowData["settings"]["currency"];
-  onMarkPaid: (id: string) => void;
-}
-
-function UpcomingCard({ payment, currency, onMarkPaid }: UpcomingCardProps) {
+  onEdit: (payment: UpcomingPayment) => void;
+  onRequestMarkPaid: (payment: UpcomingPayment) => void;
+}) {
   const daysUntil = getDaysUntil(payment.dueDate);
   const isPaid = payment.status === "paid";
   const isOverdue = daysUntil < 0 && !isPaid;
   const isUrgent = daysUntil >= 0 && daysUntil <= 3 && !isPaid;
 
-  const urgencyColor = isPaid
+  const cardTone = isPaid
     ? "border-emerald-500/20 bg-emerald-500/[0.05] dark:bg-emerald-500/[0.08]"
     : isOverdue
       ? "border-rose-500/30 bg-rose-500/[0.07] dark:bg-rose-500/[0.1]"
@@ -53,71 +58,73 @@ function UpcomingCard({ payment, currency, onMarkPaid }: UpcomingCardProps) {
         ? "border-amber-500/30 bg-amber-500/[0.07] dark:bg-amber-500/[0.1]"
         : "border-border/50 bg-muted/20";
 
+  const badgeTone = isPaid
+    ? "bg-emerald-500/[0.15] text-emerald-700 dark:text-emerald-300"
+    : isOverdue
+      ? "bg-rose-500/[0.15] text-rose-700 dark:text-rose-300"
+      : "bg-amber-500/[0.15] text-amber-700 dark:text-amber-300";
+
   const daysLabel = isPaid
     ? "שולם"
     : daysUntil === 0
-      ? "היום!"
+      ? "היום"
       : isOverdue
         ? `איחור ${Math.abs(daysUntil)} ימים`
         : `בעוד ${daysUntil} ימים`;
 
-  const daysLabelColor = isPaid
-    ? "text-emerald-600 dark:text-emerald-300"
-    : isOverdue
-      ? "text-rose-600 dark:text-rose-300"
-      : isUrgent
-        ? "text-amber-600 dark:text-amber-300"
-        : "text-muted-foreground";
-
   return (
-    <Card className={cn("rounded-[calc(var(--radius)+0.625rem)] border transition-all duration-200", urgencyColor)}>
+    <Card className={cn("rounded-[calc(var(--radius)+0.625rem)] border transition-all duration-200", cardTone)}>
       <CardContent className="p-4">
-        <div className="rtl-title-row items-start gap-3">
-          {/* Icon chip */}
-          <div className={cn(
-            "flex h-10 w-10 shrink-0 items-center justify-center rounded-[calc(var(--radius)+0.25rem)] border text-sm",
-            isPaid ? "border-emerald-500/20 bg-emerald-500/[0.1]" : "border-amber-500/20 bg-amber-500/[0.1]",
-          )}>
-            {isPaid ? "✅" : payment.recurrence === "monthly" ? <RefreshCw className="h-4 w-4 text-amber-600 dark:text-amber-300" /> : <Zap className="h-4 w-4 text-amber-600 dark:text-amber-300" />}
+        <div className="flex items-start gap-3 text-right">
+          <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[5px] border border-primary/25 bg-primary text-xs font-black text-primary-foreground shadow-[var(--app-shadow)]">
+            ₪
           </div>
 
-          {/* Details */}
-          <div className="flex-1 min-w-0 space-y-1 text-right">
+          <div className="min-w-0 flex-1 space-y-1 text-right">
             <div className="flex items-start justify-between gap-2">
-              <p className="text-sm font-bold leading-tight flex-1 truncate">{payment.name}</p>
-              <p
-                className="text-base font-black tabular-nums shrink-0"
-                style={{ direction: "ltr" }}
-              >
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-bold leading-tight">{payment.name}</p>
+                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                  <span className="text-muted-foreground">{formatHebrewDate(payment.dueDate)}</span>
+                  <span className={cn("font-semibold", isPaid ? "text-emerald-600 dark:text-emerald-300" : isOverdue ? "text-rose-600 dark:text-rose-300" : "text-amber-600 dark:text-amber-300")}>
+                    {daysLabel}
+                  </span>
+                  {payment.recurringMonthly ? <span className="text-muted-foreground">חוזר חודשי</span> : null}
+                </div>
+              </div>
+
+              <span className="cashflow-number shrink-0 text-base font-black">
                 {formatCashflowAmount(payment.amount, currency)}
-              </p>
+              </span>
             </div>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <span className="text-xs text-muted-foreground">{formatHebrewDate(payment.dueDate)}</span>
-              <span className={cn("text-xs font-semibold", daysLabelColor)}>{daysLabel}</span>
-              {payment.recurrence === "monthly" && (
-                <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-                  <RefreshCw className="h-2.5 w-2.5" />
-                  חוזר חודשי
-                </span>
-              )}
-            </div>
-            {payment.note && (
-              <p className="text-xs text-muted-foreground">{payment.note}</p>
-            )}
+
+            {payment.note ? <p className="text-xs text-muted-foreground">{payment.note}</p> : null}
           </div>
+
+          <div className={cn("rounded-full px-2 py-1 text-[10px] font-semibold", badgeTone)}>{daysLabel}</div>
         </div>
 
-        {/* Mark as paid button */}
-        {!isPaid && (
+        <div className="mt-3 flex items-center justify-between gap-2">
           <button
-            onClick={() => onMarkPaid(payment.id)}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-[calc(var(--radius)+0.25rem)] border border-emerald-500/25 bg-emerald-500/[0.08] py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/18 transition-colors"
+            type="button"
+            onClick={() => onEdit(payment)}
+            className="inline-flex items-center gap-1.5 rounded-[calc(var(--radius)+0.25rem)] border border-border/60 bg-background/70 px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-muted/70"
           >
-            <Check className="h-3.5 w-3.5" />
-            סמן כשולם
+            <Pencil className="h-3.5 w-3.5" />
+            ערוך
           </button>
-        )}
+
+          {!isPaid ? (
+            <button
+              type="button"
+              onClick={() => onRequestMarkPaid(payment)}
+              className="inline-flex items-center gap-1.5 rounded-[calc(var(--radius)+0.25rem)] border border-emerald-500/25 bg-emerald-500/[0.08] px-3 py-1.5 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-500/[0.16] dark:text-emerald-300"
+            >
+              <Check className="h-3.5 w-3.5" />
+              סמן כשולם
+            </button>
+          ) : null}
+        </div>
       </CardContent>
     </Card>
   );
@@ -126,61 +133,80 @@ function UpcomingCard({ payment, currency, onMarkPaid }: UpcomingCardProps) {
 interface CashflowUpcomingProps {
   data: CashflowData;
   onAddUpcoming: () => void;
-  onMarkPaid: (id: string) => void;
+  onEditUpcoming: (payment: UpcomingPayment) => void;
+  onMarkPaid: (paymentId: string, createExpense: boolean) => void;
 }
 
-export function CashflowUpcoming({ data, onAddUpcoming, onMarkPaid }: CashflowUpcomingProps) {
+export function CashflowUpcoming({
+  data,
+  onAddUpcoming,
+  onEditUpcoming,
+  onMarkPaid,
+}: CashflowUpcomingProps) {
   const [filter, setFilter] = useState<FilterKey>("all");
+  const [search, setSearch] = useState("");
+  const [paymentToConfirm, setPaymentToConfirm] = useState<UpcomingPayment | null>(null);
 
   const filtered = useMemo(() => {
-    const payments = [...data.upcomingPayments].sort((a, b) =>
-      a.dueDate.localeCompare(b.dueDate),
-    );
-    switch (filter) {
-      case "pending": return payments.filter((p) => p.status === "pending");
-      case "paid": return payments.filter((p) => p.status === "paid");
-      case "week": return payments.filter((p) => p.status === "pending" && isWithinDays(p.dueDate, 7));
-      case "month": return payments.filter((p) => p.status === "pending" && isWithinDays(p.dueDate, 30));
-      default: return payments;
-    }
-  }, [data.upcomingPayments, filter]);
+    const query = search.trim().toLowerCase();
+
+    return [...data.upcomingPayments]
+      .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
+      .filter((payment) => matchesPeriod(payment, filter))
+      .filter((payment) => {
+        if (!query) return true;
+        const amount = String(payment.amount);
+        const dateText = formatHebrewDate(payment.dueDate).toLowerCase();
+        return (
+          payment.name.toLowerCase().includes(query) ||
+          (payment.note ?? "").toLowerCase().includes(query) ||
+          amount.includes(query) ||
+          dateText.includes(query)
+        );
+      });
+  }, [data.upcomingPayments, filter, search]);
 
   const totalPending = useMemo(
-    () => data.upcomingPayments.filter((p) => p.status === "pending").reduce((s, p) => s + p.amount, 0),
+    () => data.upcomingPayments.filter((payment) => payment.status === "pending").reduce((sum, payment) => sum + payment.amount, 0),
     [data.upcomingPayments],
   );
 
-  const pendingCount = data.upcomingPayments.filter((p) => p.status === "pending").length;
+  const pendingCount = data.upcomingPayments.filter((payment) => payment.status === "pending").length;
 
   return (
     <div className="space-y-4 pb-4">
-
-      {/* ── Summary card ─────────────────────────────────────────────────── */}
-      {pendingCount > 0 && (
-        <div className="surface-shell rounded-[calc(var(--radius)+0.85rem)] border border-amber-500/20 bg-amber-500/[0.04] dark:bg-amber-500/[0.07] p-4 text-right">
-          <div className="rtl-title-row">
-            <div>
+      {pendingCount > 0 ? (
+        <div className="surface-shell rounded-[calc(var(--radius)+0.85rem)] border border-amber-500/20 bg-amber-500/[0.04] p-4 text-right dark:bg-amber-500/[0.07]">
+          <div className="flex items-center gap-3">
+            <div className="min-w-0 flex-1 space-y-1 text-right">
               <p className="text-xs font-semibold text-muted-foreground">סה"כ תשלומים ממתינים</p>
-              <p
-                className="mt-1 text-2xl font-black text-amber-600 dark:text-amber-300 tabular-nums"
-                style={{ direction: "ltr" }}
-              >
+              <p className="cashflow-number mt-1 text-2xl font-black text-amber-600 dark:text-amber-300">
                 {formatCashflowAmount(totalPending, data.settings.currency)}
               </p>
-              <p className="text-xs text-muted-foreground mt-0.5">{pendingCount} תשלומים ממתינים</p>
+              <p className="text-xs text-muted-foreground">{pendingCount} תשלומים ממתינים</p>
             </div>
             <div className="icon-chip h-11 w-11 shrink-0 rounded-[calc(var(--radius)+0.375rem)] border-amber-500/20 bg-amber-500/[0.12] text-amber-600 dark:text-amber-300">
               <CalendarClock className="h-5 w-5" />
             </div>
           </div>
         </div>
-      )}
+      ) : null}
 
-      {/* ── Filter chips ─────────────────────────────────────────────────── */}
-      <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+      <div className="relative">
+        <Search className="pointer-events-none absolute end-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="חיפוש תשלומים..."
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          className="h-12 rounded-[calc(var(--radius)+0.375rem)] border-border/60 bg-muted/40 pe-10 text-right focus:border-primary/50"
+        />
+      </div>
+
+      <div className="flex gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
         {FILTERS.map(({ key, label }) => (
           <button
             key={key}
+            type="button"
             onClick={() => setFilter(key)}
             className={cn(
               "shrink-0 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all duration-150",
@@ -194,17 +220,15 @@ export function CashflowUpcoming({ data, onAddUpcoming, onMarkPaid }: CashflowUp
         ))}
       </div>
 
-      {/* ── Add button ───────────────────────────────────────────────────── */}
       <Button
         onClick={onAddUpcoming}
         variant="outline"
-        className="w-full h-11 rounded-[calc(var(--radius)+0.5rem)] border-dashed border-amber-500/30 bg-amber-500/[0.05] text-amber-700 dark:text-amber-300 hover:border-amber-500/50 hover:bg-amber-500/10 font-semibold gap-2"
+        className="h-11 w-full rounded-[calc(var(--radius)+0.5rem)] border-dashed border-amber-500/30 bg-amber-500/[0.05] font-semibold text-amber-700 hover:border-amber-500/50 hover:bg-amber-500/10 dark:text-amber-300"
       >
         <Plus className="h-4 w-4" />
         הוסף תשלום עתידי
       </Button>
 
-      {/* ── Payment cards ─────────────────────────────────────────────────  */}
       <AnimatePresence mode="wait">
         {filtered.length === 0 ? (
           <motion.div
@@ -220,7 +244,7 @@ export function CashflowUpcoming({ data, onAddUpcoming, onMarkPaid }: CashflowUp
             <div className="space-y-1">
               <p className="font-semibold text-foreground">אין תשלומים להציג</p>
               <p className="text-sm text-muted-foreground">
-                {filter === "all" ? "הוסף תשלום עתידי כדי לעקוב אחרי ההתחייבויות שלך" : "אין תוצאות לפי הפילטר הנוכחי"}
+                {filter === "all" && !search ? "הוסף תשלום עתידי כדי לעקוב אחרי מה שצפוי לצאת" : "אין תוצאות לפי החיפוש או הפילטר"}
               </p>
             </div>
           </motion.div>
@@ -233,17 +257,49 @@ export function CashflowUpcoming({ data, onAddUpcoming, onMarkPaid }: CashflowUp
             className="space-y-3"
           >
             {filtered.map((payment) => (
-              <UpcomingCard
+              <PaymentCard
                 key={payment.id}
                 payment={payment}
                 currency={data.settings.currency}
-                onMarkPaid={onMarkPaid}
+                onEdit={onEditUpcoming}
+                onRequestMarkPaid={setPaymentToConfirm}
               />
             ))}
           </motion.div>
         )}
       </AnimatePresence>
 
+      <AlertDialog open={Boolean(paymentToConfirm)} onOpenChange={(open) => !open && setPaymentToConfirm(null)}>
+        <AlertDialogContent dir="rtl" className="max-w-md rounded-[calc(var(--radius)+0.5rem)] border-border/80 bg-card/[0.98] text-right">
+          <AlertDialogHeader className="text-right">
+            <AlertDialogTitle className="text-right">איך לסמן את התשלום?</AlertDialogTitle>
+            <AlertDialogDescription className="text-right">
+              {paymentToConfirm ? `התשלום "${paymentToConfirm.name}" יסומן כשולם.` : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="sm:flex-col sm:space-x-0">
+            <AlertDialogAction
+              className="w-full justify-center"
+              onClick={() => {
+                if (paymentToConfirm) onMarkPaid(paymentToConfirm.id, true);
+                setPaymentToConfirm(null);
+              }}
+            >
+              סמן כשולם וצור הוצאה
+            </AlertDialogAction>
+            <AlertDialogAction
+              className="w-full justify-center border border-border/70 bg-muted/50 text-foreground hover:bg-muted"
+              onClick={() => {
+                if (paymentToConfirm) onMarkPaid(paymentToConfirm.id, false);
+                setPaymentToConfirm(null);
+              }}
+            >
+              סמן כשולם בלבד
+            </AlertDialogAction>
+            <AlertDialogCancel className="w-full justify-center">ביטול</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

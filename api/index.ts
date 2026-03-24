@@ -262,6 +262,7 @@ async function initializeDatabase() {
       planner_json JSONB NOT NULL DEFAULT '{}'::jsonb,
       budget_json JSONB NOT NULL DEFAULT '{}'::jsonb,
       meal_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+      cashflow_json JSONB NOT NULL DEFAULT '{}'::jsonb,
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
@@ -269,6 +270,24 @@ async function initializeDatabase() {
   await dbPool.query(`
     ALTER TABLE app_user_data
     ADD COLUMN IF NOT EXISTS meal_json JSONB NOT NULL DEFAULT '{}'::jsonb;
+  `);
+
+  await dbPool.query(`
+    ALTER TABLE app_user_data
+    ADD COLUMN IF NOT EXISTS cashflow_json JSONB NOT NULL DEFAULT '{}'::jsonb;
+  `);
+
+  await dbPool.query(`
+    CREATE TABLE IF NOT EXISTS cashflow_attachments (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id TEXT NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+      file_name TEXT NOT NULL,
+      mime_type TEXT NOT NULL,
+      size_bytes INT NOT NULL DEFAULT 0,
+      data_base64 TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
   `);
 
   await dbPool.query(`
@@ -379,7 +398,7 @@ async function registerUser(input: { email: string; password: string; displayNam
   );
 
   await getDbPool().query(
-    "INSERT INTO app_user_data (user_id, planner_json, budget_json, meal_json) VALUES ($1, '{}'::jsonb, '{}'::jsonb, '{}'::jsonb)",
+    "INSERT INTO app_user_data (user_id, planner_json, budget_json, meal_json, cashflow_json) VALUES ($1, '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, '{}'::jsonb)",
     [id],
   );
 
@@ -416,31 +435,32 @@ async function loginUser(emailRaw: string, password: string): Promise<AuthUser |
 
 async function getCloudData(userId: string) {
   const result = await getDbPool().query(
-    'SELECT planner_json as "plannerData", budget_json as "budgetData", meal_json as "mealData" FROM app_user_data WHERE user_id = $1 LIMIT 1',
+    'SELECT planner_json as "plannerData", budget_json as "budgetData", meal_json as "mealData", cashflow_json as "cashflowData" FROM app_user_data WHERE user_id = $1 LIMIT 1',
     [userId],
   );
 
   if (!result.rowCount) {
     await getDbPool().query(
-      "INSERT INTO app_user_data (user_id, planner_json, budget_json, meal_json) VALUES ($1, '{}'::jsonb, '{}'::jsonb, '{}'::jsonb)",
+      "INSERT INTO app_user_data (user_id, planner_json, budget_json, meal_json, cashflow_json) VALUES ($1, '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, '{}'::jsonb)",
       [userId],
     );
-    return { plannerData: null, budgetData: null, mealData: null };
+    return { plannerData: null, budgetData: null, mealData: null, cashflowData: null };
   }
 
-  return result.rows[0] as { plannerData: unknown; budgetData: unknown; mealData: unknown };
+  return result.rows[0] as { plannerData: unknown; budgetData: unknown; mealData: unknown; cashflowData: unknown };
 }
 
-async function saveCloudData(userId: string, payload: { plannerData?: unknown; budgetData?: unknown; mealData?: unknown }) {
+async function saveCloudData(userId: string, payload: { plannerData?: unknown; budgetData?: unknown; mealData?: unknown; cashflowData?: unknown }) {
   await getDbPool().query(
     `
-    INSERT INTO app_user_data (user_id, planner_json, budget_json, meal_json, updated_at)
-    VALUES ($1, COALESCE($2::jsonb, '{}'::jsonb), COALESCE($3::jsonb, '{}'::jsonb), COALESCE($4::jsonb, '{}'::jsonb), NOW())
+    INSERT INTO app_user_data (user_id, planner_json, budget_json, meal_json, cashflow_json, updated_at)
+    VALUES ($1, COALESCE($2::jsonb, '{}'::jsonb), COALESCE($3::jsonb, '{}'::jsonb), COALESCE($4::jsonb, '{}'::jsonb), COALESCE($5::jsonb, '{}'::jsonb), NOW())
     ON CONFLICT (user_id)
     DO UPDATE SET
       planner_json = COALESCE($2::jsonb, app_user_data.planner_json),
       budget_json = COALESCE($3::jsonb, app_user_data.budget_json),
       meal_json = COALESCE($4::jsonb, app_user_data.meal_json),
+      cashflow_json = COALESCE($5::jsonb, app_user_data.cashflow_json),
       updated_at = NOW();
     `,
     [
@@ -448,6 +468,7 @@ async function saveCloudData(userId: string, payload: { plannerData?: unknown; b
       payload.plannerData ? JSON.stringify(payload.plannerData) : null,
       payload.budgetData ? JSON.stringify(payload.budgetData) : null,
       payload.mealData ? JSON.stringify(payload.mealData) : null,
+      payload.cashflowData ? JSON.stringify(payload.cashflowData) : null,
     ],
   );
 }
@@ -578,8 +599,73 @@ app.put("/api/data", async (req, res) => {
     plannerData: req.body?.plannerData,
     budgetData: req.body?.budgetData,
     mealData: req.body?.mealData,
+    cashflowData: req.body?.cashflowData,
   });
   return res.json({ ok: true });
+});
+
+app.post("/api/cashflow/attachments", async (req, res) => {
+  const userId = readAuthFromRequest(req)?.userId;
+  if (!userId) return res.status(401).json({ message: "غير مصرح" });
+
+  const fileName = typeof req.body?.fileName === "string" ? req.body.fileName.trim() : "";
+  const mimeType = typeof req.body?.mimeType === "string" ? req.body.mimeType.trim() : "";
+  const dataBase64 = typeof req.body?.dataBase64 === "string" ? req.body.dataBase64.trim() : "";
+  const sizeBytes = Number(req.body?.sizeBytes ?? 0);
+
+  if (!fileName || !mimeType || !dataBase64 || !Number.isFinite(sizeBytes) || sizeBytes <= 0) {
+    return res.status(400).json({ message: "קובץ קבלה חסר או לא תקין" });
+  }
+
+  if (!/^image\/|^application\/pdf$/i.test(mimeType)) {
+    return res.status(400).json({ message: "ניתן לצרף רק תמונה או PDF" });
+  }
+
+  if (sizeBytes > 6 * 1024 * 1024) {
+    return res.status(400).json({ message: "הקובץ גדול מדי. עד 6MB" });
+  }
+
+  const insert = await getDbPool().query(
+    `INSERT INTO cashflow_attachments (user_id, file_name, mime_type, size_bytes, data_base64, updated_at)
+     VALUES ($1, $2, $3, $4, $5, NOW())
+     RETURNING id, file_name as "fileName", mime_type as "mimeType", size_bytes as "sizeBytes", created_at as "createdAt"`,
+    [userId, fileName, mimeType, sizeBytes, dataBase64],
+  );
+
+  return res.status(201).json(insert.rows[0]);
+});
+
+app.get("/api/cashflow/attachments/:id", async (req, res) => {
+  const userId = readAuthFromRequest(req)?.userId;
+  if (!userId) return res.status(401).json({ message: "غير مصرح" });
+
+  const result = await getDbPool().query(
+    `SELECT id, file_name as "fileName", mime_type as "mimeType", size_bytes as "sizeBytes", data_base64 as "dataBase64"
+     FROM cashflow_attachments
+     WHERE id = $1 AND user_id = $2
+     LIMIT 1`,
+    [req.params.id, userId],
+  );
+
+  if (!result.rowCount) {
+    return res.status(404).json({ message: "הקובץ לא נמצא" });
+  }
+
+  const row = result.rows[0] as {
+    id: string;
+    fileName: string;
+    mimeType: string;
+    sizeBytes: number;
+    dataBase64: string;
+  };
+
+  return res.json({
+    id: row.id,
+    fileName: row.fileName,
+    mimeType: row.mimeType,
+    sizeBytes: row.sizeBytes,
+    dataUrl: `data:${row.mimeType};base64,${row.dataBase64}`,
+  });
 });
 
 app.get("/api/meal/catalog", async (req, res) => {

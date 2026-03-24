@@ -227,6 +227,7 @@ export async function initializeDatabase() {
       planner_json JSONB NOT NULL DEFAULT '{}'::jsonb,
       budget_json JSONB NOT NULL DEFAULT '{}'::jsonb,
       meal_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+      cashflow_json JSONB NOT NULL DEFAULT '{}'::jsonb,
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
@@ -234,6 +235,24 @@ export async function initializeDatabase() {
   await dbPool.query(`
     ALTER TABLE app_user_data
     ADD COLUMN IF NOT EXISTS meal_json JSONB NOT NULL DEFAULT '{}'::jsonb;
+  `);
+
+  await dbPool.query(`
+    ALTER TABLE app_user_data
+    ADD COLUMN IF NOT EXISTS cashflow_json JSONB NOT NULL DEFAULT '{}'::jsonb;
+  `);
+
+  await dbPool.query(`
+    CREATE TABLE IF NOT EXISTS cashflow_attachments (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id TEXT NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+      file_name TEXT NOT NULL,
+      mime_type TEXT NOT NULL,
+      size_bytes INT NOT NULL DEFAULT 0,
+      data_base64 TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
   `);
 
   await dbPool.query(`
@@ -311,7 +330,7 @@ export async function initializeDatabase() {
     );
 
     await dbPool.query(
-      "INSERT INTO app_user_data (user_id, planner_json, budget_json, meal_json) VALUES ($1, '{}'::jsonb, '{}'::jsonb, '{}'::jsonb)",
+      "INSERT INTO app_user_data (user_id, planner_json, budget_json, meal_json, cashflow_json) VALUES ($1, '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, '{}'::jsonb)",
       [id],
     );
 

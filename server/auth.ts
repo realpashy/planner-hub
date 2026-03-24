@@ -39,7 +39,7 @@ export async function registerUser(input: { email: string; password: string; dis
   );
 
   await dbPool.query(
-    "INSERT INTO app_user_data (user_id, planner_json, budget_json, meal_json) VALUES ($1, '{}'::jsonb, '{}'::jsonb, '{}'::jsonb)",
+    "INSERT INTO app_user_data (user_id, planner_json, budget_json, meal_json, cashflow_json) VALUES ($1, '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, '{}'::jsonb)",
     [id],
   );
 

@@ -1,62 +1,37 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// CashflowSettings — Business baseline & balance setup
-// Hebrew-first. Non-technical language. Simple form.
-// Designed for business owners joining mid-way who need to set an overall picture.
-// ─────────────────────────────────────────────────────────────────────────────
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
+import { Banknote, Check, Info, Settings, Target, TrendingDown, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  type CashflowData,
-  type CashflowSettings,
-  formatCashflowAmount,
-} from "@/lib/cashflow";
-import { Banknote, Check, Info, Settings, Target, TrendingDown, TrendingUp } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { type CashflowData, type CashflowSettings as CashflowSettingsType, formatCashflowAmount } from "@/lib/cashflow";
 
-interface FieldProps {
+function NumberField({
+  label,
+  description,
+  value,
+  onChange,
+}: {
   label: string;
   description?: string;
-  placeholder?: string;
   value: string;
-  onChange: (v: string) => void;
-  prefix?: string;
-  suffix?: string;
-}
-
-function SettingField({ label, description, placeholder, value, onChange, prefix, suffix }: FieldProps) {
+  onChange: (value: string) => void;
+}) {
   return (
     <div className="space-y-1.5 text-right">
-      <label className="text-sm font-semibold text-foreground">{label}</label>
-      {description && (
-        <p className="text-xs text-muted-foreground leading-5">{description}</p>
-      )}
+      {label ? <label className="text-sm font-semibold text-foreground">{label}</label> : null}
+      {description ? <p className="text-xs leading-5 text-muted-foreground">{description}</p> : null}
       <div className="relative">
-        {prefix && (
-          <span className="absolute end-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground pointer-events-none">
-            {prefix}
-          </span>
-        )}
-        {suffix && (
-          <span className="absolute start-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground pointer-events-none">
-            {suffix}
-          </span>
-        )}
         <Input
           type="number"
           inputMode="decimal"
-          placeholder={placeholder ?? "0"}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className={cn(
-            "h-12 rounded-[calc(var(--radius)+0.25rem)] border-border/60 bg-muted/40 text-right focus:border-primary/50",
-            prefix && "pe-8",
-            suffix && "ps-8",
-          )}
+          onChange={(event) => onChange(event.target.value)}
+          className="h-14 rounded-[calc(var(--radius)+0.375rem)] border-border/70 bg-muted/40 pe-4 ps-12 text-right text-[22px] font-black tracking-tight focus:border-primary/50"
           style={{ direction: "ltr", textAlign: "right" }}
         />
+        <span className="pointer-events-none absolute start-4 top-1/2 -translate-y-1/2 text-base font-black text-muted-foreground">₪</span>
       </div>
     </div>
   );
@@ -64,191 +39,171 @@ function SettingField({ label, description, placeholder, value, onChange, prefix
 
 interface CashflowSettingsProps {
   data: CashflowData;
-  onSave: (settings: CashflowSettings) => void;
+  onSave: (settings: CashflowSettingsType) => void;
 }
 
 export function CashflowSettings({ data, onSave }: CashflowSettingsProps) {
-  const s = data.settings;
-
-  // Balance inputs
-  const [bankBalance, setBankBalance] = useState(s.bankBalance?.toString() ?? "");
-  const [cashInRegister, setCashInRegister] = useState(s.cashInRegister?.toString() ?? "");
-  const [useOverride, setUseOverride] = useState(s.availableBalanceOverride !== undefined);
-  const [balanceOverride, setBalanceOverride] = useState(s.availableBalanceOverride?.toString() ?? "");
-
-  // Baselines
-  const [monthlyExpenses, setMonthlyExpenses] = useState(s.monthlyExpensesBaseline?.toString() ?? "");
-  const [monthlyIncome, setMonthlyIncome] = useState(s.monthlyIncomeBaseline?.toString() ?? "");
-  const [warningThreshold, setWarningThreshold] = useState(s.cashflowWarningThreshold?.toString() ?? "");
-
+  const settings = data.settings;
+  const [bankBalance, setBankBalance] = useState("");
+  const [cashOnHand, setCashOnHand] = useState("");
+  const [overallAvailableCash, setOverallAvailableCash] = useState("");
+  const [monthlyBaselineExpenses, setMonthlyBaselineExpenses] = useState("");
+  const [monthlyBaselineIncome, setMonthlyBaselineIncome] = useState("");
+  const [cashWarningThreshold, setCashWarningThreshold] = useState("");
+  const [balanceMode, setBalanceMode] = useState<"split" | "overall">("split");
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    setBankBalance(settings.bankBalance?.toString() ?? "");
+    setCashOnHand(settings.cashOnHand?.toString() ?? "");
+    setOverallAvailableCash(settings.overallAvailableCash?.toString() ?? "");
+    setMonthlyBaselineExpenses(settings.monthlyBaselineExpenses?.toString() ?? "");
+    setMonthlyBaselineIncome(settings.monthlyBaselineIncome?.toString() ?? "");
+    setCashWarningThreshold(settings.cashWarningThreshold?.toString() ?? "");
+    setBalanceMode(settings.balanceMode ?? (settings.overallAvailableCash !== undefined ? "overall" : "split"));
+  }, [settings]);
+
+  const computedBalance = useMemo(() => {
+    if (balanceMode === "overall") return Number.parseFloat(overallAvailableCash || "0") || 0;
+    return (Number.parseFloat(bankBalance || "0") || 0) + (Number.parseFloat(cashOnHand || "0") || 0);
+  }, [balanceMode, bankBalance, cashOnHand, overallAvailableCash]);
 
   function handleSave() {
     onSave({
-      ...s,
-      bankBalance: bankBalance ? parseFloat(bankBalance) : undefined,
-      cashInRegister: cashInRegister ? parseFloat(cashInRegister) : undefined,
-      availableBalanceOverride: useOverride && balanceOverride ? parseFloat(balanceOverride) : undefined,
-      monthlyExpensesBaseline: monthlyExpenses ? parseFloat(monthlyExpenses) : undefined,
-      monthlyIncomeBaseline: monthlyIncome ? parseFloat(monthlyIncome) : undefined,
-      cashflowWarningThreshold: warningThreshold ? parseFloat(warningThreshold) : undefined,
+      ...settings,
+      balanceMode,
+      bankBalance: balanceMode === "split" && bankBalance ? Number.parseFloat(bankBalance) : undefined,
+      cashOnHand: balanceMode === "split" && cashOnHand ? Number.parseFloat(cashOnHand) : undefined,
+      overallAvailableCash: balanceMode === "overall" && overallAvailableCash ? Number.parseFloat(overallAvailableCash) : undefined,
+      monthlyBaselineExpenses: monthlyBaselineExpenses ? Number.parseFloat(monthlyBaselineExpenses) : undefined,
+      monthlyBaselineIncome: monthlyBaselineIncome ? Number.parseFloat(monthlyBaselineIncome) : undefined,
+      cashWarningThreshold: cashWarningThreshold ? Number.parseFloat(cashWarningThreshold) : undefined,
     });
     setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    window.setTimeout(() => setSaved(false), 2000);
   }
-
-  const computedBalance = useOverride
-    ? parseFloat(balanceOverride || "0")
-    : (parseFloat(bankBalance || "0") + parseFloat(cashInRegister || "0"));
 
   return (
     <div className="space-y-5 pb-8">
-
-      {/* ── Intro ────────────────────────────────────────────────────────── */}
-      <div className="text-right space-y-1">
+      <div className="space-y-1 text-right">
         <h2 className="text-lg font-black">הגדרות תזרים</h2>
-        <p className="text-sm text-muted-foreground leading-6">
-          הגדר את נקודת ההתחלה של העסק שלך. אלו הם הנתונים הבסיסיים שעוזרים לנו לחשב את יעד ההכנסה היומי ולזהות מצבים של לחץ תזרימי.
+        <p className="text-sm leading-6 text-muted-foreground">
+          קבע את נקודת ההתחלה של העסק. נתוני הבסיס האלו משמשים רק להצגת תמונת מצב, תחזית ויעד יומי נדרש.
         </p>
       </div>
 
-      {/* ── Balance section ──────────────────────────────────────────────── */}
       <Card className="surface-shell rounded-[calc(var(--radius)+0.85rem)] border-border/70">
-        <CardHeader className="pb-3 pt-4 px-4 text-right">
-          <div className="rtl-title-row">
-            <CardTitle className="text-sm font-bold">יתרה זמינה</CardTitle>
+        <CardHeader className="px-4 pb-3 pt-5 text-right">
+          <div className="flex items-center gap-3">
+            <div className="min-w-0 flex-1 text-right">
+              <CardTitle className="text-sm font-bold">יתרה זמינה</CardTitle>
+            </div>
             <div className="icon-chip h-9 w-9 shrink-0 rounded-[calc(var(--radius)+0.375rem)] border-sky-500/20 bg-sky-500/[0.1] text-sky-600 dark:text-sky-300">
               <Banknote className="h-4 w-4" />
             </div>
           </div>
         </CardHeader>
-        <CardContent className="px-4 pb-4 space-y-4">
-
-          {/* Toggle: separate vs combined */}
+        <CardContent className="space-y-4 px-4 pb-4">
           <div className="grid grid-cols-2 gap-2">
             {[
-              { id: false, label: "בנק + קופה" },
-              { id: true, label: "יתרה כוללת" },
-            ].map(({ id, label }) => (
+              { value: "split" as const, label: "בנק + מזומן" },
+              { value: "overall" as const, label: "יתרה כוללת" },
+            ].map((option) => (
               <button
-                key={String(id)}
-                onClick={() => setUseOverride(id)}
+                key={option.value}
+                type="button"
+                onClick={() => setBalanceMode(option.value)}
                 className={cn(
                   "rounded-[calc(var(--radius)+0.25rem)] border py-2.5 text-sm font-semibold transition-all",
-                  useOverride === id
-                    ? "border-sky-500/40 bg-sky-500/[0.12] text-sky-700 dark:text-sky-300 ring-1 ring-sky-500/25"
+                  balanceMode === option.value
+                    ? "border-sky-500/40 bg-sky-500/[0.12] text-sky-700 ring-1 ring-sky-500/25 dark:text-sky-300"
                     : "border-border/50 bg-muted/30 text-muted-foreground hover:bg-muted/60",
                 )}
               >
-                {label}
+                {option.label}
               </button>
             ))}
           </div>
 
-          {useOverride ? (
-            <SettingField
-              label="יתרה זמינה כוללת (₪)"
-              description="סכום כולל של כל הכסף הזמין לעסק כרגע"
-              value={balanceOverride}
-              onChange={setBalanceOverride}
-              prefix="₪"
+          {balanceMode === "overall" ? (
+            <NumberField
+              label="יתרה זמינה כוללת"
+              description="כשממלאים יתרה כוללת, היא גוברת על שדות בנק + מזומן לצורך חישובי התזרים."
+              value={overallAvailableCash}
+              onChange={setOverallAvailableCash}
             />
           ) : (
             <div className="space-y-3">
-              <SettingField
-                label="יתרת בנק (₪)"
-                description="הסכום בחשבון הבנק העסקי"
-                value={bankBalance}
-                onChange={setBankBalance}
-                prefix="₪"
-              />
-              <SettingField
-                label="מזומן בקופה (₪)"
-                description="המזומן הפיזי בקופה"
-                value={cashInRegister}
-                onChange={setCashInRegister}
-                prefix="₪"
-              />
+              <NumberField label="יתרת בנק" description="הסכום בחשבון הבנק העסקי." value={bankBalance} onChange={setBankBalance} />
+              <NumberField label="מזומן" description="מזומן זמין שנמצא כרגע בעסק." value={cashOnHand} onChange={setCashOnHand} />
             </div>
           )}
 
-          {/* Computed balance preview */}
-          {computedBalance > 0 && (
+          {computedBalance > 0 ? (
             <motion.div
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex items-center gap-2 rounded-[calc(var(--radius)+0.25rem)] border border-sky-500/20 bg-sky-500/[0.07] px-3 py-2 text-right"
+              className="rounded-[calc(var(--radius)+0.25rem)] border border-sky-500/20 bg-sky-500/[0.07] px-3 py-2 text-right"
             >
-              <Info className="h-3.5 w-3.5 shrink-0 text-sky-600 dark:text-sky-300" />
-              <p className="text-xs font-semibold text-sky-700 dark:text-sky-300">
-                יתרה זמינה מחושבת: {formatCashflowAmount(computedBalance, data.settings.currency)}
-              </p>
+              <div className="flex items-center gap-2">
+                <div className="min-w-0 flex-1 text-right">
+                  <p className="text-xs font-semibold text-sky-700 dark:text-sky-300">
+                    יתרה זמינה מחושבת: {formatCashflowAmount(computedBalance, data.settings.currency)}
+                  </p>
+                </div>
+                <Info className="h-3.5 w-3.5 shrink-0 text-sky-600 dark:text-sky-300" />
+              </div>
             </motion.div>
-          )}
+          ) : null}
         </CardContent>
       </Card>
 
-      {/* ── Baseline section ─────────────────────────────────────────────── */}
       <Card className="surface-shell rounded-[calc(var(--radius)+0.85rem)] border-border/70">
-        <CardHeader className="pb-3 pt-4 px-4 text-right">
-          <div className="rtl-title-row">
-            <CardTitle className="text-sm font-bold">נתוני בסיס חודשיים</CardTitle>
+        <CardHeader className="px-4 pb-3 pt-5 text-right">
+          <div className="flex items-center gap-3">
+            <div className="min-w-0 flex-1 text-right">
+              <CardTitle className="text-sm font-bold">נתוני בסיס חודשיים</CardTitle>
+            </div>
             <div className="icon-chip h-9 w-9 shrink-0 rounded-[calc(var(--radius)+0.375rem)] border-primary/20 bg-primary/[0.1] text-primary">
               <Settings className="h-4 w-4" />
             </div>
           </div>
         </CardHeader>
-        <CardContent className="px-4 pb-4 space-y-4">
-          <div className="flex items-start gap-2 rounded-[calc(var(--radius)+0.25rem)] border border-border/40 bg-muted/30 px-3 py-2.5 text-right">
-            <Info className="h-3.5 w-3.5 shrink-0 text-muted-foreground mt-0.5" />
-            <p className="text-xs text-muted-foreground leading-5">
-              השתמש בנתונים אלו אם הצטרפת באמצע חודש ורוצה תמונה כוללת מדויקת. אין חובה למלא הכל.
+        <CardContent className="space-y-4 px-4 pb-4">
+          <div className="rounded-[calc(var(--radius)+0.25rem)] border border-border/40 bg-muted/30 px-3 py-2.5 text-right">
+            <p className="text-xs leading-5 text-muted-foreground">
+              נתוני הבסיס האלו משמשים רק לתחזית ולסקירה. הם לא יוצרים עסקאות מזויפות ולא משנים את ההיסטוריה שלך.
             </p>
           </div>
 
           <div className="space-y-3">
-            <div className="rtl-title-row items-center">
-              <label className="text-sm font-semibold text-foreground">הוצאות חודשיות ממוצעות (₪)</label>
-              <TrendingDown className="h-4 w-4 text-rose-500 shrink-0" />
+            <div className="flex items-center gap-2 text-right">
+              <div className="min-w-0 flex-1 text-right">
+                <label className="text-sm font-semibold text-foreground">הוצאות בסיס חודשיות</label>
+              </div>
+              <TrendingDown className="h-4 w-4 shrink-0 text-rose-500" />
             </div>
-            <Input
-              type="number"
-              inputMode="decimal"
-              placeholder="לדוגמה: 18000"
-              value={monthlyExpenses}
-              onChange={(e) => setMonthlyExpenses(e.target.value)}
-              className="h-12 rounded-[calc(var(--radius)+0.25rem)] border-border/60 bg-muted/40 text-right focus:border-primary/50"
-              style={{ direction: "ltr", textAlign: "right" }}
-            />
+            <NumberField label="" value={monthlyBaselineExpenses} onChange={setMonthlyBaselineExpenses} />
           </div>
 
           <div className="space-y-3">
-            <div className="rtl-title-row items-center">
-              <label className="text-sm font-semibold text-foreground">הכנסה חודשית ממוצעת (₪)</label>
-              <TrendingUp className="h-4 w-4 text-emerald-500 shrink-0" />
+            <div className="flex items-center gap-2 text-right">
+              <div className="min-w-0 flex-1 text-right">
+                <label className="text-sm font-semibold text-foreground">הכנסות בסיס חודשיות</label>
+              </div>
+              <TrendingUp className="h-4 w-4 shrink-0 text-emerald-500" />
             </div>
-            <Input
-              type="number"
-              inputMode="decimal"
-              placeholder="לדוגמה: 25000"
-              value={monthlyIncome}
-              onChange={(e) => setMonthlyIncome(e.target.value)}
-              className="h-12 rounded-[calc(var(--radius)+0.25rem)] border-border/60 bg-muted/40 text-right focus:border-primary/50"
-              style={{ direction: "ltr", textAlign: "right" }}
-            />
+            <NumberField label="" value={monthlyBaselineIncome} onChange={setMonthlyBaselineIncome} />
           </div>
         </CardContent>
       </Card>
 
-      {/* ── Warning threshold section ─────────────────────────────────────── */}
       <Card className="surface-shell rounded-[calc(var(--radius)+0.85rem)] border-border/70">
-        <CardHeader className="pb-3 pt-4 px-4 text-right">
-          <div className="rtl-title-row">
-            <div>
-              <CardTitle className="text-sm font-bold">סף אזהרה תזרימי</CardTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                כשהיתרה הזמינה יורדת מתחת לסף זה, מוצגת אזהרה
-              </p>
+        <CardHeader className="px-4 pb-3 pt-5 text-right">
+          <div className="flex items-center gap-3">
+            <div className="min-w-0 flex-1 text-right">
+              <CardTitle className="text-sm font-bold">סף אזהרה</CardTitle>
+              <p className="mt-0.5 text-xs text-muted-foreground">אם היתרה תרד מתחת לסף הזה, יוצג סימון ברור בסקירה.</p>
             </div>
             <div className="icon-chip h-9 w-9 shrink-0 rounded-[calc(var(--radius)+0.375rem)] border-amber-500/20 bg-amber-500/[0.1] text-amber-600 dark:text-amber-300">
               <Target className="h-4 w-4" />
@@ -256,26 +211,14 @@ export function CashflowSettings({ data, onSave }: CashflowSettingsProps) {
           </div>
         </CardHeader>
         <CardContent className="px-4 pb-4">
-          <div className="relative">
-            <span className="absolute end-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground pointer-events-none">₪</span>
-            <Input
-              type="number"
-              inputMode="decimal"
-              placeholder="לדוגמה: 5000"
-              value={warningThreshold}
-              onChange={(e) => setWarningThreshold(e.target.value)}
-              className="h-12 pe-8 rounded-[calc(var(--radius)+0.25rem)] border-border/60 bg-muted/40 text-right focus:border-primary/50"
-              style={{ direction: "ltr", textAlign: "right" }}
-            />
-          </div>
+          <NumberField label="" value={cashWarningThreshold} onChange={setCashWarningThreshold} />
         </CardContent>
       </Card>
 
-      {/* ── Save button ───────────────────────────────────────────────────── */}
       <Button
         onClick={handleSave}
         size="lg"
-        className="w-full h-14 rounded-[calc(var(--radius)+0.5rem)] text-base font-bold gap-2"
+        className="h-14 w-full rounded-[calc(var(--radius)+0.5rem)] text-base font-bold"
       >
         {saved ? (
           <>
@@ -286,7 +229,6 @@ export function CashflowSettings({ data, onSave }: CashflowSettingsProps) {
           "שמור הגדרות"
         )}
       </Button>
-
     </div>
   );
 }

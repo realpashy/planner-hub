@@ -1,53 +1,23 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// CashflowOverview — Main dashboard screen
-// Hebrew-first. Mobile-optimised. Follows Planner Hub design system.
-// Shows: balance, month metrics, period toggle, quick actions, upcoming preview,
-// cashflow chart, income-vs-expense chart.
-// ─────────────────────────────────────────────────────────────────────────────
-import { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { AlertCircle, ArrowDownLeft, ArrowUpRight, CalendarClock, ChevronLeft, Clock, Plus, RefreshCw, Target, TrendingUp, Wallet } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   type CashflowData,
+  type ForecastRange,
   formatCashflowAmount,
   formatHebrewDateShort,
-  getDaysUntil,
   getAvailableBalance,
-  getDailyTargetRequired,
-  getMonthStats,
-  getWeekStats,
-  getTodayStats,
-  getCurrentMonthKey,
-  getLast7DaysChartData,
-  getLast6MonthsChartData,
+  getDailyAverages,
+  getDaysUntil,
+  getForecastSeries,
+  getIncomeExpenseChartData,
+  getPendingUpcomingTotal,
+  getPeriodStats,
+  getRequiredDailyTarget,
 } from "@/lib/cashflow";
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-} from "recharts";
-import {
-  ArrowDownLeft,
-  ArrowUpRight,
-  CalendarClock,
-  Clock,
-  Plus,
-  RefreshCw,
-  Target,
-  TrendingUp,
-  Wallet,
-  AlertCircle,
-  ChevronLeft,
-} from "lucide-react";
 
 type PeriodKey = "today" | "week" | "month";
 
@@ -56,13 +26,6 @@ const PERIOD_LABELS: Record<PeriodKey, string> = {
   week: "השבוע",
   month: "החודש",
 };
-
-interface QuickAction {
-  label: string;
-  icon: React.ElementType;
-  colorClass: string;
-  onClick: () => void;
-}
 
 interface CashflowOverviewProps {
   data: CashflowData;
@@ -73,15 +36,23 @@ interface CashflowOverviewProps {
   onViewUpcoming: () => void;
 }
 
-// ── Custom tooltip for charts ─────────────────────────────────────────────────
-function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string }>; label?: string }) {
+function ChartTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: Array<{ name: string; value: number; color: string }>;
+  label?: string;
+}) {
   if (!active || !payload?.length) return null;
+
   return (
-    <div className="rounded-[calc(var(--radius)+0.25rem)] border border-border/60 bg-popover/95 backdrop-blur-md px-3 py-2 shadow-lg text-right">
-      <p className="text-xs font-semibold text-muted-foreground mb-1">{label}</p>
+    <div className="rounded-[calc(var(--radius)+0.25rem)] border border-border/60 bg-popover/95 px-3 py-2 text-right shadow-lg backdrop-blur-md">
+      <p className="mb-1 text-xs font-semibold text-muted-foreground">{label}</p>
       {payload.map((entry) => (
-        <p key={entry.name} className="text-sm font-bold" style={{ color: entry.color }}>
-          ₪{entry.value.toLocaleString("he-IL")}
+        <p key={entry.name} className="cashflow-number text-sm font-bold" style={{ color: entry.color }}>
+          {formatCashflowAmount(entry.value)}
         </p>
       ))}
     </div>
@@ -96,125 +67,104 @@ export function CashflowOverview({
   onUpdateBalance,
   onViewUpcoming,
 }: CashflowOverviewProps) {
-  const [period, setPeriod] = useState<PeriodKey>("month");
+  const [period, setPeriod] = useState<PeriodKey>("today");
+  const [forecastRange, setForecastRange] = useState<ForecastRange>(7);
 
-  const { stats, balance, dailyTarget, chartData7, chartData6, pendingPayments } = useMemo(() => {
-    const stats =
-      period === "today"
-        ? getTodayStats(data.transactions)
-        : period === "week"
-          ? getWeekStats(data.transactions)
-          : getMonthStats(data.transactions, getCurrentMonthKey());
+  const stats = useMemo(() => getPeriodStats(data, period), [data, period]);
+  const balance = useMemo(() => getAvailableBalance(data), [data]);
+  const dailyTarget = useMemo(() => getRequiredDailyTarget(data), [data]);
+  const dailyAverages = useMemo(() => getDailyAverages(data, period), [data, period]);
+  const forecastSeries = useMemo(() => getForecastSeries(data, forecastRange), [data, forecastRange]);
+  const incomeExpenseData = useMemo(() => getIncomeExpenseChartData(data.transactions), [data.transactions]);
+  const monthlyUpcomingTotal = useMemo(() => getPendingUpcomingTotal(data, "month"), [data]);
 
-    const balance = getAvailableBalance(data);
-    const dailyTarget = getDailyTargetRequired(data);
-    const chartData7 = getLast7DaysChartData(data.transactions);
-    const chartData6 = getLast6MonthsChartData(data.transactions);
+  const pendingPayments = useMemo(() => {
     const now = new Date().toISOString().split("T")[0];
-    const pendingPayments = data.upcomingPayments
-      .filter((p) => p.status === "pending" && p.dueDate >= now)
+    return data.upcomingPayments
+      .filter((payment) => payment.status === "pending" && payment.dueDate >= now)
       .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
       .slice(0, 3);
+  }, [data.upcomingPayments]);
 
-    return { stats, balance, dailyTarget, chartData7, chartData6, pendingPayments };
-  }, [data, period]);
-
-  const isLowBalance = data.settings.cashflowWarningThreshold
-    ? balance < data.settings.cashflowWarningThreshold
-    : false;
-
-  const quickActions: QuickAction[] = [
-    { label: "הוסף הכנסה", icon: ArrowUpRight, colorClass: "text-emerald-600 dark:text-emerald-300 bg-emerald-500/[0.1] border-emerald-500/25 hover:bg-emerald-500/20", onClick: onAddIncome },
-    { label: "הוסף הוצאה", icon: ArrowDownLeft, colorClass: "text-rose-600 dark:text-rose-300 bg-rose-500/[0.1] border-rose-500/25 hover:bg-rose-500/20", onClick: onAddExpense },
-    { label: "תשלום עתידי", icon: CalendarClock, colorClass: "text-amber-600 dark:text-amber-300 bg-amber-500/[0.1] border-amber-500/25 hover:bg-amber-500/20", onClick: onAddUpcoming },
-    { label: "עדכן יתרה", icon: RefreshCw, colorClass: "text-sky-600 dark:text-sky-300 bg-sky-500/[0.1] border-sky-500/25 hover:bg-sky-500/20", onClick: onUpdateBalance },
-  ];
+  const isLowBalance = data.settings.cashWarningThreshold ? balance < data.settings.cashWarningThreshold : false;
 
   return (
     <div className="space-y-5 pb-4">
-
-      {/* ── Balance card — hero ────────────────────────────────────────────── */}
       <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-        <Card className={cn(
-          "surface-shell relative overflow-hidden rounded-[calc(var(--radius)+1rem)]",
-          "border-border/70",
-        )}>
-          {/* Background glow */}
+        <Card className="surface-shell relative overflow-hidden rounded-[calc(var(--radius)+1rem)] border-border/70">
           <div className="pointer-events-none absolute inset-x-0 top-0 h-full bg-[radial-gradient(ellipse_at_top_right,rgba(14,165,233,0.07),transparent_55%)] dark:bg-[radial-gradient(ellipse_at_top_right,rgba(14,165,233,0.16),transparent_55%)]" />
 
-          <CardContent className="relative p-5">
-            <div className="rtl-title-row items-start">
-              <div className="space-y-1 flex-1">
+          <CardContent className="relative p-6 pt-7">
+            <div className="flex items-center gap-3">
+              <div className="flex min-w-0 flex-1 flex-col items-end space-y-1 text-right">
                 <div className="flex items-center gap-1.5">
                   <p className="text-xs font-semibold text-muted-foreground">יתרה זמינה עכשיו</p>
-                  {isLowBalance && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/[0.1] px-2 py-0.5 text-[10px] font-semibold text-rose-600 dark:text-rose-300 border border-rose-500/20">
+                  {isLowBalance ? (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-rose-500/20 bg-rose-500/[0.1] px-2 py-0.5 text-[10px] font-semibold text-rose-600 dark:text-rose-300">
                       <AlertCircle className="h-2.5 w-2.5" />
                       נמוכה
                     </span>
-                  )}
+                  ) : null}
                 </div>
-                <p
-                  className={cn(
-                    "text-4xl font-black leading-none tabular-nums",
-                    isLowBalance
-                      ? "text-rose-600 dark:text-rose-300"
-                      : "text-foreground",
-                  )}
-                  style={{ direction: "ltr", unicodeBidi: "bidi-override" }}
-                >
+                <p className={cn("cashflow-number text-4xl font-black leading-none", isLowBalance ? "text-rose-600 dark:text-rose-300" : "text-foreground")}>
                   {formatCashflowAmount(balance, data.settings.currency)}
                 </p>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 pt-1">
-                  {data.settings.bankBalance !== undefined && (
-                    <span className="text-xs text-muted-foreground">
-                      בנק: {formatCashflowAmount(data.settings.bankBalance, data.settings.currency)}
-                    </span>
-                  )}
-                  {data.settings.cashInRegister !== undefined && (
-                    <span className="text-xs text-muted-foreground">
-                      קופה: {formatCashflowAmount(data.settings.cashInRegister, data.settings.currency)}
-                    </span>
-                  )}
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 pt-1 text-xs text-muted-foreground">
+                  {data.settings.bankBalance !== undefined ? (
+                    <span>בנק: {formatCashflowAmount(data.settings.bankBalance, data.settings.currency)}</span>
+                  ) : null}
+                  {data.settings.cashOnHand !== undefined ? (
+                    <span>מזומן: {formatCashflowAmount(data.settings.cashOnHand, data.settings.currency)}</span>
+                  ) : null}
                 </div>
               </div>
-              <div className="icon-chip h-12 w-12 shrink-0 rounded-[calc(var(--radius)+0.5rem)] border-sky-500/20 bg-sky-500/[0.12] text-sky-600 dark:text-sky-300">
+              <div className="icon-chip flex h-12 w-12 shrink-0 items-center justify-center rounded-[calc(var(--radius)+0.5rem)] border-sky-500/20 bg-sky-500/[0.12] text-sky-600 dark:text-sky-300">
                 <Wallet className="h-5 w-5" />
               </div>
             </div>
 
-            {/* Daily target pill */}
-            {dailyTarget > 0 && (
-              <div className="mt-4 flex items-center gap-2 rounded-[calc(var(--radius)+0.25rem)] border border-amber-500/20 bg-amber-500/[0.07] dark:bg-amber-500/[0.1] px-3 py-2">
-                <Target className="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-300" />
-                <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">
-                  יעד יומי נדרש: {formatCashflowAmount(dailyTarget, data.settings.currency)}
-                </p>
+            <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
+              <div className="rounded-[calc(var(--radius)+0.25rem)] border border-amber-500/20 bg-amber-500/[0.07] px-3 py-2 text-right">
+                <div className="flex items-center gap-2">
+                  <div className="flex min-w-0 flex-1 flex-col items-end text-right">
+                    <p className="text-[11px] font-semibold text-muted-foreground">יעד יומי נדרש</p>
+                    <p className="cashflow-number text-sm font-black text-amber-700 dark:text-amber-300">
+                      {formatCashflowAmount(dailyTarget, data.settings.currency)}
+                    </p>
+                  </div>
+                  <Target className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />
+                </div>
               </div>
-            )}
+              <div className="rounded-[calc(var(--radius)+0.25rem)] border border-border/60 bg-muted/30 px-3 py-2 text-right">
+                <div className="flex items-center gap-2">
+                  <div className="flex min-w-0 flex-1 flex-col items-end text-right">
+                    <p className="text-[11px] font-semibold text-muted-foreground">תשלומים ממתינים החודש</p>
+                    <p className="cashflow-number text-sm font-black">{formatCashflowAmount(monthlyUpcomingTotal, data.settings.currency)}</p>
+                  </div>
+                  <CalendarClock className="h-4 w-4 shrink-0 text-muted-foreground" />
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </motion.div>
 
-      {/* ── Period toggle ─────────────────────────────────────────────────── */}
       <div className="flex gap-1.5 rounded-[calc(var(--radius)+0.375rem)] border border-border/50 bg-muted/40 p-1">
-        {(["today", "week", "month"] as PeriodKey[]).map((p) => (
+        {(["today", "week", "month"] as PeriodKey[]).map((value) => (
           <button
-            key={p}
-            onClick={() => setPeriod(p)}
+            key={value}
+            type="button"
+            onClick={() => setPeriod(value)}
             className={cn(
               "flex-1 rounded-[calc(var(--radius)+0.125rem)] py-2 text-sm font-semibold transition-all duration-200",
-              period === p
-                ? "bg-background shadow-sm text-foreground"
-                : "text-muted-foreground hover:text-foreground",
+              period === value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
             )}
           >
-            {PERIOD_LABELS[p]}
+            {PERIOD_LABELS[value]}
           </button>
         ))}
       </div>
 
-      {/* ── Month/period metric cards ─────────────────────────────────────── */}
       <AnimatePresence mode="wait">
         <motion.div
           key={period}
@@ -222,62 +172,61 @@ export function CashflowOverview({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.2 }}
-          className="grid grid-cols-3 gap-2.5"
+          className="grid grid-cols-2 gap-2.5 xl:grid-cols-4"
         >
           {[
             {
               label: "הכנסות",
               value: stats.income,
-              color: "text-emerald-600 dark:text-emerald-300",
-              bg: "bg-emerald-500/[0.07] dark:bg-emerald-500/[0.1]",
+              tone: "text-emerald-600 dark:text-emerald-300 bg-emerald-500/[0.07] dark:bg-emerald-500/[0.1]",
               icon: ArrowUpRight,
-              iconColor: "text-emerald-600 dark:text-emerald-300",
             },
             {
               label: "הוצאות",
               value: stats.expenses,
-              color: "text-rose-600 dark:text-rose-300",
-              bg: "bg-rose-500/[0.07] dark:bg-rose-500/[0.1]",
+              tone: "text-rose-600 dark:text-rose-300 bg-rose-500/[0.07] dark:bg-rose-500/[0.1]",
               icon: ArrowDownLeft,
-              iconColor: "text-rose-600 dark:text-rose-300",
             },
             {
               label: "נטו",
               value: stats.net,
-              color: stats.net >= 0 ? "text-sky-600 dark:text-sky-300" : "text-rose-600 dark:text-rose-300",
-              bg: stats.net >= 0 ? "bg-sky-500/[0.07] dark:bg-sky-500/[0.1]" : "bg-rose-500/[0.07] dark:bg-rose-500/[0.1]",
+              tone: stats.net >= 0 ? "text-sky-600 dark:text-sky-300 bg-sky-500/[0.07] dark:bg-sky-500/[0.1]" : "text-rose-600 dark:text-rose-300 bg-rose-500/[0.07] dark:bg-rose-500/[0.1]",
               icon: TrendingUp,
-              iconColor: stats.net >= 0 ? "text-sky-600 dark:text-sky-300" : "text-rose-600 dark:text-rose-300",
             },
-          ].map(({ label, value, color, bg, icon: Icon, iconColor }) => (
-            <div key={label} className={cn("surface-shell rounded-[calc(var(--radius)+0.625rem)] p-3.5 text-right", bg)}>
-              <div className="flex items-start justify-between gap-1">
-                <div className="min-w-0">
+            {
+              label: "ממוצע יומי",
+              value: Math.max(dailyAverages.averageIncome, dailyAverages.averageExpenses),
+              tone: "text-foreground bg-muted/40",
+              icon: Clock,
+            },
+          ].map(({ label, value, tone, icon: Icon }) => (
+            <div key={label} className={cn("surface-shell rounded-[calc(var(--radius)+0.625rem)] p-3.5 text-right", tone)}>
+              <div className="flex items-center gap-3">
+                <div className="min-w-0 flex-1 text-right">
                   <p className="text-[10px] font-semibold text-muted-foreground">{label}</p>
-                  <p
-                    className={cn("mt-1 text-base font-black leading-tight tabular-nums", color)}
-                    style={{ direction: "ltr", unicodeBidi: "bidi-override", fontSize: "clamp(0.75rem,3.5vw,1rem)" }}
-                  >
-                    {formatCashflowAmount(Math.abs(value), data.settings.currency)}
-                  </p>
+                  <p className="cashflow-number mt-1 text-base font-black">{formatCashflowAmount(Math.abs(value), data.settings.currency)}</p>
                 </div>
-                <Icon className={cn("h-3.5 w-3.5 mt-0.5 shrink-0", iconColor)} />
+                <div className="inline-flex h-11 w-11 items-center justify-center rounded-[calc(var(--radius)+0.375rem)] border border-primary/25 bg-primary/[0.12] text-primary shadow-[var(--app-shadow)]">
+                  <Icon className="h-4 w-4" />
+                </div>
               </div>
             </div>
           ))}
         </motion.div>
       </AnimatePresence>
 
-      {/* ── Quick actions ─────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 gap-2.5">
-        {quickActions.map(({ label, icon: Icon, colorClass, onClick }) => (
+        {[
+          { label: "הוסף הכנסה", icon: ArrowUpRight, tone: "text-emerald-700 dark:text-emerald-300 bg-emerald-500/[0.1] border-emerald-500/25 hover:bg-emerald-500/18", onClick: onAddIncome },
+          { label: "הוסף הוצאה", icon: ArrowDownLeft, tone: "text-rose-700 dark:text-rose-300 bg-rose-500/[0.1] border-rose-500/25 hover:bg-rose-500/18", onClick: onAddExpense },
+          { label: "תשלום עתידי", icon: CalendarClock, tone: "text-amber-700 dark:text-amber-300 bg-amber-500/[0.1] border-amber-500/25 hover:bg-amber-500/18", onClick: onAddUpcoming },
+          { label: "עדכן יתרה", icon: RefreshCw, tone: "text-sky-700 dark:text-sky-300 bg-sky-500/[0.1] border-sky-500/25 hover:bg-sky-500/18", onClick: onUpdateBalance },
+        ].map(({ label, icon: Icon, tone, onClick }) => (
           <button
             key={label}
+            type="button"
             onClick={onClick}
-            className={cn(
-              "flex items-center gap-3 rounded-[calc(var(--radius)+0.5rem)] border px-4 py-3.5 text-right text-sm font-semibold transition-all duration-150 active:scale-[0.98]",
-              colorClass,
-            )}
+            className={cn("flex items-center gap-3 rounded-[calc(var(--radius)+0.5rem)] border px-4 py-3.5 text-right text-sm font-semibold transition-all duration-150 active:scale-[0.98]", tone)}
           >
             <Plus className="h-4 w-4 shrink-0 opacity-70" />
             <span className="flex-1">{label}</span>
@@ -286,123 +235,100 @@ export function CashflowOverview({
         ))}
       </div>
 
-      {/* ── Upcoming payments preview ─────────────────────────────────────── */}
-      {pendingPayments.length > 0 && (
+      {pendingPayments.length > 0 ? (
         <Card className="surface-shell rounded-[calc(var(--radius)+0.85rem)] border-border/70">
-          <CardHeader className="flex-row items-center justify-between pb-3 pt-4 px-4 text-right">
-            <CardTitle className="text-sm font-bold">תשלומים קרובים</CardTitle>
-            <button
-              onClick={onViewUpcoming}
-              className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
-            >
-              הכל
-              <ChevronLeft className="h-3 w-3" />
-            </button>
+          <CardHeader className="px-4 pb-3 pt-5 text-right">
+            <div className="flex items-center justify-between gap-3">
+              <button type="button" onClick={onViewUpcoming} className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
+                הכל
+                <ChevronLeft className="h-3 w-3" />
+              </button>
+              <CardTitle className="text-sm font-bold">תשלומים קרובים</CardTitle>
+            </div>
           </CardHeader>
-          <CardContent className="px-4 pb-4 space-y-2">
-            {pendingPayments.map((p) => {
-              const daysUntil = getDaysUntil(p.dueDate);
+          <CardContent className="space-y-2 px-4 pb-4">
+            {pendingPayments.map((payment) => {
+              const daysUntil = getDaysUntil(payment.dueDate);
               const isUrgent = daysUntil <= 3;
               return (
                 <div
-                  key={p.id}
+                  key={payment.id}
                   className={cn(
                     "flex items-center gap-3 rounded-[calc(var(--radius)+0.25rem)] border px-3 py-2.5",
-                    isUrgent
-                      ? "border-rose-500/25 bg-rose-500/[0.05] dark:bg-rose-500/[0.08]"
-                      : "border-border/40 bg-muted/30",
+                    isUrgent ? "border-rose-500/25 bg-rose-500/[0.05] dark:bg-rose-500/[0.08]" : "border-border/40 bg-muted/30",
                   )}
                 >
                   <div
                     className={cn(
-                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-black",
-                      isUrgent
-                        ? "bg-rose-500/[0.15] text-rose-700 dark:text-rose-300"
-                        : "bg-amber-500/[0.12] text-amber-700 dark:text-amber-300",
+                      "inline-flex h-8 min-w-8 shrink-0 items-center justify-center rounded-full px-2 text-xs font-black",
+                      isUrgent ? "bg-rose-500/[0.15] text-rose-700 dark:text-rose-300" : "bg-amber-500/[0.12] text-amber-700 dark:text-amber-300",
                     )}
                   >
-                    {daysUntil === 0 ? "היום" : daysUntil < 0 ? `+${Math.abs(daysUntil)}` : daysUntil}
+                    {daysUntil === 0 ? "היום" : daysUntil}
                   </div>
-                  <div className="flex-1 min-w-0 text-right">
-                    <p className="text-sm font-semibold leading-tight truncate">{p.name}</p>
-                    <p className="text-xs text-muted-foreground">{formatHebrewDateShort(p.dueDate)}</p>
+                  <div className="min-w-0 flex-1 text-right">
+                    <p className="truncate text-sm font-semibold leading-tight">{payment.name}</p>
+                    <p className="text-xs text-muted-foreground">{formatHebrewDateShort(payment.dueDate)}</p>
                   </div>
-                  <p className="text-sm font-black tabular-nums shrink-0" style={{ direction: "ltr" }}>
-                    {formatCashflowAmount(p.amount, data.settings.currency)}
-                  </p>
+                  <p className="cashflow-number shrink-0 text-sm font-black">{formatCashflowAmount(payment.amount, data.settings.currency)}</p>
                 </div>
               );
             })}
           </CardContent>
         </Card>
-      )}
+      ) : null}
 
-      {/* ── Cashflow chart (7 days) ───────────────────────────────────────── */}
       <Card className="surface-shell rounded-[calc(var(--radius)+0.85rem)] border-border/70">
-        <CardHeader className="pb-2 pt-4 px-4 text-right">
-          <div className="rtl-title-row">
-            <div>
-              <CardTitle className="text-sm font-bold">תזרים 7 ימים אחרונים</CardTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">הכנסות מול הוצאות יומיות</p>
+        <CardHeader className="px-4 pb-2 pt-5 text-right">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex gap-1 rounded-[calc(var(--radius)+0.25rem)] border border-border/50 bg-muted/35 p-1">
+              {([7, 30] as ForecastRange[]).map((range) => (
+                <button
+                  key={range}
+                  type="button"
+                  onClick={() => setForecastRange(range)}
+                  className={cn(
+                    "rounded-[calc(var(--radius)+0.125rem)] px-3 py-1.5 text-xs font-semibold transition-colors",
+                    forecastRange === range ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {range} ימים
+                </button>
+              ))}
             </div>
-            <div className="icon-chip h-9 w-9 shrink-0 rounded-[calc(var(--radius)+0.375rem)] border-sky-500/20 bg-sky-500/[0.1] text-sky-600 dark:text-sky-300">
-              <TrendingUp className="h-4 w-4" />
+            <div className="text-right">
+              <CardTitle className="text-sm font-bold">תחזית יתרה</CardTitle>
+              <p className="text-xs text-muted-foreground">מבוסס על יתרה נוכחית, תשלומים צפויים ונתוני בסיס</p>
             </div>
           </div>
         </CardHeader>
         <CardContent className="px-2 pb-4">
           <div className="h-44">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData7} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+              <AreaChart data={forecastSeries} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="incomeGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#10b981" stopOpacity={0.25} />
-                    <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="expenseGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#f43f5e" stopOpacity={0.2} />
-                    <stop offset="100%" stopColor="#f43f5e" stopOpacity={0} />
+                  <linearGradient id="cashflowForecast" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#95df1e" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="#95df1e" stopOpacity={0.03} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.1)" vertical={false} />
-                <XAxis
-                  dataKey="day"
-                  tick={{ fontSize: 10, fill: "rgba(128,128,128,0.7)" }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fontSize: 9, fill: "rgba(128,128,128,0.6)" }}
-                  axisLine={false}
-                  tickLine={false}
-                  tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`}
-                />
+                <XAxis dataKey="label" tick={{ fontSize: 10, fill: "rgba(128,128,128,0.7)" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 9, fill: "rgba(128,128,128,0.6)" }} axisLine={false} tickLine={false} tickFormatter={(value) => `${Math.round(value / 1000)}K`} />
                 <Tooltip content={<ChartTooltip />} />
-                <Area type="monotone" dataKey="income" stroke="#10b981" strokeWidth={2} fill="url(#incomeGrad)" name="הכנסות" />
-                <Area type="monotone" dataKey="expenses" stroke="#f43f5e" strokeWidth={2} fill="url(#expenseGrad)" name="הוצאות" />
+                <Area type="monotone" dataKey="balance" stroke="#95df1e" strokeWidth={2.5} fill="url(#cashflowForecast)" name="יתרה" />
               </AreaChart>
             </ResponsiveContainer>
-          </div>
-          <div className="flex justify-center gap-5 mt-2">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <span className="inline-block h-2 w-3 rounded-full bg-emerald-500 opacity-70" />
-              הכנסות
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <span className="inline-block h-2 w-3 rounded-full bg-rose-500 opacity-70" />
-              הוצאות
-            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* ── Income vs Expenses bar chart (6 months) ──────────────────────── */}
       <Card className="surface-shell rounded-[calc(var(--radius)+0.85rem)] border-border/70">
-        <CardHeader className="pb-2 pt-4 px-4 text-right">
-          <div className="rtl-title-row">
-            <div>
+        <CardHeader className="px-4 pb-2 pt-5 text-right">
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-right">
               <CardTitle className="text-sm font-bold">הכנסות מול הוצאות</CardTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">6 חודשים אחרונים</p>
+              <p className="text-xs text-muted-foreground">6 החודשים האחרונים על בסיס נתונים אמיתיים</p>
             </div>
             <div className="icon-chip h-9 w-9 shrink-0 rounded-[calc(var(--radius)+0.375rem)] border-primary/20 bg-primary/[0.1] text-primary">
               <Clock className="h-4 w-4" />
@@ -412,39 +338,18 @@ export function CashflowOverview({
         <CardContent className="px-2 pb-4">
           <div className="h-44">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData6} margin={{ top: 4, right: 8, left: -20, bottom: 0 }} barCategoryGap="30%">
+              <BarChart data={incomeExpenseData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }} barCategoryGap="30%">
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.1)" vertical={false} />
-                <XAxis
-                  dataKey="month"
-                  tick={{ fontSize: 10, fill: "rgba(128,128,128,0.7)" }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fontSize: 9, fill: "rgba(128,128,128,0.6)" }}
-                  axisLine={false}
-                  tickLine={false}
-                  tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`}
-                />
+                <XAxis dataKey="label" tick={{ fontSize: 10, fill: "rgba(128,128,128,0.7)" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 9, fill: "rgba(128,128,128,0.6)" }} axisLine={false} tickLine={false} tickFormatter={(value) => `${Math.round(value / 1000)}K`} />
                 <Tooltip content={<ChartTooltip />} />
                 <Bar dataKey="income" fill="#10b981" radius={[3, 3, 0, 0]} name="הכנסות" maxBarSize={20} />
                 <Bar dataKey="expenses" fill="#f43f5e" radius={[3, 3, 0, 0]} name="הוצאות" maxBarSize={20} />
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <div className="flex justify-center gap-5 mt-2">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <span className="inline-block h-2 w-3 rounded-full bg-emerald-500 opacity-70" />
-              הכנסות
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <span className="inline-block h-2 w-3 rounded-full bg-rose-500 opacity-70" />
-              הוצאות
-            </div>
-          </div>
         </CardContent>
       </Card>
-
     </div>
   );
 }

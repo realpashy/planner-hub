@@ -9,6 +9,7 @@ export interface CloudDataPayload {
   plannerData?: unknown;
   budgetData?: unknown;
   mealData?: unknown;
+  cashflowData?: unknown;
 }
 
 export interface ProfileRow {
@@ -58,31 +59,32 @@ function getJerusalemKeys(date = new Date()) {
 
 export async function getCloudData(userId: string) {
   const result = await dbPool.query(
-    "SELECT planner_json as \"plannerData\", budget_json as \"budgetData\", meal_json as \"mealData\" FROM app_user_data WHERE user_id = $1 LIMIT 1",
+    "SELECT planner_json as \"plannerData\", budget_json as \"budgetData\", meal_json as \"mealData\", cashflow_json as \"cashflowData\" FROM app_user_data WHERE user_id = $1 LIMIT 1",
     [userId],
   );
 
   if (!result.rowCount) {
     await dbPool.query(
-      "INSERT INTO app_user_data (user_id, planner_json, budget_json, meal_json) VALUES ($1, '{}'::jsonb, '{}'::jsonb, '{}'::jsonb)",
+      "INSERT INTO app_user_data (user_id, planner_json, budget_json, meal_json, cashflow_json) VALUES ($1, '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, '{}'::jsonb)",
       [userId],
     );
-    return { plannerData: null, budgetData: null, mealData: null };
+    return { plannerData: null, budgetData: null, mealData: null, cashflowData: null };
   }
 
-  return result.rows[0] as { plannerData: unknown; budgetData: unknown; mealData: unknown };
+  return result.rows[0] as { plannerData: unknown; budgetData: unknown; mealData: unknown; cashflowData: unknown };
 }
 
 export async function saveCloudData(userId: string, payload: CloudDataPayload) {
   await dbPool.query(
     `
-    INSERT INTO app_user_data (user_id, planner_json, budget_json, meal_json, updated_at)
-    VALUES ($1, COALESCE($2::jsonb, '{}'::jsonb), COALESCE($3::jsonb, '{}'::jsonb), COALESCE($4::jsonb, '{}'::jsonb), NOW())
+    INSERT INTO app_user_data (user_id, planner_json, budget_json, meal_json, cashflow_json, updated_at)
+    VALUES ($1, COALESCE($2::jsonb, '{}'::jsonb), COALESCE($3::jsonb, '{}'::jsonb), COALESCE($4::jsonb, '{}'::jsonb), COALESCE($5::jsonb, '{}'::jsonb), NOW())
     ON CONFLICT (user_id)
     DO UPDATE SET
       planner_json = COALESCE($2::jsonb, app_user_data.planner_json),
       budget_json = COALESCE($3::jsonb, app_user_data.budget_json),
       meal_json = COALESCE($4::jsonb, app_user_data.meal_json),
+      cashflow_json = COALESCE($5::jsonb, app_user_data.cashflow_json),
       updated_at = NOW();
     `,
     [
@@ -90,6 +92,7 @@ export async function saveCloudData(userId: string, payload: CloudDataPayload) {
       payload.plannerData ? JSON.stringify(payload.plannerData) : null,
       payload.budgetData ? JSON.stringify(payload.budgetData) : null,
       payload.mealData ? JSON.stringify(payload.mealData) : null,
+      payload.cashflowData ? JSON.stringify(payload.cashflowData) : null,
     ],
   );
 }
