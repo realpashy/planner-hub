@@ -51,11 +51,11 @@
   --warning: 38 92% 50%;
   --warning-foreground: 0 0% 100%;
   --app-shadow: 2px 2px 1px 1px #0000000d;
-  --surface-canvas: linear-gradient(180deg, rgba(255,255,255,0.99), rgba(249,250,251,0.99));
-  --surface-card: linear-gradient(180deg, rgba(255,255,255,1), rgba(252,253,250,0.985));
-  --surface-muted: linear-gradient(180deg, rgba(251,252,253,1), rgba(247,249,244,0.985));
-  --surface-accent: linear-gradient(180deg, rgba(245,252,232,0.95), rgba(231,247,205,0.72));
-  --surface-glow: radial-gradient(circle at top right, rgba(149,223,30,0.06), transparent 44%);
+  --surface-canvas: linear-gradient(180deg, rgba(250,251,250,0.99), rgba(245,247,244,0.99));
+  --surface-card: linear-gradient(180deg, rgba(255,255,255,1), rgba(253,254,252,0.99));
+  --surface-muted: linear-gradient(180deg, rgba(248,249,247,1), rgba(243,245,241,0.99));
+  --surface-accent: linear-gradient(180deg, rgba(240,250,220,0.80), rgba(225,243,190,0.55));
+  --surface-glow: radial-gradient(circle at top right, rgba(149,223,30,0.025), transparent 44%);
   --meal-card-overlay: radial-gradient(circle at top right, rgba(149,223,30,0.045), transparent 28%);
   --meal-card-selected-overlay: radial-gradient(circle at top right, rgba(149,223,30,0.09), transparent 30%);
   --meal-soft-overlay: radial-gradient(circle at top right, rgba(149,223,30,0.03), transparent 26%);
