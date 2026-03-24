@@ -1,6 +1,6 @@
 # Cashflow Module
 
-This document describes the implemented MVP for the Planner Hub cashflow module.
+This document describes the current MVP for the Planner Hub cashflow module.
 
 ## Goal
 
@@ -26,6 +26,7 @@ It focuses on four practical questions:
 - Cloud sync is handled through the existing `/api/data` contract
 - The client writes to local storage first and then syncs through the shared cloud sync flow
 - Receipt attachments are stored separately in `cashflow_attachments`
+- Import does not create separate storage. After review, it writes back into the same synced `cashflowData` model
 
 ## Data model
 
@@ -52,6 +53,7 @@ Required fields:
 
 - `id`
 - `name`
+- `category?`
 - `amount`
 - `dueDate`
 - `note?`
@@ -75,6 +77,7 @@ Required fields:
 - `bankBalance?`
 - `cashOnHand?`
 - `overallAvailableCash?`
+- `overallBankPortion?`
 - `monthlyBaselineExpenses?`
 - `monthlyBaselineIncome?`
 - `cashWarningThreshold?`
@@ -90,6 +93,13 @@ Two balance modes are supported:
    - uses `overallAvailableCash`
 
 When `balanceMode` is `overall`, the explicit overall number overrides the bank + מזומן split.
+
+### Overall bank portion
+
+- `overallBankPortion` is only shown in overall mode
+- it must be less than or equal to `overallAvailableCash`
+- it is stored for visibility and future split features
+- it does **not** change current calculations yet
 
 ## Receipt attachment MVP
 
@@ -160,16 +170,21 @@ They do **not** create fake transactions.
 
 ### Upcoming payments
 
-- name is required
+- name is required after category/default-name resolution
 - amount must be positive
 - due date is required
 
 ### Partners
 
-- if exactly one partner exists, ownership is forced to `100`
-- if more than one partner exists, ownership remains editable
-- total ownership must equal `100`
+- if exactly one partner exists, it can still be edited but starts at `100%`
+- when adding or editing a partner, the newly entered share is preserved
+- existing partner shares are reduced proportionally
+- the final ownership total must equal `100%`
 - invalid ownership totals are blocked from save
+
+### Settings
+
+- in overall mode, `overallBankPortion <= overallAvailableCash`
 
 ## Paid flow
 
@@ -179,6 +194,91 @@ Upcoming payments support a lightweight confirmation:
 - `סמן כשולם וצור הוצאה`
 
 When the second option is used, a matching expense transaction is created and linked through `paidFor`.
+
+## Import workflow
+
+The importer is deterministic and review-first.
+It never saves immediately after upload.
+
+### Entry points
+
+- `הורדת תבנית מוכנה`
+- `ייבוא מקובץ קיים`
+
+### Supported file types
+
+- `.xlsx`
+- `.xls`
+- `.csv`
+
+### Steps
+
+1. `העלאת קובץ`
+2. `בחירת גיליון`
+3. `זיהוי אזורים`
+4. `התאמת שדות`
+5. `בדיקת נתונים`
+6. `סיכום וייבוא`
+
+### Detection heuristics
+
+The importer scans each sheet for meaningful blocks instead of assuming one table.
+
+Likely block types:
+
+- transactions
+- upcoming payments
+- partners
+- settings / opening balances
+- fixed monthly expenses
+- unknown
+
+Hebrew-oriented hints include labels such as:
+
+- transactions: `תאריך`, `סכום`, `הכנסה`, `הוצאה`, `סוג תנועה`, `למי שולם`, `עבור מה`, `הערות`
+- upcoming: `שם`, `סכום`, `תאריך יעד`, `שולם`, `תשלום`
+- partners: `שותף`, `אחוז`, `בעלות`, `השקעה`, `התחייבות`
+- settings: `בנק`, `מזומן`, `יתרה`, `פתיחה`
+- fixed expenses: `שכירות`, `ארנונה`, `חשמל`, `מים`, `משכורות`, `אינטרנט`
+
+### Cleanup rules
+
+- trim whitespace
+- normalize Hebrew spacing and punctuation
+- parse `₪`
+- parse comma-separated amounts
+- parse Excel serial dates
+- parse common local date formats
+- ignore empty rows and blank columns
+- skip summary rows such as `סה"כ`, `סך הכל`, `total`
+
+### Mapping and validation
+
+- user chooses or confirms block type
+- user can choose the header row
+- user maps source columns to cashflow fields
+- unmapped columns are ignored
+- imported rows are classified as:
+  - valid
+  - invalid
+  - skipped
+  - duplicates
+
+### Fixed expenses
+
+Fixed expenses do not create fake historical transactions.
+
+They can be used only as:
+
+- monthly baseline expenses total
+- or ignored
+
+### Duplicate and replace safeguards
+
+- importer checks likely duplicates against existing saved data and the current import set
+- replace is allowed only per section
+- replace always shows a clear destructive confirmation with the exact affected section
+- there is no silent replacement
 
 ## Intentionally deferred features
 

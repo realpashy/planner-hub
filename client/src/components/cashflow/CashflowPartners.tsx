@@ -10,10 +10,13 @@ import {
   type CashflowData,
   type CashflowPartner,
   formatCashflowAmount,
+  formatOwnershipPercent,
   generateId,
   getPartnerSummary,
+  rebalancePartnerOwnership,
   validatePartnerOwnership,
 } from "@/lib/cashflow";
+import { CashflowNumericField } from "@/components/cashflow/CashflowNumericField";
 
 const PARTNER_COLORS = [
   { bg: "bg-sky-500", soft: "bg-sky-500/[0.12] border-sky-500/25 text-sky-700 dark:text-sky-300" },
@@ -27,47 +30,18 @@ function getPartnerColor(index: number) {
   return PARTNER_COLORS[index % PARTNER_COLORS.length];
 }
 
-function MoneyField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <label className="text-xs font-semibold text-muted-foreground">{label}</label>
-      <div className="relative">
-        <Input
-          type="number"
-          inputMode="decimal"
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          className="h-14 rounded-[calc(var(--radius)+0.375rem)] border-border/70 bg-muted/40 pe-4 ps-12 text-right text-[22px] font-black tracking-tight"
-          style={{ direction: "ltr", textAlign: "right" }}
-        />
-        <span className="pointer-events-none absolute start-4 top-1/2 -translate-y-1/2 text-base font-black text-muted-foreground">
-          ₪
-        </span>
-      </div>
-    </div>
-  );
-}
-
 function PartnerSheet({
   open,
   existingPartners,
   initialPartner,
   onClose,
-  onSave,
+  onSaveAll,
 }: {
   open: boolean;
   existingPartners: CashflowPartner[];
   initialPartner?: CashflowPartner | null;
   onClose: () => void;
-  onSave: (partner: CashflowPartner) => void;
+  onSaveAll: (partners: CashflowPartner[]) => void;
 }) {
   const isEditing = Boolean(initialPartner);
   const [name, setName] = useState("");
@@ -78,57 +52,52 @@ function PartnerSheet({
 
   useEffect(() => {
     if (!open) return;
-    const autoOwnership = !initialPartner && existingPartners.length === 0 ? "100" : "";
+    const autoOwnership = !initialPartner && existingPartners.length === 0 ? "100" : initialPartner ? String(initialPartner.ownershipPercent) : "";
     setName(initialPartner?.name ?? "");
-    setOwnershipPercent(initialPartner ? String(initialPartner.ownershipPercent) : autoOwnership);
+    setOwnershipPercent(autoOwnership);
     setInvestedAmount(initialPartner ? String(initialPartner.investedAmount) : "");
     setTargetCommitment(initialPartner?.targetCommitment ? String(initialPartner.targetCommitment) : "");
     setError("");
   }, [existingPartners.length, initialPartner, open]);
 
-  const parsedOwnership = Number.parseFloat(ownershipPercent || "0") || 0;
-  const nextPartnerCount = initialPartner ? existingPartners.length : existingPartners.length + 1;
-  const liveTotal = useMemo(() => {
-    const others = existingPartners.filter((partner) => partner.id !== initialPartner?.id);
-    const otherTotal = others.reduce((sum, partner) => sum + partner.ownershipPercent, 0);
-    return otherTotal + parsedOwnership;
-  }, [existingPartners, initialPartner?.id, parsedOwnership]);
-
-  const onePartnerMode = nextPartnerCount === 1;
-
-  function handleSave() {
+  const draftPartner = useMemo<CashflowPartner>(() => {
     const timestamp = new Date().toISOString();
-    const partner: CashflowPartner = {
+    return {
       id: initialPartner?.id ?? generateId(),
-      name: name.trim(),
-      ownershipPercent: onePartnerMode ? 100 : parsedOwnership,
+      name: name.trim() || "שותף חדש",
+      ownershipPercent: Number.parseFloat(ownershipPercent || "0") || 0,
       investedAmount: Number.parseFloat(investedAmount || "0") || 0,
       targetCommitment: targetCommitment ? Number.parseFloat(targetCommitment || "0") || 0 : undefined,
       createdAt: initialPartner?.createdAt ?? timestamp,
       updatedAt: timestamp,
     };
+  }, [initialPartner?.createdAt, initialPartner?.id, investedAmount, name, ownershipPercent, targetCommitment]);
 
-    if (!partner.name) {
+  const previewPartners = useMemo(() => {
+    if (!name.trim()) return [];
+    return rebalancePartnerOwnership(existingPartners, draftPartner);
+  }, [draftPartner, existingPartners, name]);
+
+  const liveTotal = useMemo(() => previewPartners.reduce((sum, partner) => sum + partner.ownershipPercent, 0), [previewPartners]);
+
+  function handleSave() {
+    if (!name.trim()) {
       setError("נא להכניס שם שותף");
       return;
     }
 
-    if (!onePartnerMode && (partner.ownershipPercent <= 0 || partner.ownershipPercent > 100)) {
+    if (draftPartner.ownershipPercent <= 0 || draftPartner.ownershipPercent > 100) {
       setError("אחוז הבעלות חייב להיות בין 1 ל-100");
       return;
     }
 
-    const validation = validatePartnerOwnership([
-      ...existingPartners.filter((existingPartner) => existingPartner.id !== partner.id),
-      partner,
-    ]);
-
+    const validation = validatePartnerOwnership(previewPartners);
     if (!validation.valid) {
       setError(`סך כל אחוזי הבעלות חייב להיות 100%. כרגע: ${Math.round(validation.total)}%`);
       return;
     }
 
-    onSave(partner);
+    onSaveAll(previewPartners);
     onClose();
   }
 
@@ -139,7 +108,7 @@ function PartnerSheet({
         dir="rtl"
         onOpenAutoFocus={(event) => event.preventDefault()}
         className={cn(
-          "max-h-[88dvh] overflow-y-auto rounded-t-[1.25rem] border-t border-border/60 p-0 bg-popover",
+          "max-h-[88dvh] overflow-y-auto rounded-t-[1.25rem] border-t border-border/60 p-0 bg-popover md:mx-auto md:mb-4 md:max-w-[60vw] md:rounded-[calc(var(--radius)+1rem)] md:border",
           "bg-[radial-gradient(circle_at_top_right,rgba(149,223,30,0.03),transparent_40%)]",
           "dark:bg-[radial-gradient(circle_at_top_right,rgba(149,223,30,0.07),transparent_40%),linear-gradient(180deg,rgba(30,30,30,0.99),rgba(22,22,22,0.99))]",
           "[&>button]:left-4 [&>button]:right-auto [&>button]:top-4",
@@ -156,41 +125,48 @@ function PartnerSheet({
             <label className="text-xs font-semibold text-muted-foreground">שם השותף</label>
             <Input
               value={name}
-              onChange={(event) => { setName(event.target.value); setError(""); }}
+              onChange={(event) => {
+                setName(event.target.value);
+                setError("");
+              }}
               placeholder="לדוגמה: יוסי כהן"
               className="h-12 rounded-[calc(var(--radius)+0.25rem)] border-border/60 bg-muted/40 text-right focus:border-primary/50"
             />
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground">אחוז בעלות</label>
-            <div className="relative">
-              <Input
-                type="number"
-                inputMode="decimal"
-                value={onePartnerMode ? "100" : ownershipPercent}
-                onChange={(event) => { setOwnershipPercent(event.target.value); setError(""); }}
-                disabled={onePartnerMode}
-                className="h-14 rounded-[calc(var(--radius)+0.375rem)] border-border/70 bg-muted/40 pe-4 ps-12 text-right text-[22px] font-black tracking-tight"
-                style={{ direction: "ltr", textAlign: "right" }}
-              />
-              <span className="pointer-events-none absolute start-4 top-1/2 -translate-y-1/2 text-base font-black text-muted-foreground">%</span>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {onePartnerMode ? "שותף יחיד מקבל 100% אוטומטית." : `סה״כ בעלות כרגע: ${Math.round(liveTotal)}%`}
-            </p>
-          </div>
+          <CashflowNumericField
+            label="אחוז בעלות"
+            suffix="%"
+            value={ownershipPercent}
+            onChange={(value) => {
+              setOwnershipPercent(value);
+              setError("");
+            }}
+          />
+          <p className="text-xs text-muted-foreground">
+            {existingPartners.length === 0 ? "השותף הראשון מתחיל ב-100%, אבל אפשר לערוך לפני שמירה." : `סה״כ בעלות מחושב: ${Math.round(liveTotal)}%`}
+          </p>
 
-          <MoneyField label="השקעה בפועל" value={investedAmount} onChange={setInvestedAmount} />
-          <MoneyField label="יעד התחייבות (אופציונלי)" value={targetCommitment} onChange={setTargetCommitment} />
+          <CashflowNumericField label="השקעה בפועל" value={investedAmount} onChange={setInvestedAmount} />
+          <CashflowNumericField label="יעד התחייבות (אופציונלי)" value={targetCommitment} onChange={setTargetCommitment} />
+
+          {previewPartners.length > 0 ? (
+            <div className="space-y-2 rounded-[calc(var(--radius)+0.375rem)] border border-border/50 bg-muted/30 p-3 text-right">
+              <p className="text-xs font-semibold text-muted-foreground">חלוקה מחושבת לפני שמירה</p>
+              <div className="space-y-1.5">
+                {previewPartners.map((partnerPreview) => (
+                  <div key={partnerPreview.id} className="flex items-center gap-2">
+                    <span className="cashflow-number text-xs font-bold text-primary">{formatOwnershipPercent(partnerPreview.ownershipPercent)}</span>
+                    <span className="min-w-0 flex-1 truncate text-sm font-semibold">{partnerPreview.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
 
           {error ? <p className="text-xs font-medium text-destructive">{error}</p> : null}
 
-          <Button
-            size="lg"
-            className="h-14 w-full rounded-[calc(var(--radius)+0.5rem)] text-base font-bold"
-            onClick={handleSave}
-          >
+          <Button size="lg" className="h-14 w-full rounded-[calc(var(--radius)+0.5rem)] text-base font-bold" onClick={handleSave}>
             {isEditing ? "שמור שינויים" : "הוסף שותף"}
           </Button>
 
@@ -217,15 +193,16 @@ function PartnerCard({
   onEdit: (partner: CashflowPartner) => void;
 }) {
   const color = getPartnerColor(index);
-  const progressPercent = partner.targetCommitment
-    ? Math.min((partner.investedAmount / partner.targetCommitment) * 100, 100)
-    : 100;
+  const progressPercent = partner.targetCommitment ? Math.min((partner.investedAmount / partner.targetCommitment) * 100, 100) : 100;
 
   return (
     <Card className="surface-shell overflow-hidden rounded-[calc(var(--radius)+0.75rem)] border-border/60">
       <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, transparent, currentColor)` }} />
       <CardContent className="space-y-3 p-4 text-right">
         <div className="flex items-center gap-3">
+          <div className={cn("inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border text-sm font-black", color.soft)}>
+            {formatOwnershipPercent(partner.ownershipPercent)}
+          </div>
           <div className="min-w-0 flex-1 space-y-1 text-right">
             <div className="flex items-center gap-2">
               <span className="text-base font-bold">{partner.name}</span>
@@ -237,16 +214,12 @@ function PartnerCard({
               ) : null}
             </div>
           </div>
-
-          <div className={cn("inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border text-lg font-black", color.soft)}>
-            {partner.ownershipPercent}%
-          </div>
         </div>
 
         <div className="space-y-1">
           <div className="flex justify-between text-xs text-muted-foreground">
             <span>אחוז בעלות</span>
-            <span>{partner.ownershipPercent}%</span>
+            <span>{formatOwnershipPercent(partner.ownershipPercent)}</span>
           </div>
           <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
             <div className={cn("h-full rounded-full transition-all duration-500", color.bg)} style={{ width: `${partner.ownershipPercent}%` }} />
@@ -260,9 +233,7 @@ function PartnerCard({
           </div>
           <div className="surface-subtle rounded-[calc(var(--radius)+0.25rem)] p-2.5 text-right">
             <p className="text-[10px] font-semibold text-muted-foreground">יעד התחייבות</p>
-            <p className="cashflow-number mt-1 text-sm font-black">
-              {partner.targetCommitment ? formatCashflowAmount(partner.targetCommitment, currency) : "—"}
-            </p>
+            <p className="cashflow-number mt-1 text-sm font-black">{partner.targetCommitment ? formatCashflowAmount(partner.targetCommitment, currency) : "—"}</p>
           </div>
         </div>
 
@@ -295,10 +266,10 @@ function PartnerCard({
 
 interface CashflowPartnersProps {
   data: CashflowData;
-  onSavePartner: (partner: CashflowPartner) => void;
+  onSavePartners: (partners: CashflowPartner[]) => void;
 }
 
-export function CashflowPartners({ data, onSavePartner }: CashflowPartnersProps) {
+export function CashflowPartners({ data, onSavePartners }: CashflowPartnersProps) {
   const [showPartnerSheet, setShowPartnerSheet] = useState(false);
   const [editingPartner, setEditingPartner] = useState<CashflowPartner | null>(null);
 
@@ -311,7 +282,7 @@ export function CashflowPartners({ data, onSavePartner }: CashflowPartnersProps)
     <div className="space-y-4 pb-4">
       {data.partners.length > 0 ? (
         <Card className="surface-shell overflow-hidden rounded-[calc(var(--radius)+0.85rem)] border-border/70">
-          <CardHeader className="pb-3 pt-5 text-right">
+          <CardHeader className="pb-3 pt-6 text-right">
             <CardTitle className="text-sm font-bold">סיכום שותפים</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 px-4 pb-4">
@@ -322,7 +293,7 @@ export function CashflowPartners({ data, onSavePartner }: CashflowPartnersProps)
                   {data.partners.map((partner, index) => (
                     <div
                       key={partner.id}
-                      title={`${partner.name}: ${partner.ownershipPercent}%`}
+                      title={`${partner.name}: ${formatOwnershipPercent(partner.ownershipPercent)}`}
                       className={cn("h-full transition-all duration-500", getPartnerColor(index).bg)}
                       style={{ width: `${partner.ownershipPercent}%` }}
                     />
@@ -333,7 +304,7 @@ export function CashflowPartners({ data, onSavePartner }: CashflowPartnersProps)
                     <div key={partner.id} className="flex items-center gap-1.5 text-xs">
                       <span className={cn("inline-block h-2 w-2 rounded-full", getPartnerColor(index).bg)} />
                       <span className="font-semibold">{partner.name}</span>
-                      <span className="text-muted-foreground">{partner.ownershipPercent}%</span>
+                      <span className="text-muted-foreground">{formatOwnershipPercent(partner.ownershipPercent)}</span>
                     </div>
                   ))}
                 </div>
@@ -376,12 +347,7 @@ export function CashflowPartners({ data, onSavePartner }: CashflowPartnersProps)
 
       <AnimatePresence>
         {data.partners.length === 0 ? (
-          <motion.div
-            key="empty"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex flex-col items-center gap-3 py-14 text-center"
-          >
+          <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center gap-3 py-14 text-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted/60">
               <Users className="h-6 w-6 text-muted-foreground/60" />
             </div>
@@ -393,12 +359,7 @@ export function CashflowPartners({ data, onSavePartner }: CashflowPartnersProps)
         ) : (
           <div className="space-y-3">
             {data.partners.map((partner, index) => (
-              <motion.div
-                key={partner.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-              >
+              <motion.div key={partner.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
                 <PartnerCard
                   partner={partner}
                   index={index}
@@ -423,7 +384,7 @@ export function CashflowPartners({ data, onSavePartner }: CashflowPartnersProps)
           setShowPartnerSheet(false);
           setEditingPartner(null);
         }}
-        onSave={onSavePartner}
+        onSaveAll={onSavePartners}
       />
     </div>
   );

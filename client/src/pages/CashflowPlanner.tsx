@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "wouter";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, BarChart3, CalendarClock, ListOrdered, Settings, TrendingUp, Users } from "lucide-react";
+import { ArrowLeft, BarChart3, CalendarClock, Home, ListOrdered, Settings, TrendingUp, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CashflowOverview } from "@/components/cashflow/CashflowOverview";
@@ -13,6 +13,7 @@ import { AddEntrySheet, AddUpcomingSheet } from "@/components/cashflow/AddEntryS
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { CashflowNumericField } from "@/components/cashflow/CashflowNumericField";
 import {
   type CashflowData,
   type CashflowPartner,
@@ -75,7 +76,7 @@ function UpdateBalanceSheet({ open, data, onClose, onSave }: UpdateBalanceSheetP
         dir="rtl"
         onOpenAutoFocus={(event) => event.preventDefault()}
         className={cn(
-          "max-h-[72dvh] rounded-t-[1.25rem] border-t border-border/60 p-0 bg-popover",
+          "max-h-[72dvh] rounded-t-[1.25rem] border-t border-border/60 p-0 bg-popover md:mx-auto md:mb-4 md:max-w-[60vw] md:rounded-[calc(var(--radius)+1rem)] md:border",
           "bg-[radial-gradient(circle_at_top_right,rgba(149,223,30,0.03),transparent_40%)]",
           "dark:bg-[radial-gradient(circle_at_top_right,rgba(149,223,30,0.07),transparent_40%),linear-gradient(180deg,rgba(30,30,30,0.99),rgba(22,22,22,0.99))]",
           "[&>button]:left-4 [&>button]:right-auto [&>button]:top-4",
@@ -88,35 +89,8 @@ function UpdateBalanceSheet({ open, data, onClose, onSave }: UpdateBalanceSheetP
           <SheetTitle>עדכון יתרה זמינה</SheetTitle>
         </SheetHeader>
         <div className="space-y-4 px-5 pb-6 pt-2">
-          <div className="space-y-1.5 text-right">
-            <label className="text-xs font-semibold text-muted-foreground">יתרת בנק (₪)</label>
-            <div className="relative">
-              <Input
-                type="number"
-                inputMode="decimal"
-                value={bankBalance}
-                onChange={(event) => setBankBalance(event.target.value)}
-                className="h-14 rounded-[calc(var(--radius)+0.375rem)] border-border/70 bg-muted/40 pe-4 ps-12 text-right text-[22px] font-black tracking-tight"
-                style={{ direction: "ltr", textAlign: "right" }}
-              />
-              <span className="pointer-events-none absolute start-4 top-1/2 -translate-y-1/2 text-base font-black text-muted-foreground">₪</span>
-            </div>
-          </div>
-
-          <div className="space-y-1.5 text-right">
-            <label className="text-xs font-semibold text-muted-foreground">מזומן (₪)</label>
-            <div className="relative">
-              <Input
-                type="number"
-                inputMode="decimal"
-                value={cashOnHand}
-                onChange={(event) => setCashOnHand(event.target.value)}
-                className="h-14 rounded-[calc(var(--radius)+0.375rem)] border-border/70 bg-muted/40 pe-4 ps-12 text-right text-[22px] font-black tracking-tight"
-                style={{ direction: "ltr", textAlign: "right" }}
-              />
-              <span className="pointer-events-none absolute start-4 top-1/2 -translate-y-1/2 text-base font-black text-muted-foreground">₪</span>
-            </div>
-          </div>
+          <CashflowNumericField label="יתרת בנק" value={bankBalance} onChange={setBankBalance} />
+          <CashflowNumericField label="מזומן" value={cashOnHand} onChange={setCashOnHand} />
 
           <div className="rounded-[calc(var(--radius)+0.25rem)] border border-sky-500/20 bg-sky-500/[0.07] px-3 py-2 text-right">
             <p className="text-xs font-semibold text-sky-700 dark:text-sky-300">
@@ -247,14 +221,11 @@ export default function CashflowPlanner() {
     });
   }
 
-  function handleSavePartner(partner: CashflowPartner) {
+  function handleSavePartners(partners: CashflowPartner[]) {
     updateData((previous) => {
-      const exists = previous.partners.some((item) => item.id === partner.id);
       return {
         ...previous,
-        partners: exists
-          ? previous.partners.map((item) => (item.id === partner.id ? partner : item))
-          : [...previous.partners, partner],
+        partners,
       };
     });
   }
@@ -264,6 +235,10 @@ export default function CashflowPlanner() {
       ...previous,
       settings,
     }));
+  }
+
+  function handleImport(nextData: CashflowData) {
+    updateData(() => nextData);
   }
 
   function handleUpdateBalance(bankBalance: number, cashOnHand: number) {
@@ -282,29 +257,39 @@ export default function CashflowPlanner() {
   return (
     <div className="app-shell flex min-h-screen flex-col" dir="rtl">
       <nav className="sticky top-0 z-50 shrink-0 border-b border-border/50 bg-background/90 backdrop-blur-md">
-        <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
+        <div className="flex w-full items-center justify-between px-4 py-3 md:px-6 xl:px-8">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-sky-500/20 bg-sky-500/[0.15] text-sky-600 dark:text-sky-300">
+              <TrendingUp className="h-4 w-4" />
+            </div>
+            <div className="space-y-0.5 text-right">
+              <div className="font-hebrew flex items-center justify-start gap-2 text-xs font-semibold text-muted-foreground">
+                <span className="text-muted-foreground/70">/</span>
+                <span>{SCREEN_TITLES[screen]}</span>
+                <Link href="/">
+                  <button className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-primary transition-colors hover:bg-primary/[0.08]">
+                    <Home className="h-3.5 w-3.5" />
+                    בית
+                  </button>
+                </Link>
+              </div>
+              <span className="font-hebrew block text-base font-black tracking-tight text-foreground">{SCREEN_TITLES[screen]}</span>
+            </div>
+          </div>
+
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Link href="/">
               <button className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted/60 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
                 <ArrowLeft className="h-4 w-4" />
               </button>
             </Link>
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-sky-500/20 bg-sky-500/[0.15] text-sky-600 dark:text-sky-300">
-                <TrendingUp className="h-4 w-4" />
-              </div>
-              <span className="text-base font-black tracking-tight text-foreground">{SCREEN_TITLES[screen]}</span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1">
-            <ThemeToggle />
           </div>
         </div>
       </nav>
 
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto pb-24">
-        <div className="mx-auto max-w-2xl px-4 py-5">
+        <div className="w-full px-4 py-5 md:px-6 xl:px-8">
           <AnimatePresence mode="wait">
             <motion.div
               key={screen}
@@ -343,11 +328,11 @@ export default function CashflowPlanner() {
               ) : null}
 
               {screen === "partners" ? (
-                <CashflowPartners data={data} onSavePartner={handleSavePartner} />
+                <CashflowPartners data={data} onSavePartners={handleSavePartners} />
               ) : null}
 
               {screen === "settings" ? (
-                <CashflowSettings data={data} onSave={handleSaveSettings} />
+                <CashflowSettings data={data} onSave={handleSaveSettings} onImport={handleImport} />
               ) : null}
             </motion.div>
           </AnimatePresence>
@@ -355,7 +340,7 @@ export default function CashflowPlanner() {
       </div>
 
       <nav className="safe-area-bottom fixed inset-x-0 bottom-0 z-50 border-t border-border/60 bg-background/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-2xl items-center justify-around px-2 py-2">
+        <div className="flex w-full items-center justify-around px-2 py-2 md:px-6 xl:px-8">
           {NAV_ITEMS.map(({ key, label, icon: Icon }) => {
             const isActive = screen === key;
             const showDot = key === "transactions" && hasNewTransactionsToday && !isActive;

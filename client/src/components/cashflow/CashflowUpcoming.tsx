@@ -1,18 +1,31 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { CalendarClock, Check, Clock, Pencil, Plus, Search } from "lucide-react";
+import { CalendarClock, Check, Pencil, Plus, Search } from "lucide-react";
 import {
+  type CashflowDateFilter,
   type CashflowData,
   type UpcomingPayment,
+  filterByDateRange,
   formatCashflowAmount,
   formatHebrewDate,
   getDaysUntil,
+  getUpcomingPaymentCategoryMeta,
 } from "@/lib/cashflow";
+import { CashflowDateRangeFilter } from "@/components/cashflow/CashflowDateRangeFilter";
 
 type FilterKey = "all" | "week" | "month" | "paid" | "pending";
 
@@ -28,7 +41,6 @@ function matchesPeriod(payment: UpcomingPayment, filter: FilterKey) {
   if (filter === "all") return true;
   if (filter === "paid") return payment.status === "paid";
   if (filter === "pending") return payment.status === "pending";
-
   const daysUntil = getDaysUntil(payment.dueDate);
   if (payment.status !== "pending") return false;
   return filter === "week" ? daysUntil >= 0 && daysUntil <= 7 : daysUntil >= 0 && daysUntil <= 30;
@@ -49,6 +61,7 @@ function PaymentCard({
   const isPaid = payment.status === "paid";
   const isOverdue = daysUntil < 0 && !isPaid;
   const isUrgent = daysUntil >= 0 && daysUntil <= 3 && !isPaid;
+  const categoryMeta = getUpcomingPaymentCategoryMeta(payment);
 
   const cardTone = isPaid
     ? "border-emerald-500/20 bg-emerald-500/[0.05] dark:bg-emerald-500/[0.08]"
@@ -58,72 +71,69 @@ function PaymentCard({
         ? "border-amber-500/30 bg-amber-500/[0.07] dark:bg-amber-500/[0.1]"
         : "border-border/50 bg-muted/20";
 
-  const badgeTone = isPaid
-    ? "bg-emerald-500/[0.15] text-emerald-700 dark:text-emerald-300"
-    : isOverdue
-      ? "bg-rose-500/[0.15] text-rose-700 dark:text-rose-300"
-      : "bg-amber-500/[0.15] text-amber-700 dark:text-amber-300";
-
-  const daysLabel = isPaid
-    ? "שולם"
-    : daysUntil === 0
-      ? "היום"
+  const tags = [
+    isPaid
+      ? { label: "שולם", tone: "bg-emerald-500/[0.15] text-emerald-700 dark:text-emerald-300" }
       : isOverdue
-        ? `איחור ${Math.abs(daysUntil)} ימים`
-        : `בעוד ${daysUntil} ימים`;
+        ? { label: `איחור ${Math.abs(daysUntil)} ימים`, tone: "bg-rose-500/[0.15] text-rose-700 dark:text-rose-300" }
+        : { label: daysUntil === 0 ? "היום" : `בעוד ${daysUntil} ימים`, tone: "bg-amber-500/[0.15] text-amber-700 dark:text-amber-300" },
+    payment.recurringMonthly
+      ? { label: "חוזר חודשי", tone: "bg-sky-500/[0.15] text-sky-700 dark:text-sky-300" }
+      : null,
+  ].filter(Boolean) as Array<{ label: string; tone: string }>;
 
   return (
     <Card className={cn("rounded-[calc(var(--radius)+0.625rem)] border transition-all duration-200", cardTone)}>
-      <CardContent className="p-4">
-        <div className="flex items-start gap-3 text-right">
-          <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[5px] border border-primary/25 bg-primary text-xs font-black text-primary-foreground shadow-[var(--app-shadow)]">
-            ₪
+      <CardContent className="p-4 pt-5">
+        <div className="grid items-stretch gap-4 md:grid-cols-[15%_1fr_25%]">
+          <div className="flex min-h-full items-center justify-center">
+            <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-[calc(var(--radius)+0.375rem)] border border-primary/25 bg-primary text-xl text-primary-foreground shadow-[var(--app-shadow)]">
+              {categoryMeta.icon}
+            </div>
           </div>
 
-          <div className="min-w-0 flex-1 space-y-1 text-right">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-bold leading-tight">{payment.name}</p>
-                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-                  <span className="text-muted-foreground">{formatHebrewDate(payment.dueDate)}</span>
-                  <span className={cn("font-semibold", isPaid ? "text-emerald-600 dark:text-emerald-300" : isOverdue ? "text-rose-600 dark:text-rose-300" : "text-amber-600 dark:text-amber-300")}>
-                    {daysLabel}
-                  </span>
-                  {payment.recurringMonthly ? <span className="text-muted-foreground">חוזר חודשי</span> : null}
-                </div>
+          <div className="min-w-0 space-y-3 text-right">
+            <div className="space-y-1">
+              <p className="truncate text-sm font-bold leading-tight">{payment.name}</p>
+              <div className="flex flex-wrap items-center justify-start gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                <span>{formatHebrewDate(payment.dueDate)}</span>
+                <span>{categoryMeta.label}</span>
               </div>
-
-              <span className="cashflow-number shrink-0 text-base font-black">
-                {formatCashflowAmount(payment.amount, currency)}
-              </span>
+              {payment.note ? <p className="pt-1 text-xs text-muted-foreground">{payment.note}</p> : null}
             </div>
 
-            {payment.note ? <p className="text-xs text-muted-foreground">{payment.note}</p> : null}
+            <div className="flex flex-wrap items-center justify-start gap-2">
+              {!isPaid ? (
+                <button
+                  type="button"
+                  onClick={() => onRequestMarkPaid(payment)}
+                  className="inline-flex items-center gap-1.5 rounded-[calc(var(--radius)+0.25rem)] border border-emerald-500/25 bg-emerald-500/[0.08] px-3 py-1.5 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-500/[0.16] dark:text-emerald-300"
+                >
+                  <Check className="h-3.5 w-3.5" />
+                  סמן כשולם
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => onEdit(payment)}
+                className="inline-flex items-center gap-1.5 rounded-[calc(var(--radius)+0.25rem)] border border-border/60 bg-background/70 px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-muted/70"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                ערוך
+              </button>
+            </div>
           </div>
 
-          <div className={cn("rounded-full px-2 py-1 text-[10px] font-semibold", badgeTone)}>{daysLabel}</div>
-        </div>
-
-        <div className="mt-3 flex items-center justify-between gap-2">
-          <button
-            type="button"
-            onClick={() => onEdit(payment)}
-            className="inline-flex items-center gap-1.5 rounded-[calc(var(--radius)+0.25rem)] border border-border/60 bg-background/70 px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-muted/70"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-            ערוך
-          </button>
-
-          {!isPaid ? (
-            <button
-              type="button"
-              onClick={() => onRequestMarkPaid(payment)}
-              className="inline-flex items-center gap-1.5 rounded-[calc(var(--radius)+0.25rem)] border border-emerald-500/25 bg-emerald-500/[0.08] px-3 py-1.5 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-500/[0.16] dark:text-emerald-300"
-            >
-              <Check className="h-3.5 w-3.5" />
-              סמן כשולם
-            </button>
-          ) : null}
+          <div className="flex min-h-full flex-col items-start justify-center gap-2 text-left">
+            <p className="cashflow-number text-base font-black">{formatCashflowAmount(payment.amount, currency)}</p>
+            <div className="flex flex-col items-start gap-1">
+              {tags.map((tag) => (
+                <div key={`${payment.id}-${tag.label}`} className={cn("rounded-full px-2 py-1 text-[10px] font-semibold", tag.tone)}>
+                  {tag.label}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -137,20 +147,16 @@ interface CashflowUpcomingProps {
   onMarkPaid: (paymentId: string, createExpense: boolean) => void;
 }
 
-export function CashflowUpcoming({
-  data,
-  onAddUpcoming,
-  onEditUpcoming,
-  onMarkPaid,
-}: CashflowUpcomingProps) {
+export function CashflowUpcoming({ data, onAddUpcoming, onEditUpcoming, onMarkPaid }: CashflowUpcomingProps) {
   const [filter, setFilter] = useState<FilterKey>("all");
   const [search, setSearch] = useState("");
+  const [dateFilter, setDateFilter] = useState<CashflowDateFilter>({});
   const [paymentToConfirm, setPaymentToConfirm] = useState<UpcomingPayment | null>(null);
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
 
-    return [...data.upcomingPayments]
+    return filterByDateRange([...data.upcomingPayments], dateFilter)
       .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
       .filter((payment) => matchesPeriod(payment, filter))
       .filter((payment) => {
@@ -164,7 +170,7 @@ export function CashflowUpcoming({
           dateText.includes(query)
         );
       });
-  }, [data.upcomingPayments, filter, search]);
+  }, [data.upcomingPayments, dateFilter, filter, search]);
 
   const totalPending = useMemo(
     () => data.upcomingPayments.filter((payment) => payment.status === "pending").reduce((sum, payment) => sum + payment.amount, 0),
@@ -176,17 +182,15 @@ export function CashflowUpcoming({
   return (
     <div className="space-y-4 pb-4">
       {pendingCount > 0 ? (
-        <div className="surface-shell rounded-[calc(var(--radius)+0.85rem)] border border-amber-500/20 bg-amber-500/[0.04] p-4 text-right dark:bg-amber-500/[0.07]">
+        <div className="surface-shell rounded-[calc(var(--radius)+0.85rem)] border border-amber-500/20 bg-amber-500/[0.04] p-4 pt-5 text-right dark:bg-amber-500/[0.07]">
           <div className="flex items-center gap-3">
-            <div className="min-w-0 flex-1 space-y-1 text-right">
-              <p className="text-xs font-semibold text-muted-foreground">סה"כ תשלומים ממתינים</p>
-              <p className="cashflow-number mt-1 text-2xl font-black text-amber-600 dark:text-amber-300">
-                {formatCashflowAmount(totalPending, data.settings.currency)}
-              </p>
-              <p className="text-xs text-muted-foreground">{pendingCount} תשלומים ממתינים</p>
-            </div>
             <div className="icon-chip h-11 w-11 shrink-0 rounded-[calc(var(--radius)+0.375rem)] border-amber-500/20 bg-amber-500/[0.12] text-amber-600 dark:text-amber-300">
               <CalendarClock className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1 space-y-1 text-right">
+              <p className="text-xs font-semibold text-muted-foreground">סה"כ תשלומים ממתינים</p>
+              <p className="cashflow-number mt-1 text-2xl font-black text-amber-600 dark:text-amber-300">{formatCashflowAmount(totalPending, data.settings.currency)}</p>
+              <p className="text-xs text-muted-foreground">{pendingCount} תשלומים ממתינים</p>
             </div>
           </div>
         </div>
@@ -202,6 +206,8 @@ export function CashflowUpcoming({
         />
       </div>
 
+      <CashflowDateRangeFilter from={dateFilter.from} to={dateFilter.to} onChange={setDateFilter} />
+
       <div className="flex gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
         {FILTERS.map(({ key, label }) => (
           <button
@@ -210,9 +216,7 @@ export function CashflowUpcoming({
             onClick={() => setFilter(key)}
             className={cn(
               "shrink-0 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all duration-150",
-              filter === key
-                ? "border-primary/40 bg-primary/[0.12] text-primary"
-                : "border-border/50 bg-muted/30 text-muted-foreground hover:border-border hover:bg-muted/60",
+              filter === key ? "border-primary/40 bg-primary/[0.12] text-primary" : "border-border/50 bg-muted/30 text-muted-foreground hover:border-border hover:bg-muted/60",
             )}
           >
             {label}
@@ -231,15 +235,9 @@ export function CashflowUpcoming({
 
       <AnimatePresence mode="wait">
         {filtered.length === 0 ? (
-          <motion.div
-            key="empty"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="flex flex-col items-center gap-3 py-14 text-center"
-          >
+          <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center gap-3 py-14 text-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted/60">
-              <Clock className="h-6 w-6 text-muted-foreground/60" />
+              <CalendarClock className="h-6 w-6 text-muted-foreground/60" />
             </div>
             <div className="space-y-1">
               <p className="font-semibold text-foreground">אין תשלומים להציג</p>
@@ -249,21 +247,9 @@ export function CashflowUpcoming({
             </div>
           </motion.div>
         ) : (
-          <motion.div
-            key="list"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="space-y-3"
-          >
+          <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3 pt-1">
             {filtered.map((payment) => (
-              <PaymentCard
-                key={payment.id}
-                payment={payment}
-                currency={data.settings.currency}
-                onEdit={onEditUpcoming}
-                onRequestMarkPaid={setPaymentToConfirm}
-              />
+              <PaymentCard key={payment.id} payment={payment} currency={data.settings.currency} onEdit={onEditUpcoming} onRequestMarkPaid={setPaymentToConfirm} />
             ))}
           </motion.div>
         )}

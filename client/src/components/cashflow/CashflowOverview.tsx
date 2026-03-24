@@ -94,7 +94,7 @@ export function CashflowOverview({
         <Card className="surface-shell relative overflow-hidden rounded-[calc(var(--radius)+1rem)] border-border/70">
           <div className="pointer-events-none absolute inset-x-0 top-0 h-full bg-[radial-gradient(ellipse_at_top_right,rgba(14,165,233,0.07),transparent_55%)] dark:bg-[radial-gradient(ellipse_at_top_right,rgba(14,165,233,0.16),transparent_55%)]" />
 
-          <CardContent className="relative p-6 pt-7">
+          <CardContent className="relative p-6 pt-8">
             <div className="flex items-center gap-3">
               <div className="flex min-w-0 flex-1 flex-col items-end space-y-1 text-right">
                 <div className="flex items-center gap-1.5">
@@ -144,6 +144,26 @@ export function CashflowOverview({
                   <CalendarClock className="h-4 w-4 shrink-0 text-muted-foreground" />
                 </div>
               </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-2.5 xl:grid-cols-4">
+              {[
+                { label: "הוסף הכנסה", icon: ArrowUpRight, tone: "text-emerald-700 dark:text-emerald-300 bg-emerald-500/[0.1] border-emerald-500/25 hover:bg-emerald-500/18", onClick: onAddIncome },
+                { label: "הוסף הוצאה", icon: ArrowDownLeft, tone: "text-rose-700 dark:text-rose-300 bg-rose-500/[0.1] border-rose-500/25 hover:bg-rose-500/18", onClick: onAddExpense },
+                { label: "תשלום עתידי", icon: CalendarClock, tone: "text-amber-700 dark:text-amber-300 bg-amber-500/[0.1] border-amber-500/25 hover:bg-amber-500/18", onClick: onAddUpcoming },
+                { label: "עדכן יתרה", icon: RefreshCw, tone: "text-sky-700 dark:text-sky-300 bg-sky-500/[0.1] border-sky-500/25 hover:bg-sky-500/18", onClick: onUpdateBalance },
+              ].map(({ label, icon: Icon, tone, onClick }) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={onClick}
+                  className={cn("flex items-center gap-3 rounded-[calc(var(--radius)+0.5rem)] border px-4 py-3.5 text-right text-sm font-semibold transition-all duration-150 active:scale-[0.98]", tone)}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  <span className="flex-1 text-right">{label}</span>
+                  <Plus className="h-4 w-4 shrink-0 opacity-70" />
+                </button>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -204,7 +224,7 @@ export function CashflowOverview({
               <div className="flex items-center gap-3">
                 <div className="min-w-0 flex-1 text-right">
                   <p className="text-[10px] font-semibold text-muted-foreground">{label}</p>
-                  <p className="cashflow-number mt-1 text-base font-black">{formatCashflowAmount(Math.abs(value), data.settings.currency)}</p>
+                  <p className="cashflow-number mt-1 text-base font-black">{formatCashflowAmount(value, data.settings.currency)}</p>
                 </div>
                 <div className="inline-flex h-11 w-11 items-center justify-center rounded-[calc(var(--radius)+0.375rem)] border border-primary/25 bg-primary/[0.12] text-primary shadow-[var(--app-shadow)]">
                   <Icon className="h-4 w-4" />
@@ -215,35 +235,15 @@ export function CashflowOverview({
         </motion.div>
       </AnimatePresence>
 
-      <div className="grid grid-cols-2 gap-2.5">
-        {[
-          { label: "הוסף הכנסה", icon: ArrowUpRight, tone: "text-emerald-700 dark:text-emerald-300 bg-emerald-500/[0.1] border-emerald-500/25 hover:bg-emerald-500/18", onClick: onAddIncome },
-          { label: "הוסף הוצאה", icon: ArrowDownLeft, tone: "text-rose-700 dark:text-rose-300 bg-rose-500/[0.1] border-rose-500/25 hover:bg-rose-500/18", onClick: onAddExpense },
-          { label: "תשלום עתידי", icon: CalendarClock, tone: "text-amber-700 dark:text-amber-300 bg-amber-500/[0.1] border-amber-500/25 hover:bg-amber-500/18", onClick: onAddUpcoming },
-          { label: "עדכן יתרה", icon: RefreshCw, tone: "text-sky-700 dark:text-sky-300 bg-sky-500/[0.1] border-sky-500/25 hover:bg-sky-500/18", onClick: onUpdateBalance },
-        ].map(({ label, icon: Icon, tone, onClick }) => (
-          <button
-            key={label}
-            type="button"
-            onClick={onClick}
-            className={cn("flex items-center gap-3 rounded-[calc(var(--radius)+0.5rem)] border px-4 py-3.5 text-right text-sm font-semibold transition-all duration-150 active:scale-[0.98]", tone)}
-          >
-            <Plus className="h-4 w-4 shrink-0 opacity-70" />
-            <span className="flex-1">{label}</span>
-            <Icon className="h-4 w-4 shrink-0" />
-          </button>
-        ))}
-      </div>
-
       {pendingPayments.length > 0 ? (
         <Card className="surface-shell rounded-[calc(var(--radius)+0.85rem)] border-border/70">
           <CardHeader className="px-4 pb-3 pt-5 text-right">
             <div className="flex items-center justify-between gap-3">
+              <CardTitle className="text-right text-sm font-bold">תשלומים קרובים</CardTitle>
               <button type="button" onClick={onViewUpcoming} className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
                 הכל
                 <ChevronLeft className="h-3 w-3" />
               </button>
-              <CardTitle className="text-sm font-bold">תשלומים קרובים</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="space-y-2 px-4 pb-4">
@@ -281,6 +281,10 @@ export function CashflowOverview({
       <Card className="surface-shell rounded-[calc(var(--radius)+0.85rem)] border-border/70">
         <CardHeader className="px-4 pb-2 pt-5 text-right">
           <div className="flex items-center justify-between gap-3">
+            <div className="text-right">
+              <CardTitle className="text-sm font-bold">תחזית יתרה</CardTitle>
+              <p className="text-xs text-muted-foreground">מבוסס על יתרה נוכחית, תשלומים צפויים ונתוני בסיס</p>
+            </div>
             <div className="flex gap-1 rounded-[calc(var(--radius)+0.25rem)] border border-border/50 bg-muted/35 p-1">
               {([7, 30] as ForecastRange[]).map((range) => (
                 <button
@@ -295,10 +299,6 @@ export function CashflowOverview({
                   {range} ימים
                 </button>
               ))}
-            </div>
-            <div className="text-right">
-              <CardTitle className="text-sm font-bold">תחזית יתרה</CardTitle>
-              <p className="text-xs text-muted-foreground">מבוסס על יתרה נוכחית, תשלומים צפויים ונתוני בסיס</p>
             </div>
           </div>
         </CardHeader>
@@ -326,12 +326,12 @@ export function CashflowOverview({
       <Card className="surface-shell rounded-[calc(var(--radius)+0.85rem)] border-border/70">
         <CardHeader className="px-4 pb-2 pt-5 text-right">
           <div className="flex items-center justify-between gap-3">
-            <div className="text-right">
-              <CardTitle className="text-sm font-bold">הכנסות מול הוצאות</CardTitle>
-              <p className="text-xs text-muted-foreground">6 החודשים האחרונים על בסיס נתונים אמיתיים</p>
-            </div>
             <div className="icon-chip h-9 w-9 shrink-0 rounded-[calc(var(--radius)+0.375rem)] border-primary/20 bg-primary/[0.1] text-primary">
               <Clock className="h-4 w-4" />
+            </div>
+            <div className="min-w-0 flex-1 text-right">
+              <CardTitle className="text-sm font-bold">הכנסות מול הוצאות</CardTitle>
+              <p className="text-xs text-muted-foreground">6 החודשים האחרונים על בסיס נתונים אמיתיים</p>
             </div>
           </div>
         </CardHeader>

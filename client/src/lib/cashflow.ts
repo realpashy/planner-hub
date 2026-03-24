@@ -4,6 +4,7 @@ export type TransactionType = "income" | "expense";
 export type UpcomingPaymentStatus = "pending" | "paid";
 export type CashflowPeriod = "today" | "week" | "month";
 export type ForecastRange = 7 | 30;
+export type CashflowDateRange = "all" | "custom";
 
 export type IncomeCategory =
   | "daily_sales"
@@ -48,26 +49,40 @@ export const EXPENSE_CATEGORY_LABELS: Record<ExpenseCategory, string> = {
 };
 
 export const INCOME_CATEGORY_ICONS: Record<IncomeCategory, string> = {
-  daily_sales: "₪",
-  other_income: "₪",
-  owner_investment: "₪",
-  grant: "₪",
-  loan: "₪",
-  refund: "₪",
-  one_time: "₪",
+  daily_sales: "🛍️",
+  other_income: "💸",
+  owner_investment: "🤝",
+  grant: "🎁",
+  loan: "🏦",
+  refund: "↩️",
+  one_time: "✨",
 };
 
 export const EXPENSE_CATEGORY_ICONS: Record<ExpenseCategory, string> = {
-  rent: "₪",
-  suppliers: "₪",
-  salaries: "₪",
-  marketing: "₪",
-  equipment: "₪",
-  operations: "₪",
-  recurring: "₪",
-  one_time: "₪",
-  other: "₪",
+  rent: "🏠",
+  suppliers: "📦",
+  salaries: "👥",
+  marketing: "📣",
+  equipment: "🧰",
+  operations: "⚙️",
+  recurring: "🗓️",
+  one_time: "🧾",
+  other: "📌",
 };
+
+export const UPCOMING_PAYMENT_CATEGORIES = [
+  { value: "rent", label: "שכירות", icon: "🏠" },
+  { value: "suppliers", label: "ספקים", icon: "📦" },
+  { value: "salaries", label: "משכורות", icon: "👥" },
+  { value: "marketing", label: "שיווק", icon: "📣" },
+  { value: "equipment", label: "ציוד", icon: "🧰" },
+  { value: "operations", label: "תפעול", icon: "⚙️" },
+  { value: "recurring", label: "תשלום קבוע", icon: "🗓️" },
+  { value: "one_time", label: "הוצאה חד פעמית", icon: "✨" },
+  { value: "other", label: "אחר", icon: "📌" },
+] as const;
+
+export type UpcomingPaymentCategoryValue = (typeof UPCOMING_PAYMENT_CATEGORIES)[number]["value"];
 
 export interface CashflowTransaction {
   id: string;
@@ -85,6 +100,7 @@ export interface CashflowTransaction {
 export interface UpcomingPayment {
   id: string;
   name: string;
+  category?: ExpenseCategory;
   amount: number;
   dueDate: string;
   note?: string;
@@ -110,9 +126,15 @@ export interface CashflowSettings {
   bankBalance?: number;
   cashOnHand?: number;
   overallAvailableCash?: number;
+  overallBankPortion?: number;
   monthlyBaselineExpenses?: number;
   monthlyBaselineIncome?: number;
   cashWarningThreshold?: number;
+}
+
+export interface CashflowDateFilter {
+  from?: string;
+  to?: string;
 }
 
 export interface CashflowData {
@@ -233,6 +255,25 @@ export function formatCashflowAmount(amount: number, currency: CashflowCurrency 
   return `${sign}${symbol} ${NUMBER_FORMATTER.format(Math.abs(amount))}`;
 }
 
+export function getUpcomingPaymentCategoryMeta(payment: Pick<UpcomingPayment, "category" | "name">) {
+  const direct = payment.category
+    ? UPCOMING_PAYMENT_CATEGORIES.find((item) => item.value === payment.category)
+    : undefined;
+  if (direct) return direct;
+  const name = normalizeForCategory(payment.name);
+  return (
+    UPCOMING_PAYMENT_CATEGORIES.find((item) => name.includes(normalizeForCategory(item.label))) ?? {
+      value: "other",
+      label: "אחר",
+      icon: "📌",
+    }
+  );
+}
+
+function normalizeForCategory(value: string) {
+  return value.replace(/\s+/g, "").toLowerCase();
+}
+
 export function getDaysUntil(isoDate: string) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -287,6 +328,10 @@ function sanitizeUpcomingPayment(raw: unknown): UpcomingPayment | null {
   return {
     id: typeof source.id === "string" && source.id ? source.id : generateId(),
     name: source.name.trim(),
+    category:
+      typeof source.category === "string" && source.category
+        ? (source.category as ExpenseCategory)
+        : undefined,
     amount: clampMoney(source.amount),
     dueDate: typeof source.dueDate === "string" && source.dueDate ? source.dueDate : getTodayKey(),
     note: typeof source.note === "string" && source.note.trim() ? source.note.trim() : undefined,
@@ -333,6 +378,10 @@ function sanitizeSettings(raw: unknown): CashflowSettings {
     overallAvailableCash:
       source.overallAvailableCash !== undefined || source.availableBalanceOverride !== undefined
         ? clampMoney(source.overallAvailableCash ?? source.availableBalanceOverride)
+        : undefined,
+    overallBankPortion:
+      source.overallBankPortion !== undefined || source.overallBankBalance !== undefined
+        ? clampMoney(source.overallBankPortion ?? source.overallBankBalance)
         : undefined,
     monthlyBaselineExpenses:
       source.monthlyBaselineExpenses !== undefined || source.monthlyExpensesBaseline !== undefined
@@ -599,6 +648,79 @@ export function validatePartnerOwnership(partners: CashflowPartner[]) {
   }
   const total = partners.reduce((sum, partner) => sum + partner.ownershipPercent, 0);
   return { valid: Math.abs(total - 100) < 0.001, total };
+}
+
+export function formatOwnershipPercent(value: number) {
+  if (Number.isInteger(value)) return `${value}%`;
+  return `${value.toFixed(2).replace(/\.00$/, "").replace(/(\.\d)0$/, "$1")}%`;
+}
+
+function clampPercentUnits(units: number) {
+  return Math.max(0, Math.min(10000, Math.round(units)));
+}
+
+export function rebalancePartnerOwnership(
+  existingPartners: CashflowPartner[],
+  draftPartner: CashflowPartner,
+): CashflowPartner[] {
+  const remainingPartners = existingPartners.filter((partner) => partner.id !== draftPartner.id);
+  const timestamp = new Date().toISOString();
+
+  if (remainingPartners.length === 0) {
+    return [{ ...draftPartner, ownershipPercent: 100, updatedAt: timestamp }];
+  }
+
+  const targetUnits = clampPercentUnits(draftPartner.ownershipPercent * 100);
+  const safeTargetUnits = Math.min(targetUnits, 10000);
+  const remainingUnits = 10000 - safeTargetUnits;
+
+  const baseWeights = remainingPartners.map((partner) => Math.max(0, Math.round(partner.ownershipPercent * 100)));
+  const totalWeight = baseWeights.reduce((sum, value) => sum + value, 0);
+  const equalWeight = remainingPartners.length > 0 ? 1 / remainingPartners.length : 0;
+
+  const allocations = remainingPartners.map((partner, index) => {
+    const weight = totalWeight > 0 ? baseWeights[index] / totalWeight : equalWeight;
+    const exact = remainingUnits * weight;
+    const floor = Math.floor(exact);
+    return { partner, index, floor, remainder: exact - floor };
+  });
+
+  let allocated = allocations.reduce((sum, item) => sum + item.floor, 0);
+  let leftover = remainingUnits - allocated;
+  allocations
+    .sort((a, b) => b.remainder - a.remainder || a.index - b.index)
+    .forEach((item) => {
+      if (leftover <= 0) return;
+      item.floor += 1;
+      leftover -= 1;
+    });
+
+  const nextPartners = allocations
+    .sort((a, b) => a.index - b.index)
+    .map((item) => ({
+      ...item.partner,
+      ownershipPercent: item.floor / 100,
+      updatedAt: timestamp,
+    }));
+
+  return [
+    ...nextPartners,
+    {
+      ...draftPartner,
+      ownershipPercent: safeTargetUnits / 100,
+      updatedAt: timestamp,
+    },
+  ];
+}
+
+export function filterByDateRange<T extends { date?: string; dueDate?: string }>(items: T[], filter: CashflowDateFilter) {
+  return items.filter((item) => {
+    const value = item.date ?? item.dueDate;
+    if (!value) return false;
+    if (filter.from && value < filter.from) return false;
+    if (filter.to && value > filter.to) return false;
+    return true;
+  });
 }
 
 export async function uploadCashflowAttachment(file: File) {

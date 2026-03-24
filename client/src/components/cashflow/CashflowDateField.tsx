@@ -25,7 +25,7 @@ export function CashflowDateField({
   placeholder = "בחר תאריך",
   className,
 }: CashflowDateFieldProps) {
-  const selectedDate = useMemo(() => new Date(`${value}T12:00:00`), [value]);
+  const selectedDate = useMemo(() => (value ? new Date(`${value}T12:00:00`) : new Date()), [value]);
   const [open, setOpen] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(selectedDate));
 
@@ -41,16 +41,16 @@ export function CashflowDateField({
           type="button"
           variant="outline"
           className={cn(
-            "h-12 w-full justify-between rounded-[calc(var(--radius)+0.25rem)] border-border/60 bg-card/[0.88] px-3.5 text-right text-base font-semibold shadow-[var(--app-shadow)] hover:bg-muted/60",
+            "h-12 w-full rounded-[calc(var(--radius)+0.25rem)] border-border/60 bg-card/[0.88] px-3.5 text-right text-base font-semibold shadow-[var(--app-shadow)] hover:bg-muted/60",
             className,
           )}
         >
-          <div className="flex min-w-0 flex-1 items-center justify-end gap-2 text-right">
+          <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <div className="flex min-w-0 flex-1 items-center justify-end gap-2 pe-2 text-right">
             <span className="truncate">
               {value ? format(selectedDate, "d MMMM yyyy", { locale: he }) : placeholder}
             </span>
           </div>
-          <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" />
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" sideOffset={8} className="w-[19rem] rounded-[calc(var(--radius)+0.5rem)] border-border/70 bg-popover/[0.98] p-4 shadow-xl backdrop-blur-xl" dir="rtl">
@@ -58,20 +58,20 @@ export function CashflowDateField({
           <div className="flex items-center justify-between">
             <button
               type="button"
-              onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+              onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
               className="inline-flex h-9 w-9 items-center justify-center rounded-[calc(var(--radius)+0.25rem)] border border-border/60 bg-muted/40 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4" />
             </button>
             <div className="text-sm font-black text-foreground">
               {format(currentMonth, "LLLL yyyy", { locale: he })}
             </div>
             <button
               type="button"
-              onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+              onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
               className="inline-flex h-9 w-9 items-center justify-center rounded-[calc(var(--radius)+0.25rem)] border border-border/60 bg-muted/40 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronLeft className="h-4 w-4" />
             </button>
           </div>
 

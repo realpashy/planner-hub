@@ -16,6 +16,7 @@ import {
   EXPENSE_CATEGORY_LABELS,
   INCOME_CATEGORY_ICONS,
   INCOME_CATEGORY_LABELS,
+  UPCOMING_PAYMENT_CATEGORIES,
   fetchCashflowAttachment,
   formatCashflowAmount,
   generateId,
@@ -23,6 +24,7 @@ import {
   uploadCashflowAttachment,
 } from "@/lib/cashflow";
 import { CashflowDateField } from "@/components/cashflow/CashflowDateField";
+import { CashflowNumericField } from "@/components/cashflow/CashflowNumericField";
 
 const INCOME_CATEGORIES = Object.keys(INCOME_CATEGORY_LABELS) as IncomeCategory[];
 const EXPENSE_CATEGORIES = Object.keys(EXPENSE_CATEGORY_LABELS) as ExpenseCategory[];
@@ -45,35 +47,6 @@ interface AddUpcomingSheetProps {
   initialPayment?: UpcomingPayment | null;
 }
 
-function MoneyInput({
-  value,
-  onChange,
-  placeholder = "0",
-  className,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  className?: string;
-}) {
-  return (
-    <div className={cn("relative", className)}>
-      <Input
-        type="number"
-        inputMode="decimal"
-        placeholder={placeholder}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-14 rounded-[calc(var(--radius)+0.375rem)] border-border/70 bg-muted/40 pe-4 ps-12 text-right text-[22px] font-black tracking-tight tabular-nums focus:border-primary/50"
-        style={{ direction: "ltr", textAlign: "right" }}
-      />
-      <span className="pointer-events-none absolute start-4 top-1/2 -translate-y-1/2 text-base font-black text-muted-foreground">
-        ₪
-      </span>
-    </div>
-  );
-}
-
 function SheetShell({
   children,
   open,
@@ -90,7 +63,7 @@ function SheetShell({
         dir="rtl"
         onOpenAutoFocus={(event) => event.preventDefault()}
         className={cn(
-          "max-h-[92dvh] overflow-y-auto rounded-t-[1.25rem] border-t border-border/60 p-0 bg-popover",
+          "max-h-[92dvh] overflow-y-auto rounded-t-[1.25rem] border-t border-border/60 p-0 bg-popover md:mx-auto md:mb-4 md:max-w-[60vw] md:rounded-[calc(var(--radius)+1rem)] md:border",
           "bg-[radial-gradient(circle_at_top_right,rgba(149,223,30,0.03),transparent_40%)]",
           "dark:bg-[radial-gradient(circle_at_top_right,rgba(149,223,30,0.07),transparent_40%),linear-gradient(180deg,rgba(30,30,30,0.99),rgba(22,22,22,0.99))]",
           "[&>button]:left-4 [&>button]:right-auto [&>button]:top-4",
@@ -227,15 +200,19 @@ export function AddEntrySheet({
       </SheetHeader>
 
       <div className="space-y-6 px-5 pb-8 pt-3">
-        <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-muted-foreground">סכום</label>
-          <MoneyInput value={amountStr} onChange={(nextValue) => { setAmountStr(nextValue); setError(""); }} />
-          {parsedAmount > 0 && (
-            <p className={cn("text-sm font-semibold", isIncome ? "text-emerald-600 dark:text-emerald-300" : "text-rose-600 dark:text-rose-300")}>
-              {formatCashflowAmount(parsedAmount, currency)}
-            </p>
-          )}
-        </div>
+        <CashflowNumericField
+          label="סכום"
+          value={amountStr}
+          onChange={(nextValue) => {
+            setAmountStr(nextValue);
+            setError("");
+          }}
+        />
+        {parsedAmount > 0 && (
+          <p className={cn("text-sm font-semibold", isIncome ? "text-emerald-600 dark:text-emerald-300" : "text-rose-600 dark:text-rose-300")}>
+            {formatCashflowAmount(parsedAmount, currency)}
+          </p>
+        )}
 
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-muted-foreground">תאריך</label>
@@ -284,14 +261,26 @@ export function AddEntrySheet({
             />
           </div>
         ) : (
-          <button
-            type="button"
-            onClick={() => setShowNote(true)}
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ChevronDown className="h-3.5 w-3.5" />
-            הוסף הערה
-          </button>
+          <div className="flex items-center justify-start gap-3">
+            <button
+              type="button"
+              onClick={() => setShowNote(true)}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <ChevronDown className="h-3.5 w-3.5" />
+              הוסף הערה
+            </button>
+            {!showAttachment ? (
+              <button
+                type="button"
+                onClick={() => setShowAttachment(true)}
+                className="me-2 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <Paperclip className="h-3.5 w-3.5" />
+                הוסף קבלה
+              </button>
+            ) : null}
+          </div>
         )}
 
         {showAttachment ? (
@@ -323,16 +312,7 @@ export function AddEntrySheet({
               ) : null}
             </div>
           </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setShowAttachment(true)}
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <Paperclip className="h-3.5 w-3.5" />
-            הוסף קבלה
-          </button>
-        )}
+        ) : null}
 
         {error ? <p className="text-xs font-medium text-destructive">{error}</p> : null}
 
@@ -360,11 +340,14 @@ export function AddUpcomingSheet({
   initialPayment,
 }: AddUpcomingSheetProps) {
   const isEditing = Boolean(initialPayment);
+  const [category, setCategory] = useState<(typeof UPCOMING_PAYMENT_CATEGORIES)[number]["value"]>("recurring");
   const [name, setName] = useState("");
   const [amountStr, setAmountStr] = useState("");
   const [dueDate, setDueDate] = useState(getTodayKey());
   const [recurringMonthly, setRecurringMonthly] = useState(false);
   const [note, setNote] = useState("");
+  const [showCustomName, setShowCustomName] = useState(false);
+  const [showNote, setShowNote] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -373,15 +356,20 @@ export function AddUpcomingSheet({
     const nextWeek = new Date();
     nextWeek.setDate(nextWeek.getDate() + 7);
     setName(initialPayment?.name ?? "");
+    setCategory(initialPayment?.category ?? "recurring");
     setAmountStr(initialPayment ? String(initialPayment.amount) : "");
     setDueDate(initialPayment?.dueDate ?? nextWeek.toISOString().split("T")[0]);
     setRecurringMonthly(initialPayment?.recurringMonthly ?? false);
     setNote(initialPayment?.note ?? "");
+    setShowCustomName(Boolean(initialPayment?.name && initialPayment?.category));
+    setShowNote(Boolean(initialPayment?.note));
     setError("");
   }, [initialPayment, open]);
 
   const parsedAmount = Number.parseFloat(amountStr.replace(/,/g, "")) || 0;
-  const isValid = name.trim().length > 0 && parsedAmount > 0 && Boolean(dueDate);
+  const selectedCategory = UPCOMING_PAYMENT_CATEGORIES.find((item) => item.value === category) ?? UPCOMING_PAYMENT_CATEGORIES[0];
+  const resolvedName = name.trim() || selectedCategory.label;
+  const isValid = resolvedName.length > 0 && parsedAmount > 0 && Boolean(dueDate);
 
   function handleSave() {
     if (!isValid) {
@@ -392,7 +380,8 @@ export function AddUpcomingSheet({
     const timestamp = new Date().toISOString();
     onSave({
       id: initialPayment?.id ?? generateId(),
-      name: name.trim(),
+      name: resolvedName,
+      category,
       amount: parsedAmount,
       dueDate,
       note: note.trim() || undefined,
@@ -409,7 +398,7 @@ export function AddUpcomingSheet({
       <SheetHeader className="px-5 pb-2 text-right">
         <div className="flex items-center gap-3">
           <div className="inline-flex h-10 w-10 items-center justify-center rounded-[calc(var(--radius)+0.375rem)] border border-amber-500/25 bg-amber-500/[0.1] text-base text-amber-700 dark:text-amber-300">
-            ₪
+            {selectedCategory.icon}
           </div>
           <div className="space-y-0.5 text-right">
             <SheetTitle>{isEditing ? "עריכת תשלום עתידי" : "הוסף תשלום עתידי"}</SheetTitle>
@@ -419,25 +408,50 @@ export function AddUpcomingSheet({
       </SheetHeader>
 
       <div className="space-y-5 px-5 pb-8 pt-3">
-        <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-muted-foreground">שם התשלום</label>
-          <Input
-            placeholder="לדוגמה: שכירות, ספקים, חשמל"
-            value={name}
-            onChange={(event) => { setName(event.target.value); setError(""); }}
-            className="h-12 rounded-[calc(var(--radius)+0.25rem)] border-border/60 bg-muted/40 text-right focus:border-primary/50"
-          />
+        <div className="space-y-2.5">
+          <label className="text-xs font-semibold text-muted-foreground">קטגוריית תשלום</label>
+          <div className="grid grid-cols-2 gap-2">
+            {UPCOMING_PAYMENT_CATEGORIES.map((option) => {
+              const selected = category === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => {
+                    setCategory(option.value);
+                    setError("");
+                  }}
+                  className={cn(
+                    "flex items-center gap-2.5 rounded-[calc(var(--radius)+0.375rem)] border px-4 py-3 text-right text-sm font-semibold transition-all",
+                    selected
+                      ? "border-amber-500/50 bg-amber-500/[0.15] text-amber-700 ring-1 ring-amber-500/30 dark:text-amber-200"
+                      : "border-border/50 bg-muted/30 text-muted-foreground hover:bg-muted/60",
+                  )}
+                >
+                  <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[5px] border border-primary/25 bg-primary text-primary-foreground shadow-[var(--app-shadow)]">
+                    {option.icon}
+                  </span>
+                  <span className="flex-1 text-right leading-tight">{option.label}</span>
+                  {selected ? <Check className="h-3.5 w-3.5 shrink-0 opacity-70" /> : null}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-muted-foreground">סכום</label>
-          <MoneyInput value={amountStr} onChange={(nextValue) => { setAmountStr(nextValue); setError(""); }} />
-          {parsedAmount > 0 ? (
-            <p className="text-sm font-semibold text-amber-700 dark:text-amber-300">
-              {formatCashflowAmount(parsedAmount, currency)}
-            </p>
-          ) : null}
-        </div>
+        <CashflowNumericField
+          label="סכום"
+          value={amountStr}
+          onChange={(nextValue) => {
+            setAmountStr(nextValue);
+            setError("");
+          }}
+        />
+        {parsedAmount > 0 ? (
+          <p className="text-sm font-semibold text-amber-700 dark:text-amber-300">
+            {formatCashflowAmount(parsedAmount, currency)}
+          </p>
+        ) : null}
 
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-muted-foreground">תאריך יעד</label>
@@ -471,14 +485,54 @@ export function AddUpcomingSheet({
           </div>
         </div>
 
-        <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-muted-foreground">הערה</label>
-          <Input
-            placeholder="אופציונלי"
-            value={note}
-            onChange={(event) => setNote(event.target.value)}
-            className="h-12 rounded-[calc(var(--radius)+0.25rem)] border-border/60 bg-muted/40 text-right focus:border-primary/50"
-          />
+        {showCustomName ? (
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-muted-foreground">שם התשלום</label>
+            <Input
+              placeholder={`ברירת מחדל: ${selectedCategory.label}`}
+              value={name}
+              onChange={(event) => {
+                setName(event.target.value);
+                setError("");
+              }}
+              className="h-12 rounded-[calc(var(--radius)+0.25rem)] border-border/60 bg-muted/40 text-right focus:border-primary/50"
+            />
+          </div>
+        ) : null}
+
+        {showNote ? (
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-muted-foreground">הערה</label>
+            <Input
+              placeholder="אופציונלי"
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+              className="h-12 rounded-[calc(var(--radius)+0.25rem)] border-border/60 bg-muted/40 text-right focus:border-primary/50"
+            />
+          </div>
+        ) : null}
+
+        <div className="flex items-center justify-start gap-3">
+          {!showCustomName ? (
+            <button
+              type="button"
+              onClick={() => setShowCustomName(true)}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <ChevronDown className="h-3.5 w-3.5" />
+              הוסף שם מותאם
+            </button>
+          ) : null}
+          {!showNote ? (
+            <button
+              type="button"
+              onClick={() => setShowNote(true)}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <ChevronDown className="h-3.5 w-3.5" />
+              הוסף הערה
+            </button>
+          ) : null}
         </div>
 
         {error ? <p className="text-xs font-medium text-destructive">{error}</p> : null}

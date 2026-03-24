@@ -5,16 +5,21 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
+  type CashflowDateFilter,
   type CashflowData,
   type CashflowTransaction,
   type ExpenseCategory,
   type IncomeCategory,
   EXPENSE_CATEGORY_LABELS,
+  EXPENSE_CATEGORY_ICONS,
   INCOME_CATEGORY_LABELS,
+  INCOME_CATEGORY_ICONS,
+  filterByDateRange,
   formatCashflowAmount,
   formatHebrewDate,
   formatHebrewDateShort,
 } from "@/lib/cashflow";
+import { CashflowDateRangeFilter } from "@/components/cashflow/CashflowDateRangeFilter";
 
 type FilterTab = "all" | "income" | "expense";
 
@@ -83,15 +88,17 @@ function TransactionRow({
             : "border-rose-500/25 bg-rose-500/[0.1] text-rose-700 dark:text-rose-300",
         )}
       >
-        ₪
+        {isIncome
+          ? INCOME_CATEGORY_ICONS[transaction.category as IncomeCategory] ?? "💸"
+          : EXPENSE_CATEGORY_ICONS[transaction.category as ExpenseCategory] ?? "📌"}
       </div>
 
       <div className="min-w-0 flex-1 text-right">
-        <div className="flex items-center justify-start gap-2 text-right">
+        <div className="flex items-start justify-start gap-2 text-right">
           <span className="text-sm font-semibold leading-tight">{getCategoryLabel(transaction)}</span>
           {transaction.attachmentId ? <Paperclip className="h-3.5 w-3.5 shrink-0 text-muted-foreground" /> : null}
         </div>
-        {transaction.note ? <p className="mt-0.5 truncate text-xs text-muted-foreground">{transaction.note}</p> : null}
+        {transaction.note ? <p className="mt-1 text-xs text-muted-foreground">{transaction.note}</p> : null}
       </div>
 
       <div className="shrink-0 text-left">
@@ -130,6 +137,7 @@ export function CashflowTransactions({
 }: CashflowTransactionsProps) {
   const [tab, setTab] = useState<FilterTab>("all");
   const [search, setSearch] = useState("");
+  const [dateFilter, setDateFilter] = useState<CashflowDateFilter>({});
 
   const filtered = useMemo(() => {
     let transactions = data.transactions;
@@ -137,6 +145,7 @@ export function CashflowTransactions({
     if (tab === "income") transactions = transactions.filter((transaction) => transaction.type === "income");
     if (tab === "expense") transactions = transactions.filter((transaction) => transaction.type === "expense");
 
+    transactions = filterByDateRange(transactions, dateFilter);
     const query = search.trim().toLowerCase();
     if (!query) return transactions;
 
@@ -147,7 +156,7 @@ export function CashflowTransactions({
       const dateText = formatHebrewDate(transaction.date).toLowerCase();
       return category.includes(query) || note.includes(query) || amount.includes(query) || dateText.includes(query);
     });
-  }, [data.transactions, search, tab]);
+  }, [data.transactions, dateFilter, search, tab]);
 
   const grouped = useMemo(() => groupByDate(filtered), [filtered]);
   const totals = useMemo(() => {
@@ -183,6 +192,8 @@ export function CashflowTransactions({
           className="h-12 rounded-[calc(var(--radius)+0.375rem)] border-border/60 bg-muted/40 pe-10 text-right focus:border-primary/50"
         />
       </div>
+
+      <CashflowDateRangeFilter from={dateFilter.from} to={dateFilter.to} onChange={setDateFilter} />
 
       {filtered.length > 0 ? (
         <div className="grid grid-cols-2 gap-2.5">
