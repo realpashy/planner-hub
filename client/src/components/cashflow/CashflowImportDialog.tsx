@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import { AlertTriangle, Download, FileSpreadsheet, Layers3, UploadCloud } from "lucide-react";
 import {
   AlertDialog,
@@ -14,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import {
   applyCashflowImport,
@@ -100,6 +102,29 @@ interface CashflowImportDialogProps {
   data: CashflowData;
   onClose: () => void;
   onApply: (nextData: CashflowData) => void;
+}
+
+function showImportToast(title: string, description: string, tone: "success" | "error" = "success") {
+  toast({
+    duration: 3000,
+    description: (
+      <div className="relative overflow-hidden rounded-[calc(var(--radius)+0.5rem)] pr-0 text-right" dir="rtl">
+        <div className="px-1 py-0.5">
+          <p className="text-sm font-bold text-foreground">{title}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+        </div>
+        <motion.div
+          initial={{ scaleX: 1 }}
+          animate={{ scaleX: 0 }}
+          transition={{ duration: 3, ease: "linear" }}
+          className={cn(
+            "absolute inset-x-0 bottom-0 h-1 origin-right rounded-full",
+            tone === "error" ? "bg-rose-500/80" : "bg-primary/80",
+          )}
+        />
+      </div>
+    ),
+  });
 }
 
 function PreviewTable({ block }: { block: CashflowImportBlock }) {
@@ -204,8 +229,14 @@ export function CashflowImportDialog({ open, data, onClose, onApply }: CashflowI
           ]),
         ),
       );
+      showImportToast(
+        "הקובץ נטען בהצלחה",
+        parsed.templateMatched ? "זוהתה תבנית Planner Hub והמערכת הכינה מיפוי מהיר לבדיקה." : "הקובץ נטען. עכשיו אפשר לעבור על הגיליונות, האזורים והמיפוי לפני שמירה.",
+      );
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : "לא הצלחנו לקרוא את הקובץ");
+      const message = nextError instanceof Error ? nextError.message : "לא הצלחנו לקרוא את הקובץ";
+      setError(message);
+      showImportToast("הייבוא לא הצליח", message, "error");
     } finally {
       setLoading(false);
     }
@@ -228,6 +259,7 @@ export function CashflowImportDialog({ open, data, onClose, onApply }: CashflowI
     }
 
     onApply(applyCashflowImport(data, preview, actions));
+    showImportToast("הייבוא נשמר", "הנתונים החדשים נכנסו למודול התזרים ונשמרו בסנכרון.");
     onClose();
   }
 
@@ -604,6 +636,7 @@ export function CashflowImportDialog({ open, data, onClose, onApply }: CashflowI
               onClick={() => {
                 if (!preview) return;
                 onApply(applyCashflowImport(data, preview, actions));
+                showImportToast("הייבוא נשמר", "הנתונים נבדקו, נשמרו ועודכנו במודול התזרים.");
                 setShowReplaceConfirm(false);
                 onClose();
               }}

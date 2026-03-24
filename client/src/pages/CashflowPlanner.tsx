@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "wouter";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, BarChart3, CalendarClock, Home, ListOrdered, Settings, TrendingUp, Users } from "lucide-react";
+import { BarChart3, CalendarClock, Home, ListOrdered, Settings, TrendingUp, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CashflowOverview } from "@/components/cashflow/CashflowOverview";
@@ -20,6 +19,7 @@ import {
   type CashflowSettings as CashflowSettingsType,
   type CashflowTransaction,
   type UpcomingPayment,
+  createEmptyCashflowData,
   formatCashflowAmount,
   loadCashflowData,
   saveCashflowData,
@@ -124,6 +124,7 @@ export default function CashflowPlanner() {
   const [editingTransaction, setEditingTransaction] = useState<CashflowTransaction | null>(null);
   const [editingUpcoming, setEditingUpcoming] = useState<UpcomingPayment | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const currentTabLabel = NAV_ITEMS.find((item) => item.key === screen)?.label ?? SCREEN_TITLES[screen];
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
@@ -241,6 +242,11 @@ export default function CashflowPlanner() {
     updateData(() => nextData);
   }
 
+  function handleResetData() {
+    updateData(() => createEmptyCashflowData());
+    setScreen("overview");
+  }
+
   function handleUpdateBalance(bankBalance: number, cashOnHand: number) {
     updateData((previous) => ({
       ...previous,
@@ -257,21 +263,23 @@ export default function CashflowPlanner() {
   return (
     <div className="app-shell flex min-h-screen flex-col" dir="rtl">
       <nav className="sticky top-0 z-50 shrink-0 border-b border-border/50 bg-background/90 backdrop-blur-md">
-        <div className="flex w-full items-center justify-between px-4 py-3 md:px-6 xl:px-8">
-          <div className="flex items-center gap-3">
+        <div className="mx-auto flex w-full items-center justify-between px-4 py-3 md:max-w-[60vw] md:px-6">
+          <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-sky-500/20 bg-sky-500/[0.15] text-sky-600 dark:text-sky-300">
               <TrendingUp className="h-4 w-4" />
             </div>
             <div className="space-y-0.5 text-right">
-              <div className="font-hebrew flex items-center justify-start gap-2 text-xs font-semibold text-muted-foreground">
+              <div className="font-hebrew flex items-center justify-end gap-2 text-xs font-semibold text-muted-foreground">
+                <button
+                  type="button"
+                  onClick={() => setScreen("overview")}
+                  className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-primary transition-colors hover:bg-primary/[0.08]"
+                >
+                  <Home className="h-3.5 w-3.5" />
+                  בית
+                </button>
                 <span className="text-muted-foreground/70">/</span>
-                <span>{SCREEN_TITLES[screen]}</span>
-                <Link href="/">
-                  <button className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-primary transition-colors hover:bg-primary/[0.08]">
-                    <Home className="h-3.5 w-3.5" />
-                    בית
-                  </button>
-                </Link>
+                <span>{currentTabLabel}</span>
               </div>
               <span className="font-hebrew block text-base font-black tracking-tight text-foreground">{SCREEN_TITLES[screen]}</span>
             </div>
@@ -279,17 +287,12 @@ export default function CashflowPlanner() {
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Link href="/">
-              <button className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted/60 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
-                <ArrowLeft className="h-4 w-4" />
-              </button>
-            </Link>
           </div>
         </div>
       </nav>
 
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto pb-24">
-        <div className="w-full px-4 py-5 md:px-6 xl:px-8">
+        <div className="mx-auto w-full px-4 py-5 md:max-w-[60vw] md:px-6">
           <AnimatePresence mode="wait">
             <motion.div
               key={screen}
@@ -332,7 +335,7 @@ export default function CashflowPlanner() {
               ) : null}
 
               {screen === "settings" ? (
-                <CashflowSettings data={data} onSave={handleSaveSettings} onImport={handleImport} />
+                <CashflowSettings data={data} onSave={handleSaveSettings} onImport={handleImport} onReset={handleResetData} />
               ) : null}
             </motion.div>
           </AnimatePresence>
@@ -340,7 +343,7 @@ export default function CashflowPlanner() {
       </div>
 
       <nav className="safe-area-bottom fixed inset-x-0 bottom-0 z-50 border-t border-border/60 bg-background/95 backdrop-blur-md">
-        <div className="flex w-full items-center justify-around px-2 py-2 md:px-6 xl:px-8">
+        <div className="mx-auto flex w-full items-center justify-around px-2 py-2 md:max-w-[60vw] md:px-6">
           {NAV_ITEMS.map(({ key, label, icon: Icon }) => {
             const isActive = screen === key;
             const showDot = key === "transactions" && hasNewTransactionsToday && !isActive;

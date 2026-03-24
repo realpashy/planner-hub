@@ -41,13 +41,13 @@ export function CashflowDateField({
           type="button"
           variant="outline"
           className={cn(
-            "h-12 w-full rounded-[calc(var(--radius)+0.25rem)] border-border/60 bg-card/[0.88] px-3.5 text-right text-base font-semibold shadow-[var(--app-shadow)] hover:bg-muted/60",
+            "h-12 w-full justify-end rounded-[calc(var(--radius)+0.25rem)] border-border/60 bg-card/[0.88] px-3.5 text-right text-base font-semibold shadow-[var(--app-shadow)] hover:bg-muted/60",
             className,
           )}
         >
-          <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" />
-          <div className="flex min-w-0 flex-1 items-center justify-end gap-2 pe-2 text-right">
-            <span className="truncate">
+          <div className="flex w-full items-center justify-end gap-2 text-right">
+            <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <span className="min-w-0 flex-1 truncate text-right">
               {value ? format(selectedDate, "d MMMM yyyy", { locale: he }) : placeholder}
             </span>
           </div>
@@ -58,7 +58,7 @@ export function CashflowDateField({
           <div className="flex items-center justify-between">
             <button
               type="button"
-              onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+              onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
               className="inline-flex h-9 w-9 items-center justify-center rounded-[calc(var(--radius)+0.25rem)] border border-border/60 bg-muted/40 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               <ChevronRight className="h-4 w-4" />
@@ -68,7 +68,7 @@ export function CashflowDateField({
             </div>
             <button
               type="button"
-              onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+              onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
               className="inline-flex h-9 w-9 items-center justify-center rounded-[calc(var(--radius)+0.25rem)] border border-border/60 bg-muted/40 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               <ChevronLeft className="h-4 w-4" />

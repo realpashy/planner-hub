@@ -95,7 +95,10 @@ export function CashflowOverview({
           <div className="pointer-events-none absolute inset-x-0 top-0 h-full bg-[radial-gradient(ellipse_at_top_right,rgba(14,165,233,0.07),transparent_55%)] dark:bg-[radial-gradient(ellipse_at_top_right,rgba(14,165,233,0.16),transparent_55%)]" />
 
           <CardContent className="relative p-6 pt-8">
-            <div className="flex items-center gap-3">
+            <div className="flex items-start justify-end gap-3">
+              <div className="icon-chip flex h-12 w-12 shrink-0 items-center justify-center rounded-[calc(var(--radius)+0.5rem)] border-sky-500/20 bg-sky-500/[0.12] text-sky-600 dark:text-sky-300">
+                <Wallet className="h-5 w-5" />
+              </div>
               <div className="flex min-w-0 flex-1 flex-col items-end space-y-1 text-right">
                 <div className="flex items-center gap-1.5">
                   <p className="text-xs font-semibold text-muted-foreground">יתרה זמינה עכשיו</p>
@@ -118,30 +121,27 @@ export function CashflowOverview({
                   ) : null}
                 </div>
               </div>
-              <div className="icon-chip flex h-12 w-12 shrink-0 items-center justify-center rounded-[calc(var(--radius)+0.5rem)] border-sky-500/20 bg-sky-500/[0.12] text-sky-600 dark:text-sky-300">
-                <Wallet className="h-5 w-5" />
-              </div>
             </div>
 
             <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
               <div className="rounded-[calc(var(--radius)+0.25rem)] border border-amber-500/20 bg-amber-500/[0.07] px-3 py-2 text-right">
-                <div className="flex items-center gap-2">
+                <div className="flex items-start justify-end gap-2">
+                  <Target className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />
                   <div className="flex min-w-0 flex-1 flex-col items-end text-right">
                     <p className="text-[11px] font-semibold text-muted-foreground">יעד יומי נדרש</p>
                     <p className="cashflow-number text-sm font-black text-amber-700 dark:text-amber-300">
                       {formatCashflowAmount(dailyTarget, data.settings.currency)}
                     </p>
                   </div>
-                  <Target className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />
                 </div>
               </div>
               <div className="rounded-[calc(var(--radius)+0.25rem)] border border-border/60 bg-muted/30 px-3 py-2 text-right">
-                <div className="flex items-center gap-2">
+                <div className="flex items-start justify-end gap-2">
+                  <CalendarClock className="h-4 w-4 shrink-0 text-muted-foreground" />
                   <div className="flex min-w-0 flex-1 flex-col items-end text-right">
                     <p className="text-[11px] font-semibold text-muted-foreground">תשלומים ממתינים החודש</p>
                     <p className="cashflow-number text-sm font-black">{formatCashflowAmount(monthlyUpcomingTotal, data.settings.currency)}</p>
                   </div>
-                  <CalendarClock className="h-4 w-4 shrink-0 text-muted-foreground" />
                 </div>
               </div>
             </div>

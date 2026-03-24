@@ -1,8 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Banknote, Check, Download, Import, Info, Settings, Target, TrendingDown, TrendingUp } from "lucide-react";
+import { Banknote, Check, Download, Import, Info, Settings, Target, Trash2, TrendingDown, TrendingUp } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { type CashflowData, type CashflowSettings as CashflowSettingsType, formatCashflowAmount } from "@/lib/cashflow";
 import { CashflowNumericField } from "@/components/cashflow/CashflowNumericField";
@@ -13,9 +24,10 @@ interface CashflowSettingsProps {
   data: CashflowData;
   onSave: (settings: CashflowSettingsType) => void;
   onImport: (nextData: CashflowData) => void;
+  onReset: () => void;
 }
 
-export function CashflowSettings({ data, onSave, onImport }: CashflowSettingsProps) {
+export function CashflowSettings({ data, onSave, onImport, onReset }: CashflowSettingsProps) {
   const settings = data.settings;
   const [bankBalance, setBankBalance] = useState("");
   const [cashOnHand, setCashOnHand] = useState("");
@@ -28,6 +40,8 @@ export function CashflowSettings({ data, onSave, onImport }: CashflowSettingsPro
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showResetDialog, setShowResetDialog] = useState(false);
+  const [resetInput, setResetInput] = useState("");
 
   useEffect(() => {
     setBankBalance(settings.bankBalance?.toString() ?? "");
@@ -203,6 +217,34 @@ export function CashflowSettings({ data, onSave, onImport }: CashflowSettingsPro
           </CardContent>
         </Card>
 
+        <Card className="surface-shell rounded-[calc(var(--radius)+0.85rem)] border-rose-500/20">
+          <CardHeader className="px-4 pb-3 pt-5 text-right">
+            <div className="flex items-center gap-3">
+              <div className="icon-chip h-9 w-9 shrink-0 rounded-[calc(var(--radius)+0.375rem)] border-rose-500/20 bg-rose-500/[0.1] text-rose-600 dark:text-rose-300">
+                <Trash2 className="h-4 w-4" />
+              </div>
+              <div className="min-w-0 flex-1 text-right">
+                <CardTitle className="text-sm font-bold">איפוס כל הנתונים</CardTitle>
+                <p className="mt-0.5 text-xs text-muted-foreground">מוחק את כל התזרים, התשלומים, השותפים וההגדרות ומתחיל מחדש.</p>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-12 w-full rounded-[calc(var(--radius)+0.5rem)] border-rose-500/25 bg-rose-500/[0.06] text-rose-700 hover:bg-rose-500/[0.12] dark:text-rose-300"
+              onClick={() => {
+                setResetInput("");
+                setShowResetDialog(true);
+              }}
+            >
+              <Trash2 className="h-4 w-4" />
+              מחק הכל והתחל מחדש
+            </Button>
+          </CardContent>
+        </Card>
+
         <Card className="surface-shell rounded-[calc(var(--radius)+0.85rem)] border-border/70">
           <CardHeader className="px-4 pb-3 pt-5 text-right">
             <div className="flex items-center gap-3">
@@ -267,6 +309,40 @@ export function CashflowSettings({ data, onSave, onImport }: CashflowSettingsPro
           setShowImportDialog(false);
         }}
       />
+
+      <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+        <AlertDialogContent dir="rtl" className="max-w-md text-right">
+          <AlertDialogHeader className="text-right">
+            <AlertDialogTitle className="text-right">מוחקים את כל הנתונים?</AlertDialogTitle>
+            <AlertDialogDescription className="text-right">
+              כדי למחוק את כל נתוני התזרים, כתוב <span className="font-black text-foreground">DELETE</span> בשדה למטה.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-muted-foreground">אישור מחיקה</label>
+            <Input
+              value={resetInput}
+              onChange={(event) => setResetInput(event.target.value)}
+              placeholder="DELETE"
+              className="h-12 text-left uppercase tracking-[0.2em]"
+            />
+          </div>
+          <AlertDialogFooter className="sm:flex-col sm:space-x-0">
+            <AlertDialogAction
+              disabled={resetInput.trim().toUpperCase() !== "DELETE"}
+              onClick={() => {
+                onReset();
+                setShowResetDialog(false);
+                setResetInput("");
+              }}
+              className="bg-rose-600 text-white hover:bg-rose-700 disabled:pointer-events-none disabled:opacity-50"
+            >
+              מחק הכל
+            </AlertDialogAction>
+            <AlertDialogCancel onClick={() => setResetInput("")}>ביטול</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

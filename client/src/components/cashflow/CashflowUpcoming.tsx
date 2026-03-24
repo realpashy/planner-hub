@@ -87,7 +87,7 @@ function PaymentCard({
       <CardContent className="p-4 pt-5">
         <div className="grid items-stretch gap-4 md:grid-cols-[15%_1fr_25%]">
           <div className="flex min-h-full items-center justify-center">
-            <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-[calc(var(--radius)+0.375rem)] border border-primary/25 bg-primary text-xl text-primary-foreground shadow-[var(--app-shadow)]">
+            <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-[calc(var(--radius)+0.375rem)] border border-primary/30 bg-background/60 text-xl shadow-[0_0_0_1px_rgba(149,223,30,0.12),0_0_18px_rgba(149,223,30,0.12)]">
               {categoryMeta.icon}
             </div>
           </div>
@@ -125,7 +125,7 @@ function PaymentCard({
           </div>
 
           <div className="flex min-h-full flex-col items-start justify-center gap-2 text-left">
-            <p className="cashflow-number text-base font-black">{formatCashflowAmount(payment.amount, currency)}</p>
+            <p className="cashflow-number text-[26px] font-black leading-none">{formatCashflowAmount(payment.amount, currency)}</p>
             <div className="flex flex-col items-start gap-1">
               {tags.map((tag) => (
                 <div key={`${payment.id}-${tag.label}`} className={cn("rounded-full px-2 py-1 text-[10px] font-semibold", tag.tone)}>
@@ -247,7 +247,7 @@ export function CashflowUpcoming({ data, onAddUpcoming, onEditUpcoming, onMarkPa
             </div>
           </motion.div>
         ) : (
-          <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3 pt-1">
+          <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4 pt-2">
             {filtered.map((payment) => (
               <PaymentCard key={payment.id} payment={payment} currency={data.settings.currency} onEdit={onEditUpcoming} onRequestMarkPaid={setPaymentToConfirm} />
             ))}

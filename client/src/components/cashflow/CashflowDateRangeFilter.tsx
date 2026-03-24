@@ -13,11 +13,9 @@ export function CashflowDateRangeFilter({ from, to, onChange }: CashflowDateRang
 
   return (
     <div className="surface-subtle rounded-[calc(var(--radius)+0.5rem)] p-3">
-      <div className="mb-3 flex items-center gap-2">
-        <div className="min-w-0 flex-1 text-right">
-          <p className="text-xs font-semibold text-muted-foreground">סינון לפי תאריכים</p>
-        </div>
+      <div className="mb-3 flex items-center justify-end gap-2 text-right">
         <CalendarRange className="h-4 w-4 shrink-0 text-primary" />
+        <p className="text-xs font-semibold text-muted-foreground">סינון לפי תאריכים</p>
       </div>
 
       <div className="grid gap-2 md:grid-cols-[1fr_1fr_auto]">

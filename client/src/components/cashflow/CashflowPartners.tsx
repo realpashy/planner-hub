@@ -289,22 +289,17 @@ export function CashflowPartners({ data, onSavePartners }: CashflowPartnersProps
             {data.partners.length > 1 ? (
               <div className="space-y-2">
                 <p className="text-xs font-semibold text-muted-foreground">חלוקת בעלות</p>
-                <div className="flex h-3 w-full gap-0.5 overflow-hidden rounded-full bg-muted">
+                <div className="grid gap-2">
                   {data.partners.map((partner, index) => (
-                    <div
-                      key={partner.id}
-                      title={`${partner.name}: ${formatOwnershipPercent(partner.ownershipPercent)}`}
-                      className={cn("h-full transition-all duration-500", getPartnerColor(index).bg)}
-                      style={{ width: `${partner.ownershipPercent}%` }}
-                    />
-                  ))}
-                </div>
-                <div className="flex flex-wrap gap-x-4 gap-y-1">
-                  {data.partners.map((partner, index) => (
-                    <div key={partner.id} className="flex items-center gap-1.5 text-xs">
-                      <span className={cn("inline-block h-2 w-2 rounded-full", getPartnerColor(index).bg)} />
-                      <span className="font-semibold">{partner.name}</span>
-                      <span className="text-muted-foreground">{formatOwnershipPercent(partner.ownershipPercent)}</span>
+                    <div key={partner.id} className="surface-subtle flex items-center gap-3 rounded-[calc(var(--radius)+0.25rem)] px-3 py-2 text-right">
+                      <span className={cn("inline-flex h-7 min-w-7 items-center justify-center rounded-full text-[10px] font-black text-white", getPartnerColor(index).bg)}>
+                        {index + 1}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold">{partner.name}</p>
+                        <p className="cashflow-number mt-0.5 text-xs text-muted-foreground">{formatCashflowAmount(partner.investedAmount, data.settings.currency)}</p>
+                      </div>
+                      <span className="cashflow-number text-sm font-black text-primary">{formatOwnershipPercent(partner.ownershipPercent)}</span>
                     </div>
                   ))}
                 </div>

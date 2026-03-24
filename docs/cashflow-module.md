@@ -185,6 +185,7 @@ They do **not** create fake transactions.
 ### Settings
 
 - in overall mode, `overallBankPortion <= overallAvailableCash`
+- when a cashflow filter or section heading includes an icon, the icon stays on the right before the Hebrew label as one RTL-aligned cluster
 
 ## Paid flow
 

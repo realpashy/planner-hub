@@ -317,6 +317,38 @@ export async function configureApiApp(app: Express) {
     });
   });
 
+  app.get("/api/cashflow/attachments/:id/file", async (req, res) => {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
+
+    const result = await dbPool.query(
+      `SELECT file_name as "fileName", mime_type as "mimeType", data_base64 as "dataBase64"
+       FROM cashflow_attachments
+       WHERE id = $1 AND user_id = $2
+       LIMIT 1`,
+      [req.params.id, userId],
+    );
+
+    if (!result.rowCount) {
+      return res.status(404).json({ message: "הקובץ לא נמצא" });
+    }
+
+    const row = result.rows[0] as {
+      fileName: string;
+      mimeType: string;
+      dataBase64: string;
+    };
+
+    const download = String(req.query.download ?? "") === "1";
+    const disposition = download ? "attachment" : "inline";
+    const fileBuffer = Buffer.from(row.dataBase64, "base64");
+
+    res.setHeader("Content-Type", row.mimeType);
+    res.setHeader("Content-Length", String(fileBuffer.length));
+    res.setHeader("Content-Disposition", `${disposition}; filename*=UTF-8''${encodeURIComponent(row.fileName)}`);
+    return res.send(fileBuffer);
+  });
+
   app.get("/api/meal/catalog", async (req, res) => {
     const userId = requireAuth(req, res);
     if (!userId) return;

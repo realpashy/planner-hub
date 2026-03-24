@@ -17,9 +17,9 @@ import {
   INCOME_CATEGORY_ICONS,
   INCOME_CATEGORY_LABELS,
   UPCOMING_PAYMENT_CATEGORIES,
-  fetchCashflowAttachment,
   formatCashflowAmount,
   generateId,
+  getCashflowAttachmentUrl,
   getTodayKey,
   uploadCashflowAttachment,
 } from "@/lib/cashflow";
@@ -147,8 +147,7 @@ export function AddEntrySheet({
   async function handlePreviewAttachment() {
     if (!attachmentId) return;
     try {
-      const attachment = await fetchCashflowAttachment(attachmentId);
-      window.open(attachment.dataUrl, "_blank", "noopener,noreferrer");
+      window.open(getCashflowAttachmentUrl(attachmentId), "_blank", "noopener,noreferrer");
     } catch (previewError) {
       setError(previewError instanceof Error ? previewError.message : "לא הצלחנו לפתוח את הקובץ");
     }
@@ -182,13 +181,11 @@ export function AddEntrySheet({
         <div className="flex items-center gap-3">
           <div
             className={cn(
-              "inline-flex h-10 w-10 items-center justify-center rounded-[calc(var(--radius)+0.375rem)] border text-lg",
-              isIncome
-                ? "border-emerald-500/25 bg-emerald-500/[0.1] text-emerald-700 dark:text-emerald-300"
-                : "border-rose-500/25 bg-rose-500/[0.1] text-rose-700 dark:text-rose-300",
+              "inline-flex h-10 w-10 items-center justify-center rounded-[calc(var(--radius)+0.375rem)] border border-primary/30 bg-background/50 text-lg shadow-[0_0_0_1px_rgba(149,223,30,0.12),0_0_18px_rgba(149,223,30,0.12)]",
+              isIncome ? "text-emerald-700 dark:text-emerald-300" : "text-rose-700 dark:text-rose-300",
             )}
           >
-            ₪
+            {isIncome ? "📈" : "📉"}
           </div>
           <div className="space-y-0.5 text-right">
             <SheetTitle>{isEditing ? (isIncome ? "עריכת הכנסה" : "עריכת הוצאה") : isIncome ? "הוסף הכנסה" : "הוסף הוצאה"}</SheetTitle>
@@ -238,7 +235,7 @@ export function AddEntrySheet({
                       : "border-border/50 bg-muted/30 text-muted-foreground hover:bg-muted/60",
                   )}
                 >
-                  <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[5px] border border-primary/25 bg-primary text-primary-foreground shadow-[var(--app-shadow)]">
+                  <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[5px] border border-primary/30 bg-background/60 shadow-[0_0_0_1px_rgba(149,223,30,0.12),0_0_16px_rgba(149,223,30,0.10)]">
                     {icons[cat]}
                   </span>
                   <span className="flex-1 text-right leading-tight">{labels[cat]}</span>
@@ -260,28 +257,32 @@ export function AddEntrySheet({
               className="min-h-[88px] resize-none rounded-[calc(var(--radius)+0.25rem)] border-border/60 bg-muted/40 text-base text-right focus:border-primary/50"
             />
           </div>
-        ) : (
-          <div className="flex items-center justify-start gap-3">
-            <button
-              type="button"
-              onClick={() => setShowNote(true)}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <ChevronDown className="h-3.5 w-3.5" />
-              הוסף הערה
-            </button>
+        ) : null}
+
+        {!showNote || !showAttachment ? (
+          <div className="flex flex-wrap items-center justify-start gap-3">
+            {!showNote ? (
+              <button
+                type="button"
+                onClick={() => setShowNote(true)}
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <ChevronDown className="h-3.5 w-3.5" />
+                הוסף הערה
+              </button>
+            ) : null}
             {!showAttachment ? (
               <button
                 type="button"
                 onClick={() => setShowAttachment(true)}
-                className="me-2 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                className="me-3 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
               >
                 <Paperclip className="h-3.5 w-3.5" />
                 הוסף קבלה
               </button>
             ) : null}
           </div>
-        )}
+        ) : null}
 
         {showAttachment ? (
           <div className="space-y-2">
@@ -301,14 +302,25 @@ export function AddEntrySheet({
                 />
               </label>
               {attachmentId ? (
-                <button
-                  type="button"
-                  onClick={() => void handlePreviewAttachment()}
-                  className="inline-flex items-center gap-2 rounded-[calc(var(--radius)+0.25rem)] border border-border/60 bg-background/80 px-3 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-muted/70"
-                >
-                  <FileText className="h-3.5 w-3.5" />
-                  צפה בקבלה
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => void handlePreviewAttachment()}
+                    className="inline-flex items-center gap-2 rounded-[calc(var(--radius)+0.25rem)] border border-border/60 bg-background/80 px-3 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-muted/70"
+                  >
+                    <FileText className="h-3.5 w-3.5" />
+                    צפה בקבלה
+                  </button>
+                  <a
+                    href={getCashflowAttachmentUrl(attachmentId, true)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 rounded-[calc(var(--radius)+0.25rem)] border border-border/60 bg-background/80 px-3 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-muted/70"
+                  >
+                    <Paperclip className="h-3.5 w-3.5" />
+                    הורד קבלה
+                  </a>
+                </>
               ) : null}
             </div>
           </div>
@@ -397,7 +409,7 @@ export function AddUpcomingSheet({
     <SheetShell open={open} onClose={onClose}>
       <SheetHeader className="px-5 pb-2 text-right">
         <div className="flex items-center gap-3">
-          <div className="inline-flex h-10 w-10 items-center justify-center rounded-[calc(var(--radius)+0.375rem)] border border-amber-500/25 bg-amber-500/[0.1] text-base text-amber-700 dark:text-amber-300">
+          <div className="inline-flex h-10 w-10 items-center justify-center rounded-[calc(var(--radius)+0.375rem)] border border-primary/30 bg-background/50 text-base text-amber-700 shadow-[0_0_0_1px_rgba(149,223,30,0.12),0_0_18px_rgba(149,223,30,0.12)] dark:text-amber-300">
             {selectedCategory.icon}
           </div>
           <div className="space-y-0.5 text-right">
@@ -428,7 +440,7 @@ export function AddUpcomingSheet({
                       : "border-border/50 bg-muted/30 text-muted-foreground hover:bg-muted/60",
                   )}
                 >
-                  <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[5px] border border-primary/25 bg-primary text-primary-foreground shadow-[var(--app-shadow)]">
+                  <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[5px] border border-primary/30 bg-background/60 shadow-[0_0_0_1px_rgba(149,223,30,0.12),0_0_16px_rgba(149,223,30,0.10)]">
                     {option.icon}
                   </span>
                   <span className="flex-1 text-right leading-tight">{option.label}</span>

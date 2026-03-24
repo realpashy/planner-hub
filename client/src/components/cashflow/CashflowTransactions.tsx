@@ -82,10 +82,10 @@ function TransactionRow({
     >
       <div
         className={cn(
-          "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[5px] border text-xs font-black shadow-[var(--app-shadow)]",
+          "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[5px] border text-xs font-black shadow-[0_0_0_1px_rgba(149,223,30,0.12),0_0_16px_rgba(149,223,30,0.08)]",
           isIncome
-            ? "border-emerald-500/25 bg-emerald-500/[0.1] text-emerald-700 dark:text-emerald-300"
-            : "border-rose-500/25 bg-rose-500/[0.1] text-rose-700 dark:text-rose-300",
+            ? "border-emerald-500/25 bg-background/60 text-emerald-700 dark:text-emerald-300"
+            : "border-rose-500/25 bg-background/60 text-rose-700 dark:text-rose-300",
         )}
       >
         {isIncome

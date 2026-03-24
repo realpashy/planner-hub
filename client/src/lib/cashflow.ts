@@ -772,3 +772,8 @@ export async function fetchCashflowAttachment(attachmentId: string) {
 
   return response.json() as Promise<CashflowAttachmentRecord>;
 }
+
+export function getCashflowAttachmentUrl(attachmentId: string, download = false) {
+  const suffix = download ? "?download=1" : "";
+  return `/api/cashflow/attachments/${attachmentId}/file${suffix}`;
+}
