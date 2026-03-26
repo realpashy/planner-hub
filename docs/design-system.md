@@ -168,6 +168,19 @@ Do not make every surface the same charcoal block.
   - same label/value hierarchy
 - in the meal module light theme, summary cards should read as clean white SaaS cards first, with accent only in icon chips and active highlights
 
+### RTL summary-card composition rule
+
+For Hebrew/Arabic summary widgets, treat the card content as a single anchored cluster, not as "right-aligned text inside a full-width row".
+
+- when a summary widget has an icon chip plus a text/value stack, the whole cluster should be authored as one RTL row
+- the icon chip belongs on the right side first in the RTL reading order
+- the text/value stack follows it and remains right-aligned internally
+- avoid fixing these cards with random margin nudges or by pushing a full-width flex row with the wrong `justify-*` value
+- if the row uses `dir="rtl"`, remember:
+  - `justify-start` places the cluster on the visual right
+  - `justify-end` places the cluster on the visual left
+- if the card still feels misaligned after a local JSX fix, inspect shared primitives such as `CardContent` for desktop padding or inherited layout defaults
+
 ## Chips and badges
 
 - chips are for meaning, not decoration

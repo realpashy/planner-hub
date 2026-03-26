@@ -36,6 +36,43 @@ For rows with a title block and secondary content:
 - searchable dropdown triggers and fixed-option dropdown triggers follow the same RTL rule: value text anchors right, supporting iconography stays secondary, and native browser dropdown chrome should not leak into visible product UI
 - chevrons, expand icons, and disclosure icons must be manually verified row by row
 
+### RTL flexbox start/end rule
+
+This is a high-risk source of regressions and must be treated as a manual check, not intuition.
+
+- inside a container with `dir="rtl"`, `justify-start` maps to the visual right edge
+- inside a container with `dir="rtl"`, `justify-end` maps to the visual left edge
+- do not assume LTR flex intuition when fixing Arabic/Hebrew alignment
+- if a row is visually pinned to the wrong side, inspect `dir`, DOM order, and `justify-*` together before changing spacing
+- when the goal is "put the whole content cluster on the right", prefer:
+  - `dir="rtl"`
+  - DOM order that matches the desired RTL reading order
+  - `justify-start` for the row if it should sit on the right/start edge
+- when the goal is "put the whole content cluster on the left/opposite edge", use `justify-end` intentionally and only after verifying that the row is truly opposite-side meta
+
+### RTL text flow inside aligned clusters
+
+Right alignment alone is not enough.
+
+- a cluster can be visually anchored on the right while still reading with the wrong internal flow
+- if text "sits on the right" but still feels left-to-right, verify the row direction and DOM order
+- for Hebrew/Arabic text clusters:
+  - the cluster itself should live in an RTL row
+  - labels and helper text should inherit RTL flow
+  - only the numeric token itself should opt into LTR when needed
+- for mixed text + numeric rows, keep the text wrapper RTL and isolate the number with a dedicated helper such as `.cashflow-number`
+
+### Shadcn defaults that commonly break RTL intent
+
+Shared primitives can silently override local fixes.
+
+- do not assume a local `pt-*`, `justify-*`, or `text-right` class is winning just because it appears in the JSX
+- inspect the shared primitive when a fix "should work" but does not
+- example from cashflow:
+  - `CardContent` carries `md:pt-0` by default
+  - on desktop this can wipe the intended top padding from a card even if the local component sets a mobile `pt-*`
+  - if a card needs top breathing room on desktop, override the desktop padding explicitly in the component class list
+
 ### Dialogs and drawers
 
 - title and description align right

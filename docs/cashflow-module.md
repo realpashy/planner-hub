@@ -198,6 +198,75 @@ They do **not** create fake transactions.
 - in overall mode, `overallBankPortion <= overallAvailableCash`
 - when a cashflow filter or section heading includes an icon, the icon stays on the right before the Hebrew label as one RTL-aligned cluster
 
+## RTL implementation notes from the cashflow overview fixes
+
+These notes are intentionally detailed because the cashflow module exposed a recurring class of RTL bugs that looked simple but were easy to "fix" incorrectly.
+
+### What caused the bug
+
+The broken overview and filter rows were caused by a combination of:
+
+- `dir="rtl"` on the container
+- flex rows using `justify-end` based on LTR intuition
+- right-aligned text inside a cluster that was still positioned on the wrong flex edge
+- shared primitive defaults, especially desktop padding coming from `CardContent`
+
+The result was misleading:
+
+- the text looked right-aligned
+- the icon sometimes looked close to the right place
+- but the whole cluster was actually pinned to the visual left or had the wrong internal reading flow
+
+### The specific rule that fixed it
+
+Inside an RTL container:
+
+- `justify-start` anchors a row on the visual right/start edge
+- `justify-end` anchors a row on the visual left/end edge
+
+Because of this, the correct fix for the overview card was not "add more right alignment".
+The correct fix was:
+
+1. keep the row in RTL
+2. use DOM order that matches the desired RTL reading order
+3. use `justify-start` when the whole cluster should sit on the right
+4. isolate numbers with `.cashflow-number` only, while keeping the surrounding text cluster RTL
+
+### Cashflow-specific examples
+
+Use this pattern for:
+
+- the main balance widget
+- mini summary widgets such as `יעד יומי נדרש`
+- filter headers such as `סינון לפי תאריכים`
+- dropdown/search trigger label rows
+
+Do not use this anti-pattern:
+
+- full-width RTL row
+- `justify-end`
+- hoping `text-right` will make the cluster feel correct
+
+That combination often pushes the whole cluster to the wrong visual side.
+
+### Shared primitive trap
+
+The cashflow overview card also exposed a desktop spacing trap:
+
+- shared `CardContent` includes `md:pt-0`
+- this can silently remove intended top spacing on desktop
+- if a cashflow card needs space from the rounded top border, the desktop top padding must be overridden explicitly in the component
+
+### Required future check
+
+Whenever an RTL cashflow row is touched in the future:
+
+1. verify which side `start` and `end` map to under the current `dir`
+2. verify DOM order matches the intended RTL reading order
+3. verify the text wrapper remains RTL
+4. verify only numeric tokens opt into LTR
+5. verify shared primitives are not overriding spacing/alignment at desktop breakpoints
+
 ## Paid flow
 
 Upcoming payments support a lightweight confirmation:
