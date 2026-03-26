@@ -53,7 +53,7 @@ export function CashflowDateField({
           </div>
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" sideOffset={8} className="w-[19rem] rounded-[calc(var(--radius)+0.5rem)] border-border/70 bg-popover/[0.98] p-4 shadow-xl backdrop-blur-xl" dir="rtl">
+      <PopoverContent align="start" sideOffset={8} className="w-[19rem] rounded-[calc(var(--radius)+0.5rem)] border-border/70 bg-popover/[0.98] p-4 shadow-xl backdrop-blur-xl" dir="rtl">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <button

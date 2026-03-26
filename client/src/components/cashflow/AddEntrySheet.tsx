@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Check, ChevronDown, FileText, Loader2, Paperclip } from "lucide-react";
+import { Check, ChevronDown, Download, FileText, Loader2, Paperclip } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,6 +11,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,6 +31,7 @@ import {
   INCOME_CATEGORY_LABELS,
   UPCOMING_PAYMENT_CATEGORIES,
   formatCashflowAmount,
+  fetchCashflowAttachment,
   generateId,
   getCashflowAttachmentUrl,
   getTodayKey,
@@ -123,6 +125,10 @@ export function AddEntrySheet({
   const [attachmentId, setAttachmentId] = useState<string | undefined>(undefined);
   const [attachmentName, setAttachmentName] = useState("");
   const [uploadingAttachment, setUploadingAttachment] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewMimeType, setPreviewMimeType] = useState("");
+  const [previewDataUrl, setPreviewDataUrl] = useState("");
   const [error, setError] = useState("");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
@@ -146,6 +152,10 @@ export function AddEntrySheet({
     setAttachmentId(initialTransaction?.attachmentId);
     setAttachmentName(initialTransaction?.attachmentId ? "קבלה מצורפת" : "");
     setUploadingAttachment(false);
+    setPreviewOpen(false);
+    setPreviewLoading(false);
+    setPreviewMimeType("");
+    setPreviewDataUrl("");
     setError("");
   }, [defaultCategory, initialTransaction, isIncome, open]);
 
@@ -168,9 +178,16 @@ export function AddEntrySheet({
   async function handlePreviewAttachment() {
     if (!attachmentId) return;
     try {
-      window.open(getCashflowAttachmentUrl(attachmentId), "_blank", "noopener,noreferrer");
+      setPreviewLoading(true);
+      setPreviewOpen(true);
+      const attachment = await fetchCashflowAttachment(attachmentId);
+      setPreviewMimeType(attachment.mimeType);
+      setPreviewDataUrl(attachment.dataUrl);
     } catch (previewError) {
+      setPreviewOpen(false);
       setError(previewError instanceof Error ? previewError.message : "לא הצלחנו לפתוח את הקובץ");
+    } finally {
+      setPreviewLoading(false);
     }
   }
 
@@ -371,11 +388,9 @@ export function AddEntrySheet({
                   </button>
                   <a
                     href={getCashflowAttachmentUrl(attachmentId, true)}
-                    target="_blank"
-                    rel="noreferrer"
                     className="inline-flex items-center gap-2 rounded-[calc(var(--radius)+0.25rem)] border border-border/60 bg-background/80 px-3 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-muted/70"
                   >
-                    <Paperclip className="h-3.5 w-3.5" />
+                    <Download className="h-3.5 w-3.5" />
                     הורד קבלה
                   </a>
                 </>
@@ -437,6 +452,57 @@ export function AddEntrySheet({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent dir="rtl" className="max-w-3xl bg-card/[0.98]">
+          <DialogHeader className="text-right">
+            <DialogTitle className="text-right">תצוגת קבלה</DialogTitle>
+            <DialogDescription className="text-right">
+              אפשר לצפות בקובץ כאן או להוריד אותו ישירות.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="flex justify-end">
+              {attachmentId ? (
+                <a
+                  href={getCashflowAttachmentUrl(attachmentId, true)}
+                  className="inline-flex items-center gap-2 rounded-[calc(var(--radius)+0.25rem)] border border-border/60 bg-background/80 px-3 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-muted/70"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  הורד קבלה
+                </a>
+              ) : null}
+            </div>
+
+            <div className="rounded-[calc(var(--radius)+0.5rem)] border border-border/60 bg-background/70 p-3">
+              {previewLoading ? (
+                <div className="flex min-h-[24rem] items-center justify-center">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : previewDataUrl ? (
+                previewMimeType === "application/pdf" ? (
+                  <iframe
+                    title="תצוגת קבלה"
+                    src={previewDataUrl}
+                    className="h-[70dvh] w-full rounded-[calc(var(--radius)+0.25rem)] border border-border/50 bg-background"
+                  />
+                ) : (
+                  <img
+                    src={previewDataUrl}
+                    alt="קבלה"
+                    className="max-h-[70dvh] w-full rounded-[calc(var(--radius)+0.25rem)] object-contain"
+                  />
+                )
+              ) : (
+                <div className="flex min-h-[24rem] items-center justify-center text-sm text-muted-foreground">
+                  לא הצלחנו לטעון את הקבלה.
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </SheetShell>
   );
 }

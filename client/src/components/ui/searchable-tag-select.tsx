@@ -97,7 +97,7 @@ export function SearchableTagSelect({
           <ChevronDown className="h-4 w-4 shrink-0 opacity-60" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent dir="rtl" align="end" sideOffset={8} className="w-[min(26rem,var(--radix-popover-trigger-width))] rounded-[5px] border border-border/70 bg-popover/[0.98] p-3 shadow-xl backdrop-blur-xl">
+      <PopoverContent dir="rtl" align="start" sideOffset={8} className="w-[min(26rem,var(--radix-popover-trigger-width))] rounded-[5px] border border-border/70 bg-popover/[0.98] p-3 shadow-xl backdrop-blur-xl">
         <div className="space-y-3">
           <div className="relative">
             <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
