@@ -94,11 +94,11 @@ export function CashflowOverview({
         <Card className="surface-shell relative overflow-hidden rounded-[calc(var(--radius)+1rem)] border-border/70">
           <div className="pointer-events-none absolute inset-x-0 top-0 h-full bg-[radial-gradient(ellipse_at_top_right,rgba(14,165,233,0.07),transparent_55%)] dark:bg-[radial-gradient(ellipse_at_top_right,rgba(14,165,233,0.16),transparent_55%)]" />
 
-          <CardContent className="relative p-6 pt-8">
+          <CardContent className="relative p-6 pt-10">
             <div className="flex justify-end">
-              <div className="flex max-w-full items-start justify-end gap-3 text-right">
-                <div className="flex min-w-0 flex-1 flex-col items-end space-y-1 text-right">
-                  <div className="flex w-full items-center justify-end gap-1.5 text-right">
+              <div className="inline-flex max-w-full items-start justify-end gap-3 text-right">
+                <div className="flex min-w-0 flex-col items-end space-y-1 text-right">
+                  <div className="inline-flex w-fit items-center justify-end gap-1.5 text-right">
                     <p className="text-xs font-semibold text-muted-foreground">יתרה זמינה עכשיו</p>
                     {isLowBalance ? (
                       <span className="inline-flex items-center gap-1 rounded-full border border-rose-500/20 bg-rose-500/[0.1] px-2 py-0.5 text-[10px] font-semibold text-rose-600 dark:text-rose-300">
@@ -128,8 +128,8 @@ export function CashflowOverview({
             <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
               <div className="rounded-[calc(var(--radius)+0.25rem)] border border-amber-500/20 bg-amber-500/[0.07] px-3 py-2 text-right">
                 <div className="flex justify-end">
-                  <div className="flex items-start justify-end gap-2 text-right">
-                    <div className="flex min-w-0 flex-1 flex-col items-end justify-center text-right">
+                  <div className="inline-flex w-fit items-start justify-end gap-2 text-right">
+                    <div className="flex min-w-0 flex-col items-end justify-center text-right">
                       <p className="text-[11px] font-semibold text-muted-foreground">יעד יומי נדרש</p>
                       <p className="cashflow-number text-sm font-black text-amber-700 dark:text-amber-300">
                         {formatCashflowAmount(dailyTarget, data.settings.currency)}
@@ -141,8 +141,8 @@ export function CashflowOverview({
               </div>
               <div className="rounded-[calc(var(--radius)+0.25rem)] border border-border/60 bg-muted/30 px-3 py-2 text-right">
                 <div className="flex justify-end">
-                  <div className="flex items-start justify-end gap-2 text-right">
-                    <div className="flex min-w-0 flex-1 flex-col items-end justify-center text-right">
+                  <div className="inline-flex w-fit items-start justify-end gap-2 text-right">
+                    <div className="flex min-w-0 flex-col items-end justify-center text-right">
                       <p className="text-[11px] font-semibold text-muted-foreground">תשלומים ממתינים החודש</p>
                       <p className="cashflow-number text-sm font-black">{formatCashflowAmount(monthlyUpcomingTotal, data.settings.currency)}</p>
                     </div>
