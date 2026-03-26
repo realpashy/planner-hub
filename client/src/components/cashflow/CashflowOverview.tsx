@@ -100,7 +100,7 @@ export function CashflowOverview({
                 <div className="icon-chip flex h-12 w-12 shrink-0 items-center justify-center rounded-[calc(var(--radius)+0.5rem)] border-sky-500/20 bg-sky-500/[0.12] text-sky-600 dark:text-sky-300">
                   <Wallet className="h-5 w-5" />
                 </div>
-                <div className="flex min-w-0 flex-col items-end space-y-1 text-right">
+                <div className="flex min-w-0 flex-1 flex-col space-y-1 text-right">
                   <div className="flex items-center justify-start gap-1.5 text-right" dir="rtl">
                     <p className="text-xs font-semibold text-muted-foreground">יתרה זמינה עכשיו</p>
                     {isLowBalance ? (

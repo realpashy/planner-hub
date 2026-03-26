@@ -60,6 +60,10 @@ Right alignment alone is not enough.
   - the cluster itself should live in an RTL row
   - labels and helper text should inherit RTL flow
   - only the numeric token itself should opt into LTR when needed
+- be careful with `items-end` on `flex-col` wrappers:
+  - it can force the whole text stack to align from the wrong internal edge
+  - this often makes Hebrew/Arabic copy look "right aligned but still reading left-to-right"
+  - prefer the default stretch behavior, or a full-width wrapper plus `text-right`, unless the column truly needs cross-axis end alignment
 - for mixed text + numeric rows, keep the text wrapper RTL and isolate the number with a dedicated helper such as `.cashflow-number`
 
 ### Shadcn defaults that commonly break RTL intent

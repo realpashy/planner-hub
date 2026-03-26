@@ -209,6 +209,7 @@ The broken overview and filter rows were caused by a combination of:
 - `dir="rtl"` on the container
 - flex rows using `justify-end` based on LTR intuition
 - right-aligned text inside a cluster that was still positioned on the wrong flex edge
+- `flex-col items-end` on the main overview text stack, which forced the internal Hebrew text flow to start from the wrong side
 - shared primitive defaults, especially desktop padding coming from `CardContent`
 
 The result was misleading:
@@ -231,6 +232,7 @@ The correct fix was:
 2. use DOM order that matches the desired RTL reading order
 3. use `justify-start` when the whole cluster should sit on the right
 4. isolate numbers with `.cashflow-number` only, while keeping the surrounding text cluster RTL
+5. avoid `items-end` on the inner text column unless a specific cross-axis end layout is truly required
 
 ### Cashflow-specific examples
 

@@ -176,6 +176,7 @@ For Hebrew/Arabic summary widgets, treat the card content as a single anchored c
 - the icon chip belongs on the right side first in the RTL reading order
 - the text/value stack follows it and remains right-aligned internally
 - avoid fixing these cards with random margin nudges or by pushing a full-width flex row with the wrong `justify-*` value
+- do not default the inner text stack to `flex-col items-end` unless that cross-axis behavior is required; for summary cards this often breaks Hebrew/Arabic reading flow even when the text is visually on the right
 - if the row uses `dir="rtl"`, remember:
   - `justify-start` places the cluster on the visual right
   - `justify-end` places the cluster on the visual left
