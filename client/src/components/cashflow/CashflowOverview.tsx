@@ -130,7 +130,7 @@ export function CashflowOverview({
                 <div className="flex justify-start text-right" dir="rtl">
                   <div className="flex items-start gap-2 text-right">
                     <Target className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />
-                    <div className="flex min-w-0 flex-col items-end justify-center text-right">
+                    <div className="flex min-w-0 flex-col justify-center text-right">
                       <p className="text-[11px] font-semibold text-muted-foreground">יעד יומי נדרש</p>
                       <p className="cashflow-number text-sm font-black text-amber-700 dark:text-amber-300">
                         {formatCashflowAmount(dailyTarget, data.settings.currency)}
@@ -143,7 +143,7 @@ export function CashflowOverview({
                 <div className="flex justify-start text-right" dir="rtl">
                   <div className="flex items-start gap-2 text-right">
                     <CalendarClock className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <div className="flex min-w-0 flex-col items-end justify-center text-right">
+                    <div className="flex min-w-0 flex-col justify-center text-right">
                       <p className="text-[11px] font-semibold text-muted-foreground">תשלומים ממתינים החודש</p>
                       <p className="cashflow-number text-sm font-black">{formatCashflowAmount(monthlyUpcomingTotal, data.settings.currency)}</p>
                     </div>
