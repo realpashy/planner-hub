@@ -89,7 +89,7 @@ export function SearchableTagSelect({
             className,
           )}
         >
-          <div className="flex min-w-0 flex-1 flex-row-reverse items-center justify-start gap-2 text-right">
+          <div className="flex min-w-0 flex-1 items-center justify-start gap-2 text-right">
             <span className={cn("truncate text-right", value ? "text-foreground" : "text-muted-foreground")}>
               {value || placeholder}
             </span>

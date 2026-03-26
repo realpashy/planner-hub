@@ -568,15 +568,15 @@ export function AddUpcomingSheet({
         ) : null}
 
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-muted-foreground">למי שולם</label>
+          <label className="text-xs font-semibold text-muted-foreground">למי ישולם?</label>
           <SearchableTagSelect
             value={paidFor}
             onChange={(nextValue) => {
               setPaidFor(nextValue);
               setError("");
             }}
-            placeholder="בחר או כתוב למי שולם"
-            searchPlaceholder="חיפוש או כתיבה של למי שולם"
+            placeholder="בחר או כתוב למי ישולם"
+            searchPlaceholder="חיפוש או כתיבה של למי ישולם"
             className="text-right"
             options={savedPayees}
             allowCreate

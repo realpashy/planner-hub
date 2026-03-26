@@ -50,14 +50,14 @@ export function CashflowNumericField({
           placeholder={placeholder}
           onChange={(event) => onChange(parseEditableNumber(event.target.value))}
           className={cn(
-            "h-14 rounded-[calc(var(--radius)+0.375rem)] border-border/70 bg-muted/40 pe-4 ps-14 text-right text-[22px] font-black tracking-tight focus:border-primary/50",
+            "h-14 rounded-[calc(var(--radius)+0.375rem)] border-border/70 bg-muted/40 pe-14 ps-14 text-right text-[22px] font-black tracking-tight focus:border-primary/50",
             "text-base md:text-[22px]",
             disabled && "opacity-70",
           )}
           style={{ direction: "ltr", textAlign: "right" }}
         />
 
-        <span className="pointer-events-none absolute left-12 top-1/2 -translate-y-1/2 text-base font-black text-muted-foreground">
+        <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[25px] font-black leading-none text-muted-foreground">
           {suffix}
         </span>
 

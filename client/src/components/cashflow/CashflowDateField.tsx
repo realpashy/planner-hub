@@ -45,7 +45,7 @@ export function CashflowDateField({
             className,
           )}
         >
-          <div className="flex w-full flex-row-reverse items-center justify-start gap-2 text-right">
+          <div className="flex w-full items-center justify-start gap-2 text-right" dir="rtl">
             <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" />
             <span className="min-w-0 flex-1 truncate text-right">
               {value ? format(selectedDate, "d MMMM yyyy", { locale: he }) : placeholder}
@@ -55,7 +55,7 @@ export function CashflowDateField({
       </PopoverTrigger>
       <PopoverContent align="end" sideOffset={8} className="w-[19rem] rounded-[calc(var(--radius)+0.5rem)] border-border/70 bg-popover/[0.98] p-4 shadow-xl backdrop-blur-xl" dir="rtl">
         <div className="space-y-4">
-          <div className="flex flex-row-reverse items-center justify-between">
+          <div className="flex items-center justify-between" dir="rtl">
             <button
               type="button"
               onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}

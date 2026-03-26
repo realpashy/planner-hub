@@ -217,34 +217,6 @@ export function CashflowSettings({ data, onSave, onImport, onReset }: CashflowSe
           </CardContent>
         </Card>
 
-        <Card className="surface-shell rounded-[calc(var(--radius)+0.85rem)] border-rose-500/20">
-          <CardHeader className="px-4 pb-3 pt-5 text-right">
-            <div className="flex items-center gap-3">
-              <div className="icon-chip h-9 w-9 shrink-0 rounded-[calc(var(--radius)+0.375rem)] border-rose-500/20 bg-rose-500/[0.1] text-rose-600 dark:text-rose-300">
-                <Trash2 className="h-4 w-4" />
-              </div>
-              <div className="min-w-0 flex-1 text-right">
-                <CardTitle className="text-sm font-bold">איפוס כל הנתונים</CardTitle>
-                <p className="mt-0.5 text-xs text-muted-foreground">מוחק את כל התזרים, התשלומים, השותפים וההגדרות ומתחיל מחדש.</p>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="px-4 pb-4">
-            <Button
-              type="button"
-              variant="outline"
-              className="h-12 w-full rounded-[calc(var(--radius)+0.5rem)] border-rose-500/25 bg-rose-500/[0.06] text-rose-700 hover:bg-rose-500/[0.12] dark:text-rose-300"
-              onClick={() => {
-                setResetInput("");
-                setShowResetDialog(true);
-              }}
-            >
-              <Trash2 className="h-4 w-4" />
-              מחק הכל והתחל מחדש
-            </Button>
-          </CardContent>
-        </Card>
-
         <Card className="surface-shell rounded-[calc(var(--radius)+0.85rem)] border-border/70">
           <CardHeader className="px-4 pb-3 pt-5 text-right">
             <div className="flex items-center gap-3">
@@ -298,6 +270,34 @@ export function CashflowSettings({ data, onSave, onImport, onReset }: CashflowSe
             "שמור הגדרות"
           )}
         </Button>
+
+        <Card className="surface-shell rounded-[calc(var(--radius)+0.85rem)] border-rose-500/20">
+          <CardHeader className="px-4 pb-3 pt-5 text-right">
+            <div className="flex items-center gap-3">
+              <div className="icon-chip h-9 w-9 shrink-0 rounded-[calc(var(--radius)+0.375rem)] border-rose-500/20 bg-rose-500/[0.1] text-rose-600 dark:text-rose-300">
+                <Trash2 className="h-4 w-4" />
+              </div>
+              <div className="min-w-0 flex-1 text-right">
+                <CardTitle className="text-sm font-bold">איפוס כל הנתונים</CardTitle>
+                <p className="mt-0.5 text-xs text-muted-foreground">מוחק את כל התזרים, התשלומים, השותפים וההגדרות ומתחיל מחדש.</p>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-12 w-full rounded-[calc(var(--radius)+0.5rem)] border-rose-500/25 bg-rose-500/[0.06] text-rose-700 hover:bg-rose-500/[0.12] dark:text-rose-300"
+              onClick={() => {
+                setResetInput("");
+                setShowResetDialog(true);
+              }}
+            >
+              <Trash2 className="h-4 w-4" />
+              מחק הכל והתחל מחדש
+            </Button>
+          </CardContent>
+        </Card>
       </div>
 
       <CashflowImportDialog

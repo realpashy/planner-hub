@@ -84,8 +84,8 @@ function PaymentCard({
   ].filter(Boolean) as Array<{ label: string; tone: string }>;
 
   return (
-    <Card className={cn("rounded-[calc(var(--radius)+0.625rem)] border transition-all duration-200", cardTone)}>
-      <CardContent className="p-4 pt-[15px]">
+    <Card className={cn("rounded-[calc(var(--radius)+0.625rem)] border pt-5 transition-all duration-200", cardTone)}>
+      <CardContent className="p-4 pt-0">
         <div className="grid items-stretch gap-4 md:grid-cols-[15%_1fr_25%]">
           <div className="flex min-h-full items-center justify-center">
             <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-[calc(var(--radius)+0.375rem)] border border-primary/30 bg-background/60 text-xl shadow-[0_0_0_1px_rgba(149,223,30,0.12),0_0_18px_rgba(149,223,30,0.12)]">
