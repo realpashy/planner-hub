@@ -47,6 +47,12 @@ import {
   getCurrentMonthKey as getCashflowMonthKey,
   formatCashflowAmount,
 } from "@/lib/cashflow";
+import {
+  loadHabitsData,
+  getTodayCompletionRate,
+  getHabitsForToday,
+  getHabitStreak,
+} from "@/lib/habits";
 
 type ModuleStat = {
   label: string;
@@ -246,6 +252,14 @@ export default function Dashboard() {
       (p) => p.status === "pending" && p.dueDate >= new Date().toISOString().split("T")[0],
     ).length;
 
+    const habitsData = loadHabitsData();
+    const todayHabits = getHabitsForToday(habitsData);
+    const todayCompletionRate = getTodayCompletionRate(habitsData);
+    const maxStreak = habitsData.habits.filter((h) => !h.isArchived).reduce(
+      (max, h) => Math.max(max, getHabitStreak(h.id, habitsData)),
+      0,
+    );
+
     const active: ActiveModule[] = [
       {
         id: "planner",
@@ -350,6 +364,31 @@ export default function Dashboard() {
         ],
         ctaLabel: "פתח תזרים",
       },
+      {
+        id: "habits",
+        href: "/habits",
+        title: "متتبع العادات",
+        description: "تتبّع عاداتك اليومية، راقب مزاجك، وحافظ على الاستمرارية عبر لوحة مركّزة وتحليلات مفيدة.",
+        helper: "ابدأ بتسجيل عاداتك اليومية وشاهد التحسن يوماً بيوم.",
+        icon: Activity,
+        accentClass: "bg-[radial-gradient(circle_at_top_right,rgba(139,92,246,0.07),transparent_56%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(139,92,246,0.18),transparent_56%)]",
+        iconClass: "border-violet-500/20 bg-violet-500/[0.12] text-violet-600 dark:text-violet-300",
+        badgeClass: "border-violet-500/20 bg-violet-500/[0.08] text-violet-700 dark:bg-violet-500/[0.15] dark:text-violet-300",
+        highlights: ["عادات يومية", "تتبع المزاج", "إحصائيات وتحليلات"],
+        stats: [
+          {
+            label: "إنجاز اليوم",
+            value: `${formatCount(todayCompletionRate)}%`,
+            note: `${formatCount(todayHabits.length)} عادة مقررة اليوم`,
+          },
+          {
+            label: "أطول سلسلة",
+            value: formatCount(maxStreak),
+            note: maxStreak > 0 ? `${formatCount(maxStreak)} يوم متتالي` : "ابدأ الآن",
+          },
+        ],
+        ctaLabel: "افتح العادات",
+      },
     ];
 
     const metrics: OverviewMetric[] = [
@@ -377,7 +416,6 @@ export default function Dashboard() {
     ];
 
     const upcoming: UpcomingModule[] = [
-      { id: "habits", title: "العادات", desc: "تجربة مخصصة لتتبّع العادات وبناء الاستمرارية.", icon: Activity, iconClass: "border-orange-500/20 bg-orange-500/[0.12] text-orange-600 dark:text-orange-300" },
       { id: "life", title: "منظم الحياة", desc: "مساحة أوسع لترتيب الجوانب الشخصية والروتين اليومي.", icon: Heart, iconClass: "border-rose-500/20 bg-rose-500/[0.12] text-rose-600 dark:text-rose-300" },
       { id: "monthly", title: "التخطيط الشهري", desc: "عرض شهري شامل للأهداف، المواعيد، والتوزيع العام.", icon: CalendarDays, iconClass: "border-sky-500/20 bg-sky-500/[0.12] text-sky-600 dark:text-sky-300" },
       { id: "goals", title: "أهداف السنة", desc: "متابعة الرؤية السنوية وتقسيمها إلى أهداف قابلة للتنفيذ.", icon: Target, iconClass: "border-violet-500/20 bg-violet-500/[0.12] text-violet-600 dark:text-violet-300" },

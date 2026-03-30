@@ -705,3 +705,19 @@
   display: inline-block;
   font-variant-numeric: tabular-nums;
 }
+
+/* ── Habits module utilities ─────────────────────────────────────────────── */
+/* LTR override for habit counts (mirrors .cashflow-number) */
+.habits-number {
+  direction: ltr;
+  unicode-bidi: bidi-override;
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Heatmap cell sizing helper */
+.habits-heatmap-cell {
+  width: calc(100% / 7 - 3px);
+  aspect-ratio: 1;
+  border-radius: 3px;
+}

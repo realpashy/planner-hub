@@ -2,6 +2,7 @@ const PLANNER_KEY = "planner_hub_data";
 const BUDGET_KEY = "planner_hub_budget_v2";
 const MEAL_KEY = "planner_hub_meal_planner_v5_mobile_weekly";
 const CASHFLOW_KEY = "planner_hub_cashflow_v2";
+const HABITS_KEY = "planner_hub_habits_v1";
 let lastPushedSignature = "";
 
 function safeParse(raw: string | null) {
@@ -17,7 +18,7 @@ export async function pullCloudToLocal() {
   const res = await fetch("/api/data", { credentials: "include" });
   if (!res.ok) return;
 
-  const body = (await res.json()) as { plannerData: unknown; budgetData: unknown; mealData: unknown; cashflowData: unknown };
+  const body = (await res.json()) as { plannerData: unknown; budgetData: unknown; mealData: unknown; cashflowData: unknown; habitsData: unknown };
 
   if (body.plannerData && typeof body.plannerData === "object") {
     localStorage.setItem(PLANNER_KEY, JSON.stringify(body.plannerData));
@@ -34,6 +35,10 @@ export async function pullCloudToLocal() {
   if (body.cashflowData && typeof body.cashflowData === "object") {
     localStorage.setItem(CASHFLOW_KEY, JSON.stringify(body.cashflowData));
   }
+
+  if (body.habitsData && typeof body.habitsData === "object") {
+    localStorage.setItem(HABITS_KEY, JSON.stringify(body.habitsData));
+  }
 }
 
 export async function pushLocalToCloud() {
@@ -41,7 +46,8 @@ export async function pushLocalToCloud() {
   const budgetData = safeParse(localStorage.getItem(BUDGET_KEY));
   const mealData = safeParse(localStorage.getItem(MEAL_KEY));
   const cashflowData = safeParse(localStorage.getItem(CASHFLOW_KEY));
-  const signature = JSON.stringify({ plannerData, budgetData, mealData, cashflowData });
+  const habitsData = safeParse(localStorage.getItem(HABITS_KEY));
+  const signature = JSON.stringify({ plannerData, budgetData, mealData, cashflowData, habitsData });
 
   if (signature === lastPushedSignature) return;
 
@@ -49,7 +55,7 @@ export async function pushLocalToCloud() {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify({ plannerData, budgetData, mealData, cashflowData }),
+    body: JSON.stringify({ plannerData, budgetData, mealData, cashflowData, habitsData }),
   });
 
   lastPushedSignature = signature;
