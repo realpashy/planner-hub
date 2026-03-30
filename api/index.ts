@@ -3,7 +3,6 @@ import express from "express";
 import { Pool } from "pg";
 import { readFile } from "fs/promises";
 import path from "path";
-import { generateHabitsCoachBrief } from "../server/ai";
 
 declare module "http" {
   interface IncomingMessage {
@@ -113,6 +112,198 @@ async function detectCountryFromIp(ip: string | null, signal?: AbortSignal) {
     return code && /^[A-Z]{2}$/.test(code) ? code : null;
   } catch {
     return null;
+  }
+}
+
+type HabitsCoachPayloadLite = {
+  totalHabits: number;
+  completedToday: number;
+  pendingToday: number;
+  progressPercent: number;
+  bestStreak: number;
+  averagePercent: number;
+  bestDayLabel?: string | null;
+  todayMoodLabel?: string | null;
+  reminders: Array<{ title: string; tone?: "upcoming" | "attention" }>;
+  habits: Array<{ name: string; completed?: boolean }>;
+};
+
+type HabitsCoachResultLite = {
+  headline: string;
+  overview: string;
+  momentumLabel: string;
+  focusHabits: string[];
+  actions: string[];
+  encouragement: string;
+  generatedAt: string;
+  source: "openai" | "fallback";
+};
+
+function normalizeHabitsCoachPayload(raw: unknown): HabitsCoachPayloadLite | null {
+  if (!raw || typeof raw !== "object") return null;
+  const source = raw as Record<string, unknown>;
+  const habits = Array.isArray(source.habits) ? source.habits : [];
+  const reminders = Array.isArray(source.reminders) ? source.reminders : [];
+
+  return {
+    totalHabits: Number(source.totalHabits ?? 0) || 0,
+    completedToday: Number(source.completedToday ?? 0) || 0,
+    pendingToday: Number(source.pendingToday ?? 0) || 0,
+    progressPercent: Number(source.progressPercent ?? 0) || 0,
+    bestStreak: Number(source.bestStreak ?? 0) || 0,
+    averagePercent: Number(source.averagePercent ?? 0) || 0,
+    bestDayLabel: typeof source.bestDayLabel === "string" ? source.bestDayLabel : null,
+    todayMoodLabel: typeof source.todayMoodLabel === "string" ? source.todayMoodLabel : null,
+    reminders: reminders
+      .filter((item) => item && typeof item === "object")
+      .map((item) => {
+        const value = item as Record<string, unknown>;
+        return {
+          title: typeof value.title === "string" ? value.title : "",
+          tone: (value.tone === "attention" ? "attention" : "upcoming") as "attention" | "upcoming",
+        };
+      })
+      .filter((item) => item.title)
+      .slice(0, 3),
+    habits: habits
+      .filter((item) => item && typeof item === "object")
+      .map((item) => {
+        const value = item as Record<string, unknown>;
+        return {
+          name: typeof value.name === "string" ? value.name : "",
+          completed: Boolean(value.completed),
+        };
+      })
+      .filter((item) => item.name)
+      .slice(0, 8),
+  };
+}
+
+function buildFallbackHabitsCoachLite(payload: HabitsCoachPayloadLite): HabitsCoachResultLite {
+  const nextHabit = payload.habits.find((habit) => !habit.completed) ?? payload.habits[0];
+  const secondHabit = payload.habits.find((habit) => !habit.completed && habit.name !== nextHabit?.name);
+  const attentionReminder = payload.reminders.find((item) => item.tone === "attention");
+  const completedAll = payload.totalHabits > 0 && payload.completedToday >= payload.totalHabits;
+  const focusHabits = [nextHabit?.name, secondHabit?.name].filter(Boolean) as string[];
+
+  return {
+    headline: completedAll
+      ? "يومك يبدو متماسكًا جدًا اليوم"
+      : payload.progressPercent >= 70
+        ? "أنت قريب جدًا من إغلاق يوم قوي"
+        : payload.progressPercent >= 35
+          ? "اليوم جيد، لكنه يحتاج دفعة صغيرة واضحة"
+          : "ابدأ الآن بعادة واحدة سهلة لتكسب الزخم",
+    overview: [
+      `أنجزت ${payload.completedToday} من ${payload.totalHabits} عادات اليوم.`,
+      payload.todayMoodLabel ? `مزاجك اليوم: ${payload.todayMoodLabel}.` : null,
+      attentionReminder ? `يوجد تذكير مفتوح لـ ${attentionReminder.title}.` : null,
+      payload.bestStreak > 0 ? `أفضل سلسلة حالية لديك ${payload.bestStreak} يومًا.` : null,
+    ]
+      .filter(Boolean)
+      .join(" "),
+    momentumLabel: completedAll
+      ? "اليوم شبه مكتمل"
+      : payload.progressPercent >= 70
+        ? "زخم قوي"
+        : payload.progressPercent >= 35
+          ? "زخم قابل للتحسين"
+          : "بداية هادئة",
+    focusHabits: focusHabits.length ? focusHabits : ["ابدأ بعادة واحدة"],
+    actions: [
+      nextHabit ? `ابدأ الآن بـ ${nextHabit.name} لأنها أقرب عادة لتحريك اليوم للأمام.` : "ابدأ بعادة قصيرة الآن بدل تأجيل اليوم كله.",
+      secondHabit ? `بعدها أغلق ${secondHabit.name} مباشرة لتكسب إحساسًا واضحًا بالتقدم.` : "بعد أول إنجاز، أغلق عادة ثانية مباشرة لتثبيت الزخم.",
+      payload.todayMoodLabel === "مرهق"
+        ? "خفف الهدف اليوم وركّز على الإنجاز الكافي بدل الكمال."
+        : "عادة واحدة الآن أفضل من خطة كبيرة مؤجلة.",
+    ].slice(0, 3),
+    encouragement: completedAll
+      ? "أغلق اليوم بهدوء واستمر على نفس الإيقاع."
+      : "الاستمرار أهم من الكمال. خطوة واحدة الآن تغيّر بقية اليوم.",
+    generatedAt: new Date().toISOString(),
+    source: "fallback",
+  };
+}
+
+async function generateHabitsCoachBriefForApi(rawPayload: unknown): Promise<HabitsCoachResultLite> {
+  const payload = normalizeHabitsCoachPayload(rawPayload);
+  if (!payload) {
+    throw new Error("ملخص العادات غير صالح");
+  }
+
+  const fallback = buildFallbackHabitsCoachLite(payload);
+  const key = process.env.OPENAI_API_KEY;
+  if (!key) {
+    return fallback;
+  }
+
+  try {
+    const model = process.env.OPENAI_HABITS_MODEL || process.env.OPENAI_MEAL_MODEL || "gpt-4.1-mini";
+    const response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${key}`,
+      },
+      body: JSON.stringify({
+        model,
+        input: [
+          {
+            role: "system",
+            content: [
+              {
+                type: "input_text",
+                text:
+                  "You are a premium Arabic habit coach inside Planner Hub. Return strict JSON only. Write Arabic only. Be concise, practical, supportive, and never guilt-inducing. Do not mention AI limitations. Use the provided habit summary only. Avoid markdown.",
+              },
+            ],
+          },
+          {
+            role: "user",
+            content: [
+              {
+                type: "input_text",
+                text:
+                  `اعتمادًا على هذا الملخص، أعد JSON فقط بالمفاتيح التالية: ` +
+                  `headline, overview, momentumLabel, focusHabits, actions, encouragement. ` +
+                  `الشروط: headline حتى 90 حرفًا، overview حتى 220 حرفًا، momentumLabel حتى 48 حرفًا، ` +
+                  `focusHabits من 1 إلى 3 عادات بأسمائها فقط، actions من 2 إلى 3 خطوات عملية وقصيرة، ` +
+                  `encouragement حتى 140 حرفًا. اجعل النص مباشرًا ومفيدًا لليوم الحالي.\n\n` +
+                  JSON.stringify(payload),
+              },
+            ],
+          },
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      return fallback;
+    }
+
+    const body = (await response.json()) as { output_text?: string };
+    const parsed = JSON.parse(body.output_text || "") as Omit<HabitsCoachResultLite, "generatedAt" | "source">;
+    if (
+      !parsed ||
+      typeof parsed.headline !== "string" ||
+      !Array.isArray(parsed.focusHabits) ||
+      !Array.isArray(parsed.actions)
+    ) {
+      return fallback;
+    }
+
+    return {
+      headline: parsed.headline,
+      overview: typeof parsed.overview === "string" ? parsed.overview : fallback.overview,
+      momentumLabel: typeof parsed.momentumLabel === "string" ? parsed.momentumLabel : fallback.momentumLabel,
+      focusHabits: parsed.focusHabits.filter((item): item is string => typeof item === "string").slice(0, 3),
+      actions: parsed.actions.filter((item): item is string => typeof item === "string").slice(0, 3),
+      encouragement: typeof parsed.encouragement === "string" ? parsed.encouragement : fallback.encouragement,
+      generatedAt: new Date().toISOString(),
+      source: "openai",
+    };
+  } catch {
+    return fallback;
   }
 }
 
@@ -833,7 +1024,7 @@ app.post("/api/habits/coach", async (req, res) => {
   }
 
   try {
-    const result = await generateHabitsCoachBrief(req.body.summary);
+    const result = await generateHabitsCoachBriefForApi(req.body.summary);
     return res.json({ result });
   } catch (error) {
     const message = error instanceof Error ? error.message : "تعذر إنشاء ملخص المدرب الذكي";
