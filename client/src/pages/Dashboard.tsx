@@ -47,12 +47,7 @@ import {
   getCurrentMonthKey as getCashflowMonthKey,
   formatCashflowAmount,
 } from "@/lib/cashflow";
-import {
-  loadHabitsData,
-  getTodayCompletionRate,
-  getHabitsForToday,
-  getHabitStreak,
-} from "@/lib/habits";
+import { getDashboardSummary as getHabitsDashboardSummary } from "@/modules/habits/utils/habits";
 
 type ModuleStat = {
   label: string;
@@ -251,14 +246,7 @@ export default function Dashboard() {
     const pendingPaymentsCount = cashflowData.upcomingPayments.filter(
       (p) => p.status === "pending" && p.dueDate >= new Date().toISOString().split("T")[0],
     ).length;
-
-    const habitsData = loadHabitsData();
-    const todayHabits = getHabitsForToday(habitsData);
-    const todayCompletionRate = getTodayCompletionRate(habitsData);
-    const maxStreak = habitsData.habits.filter((h) => !h.isArchived).reduce(
-      (max, h) => Math.max(max, getHabitStreak(h.id, habitsData)),
-      0,
-    );
+    const habitsSummary = getHabitsDashboardSummary();
 
     const active: ActiveModule[] = [
       {
@@ -288,6 +276,37 @@ export default function Dashboard() {
           },
         ],
         ctaLabel: "افتح المخطط",
+      },
+      {
+        id: "habits",
+        href: "/habits",
+        title: "متتبع العادات",
+        description: "موديول سريع لتتبّع العادات اليومية، المزاج، والاستمرارية في شاشة واحدة واضحة.",
+        helper: "افتح يومك، أنجز عاداتك بسرعة، وراجع الرؤى الأسبوعية بدون تعقيد.",
+        icon: Activity,
+        accentClass: "bg-[radial-gradient(circle_at_top_right,rgba(251,191,36,0.07),transparent_56%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(251,191,36,0.16),transparent_56%)]",
+        iconClass: "border-amber-500/20 bg-amber-500/[0.12] text-amber-700 dark:text-amber-300",
+        badgeClass: "border-amber-500/20 bg-amber-500/[0.08] text-amber-700 dark:bg-amber-500/[0.15] dark:text-amber-300",
+        highlights: ["عادات يومية", "مزاج سريع", "رؤى أسبوعية"],
+        stats: [
+          {
+            label: "إنجاز اليوم",
+            value: habitsSummary.totalHabits
+              ? `${formatCount(habitsSummary.completedToday)}/${formatCount(habitsSummary.totalHabits)}`
+              : "ابدئي الآن",
+            note: habitsSummary.totalHabits
+              ? `${formatCount(habitsSummary.progressPercent)}% من عادات اليوم`
+              : "أضيفي عادة واحدة لتبدأ السلسلة",
+          },
+          {
+            label: "أفضل سلسلة",
+            value: habitsSummary.bestStreak ? `${formatCount(habitsSummary.bestStreak)} أيام` : "0",
+            note: habitsSummary.pendingCount
+              ? `${formatCount(habitsSummary.pendingCount)} عادات ما زالت بانتظار اليوم`
+              : "كل العادات مكتملة اليوم",
+          },
+        ],
+        ctaLabel: "افتح متتبع العادات",
       },
       {
         id: "budget",
@@ -363,31 +382,6 @@ export default function Dashboard() {
           },
         ],
         ctaLabel: "פתח תזרים",
-      },
-      {
-        id: "habits",
-        href: "/habits",
-        title: "متتبع العادات",
-        description: "تتبّع عاداتك اليومية، راقب مزاجك، وحافظ على الاستمرارية عبر لوحة مركّزة وتحليلات مفيدة.",
-        helper: "ابدأ بتسجيل عاداتك اليومية وشاهد التحسن يوماً بيوم.",
-        icon: Activity,
-        accentClass: "bg-[radial-gradient(circle_at_top_right,rgba(139,92,246,0.07),transparent_56%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(139,92,246,0.18),transparent_56%)]",
-        iconClass: "border-violet-500/20 bg-violet-500/[0.12] text-violet-600 dark:text-violet-300",
-        badgeClass: "border-violet-500/20 bg-violet-500/[0.08] text-violet-700 dark:bg-violet-500/[0.15] dark:text-violet-300",
-        highlights: ["عادات يومية", "تتبع المزاج", "إحصائيات وتحليلات"],
-        stats: [
-          {
-            label: "إنجاز اليوم",
-            value: `${formatCount(todayCompletionRate)}%`,
-            note: `${formatCount(todayHabits.length)} عادة مقررة اليوم`,
-          },
-          {
-            label: "أطول سلسلة",
-            value: formatCount(maxStreak),
-            note: maxStreak > 0 ? `${formatCount(maxStreak)} يوم متتالي` : "ابدأ الآن",
-          },
-        ],
-        ctaLabel: "افتح العادات",
       },
     ];
 

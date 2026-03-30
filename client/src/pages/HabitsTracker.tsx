@@ -1,244 +1,123 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 import { AnimatePresence, motion } from "framer-motion";
-import { Activity, ArrowLeft, BarChart3, Home, ListChecks, Sparkles } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { HabitsOverview } from "@/components/habits/HabitsOverview";
-import { HabitsManage } from "@/components/habits/HabitsManage";
-import { HabitsInsights } from "@/components/habits/HabitsInsights";
-import { HabitsAI } from "@/components/habits/HabitsAI";
-import { AddHabitSheet } from "@/components/habits/AddHabitSheet";
-import { LogHabitSheet } from "@/components/habits/LogHabitSheet";
 import {
-  type Habit,
-  type HabitLog,
-  type HabitsData,
-  type MoodLevel,
-  generateId,
-  getTodayKey,
-  loadHabitsData,
-  saveHabitsData,
-} from "@/lib/habits";
-import { pullCloudToLocal, pushLocalToCloud } from "@/lib/cloud-sync";
+  ArrowLeft,
+  Bot,
+  BrainCircuit,
+  Home,
+  LayoutGrid,
+  ListChecks,
+  Sparkles,
+} from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { useHabitsTracker } from "@/modules/habits/hooks/useHabitsTracker";
+import { AIScreen } from "@/modules/habits/screens/AIScreen";
+import { HabitFormScreen } from "@/modules/habits/screens/HabitFormScreen";
+import { HabitsDashboardScreen } from "@/modules/habits/screens/HabitsDashboardScreen";
+import { HabitsListScreen } from "@/modules/habits/screens/HabitsListScreen";
+import { InsightsScreen } from "@/modules/habits/screens/InsightsScreen";
+import type { HabitDefinition, HabitFormValues } from "@/modules/habits/types";
 
-// ── Navigation ────────────────────────────────────────────────────────────────
+type HabitsTab = "dashboard" | "habits" | "insights" | "ai";
 
-type ScreenKey = "overview" | "manage" | "insights" | "ai";
-
-interface NavItem {
-  key: ScreenKey;
+const TAB_ITEMS: Array<{
+  key: HabitsTab;
   label: string;
   icon: React.ElementType;
-}
-
-const NAV_ITEMS: NavItem[] = [
-  { key: "overview", label: "الرئيسية", icon: Home },
-  { key: "manage", label: "عاداتي", icon: ListChecks },
-  { key: "insights", label: "الإحصائيات", icon: BarChart3 },
-  { key: "ai", label: "الذكاء", icon: Sparkles },
+}> = [
+  { key: "dashboard", label: "الرئيسية", icon: LayoutGrid },
+  { key: "habits", label: "العادات", icon: ListChecks },
+  { key: "insights", label: "الرؤى", icon: BrainCircuit },
+  { key: "ai", label: "المدرب الذكي", icon: Bot },
 ];
 
-const SCREEN_TITLES: Record<ScreenKey, string> = {
-  overview: "متتبع العادات",
-  manage: "عاداتي",
-  insights: "الإحصائيات",
-  ai: "المدرب الذكي",
-};
-
-// ── Page component ────────────────────────────────────────────────────────────
-
 export default function HabitsTracker() {
-  const [data, setData] = useState<HabitsData>(() => loadHabitsData());
-  const [screen, setScreen] = useState<ScreenKey>("overview");
-  const [showAddHabit, setShowAddHabit] = useState(false);
-  const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
-  const [showLogHabit, setShowLogHabit] = useState(false);
-  const [logTargetHabit, setLogTargetHabit] = useState<Habit | null>(null);
-  const [logTargetExisting, setLogTargetExisting] = useState<HabitLog | null>(null);
-
-  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
-  const currentTabLabel = NAV_ITEMS.find((item) => item.key === screen)?.label ?? SCREEN_TITLES[screen];
+  const [activeTab, setActiveTab] = useState<HabitsTab>("dashboard");
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingHabit, setEditingHabit] = useState<HabitDefinition | null>(null);
+  const {
+    state,
+    todayKey,
+    dashboard,
+    reminders,
+    insights,
+    todayMood,
+    saveHabit,
+    deleteHabit,
+    setHabitValue,
+    toggleHabit,
+    setMood,
+  } = useHabitsTracker();
+  const { toast } = useToast();
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
-    scrollContainerRef.current?.scrollTo({ top: 0, behavior: "auto" });
+  }, [activeTab]);
 
-    let active = true;
-    pullCloudToLocal()
-      .then(() => {
-        if (active) setData(loadHabitsData());
-      })
-      .catch(() => null);
+  const currentTabLabel = useMemo(
+    () => TAB_ITEMS.find((item) => item.key === activeTab)?.label ?? "الرئيسية",
+    [activeTab],
+  );
 
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    scrollContainerRef.current?.scrollTo({ top: 0, behavior: "auto" });
-  }, [screen]);
-
-  const updateData = useCallback((updater: (prev: HabitsData) => HabitsData) => {
-    setData((prev) => {
-      const next = { ...updater(prev), lastUpdated: new Date().toISOString() };
-      saveHabitsData(next);
-      pushLocalToCloud().catch(() => null);
-      return next;
-    });
-  }, []);
-
-  // ── Handlers ───────────────────────────────────────────────────────────────
-
-  function handleSaveHabit(habit: Habit) {
-    updateData((prev) => {
-      const exists = prev.habits.some((h) => h.id === habit.id);
-      const habits = exists
-        ? prev.habits.map((h) => (h.id === habit.id ? habit : h))
-        : [...prev.habits, { ...habit, order: prev.habits.length }];
-      return { ...prev, habits };
-    });
+  const openCreate = () => {
     setEditingHabit(null);
-  }
+    setFormOpen(true);
+  };
 
-  function handleDeleteHabit(habitId: string) {
-    updateData((prev) => ({
-      ...prev,
-      habits: prev.habits.filter((h) => h.id !== habitId),
-      logs: prev.logs.filter((l) => l.habitId !== habitId),
-    }));
-    setEditingHabit(null);
-  }
+  const openEdit = (habit: HabitDefinition) => {
+    setEditingHabit(habit);
+    setFormOpen(true);
+  };
 
-  function handleArchiveHabit(habitId: string) {
-    updateData((prev) => ({
-      ...prev,
-      habits: prev.habits.map((h) =>
-        h.id === habitId ? { ...h, isArchived: true } : h,
-      ),
-    }));
-  }
-
-  function handleUnarchiveHabit(habitId: string) {
-    updateData((prev) => ({
-      ...prev,
-      habits: prev.habits.map((h) =>
-        h.id === habitId ? { ...h, isArchived: false } : h,
-      ),
-    }));
-  }
-
-  function handleToggleHabit(habitId: string, completed: boolean) {
-    updateData((prev) => {
-      const today = getTodayKey();
-      const timestamp = new Date().toISOString();
-      const existing = prev.logs.find((l) => l.habitId === habitId && l.date === today);
-
-      if (existing) {
-        return {
-          ...prev,
-          logs: prev.logs.map((l) =>
-            l.habitId === habitId && l.date === today
-              ? { ...l, completed, createdAt: timestamp }
-              : l,
-          ),
-        };
-      }
-
-      const newLog: HabitLog = {
-        id: generateId(),
-        habitId,
-        date: today,
-        completed,
-        createdAt: timestamp,
-      };
-      return { ...prev, logs: [newLog, ...prev.logs] };
+  const handleSaveHabit = (values: HabitFormValues, habit?: HabitDefinition) => {
+    saveHabit(values, habit);
+    toast({
+      title: habit ? "تم تحديث العادة" : "تمت إضافة العادة",
+      description: habit
+        ? "التغييرات ظهرت مباشرة في لوحة اليوم."
+        : "العادة الجديدة أصبحت جاهزة للاستخدام اليومي.",
+      duration: 3000,
     });
-  }
+  };
 
-  function handleLogHabit(habit: Habit) {
-    const today = getTodayKey();
-    const existing = data.logs.find((l) => l.habitId === habit.id && l.date === today) ?? null;
-    setLogTargetHabit(habit);
-    setLogTargetExisting(existing);
-    setShowLogHabit(true);
-  }
-
-  // For count type: called from inline +/- buttons — opens the log sheet
-  function handleInlineLog(habit: Habit) {
-    handleLogHabit(habit);
-  }
-
-  function handleSaveLog(log: HabitLog) {
-    updateData((prev) => {
-      const exists = prev.logs.some((l) => l.habitId === log.habitId && l.date === log.date);
-      if (exists) {
-        return {
-          ...prev,
-          logs: prev.logs.map((l) =>
-            l.habitId === log.habitId && l.date === log.date ? log : l,
-          ),
-        };
-      }
-      return { ...prev, logs: [log, ...prev.logs] };
+  const handleDeleteHabit = (habitId: string) => {
+    deleteHabit(habitId);
+    toast({
+      title: "تم حذف العادة",
+      description: "تمت إزالة العادة وسجلها من هذه الوحدة.",
+      duration: 3000,
     });
-  }
-
-  function handleMoodSelect(mood: MoodLevel) {
-    updateData((prev) => {
-      const today = getTodayKey();
-      const timestamp = new Date().toISOString();
-      const exists = prev.moodLogs.some((l) => l.date === today);
-      if (exists) {
-        return {
-          ...prev,
-          moodLogs: prev.moodLogs.map((l) =>
-            l.date === today ? { ...l, mood, createdAt: timestamp } : l,
-          ),
-        };
-      }
-      return {
-        ...prev,
-        moodLogs: [{ id: generateId(), date: today, mood, createdAt: timestamp }, ...prev.moodLogs],
-      };
-    });
-  }
-
-  // ── Render ─────────────────────────────────────────────────────────────────
+  };
 
   return (
-    <div className="app-shell flex min-h-screen flex-col" dir="rtl">
-      {/* Top nav */}
-      <nav className="sticky top-0 z-50 shrink-0 border-b border-border/50 bg-background/90 backdrop-blur-md">
-        <div className="mx-auto flex w-full items-center justify-between px-4 py-3 md:max-w-[60vw] md:px-6">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-violet-500/20 bg-violet-500/[0.15] text-violet-600 dark:text-violet-300">
-              <Activity className="h-4 w-4" />
+    <div className="app-shell min-h-screen" dir="rtl">
+      <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/90 backdrop-blur-md">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+          <div className="flex min-w-0 items-center gap-3 text-right">
+            <div className="icon-chip h-10 w-10 rounded-[calc(var(--radius)+0.4rem)] border-primary/20 bg-primary/[0.14] text-primary">
+              <Sparkles className="h-4 w-4" />
             </div>
-            <div className="space-y-0.5 text-right">
-              <div className="font-hebrew flex items-center justify-end gap-2 text-xs font-semibold text-muted-foreground">
-                <button
-                  type="button"
-                  onClick={() => setScreen("overview")}
-                  className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-primary transition-colors hover:bg-primary/[0.08]"
-                >
+            <div className="space-y-0.5">
+              <div className="flex items-center justify-start gap-2 text-xs font-semibold text-muted-foreground">
+                <Link href="/" className="inline-flex items-center gap-1 text-primary transition-colors hover:text-primary/80">
                   <Home className="h-3.5 w-3.5" />
                   الرئيسية
-                </button>
-                <span className="text-muted-foreground/70">/</span>
+                </Link>
+                <span className="text-muted-foreground/60">/</span>
                 <span>{currentTabLabel}</span>
               </div>
-              <span className="font-hebrew block text-base font-black tracking-tight text-foreground">
-                {SCREEN_TITLES[screen]}
-              </span>
+              <p className="text-lg font-black tracking-tight text-foreground">متتبع العادات</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <Link href="/">
-              <button className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted/60 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+              <button className="flex h-10 w-10 items-center justify-center rounded-[calc(var(--radius)+0.35rem)] border border-border/70 bg-background/60 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
                 <ArrowLeft className="h-4 w-4" />
               </button>
             </Link>
@@ -246,95 +125,117 @@ export default function HabitsTracker() {
         </div>
       </nav>
 
-      {/* Screen content */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto pb-24">
-        <div className="mx-auto w-full px-4 py-5 md:max-w-[60vw] md:px-6">
+      <div className="mx-auto max-w-6xl space-y-5 px-4 py-6 sm:px-6 lg:px-8">
+        <motion.section
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+          className="surface-shell rounded-[calc(var(--radius)+1rem)] border-primary/15 p-5 text-right"
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-3">
+              <div className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-primary/[0.08] px-3 py-1 text-[11px] font-semibold text-primary">
+                <Sparkles className="h-3.5 w-3.5" />
+                استخدام يومي سريع
+              </div>
+              <div className="space-y-2">
+                <h1 className="text-3xl font-black leading-tight text-foreground md:text-4xl">
+                  عادات واضحة، إنجاز أسرع، واستمرارية بدون ضغط
+                </h1>
+                <p className="max-w-3xl text-sm leading-7 text-muted-foreground">
+                  هذا الموديول مبني لروتين يومي سريع: افتح الشاشة، أنجز عاداتك، حدّد المزاج،
+                  واغلق اليوم بإحساس واضح بدل التشتت أو اللوم.
+                </p>
+              </div>
+            </div>
+
+            <Button className="shrink-0" onClick={openCreate}>
+              <Sparkles className="h-4 w-4" />
+              إضافة عادة
+            </Button>
+          </div>
+        </motion.section>
+
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as HabitsTab)} dir="rtl">
+          <TabsList className="grid w-full grid-cols-2 gap-1 rounded-[calc(var(--radius)+0.6rem)] p-1 md:grid-cols-4">
+            {TAB_ITEMS.map(({ key, label, icon: Icon }) => (
+              <TabsTrigger
+                key={key}
+                value={key}
+                className="flex flex-row-reverse items-center justify-center gap-2 rounded-[calc(var(--radius)+0.25rem)] py-2.5 text-right"
+              >
+                <Icon className="h-4 w-4" />
+                <span>{label}</span>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+
           <AnimatePresence mode="wait">
             <motion.div
-              key={screen}
-              initial={{ opacity: 0, y: 10 }}
+              key={activeTab}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
+              exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2 }}
             >
-              {screen === "overview" && (
-                <HabitsOverview
-                  data={data}
-                  onToggleHabit={handleToggleHabit}
-                  onLogHabit={handleLogHabit}
-                  onAddHabit={() => setShowAddHabit(true)}
-                  onMoodSelect={handleMoodSelect}
+              <TabsContent value="dashboard" className="mt-5">
+                <HabitsDashboardScreen
+                  state={state}
+                  todayKey={todayKey}
+                  progressPercent={dashboard.progressPercent}
+                  completedToday={dashboard.completedToday}
+                  totalHabits={dashboard.totalHabits}
+                  pendingCount={dashboard.pendingCount}
+                  bestStreak={dashboard.bestStreak}
+                  reminders={reminders}
+                  todayMood={todayMood}
+                  onAddHabit={openCreate}
+                  onOpenHabits={() => setActiveTab("habits")}
+                  onEditHabit={openEdit}
+                  onToggleHabit={toggleHabit}
+                  onAdjustHabit={setHabitValue}
+                  onSetMood={setMood}
                 />
-              )}
-              {screen === "manage" && (
-                <HabitsManage
-                  data={data}
-                  onAddHabit={() => setShowAddHabit(true)}
-                  onEditHabit={(habit) => setEditingHabit(habit)}
-                  onDeleteHabit={handleDeleteHabit}
-                  onArchiveHabit={handleArchiveHabit}
-                  onUnarchiveHabit={handleUnarchiveHabit}
+              </TabsContent>
+
+              <TabsContent value="habits" className="mt-5">
+                <HabitsListScreen
+                  state={state}
+                  todayKey={todayKey}
+                  onCreate={openCreate}
+                  onEdit={openEdit}
+                  onToggleHabit={toggleHabit}
+                  onAdjustHabit={setHabitValue}
                 />
-              )}
-              {screen === "insights" && <HabitsInsights data={data} />}
-              {screen === "ai" && <HabitsAI />}
+              </TabsContent>
+
+              <TabsContent value="insights" className="mt-5">
+                <InsightsScreen
+                  state={state}
+                  averagePercent={insights.averagePercent}
+                  totalCheckIns={insights.totalCheckIns}
+                  bestDayLabel={insights.bestDay.label}
+                  bestDayPercent={insights.bestDay.percent}
+                  weeklyTrend={insights.weeklyTrend}
+                  monthlyTrend={insights.monthlyTrend}
+                  categoryBreakdown={insights.categoryBreakdown}
+                />
+              </TabsContent>
+
+              <TabsContent value="ai" className="mt-5">
+                <AIScreen />
+              </TabsContent>
             </motion.div>
           </AnimatePresence>
-        </div>
+        </Tabs>
       </div>
 
-      {/* Bottom nav */}
-      <nav className="safe-area-bottom fixed inset-x-0 bottom-0 z-50 border-t border-border/60 bg-background/95 backdrop-blur-md">
-        <div className="mx-auto flex w-full items-center justify-around px-2 py-2 md:max-w-[60vw] md:px-6">
-          {NAV_ITEMS.map(({ key, label, icon: Icon }) => {
-            const isActive = screen === key;
-            return (
-              <button
-                key={key}
-                onClick={() => setScreen(key)}
-                className={cn(
-                  "relative flex flex-col items-center gap-0.5 rounded-[calc(var(--radius)+0.25rem)] px-3 py-2 transition-all duration-200",
-                  isActive
-                    ? "text-violet-600 dark:text-violet-300"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                <div
-                  className={cn(
-                    "flex h-8 w-8 items-center justify-center rounded-[calc(var(--radius))] transition-all duration-200",
-                    isActive ? "bg-violet-500/[0.15]" : "bg-transparent",
-                  )}
-                >
-                  <Icon className={cn("h-5 w-5 transition-all", isActive && "scale-110")} />
-                </div>
-                <span className={cn("text-[10px] font-semibold leading-none", isActive && "font-bold")}>
-                  {label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </nav>
-
-      {/* Sheets */}
-      <AddHabitSheet
-        open={showAddHabit}
-        onClose={() => setShowAddHabit(false)}
-        onSave={handleSaveHabit}
-      />
-      <AddHabitSheet
-        open={Boolean(editingHabit)}
-        initialHabit={editingHabit}
-        onClose={() => setEditingHabit(null)}
+      <HabitFormScreen
+        open={formOpen}
+        habit={editingHabit}
+        onClose={() => setFormOpen(false)}
         onSave={handleSaveHabit}
         onDelete={handleDeleteHabit}
-      />
-      <LogHabitSheet
-        open={showLogHabit}
-        habit={logTargetHabit}
-        existingLog={logTargetExisting}
-        onClose={() => { setShowLogHabit(false); setLogTargetHabit(null); setLogTargetExisting(null); }}
-        onSave={handleSaveLog}
       />
     </div>
   );
