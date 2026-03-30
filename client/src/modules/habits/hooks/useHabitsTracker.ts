@@ -24,7 +24,16 @@ export function useHabitsTracker() {
   const [state, setState] = useState(loadHabitsState);
 
   useEffect(() => {
-    saveHabitsState(state);
+    const persist = () => saveHabitsState(state);
+    const win = typeof window === "undefined" ? null : window;
+
+    if (win && "requestIdleCallback" in win) {
+      const handle = win.requestIdleCallback(persist, { timeout: 250 });
+      return () => win.cancelIdleCallback(handle);
+    }
+
+    const timeout = setTimeout(persist, 120);
+    return () => clearTimeout(timeout);
   }, [state]);
 
   const touchState = (updater: (previous: HabitsState) => HabitsState) => {

@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useHabitsTracker } from "@/modules/habits/hooks/useHabitsTracker";
 import { AIScreen } from "@/modules/habits/screens/AIScreen";
@@ -93,6 +93,81 @@ export default function HabitsTracker() {
     });
   };
 
+  const activeScreen = useMemo(() => {
+    if (activeTab === "dashboard") {
+      return (
+        <HabitsDashboardScreen
+          state={state}
+          todayKey={todayKey}
+          progressPercent={dashboard.progressPercent}
+          completedToday={dashboard.completedToday}
+          totalHabits={dashboard.totalHabits}
+          pendingCount={dashboard.pendingCount}
+          bestStreak={dashboard.bestStreak}
+          reminders={reminders}
+          todayMood={todayMood}
+          onAddHabit={openCreate}
+          onOpenHabits={() => setActiveTab("habits")}
+          onEditHabit={openEdit}
+          onToggleHabit={toggleHabit}
+          onAdjustHabit={setHabitValue}
+          onSetMood={setMood}
+        />
+      );
+    }
+
+    if (activeTab === "habits") {
+      return (
+        <HabitsListScreen
+          state={state}
+          todayKey={todayKey}
+          onCreate={openCreate}
+          onEdit={openEdit}
+          onToggleHabit={toggleHabit}
+          onAdjustHabit={setHabitValue}
+        />
+      );
+    }
+
+    if (activeTab === "insights") {
+      return (
+        <InsightsScreen
+          state={state}
+          averagePercent={insights.averagePercent}
+          totalCheckIns={insights.totalCheckIns}
+          bestDayLabel={insights.bestDay.label}
+          bestDayPercent={insights.bestDay.percent}
+          weeklyTrend={insights.weeklyTrend}
+          monthlyTrend={insights.monthlyTrend}
+          categoryBreakdown={insights.categoryBreakdown}
+        />
+      );
+    }
+
+    return <AIScreen />;
+  }, [
+    activeTab,
+    dashboard.bestStreak,
+    dashboard.completedToday,
+    dashboard.pendingCount,
+    dashboard.progressPercent,
+    dashboard.totalHabits,
+    insights.averagePercent,
+    insights.bestDay.label,
+    insights.bestDay.percent,
+    insights.categoryBreakdown,
+    insights.monthlyTrend,
+    insights.totalCheckIns,
+    insights.weeklyTrend,
+    reminders,
+    setHabitValue,
+    setMood,
+    state,
+    todayKey,
+    todayMood,
+    toggleHabit,
+  ]);
+
   return (
     <div className="app-shell min-h-screen" dir="rtl">
       <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/90 backdrop-blur-md">
@@ -169,65 +244,20 @@ export default function HabitsTracker() {
               </TabsTrigger>
             ))}
           </TabsList>
-
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2 }}
-            >
-              <TabsContent value="dashboard" className="mt-5">
-                <HabitsDashboardScreen
-                  state={state}
-                  todayKey={todayKey}
-                  progressPercent={dashboard.progressPercent}
-                  completedToday={dashboard.completedToday}
-                  totalHabits={dashboard.totalHabits}
-                  pendingCount={dashboard.pendingCount}
-                  bestStreak={dashboard.bestStreak}
-                  reminders={reminders}
-                  todayMood={todayMood}
-                  onAddHabit={openCreate}
-                  onOpenHabits={() => setActiveTab("habits")}
-                  onEditHabit={openEdit}
-                  onToggleHabit={toggleHabit}
-                  onAdjustHabit={setHabitValue}
-                  onSetMood={setMood}
-                />
-              </TabsContent>
-
-              <TabsContent value="habits" className="mt-5">
-                <HabitsListScreen
-                  state={state}
-                  todayKey={todayKey}
-                  onCreate={openCreate}
-                  onEdit={openEdit}
-                  onToggleHabit={toggleHabit}
-                  onAdjustHabit={setHabitValue}
-                />
-              </TabsContent>
-
-              <TabsContent value="insights" className="mt-5">
-                <InsightsScreen
-                  state={state}
-                  averagePercent={insights.averagePercent}
-                  totalCheckIns={insights.totalCheckIns}
-                  bestDayLabel={insights.bestDay.label}
-                  bestDayPercent={insights.bestDay.percent}
-                  weeklyTrend={insights.weeklyTrend}
-                  monthlyTrend={insights.monthlyTrend}
-                  categoryBreakdown={insights.categoryBreakdown}
-                />
-              </TabsContent>
-
-              <TabsContent value="ai" className="mt-5">
-                <AIScreen />
-              </TabsContent>
-            </motion.div>
-          </AnimatePresence>
         </Tabs>
+
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="mt-5"
+          >
+            {activeScreen}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       <HabitFormScreen
