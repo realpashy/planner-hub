@@ -29,11 +29,13 @@ export function AI_LockedCard() {
           <div className="space-y-2">
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-primary/[0.08] px-3 py-1 text-[11px] font-semibold text-primary">
               <Lock className="h-3.5 w-3.5" />
-              قريبًا ضمن الخطة المدفوعة
+              مزايا Plus القادمة
             </div>
             <div className="space-y-1">
-              <CardTitle className="text-xl font-black">المدرب الذكي</CardTitle>
-              <CardDescription>واجهة واضحة لقيمة الذكاء الاصطناعي القادمة، بدون أي وعود وهمية الآن.</CardDescription>
+              <CardTitle className="text-xl font-black">ميزات أعمق ستُفتح لاحقًا</CardTitle>
+              <CardDescription>
+                القراءة اليومية أصبحت جاهزة، أمّا هذه الطبقة فتظل محجوبة الآن حتى لا نشحن المنتج بوعود غير مكتملة.
+              </CardDescription>
             </div>
           </div>
           <div className="icon-chip h-12 w-12 rounded-[calc(var(--radius)+0.5rem)] border-primary/25 bg-primary/[0.14] text-primary">
@@ -64,7 +66,7 @@ export function AI_LockedCard() {
         })}
 
         <Button variant="outline" className="w-full rounded-[calc(var(--radius)+0.45rem)] border-primary/20 bg-primary/[0.05] text-primary hover:bg-primary/[0.1]">
-          فتح عند إطلاق Plus
+          تُفتح مع Plus لاحقًا
         </Button>
       </CardContent>
     </Card>

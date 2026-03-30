@@ -144,7 +144,7 @@ export default function HabitsTracker() {
       );
     }
 
-    return <AIScreen />;
+    return <AIScreen state={state} onAddHabit={openCreate} />;
   }, [
     activeTab,
     dashboard.bestStreak,

@@ -10,6 +10,7 @@ import type {
   ReminderItem,
   TrendPoint,
 } from "@/modules/habits/types";
+import type { HabitsCoachPayload } from "@shared/ai/habits-coach";
 
 export const HABITS_STORAGE_KEY = "planner-hub-habits-v1";
 
@@ -405,4 +406,58 @@ export function getMoodBreakdown(state: HabitsState, reference = new Date()) {
     ...option,
     count: state.moods.filter((entry) => recentDates.has(entry.date) && entry.mood === option.value).length,
   })).filter((item) => item.count > 0);
+}
+
+export function buildHabitsCoachPayload(
+  state: HabitsState,
+  reference = new Date(),
+): HabitsCoachPayload {
+  const dashboard = getTodayCompletionSummary(state, reference);
+  const insights = getMonthlySummary(state, reference);
+  const reminders = getReminderItems(state, reference).slice(0, 3);
+  const mood = getTodayMood(state, reference);
+  const moodMeta = mood ? MOOD_OPTIONS.find((option) => option.value === mood) : null;
+  const todayKey = getTodayKey(reference);
+
+  return {
+    generatedAt: new Date().toISOString(),
+    totalHabits: dashboard.totalHabits,
+    completedToday: dashboard.completedToday,
+    pendingToday: dashboard.pendingCount,
+    progressPercent: dashboard.progressPercent,
+    bestStreak: dashboard.bestStreak,
+    averagePercent: insights.averagePercent,
+    bestDayLabel: insights.bestDay.label,
+    bestDayPercent: insights.bestDay.percent,
+    todayMoodLabel: moodMeta?.label ?? null,
+    todayMoodHint: moodMeta?.hint ?? null,
+    reminders: reminders.map((item) => ({
+      title: item.title,
+      time: item.time ?? null,
+      tone: item.tone,
+    })),
+    habits: state.habits.slice(0, 8).map((habit) => {
+      const categoryMeta = HABIT_CATEGORY_META[habit.category];
+      const currentValue = getHabitValueForDate(habit, state.logs, todayKey);
+      return {
+        name: habit.name,
+        categoryLabel: categoryMeta.label,
+        emoji: habit.emoji ?? categoryMeta.emoji,
+        completed: isHabitComplete(habit, currentValue),
+        currentValue,
+        target: habit.target,
+        unit: habit.unit,
+        streak: getHabitStreak(habit, state.logs, reference),
+      };
+    }),
+    categoryBreakdown: insights.categoryBreakdown.map((item) => ({
+      label: item.label,
+      completions: item.completions,
+      totalHabits: item.totalHabits,
+    })),
+    weeklyTrend: insights.weeklyTrend.map((item) => ({
+      label: item.label,
+      percent: item.percent,
+    })),
+  };
 }

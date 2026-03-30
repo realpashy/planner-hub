@@ -12,7 +12,7 @@ import {
   recordOverLimitAttempt,
   saveCloudData,
 } from "./persistence";
-import { parseReceiptWithAI } from "./ai";
+import { generateHabitsCoachBrief, parseReceiptWithAI } from "./ai";
 import {
   editMealForUser,
   generateWeekForUser,
@@ -459,6 +459,23 @@ export async function configureApiApp(app: Express) {
       return res.json({ result });
     } catch (error) {
       const msg = error instanceof Error ? error.message : "فشل تحليل الصورة";
+      return res.status(500).json({ message: msg });
+    }
+  });
+
+  app.post("/api/habits/coach", async (req, res) => {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
+
+    if (!req.body?.summary || typeof req.body.summary !== "object") {
+      return res.status(400).json({ message: "ملخص العادات غير صالح" });
+    }
+
+    try {
+      const result = await generateHabitsCoachBrief(req.body.summary);
+      return res.json({ result });
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "تعذر إنشاء ملخص المدرب الذكي";
       return res.status(500).json({ message: msg });
     }
   });

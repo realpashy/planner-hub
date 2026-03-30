@@ -3,6 +3,7 @@ import express from "express";
 import { Pool } from "pg";
 import { readFile } from "fs/promises";
 import path from "path";
+import { generateHabitsCoachBrief } from "../server/ai";
 
 declare module "http" {
   interface IncomingMessage {
@@ -821,6 +822,23 @@ app.post("/api/meal-planner/delete-plan", async (req, res) => {
   const runtime = await loadMealPlannerRuntime();
   const state = await runtime.deleteMealPlanForUser(auth.userId, mode);
   return res.json({ ok: true, mode, state });
+});
+
+app.post("/api/habits/coach", async (req, res) => {
+  const auth = readAuthFromRequest(req);
+  if (!auth?.userId) return res.status(401).json({ message: "غير مصرح" });
+
+  if (!req.body?.summary || typeof req.body.summary !== "object") {
+    return res.status(400).json({ message: "ملخص العادات غير صالح" });
+  }
+
+  try {
+    const result = await generateHabitsCoachBrief(req.body.summary);
+    return res.json({ result });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "تعذر إنشاء ملخص المدرب الذكي";
+    return res.status(500).json({ message });
+  }
 });
 
 app.get("/api/admin/ai-usage", async (req, res) => {

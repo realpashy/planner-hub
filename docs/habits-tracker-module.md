@@ -56,8 +56,10 @@ The module is intentionally optimized for:
 - mood distribution summary
 
 ### AI Coach
-- locked premium feature cards only
-- no fake AI functionality in MVP
+- one live AI coach brief based on the user’s current habits summary
+- advanced premium AI cards remain visibly locked
+- no open-ended chat interface
+- no fake “magic” analytics beyond the available habit data
 
 ## 6. User Flows
 
@@ -87,8 +89,9 @@ The module is intentionally optimized for:
 
 ### Explore AI premium
 1. User opens AI Coach.
-2. Locked premium cards show future features and value.
-3. No AI actions are executed in MVP.
+2. If habits exist, the module sends a compact habits summary to a server-side AI route.
+3. The user receives one short Arabic coaching brief for the current day.
+4. Advanced premium cards stay visible but locked.
 
 ## 7. Data Structure
 
@@ -124,6 +127,23 @@ The module is intentionally optimized for:
 - `moods`
 - `lastUpdated`
 
+### AI Coach Payload
+- `generatedAt`
+- `totalHabits`
+- `completedToday`
+- `pendingToday`
+- `progressPercent`
+- `bestStreak`
+- `averagePercent`
+- `bestDayLabel`
+- `bestDayPercent`
+- `todayMoodLabel?`
+- `todayMoodHint?`
+- `reminders[]`
+- `habits[]`
+- `categoryBreakdown[]`
+- `weeklyTrend[]`
+
 ## 8. UX Principles
 - Daily use must feel fast and frictionless.
 - Progress should motivate, not shame.
@@ -149,22 +169,26 @@ Planned premium positioning:
 - weekly reflection summaries
 - smart recovery suggestions after missed days
 
-Current MVP behavior:
-- AI cards are visible
-- premium value is communicated
-- no AI processing or fake responses are shown
+Current shipped behavior:
+- one concise AI coach brief is available inside the AI tab
+- deeper premium AI features remain locked and visible
+- the AI brief is server-side and uses the current habits summary only
+- there is no full conversational assistant yet
 
 ## 11. Future Roadmap
 - cloud sync and account-level persistence
 - shared streak milestones
 - richer reminder logic inside the app
 - monthly habit challenges
-- premium AI coach unlock
+- deeper premium AI coach unlock
 - integrations with broader Planner Hub goals and planning modules
 - localization expansion beyond Arabic-first defaults
 
 ## Implementation Notes
 - Current MVP uses local-first persistence in browser storage.
 - Charts are deterministic and based only on user-entered habit logs.
+- The live AI brief uses server-side OpenAI when `OPENAI_API_KEY` is available.
+- `OPENAI_HABITS_MODEL` can override the default habits AI model in server environments.
+- If AI is unavailable, the server returns a safe deterministic fallback brief instead of breaking the screen.
 - The module should stay lightweight and avoid turning into a productivity suite.
 - Reusable RTL-safe layout patterns from `docs/design-system.md` and `docs/ux-standards.md` are the source of truth for alignment decisions.
