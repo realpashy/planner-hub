@@ -22,8 +22,8 @@ const AI_FEATURES = [
 
 export function AI_LockedCard() {
   return (
-    <Card className="surface-shell overflow-hidden rounded-[calc(var(--radius)+0.85rem)] border-primary/20">
-      <CardHeader className="relative gap-4 text-right">
+    <Card data-testid="habits-ai-locked-card" className="surface-shell overflow-hidden rounded-[calc(var(--radius)+0.85rem)] border-primary/20">
+      <CardHeader className="relative gap-3 pb-5 text-right md:pb-6">
         <div className="premium-header-glow premium-header-glow-primary" />
         <div className="relative flex items-start justify-between gap-3">
           <div className="space-y-2">
@@ -44,7 +44,7 @@ export function AI_LockedCard() {
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-3.5 pt-1">
         {AI_FEATURES.map((feature) => {
           const Icon = feature.icon;
           return (
@@ -65,7 +65,7 @@ export function AI_LockedCard() {
           );
         })}
 
-        <Button variant="outline" className="w-full rounded-[calc(var(--radius)+0.45rem)] border-primary/20 bg-primary/[0.05] text-primary hover:bg-primary/[0.1]">
+        <Button variant="outline" className="mt-2 w-full rounded-[calc(var(--radius)+0.45rem)] border-primary/20 bg-primary/[0.05] text-primary hover:bg-primary/[0.1]">
           تُفتح مع Plus لاحقًا
         </Button>
       </CardContent>

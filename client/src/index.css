@@ -240,6 +240,18 @@
     background-image: radial-gradient(circle at top right, rgba(149, 223, 30, 0.18), transparent 68%);
   }
 
+  .select-item-secondary {
+    color: rgb(255, 255, 255);
+    transition: color 180ms ease, opacity 180ms ease;
+  }
+
+  [data-radix-select-content-wrapper] [role="option"]:hover .select-item-secondary,
+  [data-radix-select-content-wrapper] [role="option"][data-highlighted] .select-item-secondary,
+  [data-radix-select-content-wrapper] [role="option"][data-state="checked"] .select-item-secondary {
+    color: rgb(255, 255, 255);
+    opacity: 1;
+  }
+
   .accent-shell {
     @apply border border-primary/25 bg-primary/10 text-foreground;
     background-image: var(--surface-accent);

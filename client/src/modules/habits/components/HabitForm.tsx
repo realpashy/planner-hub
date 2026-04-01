@@ -68,7 +68,10 @@ export function HabitForm({
         <div className="space-y-2 text-right">
           <label className="text-xs font-semibold text-muted-foreground">نوع القياس</label>
           <Select value={values.type} onValueChange={(value) => handleTypeChange(value as HabitType)}>
-            <SelectTrigger className="h-12 rounded-[calc(var(--radius)+0.35rem)] border-border/70 bg-background/70 text-right">
+            <SelectTrigger
+              data-testid="habit-type-select-trigger"
+              className="h-12 rounded-[calc(var(--radius)+0.35rem)] border-border/70 bg-background/70 text-right"
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent dir="rtl">
@@ -76,7 +79,7 @@ export function HabitForm({
                 <SelectItem key={option.value} value={option.value}>
                   <div className="w-full space-y-0.5 text-right">
                     <span className="block text-right">{option.label}</span>
-                    <span data-select-secondary className="block text-[11px] text-muted-foreground/90 transition-colors">
+                    <span data-select-secondary className="select-item-secondary block text-[11px]">
                       {option.hint}
                     </span>
                   </div>
@@ -109,7 +112,10 @@ export function HabitForm({
               value={values.trackingMode}
               onValueChange={(value) => onChange({ trackingMode: value as typeof values.trackingMode })}
             >
-              <SelectTrigger className="h-12 rounded-[calc(var(--radius)+0.35rem)] border-border/70 bg-background/70 text-right">
+              <SelectTrigger
+                data-testid="habit-tracking-mode-select-trigger"
+                className="h-12 rounded-[calc(var(--radius)+0.35rem)] border-border/70 bg-background/70 text-right"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent dir="rtl">
@@ -117,7 +123,7 @@ export function HabitForm({
                   <SelectItem key={option.value} value={option.value}>
                     <div className="w-full space-y-0.5 text-right">
                       <span className="block text-right">{option.label}</span>
-                      <span data-select-secondary className="block text-[11px] text-muted-foreground/90 transition-colors">
+                      <span data-select-secondary className="select-item-secondary block text-[11px]">
                         {option.hint}
                       </span>
                     </div>
