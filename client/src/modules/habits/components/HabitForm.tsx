@@ -74,9 +74,11 @@ export function HabitForm({
             <SelectContent dir="rtl">
               {HABIT_TYPE_OPTIONS.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
-                  <div className="flex flex-col items-end text-right">
-                    <span>{option.label}</span>
-                    <span className="text-[11px] text-muted-foreground">{option.hint}</span>
+                  <div className="w-full space-y-0.5 text-right">
+                    <span className="block text-right">{option.label}</span>
+                    <span data-select-secondary className="block text-[11px] text-muted-foreground/90 transition-colors">
+                      {option.hint}
+                    </span>
                   </div>
                 </SelectItem>
               ))}
@@ -113,9 +115,11 @@ export function HabitForm({
               <SelectContent dir="rtl">
                 {HABIT_TRACKING_MODE_OPTIONS.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
-                    <div className="flex flex-col items-end text-right">
-                      <span>{option.label}</span>
-                      <span className="text-[11px] text-muted-foreground">{option.hint}</span>
+                    <div className="w-full space-y-0.5 text-right">
+                      <span className="block text-right">{option.label}</span>
+                      <span data-select-secondary className="block text-[11px] text-muted-foreground/90 transition-colors">
+                        {option.hint}
+                      </span>
                     </div>
                   </SelectItem>
                 ))}

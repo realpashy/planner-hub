@@ -127,7 +127,7 @@ function ActiveModuleCard({ module, index }: { module: ActiveModule; index: numb
           className="surface-shell relative h-full overflow-hidden rounded-[calc(var(--radius)+0.85rem)] border-border/80 transition-all duration-300 group-hover:-translate-y-1.5 group-hover:border-primary/30 group-hover:shadow-2xl"
           data-testid={`module-card-${module.id}`}
         >
-          <div className={cn("pointer-events-none absolute inset-x-0 top-0 h-36", module.accentClass)} />
+          <div className={cn("pointer-events-none absolute inset-x-0 top-0 h-44 md:h-48", module.accentClass)} />
 
           <CardHeader className="relative gap-5 pb-4 text-right">
             <div className="rtl-title-row">

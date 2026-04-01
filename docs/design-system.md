@@ -167,6 +167,9 @@ Do not make every surface the same charcoal block.
   - same border/radius/shadow logic
   - same label/value hierarchy
 - in the meal module light theme, summary cards should read as clean white SaaS cards first, with accent only in icon chips and active highlights
+- premium card headers that use a tinted or glowing top accent must size that tint to the real rendered header area, not to a short fixed height
+- if a glow stops above the subtitle or badge stack, the header layer is wrong even if the card padding looks correct
+- when the same header-tint pattern exists across modules, move it into a shared utility or shared card recipe instead of repeating one-off `h-*` overlays
 
 ### RTL summary-card composition rule
 
@@ -201,6 +204,8 @@ For Hebrew/Arabic summary widgets, treat the card content as a single anchored c
 - fixed-option dropdowns use the shared `ui/select.tsx` primitive with the same border, shadow, radius, and RTL text alignment as other form controls
 - reusable typed values such as suppliers, payees, and similar saved labels should use a searchable/taggable dropdown pattern instead of raw `datalist`
 - dropdown labels and trigger text remain right-aligned in RTL, while disclosure icons stay visually secondary
+- if a dropdown option includes helper text on a second line, that helper line must remain high-contrast on hover, highlight, and checked states; muted helper text inside an active option is a UX bug
+- for multi-line dropdown items, prefer a full-width right-aligned text wrapper instead of `flex-col items-end`, so Arabic/Hebrew text keeps the right internal flow
 
 ## Icon system
 

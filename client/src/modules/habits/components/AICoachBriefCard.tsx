@@ -22,7 +22,7 @@ export function AICoachBriefCard({
   return (
     <Card className="surface-shell overflow-hidden rounded-[calc(var(--radius)+0.95rem)] border-primary/20">
       <CardHeader className="relative gap-4 text-right">
-        <div className="absolute inset-x-0 top-0 h-32 bg-[radial-gradient(circle_at_top_right,rgba(149,223,30,0.12),transparent_58%)]" />
+        <div className="premium-header-glow premium-header-glow-primary" />
         <div className="relative flex items-start justify-between gap-4">
           <div className="space-y-2">
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-primary/[0.08] px-3 py-1 text-[11px] font-semibold text-primary">

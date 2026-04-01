@@ -227,6 +227,19 @@
     box-shadow: var(--app-shadow);
   }
 
+  .premium-header-glow {
+    @apply pointer-events-none absolute inset-x-0 top-0;
+    bottom: 0;
+  }
+
+  .premium-header-glow-primary {
+    background-image: radial-gradient(circle at top right, rgba(149, 223, 30, 0.14), transparent 66%);
+  }
+
+  .dark .premium-header-glow-primary {
+    background-image: radial-gradient(circle at top right, rgba(149, 223, 30, 0.18), transparent 68%);
+  }
+
   .accent-shell {
     @apply border border-primary/25 bg-primary/10 text-foreground;
     background-image: var(--surface-accent);

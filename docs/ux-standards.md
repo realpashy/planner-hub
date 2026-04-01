@@ -76,6 +76,13 @@ Shared primitives can silently override local fixes.
   - `CardContent` carries `md:pt-0` by default
   - on desktop this can wipe the intended top padding from a card even if the local component sets a mobile `pt-*`
   - if a card needs top breathing room on desktop, override the desktop padding explicitly in the component class list
+- another recurring trap:
+  - multi-line text wrappers built with `flex-col items-end` can make Arabic/Hebrew text look right-aligned while its internal reading flow still feels wrong
+  - prefer a full-width wrapper plus `text-right` unless you truly need cross-axis end alignment
+- another recurring trap:
+  - premium header glows often fail because the glow element uses a short fixed height like `h-28` or `h-32`
+  - when the subtitle or helper line falls outside the tinted area, fix the glow layer itself instead of adding random margins to the text
+  - prefer a shared utility that fills the real header block over one-off local heights
 
 ### Dialogs and drawers
 
