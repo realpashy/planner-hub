@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { BrainCircuit, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AICoachBriefCard } from "@/modules/habits/components/AICoachBriefCard";
+import { AICoachSignals } from "@/modules/habits/components/AICoachSignals";
 import { AI_LockedCard } from "@/modules/habits/components/AI_LockedCard";
 import type { HabitsCoachResponse } from "@shared/ai/habits-coach";
 import type { HabitsState } from "@/modules/habits/types";
@@ -12,15 +13,62 @@ interface AIScreenProps {
   onAddHabit: () => void;
 }
 
+const HABITS_AI_CACHE_KEY = "planner-hub-habits-ai-brief-v1";
+
 export function AIScreen({ state, onAddHabit }: AIScreenProps) {
   const [result, setResult] = useState<HabitsCoachResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const summary = useMemo(() => buildHabitsCoachPayload(state), [state]);
+  const cacheVersion = `${state.lastUpdated}-${summary.progressPercent}-${summary.completedToday}`;
 
-  const loadCoach = useCallback(async () => {
+  const readCachedBrief = useCallback(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = window.localStorage.getItem(HABITS_AI_CACHE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as {
+        version?: string;
+        date?: string;
+        result?: HabitsCoachResponse;
+      };
+      if (parsed.version !== cacheVersion || parsed.date !== summary.generatedAt.slice(0, 10) || !parsed.result) {
+        return null;
+      }
+      return parsed.result;
+    } catch {
+      return null;
+    }
+  }, [cacheVersion, summary.generatedAt]);
+
+  const storeCachedBrief = useCallback(
+    (nextResult: HabitsCoachResponse) => {
+      if (typeof window === "undefined") return;
+      window.localStorage.setItem(
+        HABITS_AI_CACHE_KEY,
+        JSON.stringify({
+          version: cacheVersion,
+          date: summary.generatedAt.slice(0, 10),
+          result: nextResult,
+        }),
+      );
+    },
+    [cacheVersion, summary.generatedAt],
+  );
+
+  const loadCoach = useCallback(async (forceRefresh = false) => {
     if (!summary.totalHabits) return;
+
+    if (!forceRefresh) {
+      const cached = readCachedBrief();
+      if (cached) {
+        setResult(cached);
+        setError(null);
+        return;
+      }
+    }
+
     setLoading(true);
     setError(null);
 
@@ -39,13 +87,15 @@ export function AIScreen({ state, onAddHabit }: AIScreenProps) {
         throw new Error(typeof body?.message === "string" ? body.message : "تعذر تحميل قراءة المدرب");
       }
 
-      setResult(body.result as HabitsCoachResponse);
+      const nextResult = body.result as HabitsCoachResponse;
+      setResult(nextResult);
+      storeCachedBrief(nextResult);
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : "تعذر تحميل قراءة المدرب");
     } finally {
       setLoading(false);
     }
-  }, [summary]);
+  }, [readCachedBrief, storeCachedBrief, summary]);
 
   useEffect(() => {
     void loadCoach();
@@ -63,7 +113,16 @@ export function AIScreen({ state, onAddHabit }: AIScreenProps) {
 
       {summary.totalHabits ? (
         <>
-          <AICoachBriefCard result={result} loading={loading} onRefresh={() => void loadCoach()} />
+          <AICoachSignals
+            moodLabel={summary.todayMoodLabel}
+            moodHint={summary.todayMoodHint}
+            pendingToday={summary.pendingToday}
+            averagePercent={summary.averagePercent}
+            reminderCount={summary.reminders.length}
+            bestStreak={summary.bestStreak}
+          />
+
+          <AICoachBriefCard result={result} loading={loading} onRefresh={() => void loadCoach(true)} />
 
           {error ? (
             <div className="surface-subtle rounded-[calc(var(--radius)+0.75rem)] border border-destructive/20 bg-destructive/[0.06] p-4 text-right">

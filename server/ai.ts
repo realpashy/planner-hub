@@ -63,8 +63,15 @@ function buildFallbackHabitsCoach(payload: HabitsCoachPayload): HabitsCoachRespo
       : payload.progressPercent >= 70
         ? "زخم قوي"
         : payload.progressPercent >= 35
-          ? "زخم قابل للتحسين"
+        ? "زخم قابل للتحسين"
           : "بداية هادئة",
+    winCondition: nextHabit
+      ? `إذا أنجزت ${nextHabit.name}${secondHabit ? ` ثم ${secondHabit.name}` : ""} فسيصبح يومك على المسار الصحيح.`
+      : "إنجاز عادة واحدة واضحة الآن يكفي ليمنح اليوم اتجاهًا صحيحًا.",
+    watchOut:
+      payload.todayMoodLabel === "مرهق"
+        ? "لا ترفع السقف اليوم. اختر إنجازًا كافيًا بدل محاولة تعويض كل شيء دفعة واحدة."
+        : "لا تبدّد الزخم في عادات كثيرة مرة واحدة؛ ابدأ بالأقرب للإغلاق ثم انتقل لغيرها.",
     focusHabits: focusHabits.length ? focusHabits : ["ابدأ بعادة واحدة"],
     actions,
     encouragement: completedAll
@@ -164,8 +171,9 @@ export async function generateHabitsCoachBrief(rawPayload: unknown): Promise<Hab
               type: "input_text",
               text:
                 `اعتمادًا على هذا الملخص، أعد JSON فقط بالمفاتيح التالية: ` +
-                `headline, overview, momentumLabel, focusHabits, actions, encouragement. ` +
+                `headline, overview, momentumLabel, winCondition, watchOut, focusHabits, actions, encouragement. ` +
                 `الشروط: headline حتى 90 حرفًا، overview حتى 220 حرفًا، momentumLabel حتى 48 حرفًا، ` +
+                `winCondition حتى 96 حرفًا، watchOut حتى 96 حرفًا، ` +
                 `focusHabits من 1 إلى 3 عادات بأسمائها فقط، actions من 2 إلى 3 خطوات عملية وقصيرة، ` +
                 `encouragement حتى 140 حرفًا. اجعل النص مباشرًا ومفيدًا لليوم الحالي.\n\n` +
                 JSON.stringify(parsedPayload),

@@ -50,6 +50,8 @@ export const habitsCoachResponseSchema = z.object({
   headline: z.string().min(1).max(90),
   overview: z.string().min(1).max(220),
   momentumLabel: z.string().min(1).max(48),
+  winCondition: z.string().min(1).max(96),
+  watchOut: z.string().min(1).max(96),
   focusHabits: z.array(z.string().min(1).max(56)).min(1).max(3),
   actions: z.array(z.string().min(1).max(88)).min(2).max(3),
   encouragement: z.string().min(1).max(140),

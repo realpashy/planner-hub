@@ -57,6 +57,7 @@ The module is intentionally optimized for:
 
 ### AI Coach
 - one live AI coach brief based on the user’s current habits summary
+- coach signals row for mood, pending habits, weekly average, and reminders
 - advanced premium AI cards remain visibly locked
 - no open-ended chat interface
 - no fake “magic” analytics beyond the available habit data
@@ -171,6 +172,8 @@ Planned premium positioning:
 
 Current shipped behavior:
 - one concise AI coach brief is available inside the AI tab
+- the brief includes a clear win condition and a watch-out note for the current day
+- the screen caches the latest brief locally when the daily state has not changed, to keep reloads fast
 - deeper premium AI features remain locked and visible
 - the AI brief is server-side and uses the current habits summary only
 - there is no full conversational assistant yet

@@ -97,6 +97,17 @@ export function AICoachBriefCard({ result, loading, onRefresh }: AICoachBriefCar
                   <p className="mt-1 text-sm font-black text-foreground">{result.encouragement}</p>
                 </div>
               </div>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="rounded-[calc(var(--radius)+0.45rem)] border border-primary/20 bg-primary/[0.06] p-3 text-right">
+                  <p className="text-xs font-semibold text-muted-foreground">هدف اليوم الواضح</p>
+                  <p className="mt-1 text-sm font-black leading-7 text-foreground">{result.winCondition}</p>
+                </div>
+                <div className="rounded-[calc(var(--radius)+0.45rem)] border border-amber-500/20 bg-amber-500/[0.06] p-3 text-right">
+                  <p className="text-xs font-semibold text-muted-foreground">انتبه لهذا اليوم</p>
+                  <p className="mt-1 text-sm font-black leading-7 text-foreground">{result.watchOut}</p>
+                </div>
+              </div>
             </div>
 
             <div className="space-y-3">
