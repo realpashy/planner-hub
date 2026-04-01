@@ -11,17 +11,18 @@ import { buildHabitsCoachPayload } from "@/modules/habits/utils/habits";
 interface AIScreenProps {
   state: HabitsState;
   onAddHabit: () => void;
+  onOpenHabit: (habitName: string) => void;
 }
 
 const HABITS_AI_CACHE_KEY = "planner-hub-habits-ai-brief-v1";
 
-export function AIScreen({ state, onAddHabit }: AIScreenProps) {
+export function AIScreen({ state, onAddHabit, onOpenHabit }: AIScreenProps) {
   const [result, setResult] = useState<HabitsCoachResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const summary = useMemo(() => buildHabitsCoachPayload(state), [state]);
-  const cacheVersion = `${state.lastUpdated}-${summary.progressPercent}-${summary.completedToday}`;
+  const todayCacheKey = summary.generatedAt.slice(0, 10);
 
   const readCachedBrief = useCallback(() => {
     if (typeof window === "undefined") return null;
@@ -29,44 +30,63 @@ export function AIScreen({ state, onAddHabit }: AIScreenProps) {
       const raw = window.localStorage.getItem(HABITS_AI_CACHE_KEY);
       if (!raw) return null;
       const parsed = JSON.parse(raw) as {
-        version?: string;
         date?: string;
+        manualRefreshCount?: number;
         result?: HabitsCoachResponse;
       };
-      if (parsed.version !== cacheVersion || parsed.date !== summary.generatedAt.slice(0, 10) || !parsed.result) {
+      if (parsed.date !== todayCacheKey || !parsed.result) {
         return null;
       }
-      return parsed.result;
+      return {
+        result: parsed.result,
+        manualRefreshCount: parsed.manualRefreshCount ?? 0,
+      };
     } catch {
       return null;
     }
-  }, [cacheVersion, summary.generatedAt]);
+  }, [todayCacheKey]);
 
   const storeCachedBrief = useCallback(
-    (nextResult: HabitsCoachResponse) => {
+    (nextResult: HabitsCoachResponse, manualRefreshCount: number) => {
       if (typeof window === "undefined") return;
       window.localStorage.setItem(
         HABITS_AI_CACHE_KEY,
         JSON.stringify({
-          version: cacheVersion,
-          date: summary.generatedAt.slice(0, 10),
+          date: todayCacheKey,
+          manualRefreshCount,
           result: nextResult,
         }),
       );
     },
-    [cacheVersion, summary.generatedAt],
+    [todayCacheKey],
   );
+
+  const cachedBrief = useMemo(() => readCachedBrief(), [readCachedBrief]);
+  const remainingManualRefreshes = Math.max(0, 2 - (cachedBrief?.manualRefreshCount ?? 0));
 
   const loadCoach = useCallback(async (forceRefresh = false) => {
     if (!summary.totalHabits) return;
 
-    if (!forceRefresh) {
-      const cached = readCachedBrief();
-      if (cached) {
-        setResult(cached);
-        setError(null);
-        return;
+    const cached = readCachedBrief();
+
+    if (!forceRefresh && cached) {
+      setResult(cached.result);
+      setError(null);
+      return;
+    }
+
+    if (forceRefresh && (cached?.manualRefreshCount ?? 0) >= 2) {
+      setError("يمكن تحديث القراءة مرتين يدويًا فقط في اليوم.");
+      if (cached?.result) {
+        setResult(cached.result);
       }
+      return;
+    }
+
+    if (!forceRefresh && cached?.result) {
+      setResult(cached.result);
+      setError(null);
+      return;
     }
 
     setLoading(true);
@@ -88,8 +108,9 @@ export function AIScreen({ state, onAddHabit }: AIScreenProps) {
       }
 
       const nextResult = body.result as HabitsCoachResponse;
+      const nextManualCount = forceRefresh ? (cached?.manualRefreshCount ?? 0) + 1 : (cached?.manualRefreshCount ?? 0);
       setResult(nextResult);
-      storeCachedBrief(nextResult);
+      storeCachedBrief(nextResult, nextManualCount);
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : "تعذر تحميل قراءة المدرب");
     } finally {
@@ -122,7 +143,13 @@ export function AIScreen({ state, onAddHabit }: AIScreenProps) {
             bestStreak={summary.bestStreak}
           />
 
-          <AICoachBriefCard result={result} loading={loading} onRefresh={() => void loadCoach(true)} />
+          <AICoachBriefCard
+            result={result}
+            loading={loading}
+            onRefresh={() => void loadCoach(true)}
+            remainingManualRefreshes={remainingManualRefreshes}
+            onOpenHabit={onOpenHabit}
+          />
 
           {error ? (
             <div className="surface-subtle rounded-[calc(var(--radius)+0.75rem)] border border-destructive/20 bg-destructive/[0.06] p-4 text-right">

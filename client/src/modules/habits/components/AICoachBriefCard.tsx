@@ -8,9 +8,17 @@ interface AICoachBriefCardProps {
   result: HabitsCoachResponse | null;
   loading: boolean;
   onRefresh: () => void;
+  onOpenHabit: (habitName: string) => void;
+  remainingManualRefreshes: number;
 }
 
-export function AICoachBriefCard({ result, loading, onRefresh }: AICoachBriefCardProps) {
+export function AICoachBriefCard({
+  result,
+  loading,
+  onRefresh,
+  onOpenHabit,
+  remainingManualRefreshes,
+}: AICoachBriefCardProps) {
   return (
     <Card className="surface-shell overflow-hidden rounded-[calc(var(--radius)+0.95rem)] border-primary/20">
       <CardHeader className="relative gap-4 text-right">
@@ -34,10 +42,10 @@ export function AICoachBriefCard({ result, loading, onRefresh }: AICoachBriefCar
               variant="outline"
               className="rounded-[calc(var(--radius)+0.4rem)] border-primary/20 bg-background/60 text-primary hover:bg-primary/[0.08]"
               onClick={onRefresh}
-              disabled={loading}
+              disabled={loading || remainingManualRefreshes <= 0}
             >
               <RefreshCcw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-              تحديث القراءة
+              {remainingManualRefreshes > 0 ? `تحديث القراءة (${remainingManualRefreshes})` : "انتهت تحديثات اليوم"}
             </Button>
             <div className="icon-chip h-12 w-12 rounded-[calc(var(--radius)+0.5rem)] border-primary/25 bg-primary/[0.14] text-primary">
               <Sparkles className="h-5 w-5" />
@@ -130,12 +138,14 @@ export function AICoachBriefCard({ result, loading, onRefresh }: AICoachBriefCar
                 <p className="text-sm font-black text-foreground">العادات الأهم الآن</p>
                 <div className="mt-3 flex flex-wrap justify-start gap-2">
                   {result.focusHabits.map((habit) => (
-                    <div
+                    <button
+                      type="button"
                       key={habit}
-                      className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/[0.08] px-3 py-1.5 text-[12px] font-semibold text-primary"
+                      onClick={() => onOpenHabit(habit)}
+                      className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/[0.08] px-3 py-1.5 text-[12px] font-semibold text-primary transition-colors hover:bg-primary/[0.14]"
                     >
                       <span>{habit}</span>
-                    </div>
+                    </button>
                   ))}
                 </div>
               </div>

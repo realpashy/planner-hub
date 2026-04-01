@@ -1,4 +1,5 @@
 export type HabitType = "binary" | "count" | "duration";
+export type HabitTrackingMode = "check" | "progress";
 
 export type HabitCategory =
   | "health"
@@ -16,6 +17,7 @@ export interface HabitDefinition {
   description?: string;
   category: HabitCategory;
   type: HabitType;
+  trackingMode: HabitTrackingMode;
   target: number;
   unit?: string;
   emoji?: string;
@@ -83,6 +85,7 @@ export interface HabitFormValues {
   description: string;
   category: HabitCategory;
   type: HabitType;
+  trackingMode: HabitTrackingMode;
   target: string;
   unit: string;
   emoji: string;

@@ -1,3 +1,4 @@
+import { useEffect, useMemo } from "react";
 import { CalendarClock, Plus, Sparkles, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,7 +13,7 @@ import type {
   MoodValue,
   ReminderItem,
 } from "@/modules/habits/types";
-import { getHabitStreak } from "@/modules/habits/utils/habits";
+import { getHabitStreak, getHabitValueForDate, isHabitComplete } from "@/modules/habits/utils/habits";
 
 interface HabitsDashboardScreenProps {
   state: HabitsState;
@@ -30,6 +31,7 @@ interface HabitsDashboardScreenProps {
   onToggleHabit: (habit: HabitDefinition) => void;
   onAdjustHabit: (habit: HabitDefinition, value: number) => void;
   onSetMood: (mood: MoodValue) => void;
+  highlightedHabitId?: string | null;
 }
 
 export function HabitsDashboardScreen({
@@ -48,7 +50,25 @@ export function HabitsDashboardScreen({
   onToggleHabit,
   onAdjustHabit,
   onSetMood,
+  highlightedHabitId,
 }: HabitsDashboardScreenProps) {
+  const sortedHabits = useMemo(
+    () =>
+      [...state.habits].sort((a, b) => {
+        const aComplete = isHabitComplete(a, getHabitValueForDate(a, state.logs, todayKey));
+        const bComplete = isHabitComplete(b, getHabitValueForDate(b, state.logs, todayKey));
+        if (aComplete !== bComplete) return aComplete ? 1 : -1;
+        return a.name.localeCompare(b.name, "ar");
+      }),
+    [state.habits, state.logs, todayKey],
+  );
+
+  useEffect(() => {
+    if (!highlightedHabitId) return;
+    const element = document.getElementById(`habit-card-${highlightedHabitId}`);
+    if (!element) return;
+    element.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [highlightedHabitId]);
   return (
     <div className="space-y-5">
       <Card className="surface-shell overflow-hidden rounded-[calc(var(--radius)+1rem)] border-primary/15">
@@ -103,13 +123,23 @@ export function HabitsDashboardScreen({
               </div>
             </div>
 
-            <div className="flex justify-center lg:justify-end">
-              <ProgressRing
-                value={progressPercent}
-                label="إنجاز اليوم"
-                sublabel={`${completedToday} من ${totalHabits || 0} عادات`}
-                size={156}
-              />
+            <div className="space-y-3">
+              <div className="flex justify-center lg:justify-end">
+                <ProgressRing
+                  value={progressPercent}
+                  label="إنجاز اليوم"
+                  sublabel={`${completedToday} من ${totalHabits || 0} عادات`}
+                  size={156}
+                />
+              </div>
+              <div className="rounded-[calc(var(--radius)+0.55rem)] border border-border/70 bg-background/55 p-4 text-right">
+                <p className="text-xs font-semibold text-muted-foreground">تركيز اليوم</p>
+                <p className="mt-1 text-sm font-black text-foreground">
+                  {pendingCount > 0
+                    ? `أغلق ${Math.min(pendingCount, 2)} عادة الآن لتشعر بزخم واضح لبقية اليوم.`
+                    : "اليوم تحت السيطرة. حافظ فقط على الإيقاع نفسه."}
+                </p>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -133,13 +163,14 @@ export function HabitsDashboardScreen({
 
         {state.habits.length ? (
           <div className="grid gap-3 xl:grid-cols-2">
-            {state.habits.map((habit) => (
+            {sortedHabits.map((habit) => (
               <HabitCard
                 key={habit.id}
                 habit={habit}
                 todayKey={todayKey}
                 logs={state.logs}
                 streak={getHabitStreak(habit, state.logs)}
+                highlighted={highlightedHabitId === habit.id}
                 onToggle={() => onToggleHabit(habit)}
                 onAdjust={(value) => onAdjustHabit(habit, value)}
                 onEdit={() => onEditHabit(habit)}

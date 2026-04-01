@@ -245,28 +245,28 @@
 
   .premium-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: hsl(var(--primary) / 0.45) hsl(var(--muted) / 0.65);
+    scrollbar-color: hsl(var(--border) / 0.9) transparent;
   }
 
   .premium-scrollbar::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+    width: 8px;
+    height: 8px;
   }
 
   .premium-scrollbar::-webkit-scrollbar-track {
-    background: hsl(var(--muted) / 0.55);
+    background: transparent;
     border-radius: 999px;
   }
 
   .premium-scrollbar::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, rgba(149,223,30,0.75), rgba(109,160,27,0.9));
+    background: rgba(115, 115, 115, 0.72);
     border-radius: 999px;
-    border: 2px solid transparent;
+    border: 1px solid transparent;
     background-clip: padding-box;
   }
 
   .premium-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, rgba(163,240,43,0.78), rgba(109,160,27,0.95));
+    background: rgba(140, 140, 140, 0.88);
     background-clip: padding-box;
   }
 

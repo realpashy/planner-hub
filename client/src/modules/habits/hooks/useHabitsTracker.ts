@@ -22,6 +22,13 @@ import {
 
 export function useHabitsTracker() {
   const [state, setState] = useState(loadHabitsState);
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const update = () => setNow(Date.now());
+    const interval = setInterval(update, 60_000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const persist = () => saveHabitsState(state);
@@ -43,20 +50,21 @@ export function useHabitsTracker() {
     }));
   };
 
-  const todayKey = getTodayKey();
+  const currentDate = useMemo(() => new Date(now), [now]);
+  const todayKey = getTodayKey(currentDate);
 
   const derived = useMemo(() => {
     const dashboard = getDashboardSummary(state);
-    const reminders = getReminderItems(state);
-    const insights = getMonthlySummary(state);
-    const todayMood = getTodayMood(state);
+    const reminders = getReminderItems(state, currentDate);
+    const insights = getMonthlySummary(state, currentDate);
+    const todayMood = getTodayMood(state, currentDate);
     return {
       dashboard,
       reminders,
       insights,
       todayMood,
     };
-  }, [state]);
+  }, [currentDate, state]);
 
   const actions = {
     saveHabit(values: HabitFormValues, existingHabit?: HabitDefinition) {
@@ -113,6 +121,7 @@ export function useHabitsTracker() {
   return {
     state,
     todayKey,
+    currentDate,
     ...derived,
     ...actions,
   };

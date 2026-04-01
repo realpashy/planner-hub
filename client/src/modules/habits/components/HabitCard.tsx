@@ -16,6 +16,7 @@ interface HabitCardProps {
   todayKey: string;
   logs: { habitId: string; date: string; value: number }[];
   streak: number;
+  highlighted?: boolean;
   onToggle: () => void;
   onAdjust: (value: number) => void;
   onEdit: () => void;
@@ -26,6 +27,7 @@ export function HabitCard({
   todayKey,
   logs,
   streak,
+  highlighted = false,
   onToggle,
   onAdjust,
   onEdit,
@@ -46,9 +48,11 @@ export function HabitCard({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "surface-shell rounded-[calc(var(--radius)+0.75rem)] border p-4 text-right transition-all duration-200",
+        "surface-shell rounded-[calc(var(--radius)+0.75rem)] border p-4 text-right transition-all duration-200 scroll-mt-28",
         completed ? "border-primary/30 bg-primary/[0.05]" : "border-border/70",
+        highlighted ? "border-primary/45 shadow-[0_0_0_1px_rgba(149,223,30,0.25),0_0_24px_rgba(149,223,30,0.12)]" : "",
       )}
+      id={`habit-card-${habit.id}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 space-y-3">
@@ -74,18 +78,28 @@ export function HabitCard({
             </Button>
           </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between gap-3 text-xs">
-              <span className="text-muted-foreground">سلسلة حالية: {streak} أيام</span>
-              <span className="text-foreground">{formatHabitValue(habit, currentValue)}</span>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-3 text-xs">
+                <span className="text-muted-foreground">سلسلة حالية: {streak} أيام</span>
+                <span className="text-foreground">{formatHabitValue(habit, currentValue)}</span>
+              </div>
+              <Progress
+                value={progress}
+                className="h-2.5 rounded-full bg-background/70 [&>div]:bg-[linear-gradient(90deg,#95df1e,#34d399,#38bdf8)]"
+              />
             </div>
-            <Progress
-              value={progress}
-              className="h-2.5 rounded-full bg-background/70 [&>div]:bg-[linear-gradient(90deg,#95df1e,#34d399,#38bdf8)]"
-            />
-          </div>
 
-          {habit.type === "binary" ? (
+          {habit.type === "binary" || habit.trackingMode === "check" ? (
+            <div className="space-y-2">
+              {habit.type !== "binary" ? (
+                <div className="rounded-[calc(var(--radius)+0.35rem)] border border-border/70 bg-background/55 px-3.5 py-2.5 text-right">
+                  <p className="text-[11px] font-semibold text-muted-foreground">الهدف اليومي</p>
+                  <div className="mt-1 flex items-baseline justify-start gap-1 text-right">
+                    <span className="text-sm font-black text-foreground">{habit.target}</span>
+                    <span className="text-sm font-semibold text-muted-foreground">{habit.unit}</span>
+                  </div>
+                </div>
+              ) : null}
             <Button
               variant={completed ? "secondary" : "default"}
               className={cn(
@@ -99,6 +113,7 @@ export function HabitCard({
               <Check className="h-4 w-4" />
               {completed ? "تم اليوم" : "وضع علامة اليوم"}
             </Button>
+            </div>
           ) : (
             <div className="flex items-center justify-between gap-3 rounded-[calc(var(--radius)+0.45rem)] border border-border/70 bg-background/55 p-2">
               <Button
@@ -110,12 +125,12 @@ export function HabitCard({
                 <Plus className="h-4 w-4" />
               </Button>
               <div className="space-y-1 text-center">
-                <p className="cashflow-number text-lg font-black text-foreground">
-                  {currentValue}
-                  <span className="ps-1 text-sm font-semibold text-muted-foreground">{habit.unit}</span>
-                </p>
+                <div className="flex items-baseline justify-center gap-1">
+                  <span className="cashflow-number text-lg font-black text-foreground">{currentValue}</span>
+                  <span className="text-sm font-semibold text-muted-foreground">{habit.unit}</span>
+                </div>
                 <p className="text-[11px] font-semibold text-muted-foreground">
-                  الهدف اليومي {habit.target}
+                  الهدف اليومي {habit.target} {habit.unit}
                 </p>
               </div>
               <Button

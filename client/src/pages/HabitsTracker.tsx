@@ -13,6 +13,7 @@ import {
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ToastAction } from "@/components/ui/toast";
 import { useToast } from "@/hooks/use-toast";
 import { useHabitsTracker } from "@/modules/habits/hooks/useHabitsTracker";
 import { AIScreen } from "@/modules/habits/screens/AIScreen";
@@ -21,6 +22,7 @@ import { HabitsDashboardScreen } from "@/modules/habits/screens/HabitsDashboardS
 import { HabitsListScreen } from "@/modules/habits/screens/HabitsListScreen";
 import { InsightsScreen } from "@/modules/habits/screens/InsightsScreen";
 import type { HabitDefinition, HabitFormValues } from "@/modules/habits/types";
+import { hasShownReminder, markReminderShown } from "@/modules/habits/utils/habits";
 
 type HabitsTab = "dashboard" | "habits" | "insights" | "ai";
 
@@ -39,9 +41,11 @@ export default function HabitsTracker() {
   const [activeTab, setActiveTab] = useState<HabitsTab>("dashboard");
   const [formOpen, setFormOpen] = useState(false);
   const [editingHabit, setEditingHabit] = useState<HabitDefinition | null>(null);
+  const [highlightedHabitId, setHighlightedHabitId] = useState<string | null>(null);
   const {
     state,
     todayKey,
+    currentDate,
     dashboard,
     reminders,
     insights,
@@ -58,6 +62,39 @@ export default function HabitsTracker() {
     window.scrollTo({ top: 0, behavior: "auto" });
   }, [activeTab]);
 
+  useEffect(() => {
+    if (!highlightedHabitId) return;
+    const timeout = window.setTimeout(() => setHighlightedHabitId(null), 2400);
+    return () => window.clearTimeout(timeout);
+  }, [highlightedHabitId]);
+
+  useEffect(() => {
+    const dueReminders = reminders.filter(
+      (item) => item.tone === "attention" && !hasShownReminder(item.habitId, todayKey),
+    );
+    if (!dueReminders.length) return;
+
+    dueReminders.forEach((reminder) => {
+      markReminderShown(reminder.habitId, todayKey);
+      toast({
+        title: `تذكير: ${reminder.title}`,
+        description: reminder.description,
+        duration: 5000,
+        action: (
+          <ToastAction
+            altText="فتح العادة"
+            onClick={() => {
+              setActiveTab("habits");
+              setHighlightedHabitId(reminder.habitId);
+            }}
+          >
+            فتح العادة
+          </ToastAction>
+        ),
+      });
+    });
+  }, [reminders, toast, todayKey]);
+
   const currentTabLabel = useMemo(
     () => TAB_ITEMS.find((item) => item.key === activeTab)?.label ?? "الرئيسية",
     [activeTab],
@@ -71,6 +108,13 @@ export default function HabitsTracker() {
   const openEdit = (habit: HabitDefinition) => {
     setEditingHabit(habit);
     setFormOpen(true);
+  };
+
+  const openHabitFromAi = (habitName: string) => {
+    const target = state.habits.find((habit) => habit.name === habitName);
+    if (!target) return;
+    setActiveTab("habits");
+    setHighlightedHabitId(target.id);
   };
 
   const handleSaveHabit = (values: HabitFormValues, habit?: HabitDefinition) => {
@@ -112,6 +156,7 @@ export default function HabitsTracker() {
           onToggleHabit={toggleHabit}
           onAdjustHabit={setHabitValue}
           onSetMood={setMood}
+          highlightedHabitId={highlightedHabitId}
         />
       );
     }
@@ -121,6 +166,7 @@ export default function HabitsTracker() {
         <HabitsListScreen
           state={state}
           todayKey={todayKey}
+          highlightedHabitId={highlightedHabitId}
           onCreate={openCreate}
           onEdit={openEdit}
           onToggleHabit={toggleHabit}
@@ -144,9 +190,10 @@ export default function HabitsTracker() {
       );
     }
 
-    return <AIScreen state={state} onAddHabit={openCreate} />;
+    return <AIScreen state={state} onAddHabit={openCreate} onOpenHabit={openHabitFromAi} />;
   }, [
     activeTab,
+    currentDate,
     dashboard.bestStreak,
     dashboard.completedToday,
     dashboard.pendingCount,
@@ -159,7 +206,9 @@ export default function HabitsTracker() {
     insights.monthlyTrend,
     insights.totalCheckIns,
     insights.weeklyTrend,
+    highlightedHabitId,
     reminders,
+    openHabitFromAi,
     setHabitValue,
     setMood,
     state,

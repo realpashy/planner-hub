@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { CategorySelector } from "@/modules/habits/components/CategorySelector";
 import type { HabitDefinition, HabitFormValues, HabitType } from "@/modules/habits/types";
 import {
+  HABIT_TRACKING_MODE_OPTIONS,
   HABIT_TYPE_OPTIONS,
   getDefaultUnit,
 } from "@/modules/habits/utils/habits";
@@ -39,6 +40,7 @@ export function HabitForm({
   const handleTypeChange = (nextType: HabitType) => {
     onChange({
       type: nextType,
+      trackingMode: nextType === "count" ? "progress" : "check",
       target: values.target || "1",
       unit: nextType === "binary" ? "" : values.unit || getDefaultUnit(nextType),
     });
@@ -62,7 +64,7 @@ export function HabitForm({
         <CategorySelector value={values.category} onChange={(category) => onChange({ category })} />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className={`grid gap-4 ${values.type === "binary" ? "" : "md:grid-cols-2"}`}>
         <div className="space-y-2 text-right">
           <label className="text-xs font-semibold text-muted-foreground">نوع القياس</label>
           <Select value={values.type} onValueChange={(value) => handleTypeChange(value as HabitType)}>
@@ -72,44 +74,61 @@ export function HabitForm({
             <SelectContent dir="rtl">
               {HABIT_TYPE_OPTIONS.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
-                  {option.label}
+                  <div className="flex flex-col items-end text-right">
+                    <span>{option.label}</span>
+                    <span className="text-[11px] text-muted-foreground">{option.hint}</span>
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
 
-        <div className="space-y-2 text-right">
-          <label className="text-xs font-semibold text-muted-foreground">الهدف اليومي</label>
-          <Input
-            type="number"
-            min={1}
-            value={values.target}
-            onChange={(event) => onChange({ target: event.target.value })}
-            inputMode="numeric"
-            className="h-12 rounded-[calc(var(--radius)+0.35rem)] border-border/70 bg-background/70 text-right font-black"
-          />
-        </div>
+        {values.type !== "binary" ? (
+          <div className="space-y-2 text-right">
+            <label className="text-xs font-semibold text-muted-foreground">الهدف اليومي</label>
+            <Input
+              type="number"
+              min={1}
+              value={values.target}
+              onChange={(event) => onChange({ target: event.target.value })}
+              inputMode="numeric"
+              className="h-12 rounded-[calc(var(--radius)+0.35rem)] border-border/70 bg-background/70 text-right font-black"
+            />
+          </div>
+        ) : null}
       </div>
 
       {values.type !== "binary" ? (
         <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2 text-right">
+            <label className="text-xs font-semibold text-muted-foreground">طريقة الإنهاء</label>
+            <Select
+              value={values.trackingMode}
+              onValueChange={(value) => onChange({ trackingMode: value as typeof values.trackingMode })}
+            >
+              <SelectTrigger className="h-12 rounded-[calc(var(--radius)+0.35rem)] border-border/70 bg-background/70 text-right">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent dir="rtl">
+                {HABIT_TRACKING_MODE_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    <div className="flex flex-col items-end text-right">
+                      <span>{option.label}</span>
+                      <span className="text-[11px] text-muted-foreground">{option.hint}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="space-y-2 text-right">
             <label className="text-xs font-semibold text-muted-foreground">الوحدة</label>
             <Input
               value={values.unit}
               onChange={(event) => onChange({ unit: event.target.value })}
               placeholder={getDefaultUnit(values.type)}
-              className="h-12 rounded-[calc(var(--radius)+0.35rem)] border-border/70 bg-background/70 text-right font-semibold"
-            />
-          </div>
-
-          <div className="space-y-2 text-right">
-            <label className="text-xs font-semibold text-muted-foreground">الإيموجي</label>
-            <Input
-              value={values.emoji}
-              onChange={(event) => onChange({ emoji: event.target.value })}
-              placeholder="✨"
               className="h-12 rounded-[calc(var(--radius)+0.35rem)] border-border/70 bg-background/70 text-right font-semibold"
             />
           </div>
@@ -123,6 +142,16 @@ export function HabitForm({
           يكفي أن يضع المستخدم علامة واحدة لاحتساب العادة كمكتملة في هذا اليوم.
         </div>
       )}
+
+      <div className="space-y-2 text-right">
+        <label className="text-xs font-semibold text-muted-foreground">الإيموجي</label>
+        <Input
+          value={values.emoji}
+          onChange={(event) => onChange({ emoji: event.target.value })}
+          placeholder="✨"
+          className="h-12 rounded-[calc(var(--radius)+0.35rem)] border-border/70 bg-background/70 text-right font-semibold"
+        />
+      </div>
 
       <div className="space-y-2 text-right">
         <label className="text-xs font-semibold text-muted-foreground">وصف قصير</label>

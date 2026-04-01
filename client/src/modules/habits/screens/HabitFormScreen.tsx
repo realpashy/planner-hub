@@ -34,6 +34,7 @@ function createInitialValues(habit?: HabitDefinition | null): HabitFormValues {
     description: habit?.description ?? "",
     category: habit?.category ?? "health",
     type: habit?.type ?? "binary",
+    trackingMode: habit?.trackingMode ?? (habit?.type === "count" ? "progress" : "check"),
     target: String(habit?.target ?? 1),
     unit: habit?.unit ?? getDefaultUnit(habit?.type ?? "binary"),
     emoji: habit?.emoji ?? "",

@@ -4,6 +4,7 @@ import type {
   HabitDefinition,
   HabitFormValues,
   HabitLog,
+  HabitTrackingMode,
   HabitsDashboardSummary,
   HabitsState,
   MoodValue,
@@ -13,6 +14,7 @@ import type {
 import type { HabitsCoachPayload } from "@shared/ai/habits-coach";
 
 export const HABITS_STORAGE_KEY = "planner-hub-habits-v1";
+export const HABITS_REMINDER_SEEN_KEY = "planner-hub-habits-reminder-seen-v1";
 
 export const HABIT_CATEGORY_META: Record<
   HabitCategory,
@@ -89,10 +91,19 @@ export const MOOD_OPTIONS: Array<{
 ];
 
 export const HABIT_TYPE_OPTIONS = [
-  { value: "binary", label: "إنجاز / لا" },
-  { value: "count", label: "عدد" },
-  { value: "duration", label: "مدة" },
+  { value: "binary", label: "مرة واحدة", hint: "علامة واحدة تكفي" },
+  { value: "count", label: "عدد", hint: "للتتبع العددي" },
+  { value: "duration", label: "مدة", hint: "وقت أو جلسة يومية" },
 ] as const;
+
+export const HABIT_TRACKING_MODE_OPTIONS: Array<{
+  value: HabitTrackingMode;
+  label: string;
+  hint: string;
+}> = [
+  { value: "check", label: "إنهاء بنقرة", hint: "ضع علامة عند إكمال الهدف" },
+  { value: "progress", label: "تتبع تدريجي", hint: "زد التقدم حتى تصل للهدف" },
+];
 
 function safeWindow(): Window | null {
   return typeof window === "undefined" ? null : window;
@@ -120,7 +131,9 @@ export function loadHabitsState(): HabitsState {
     if (!raw) return createEmptyHabitsState();
     const parsed = JSON.parse(raw) as Partial<HabitsState>;
     return {
-      habits: Array.isArray(parsed.habits) ? parsed.habits : [],
+      habits: Array.isArray(parsed.habits)
+        ? parsed.habits.map((habit) => normalizeHabitDefinition(habit as Partial<HabitDefinition>))
+        : [],
       logs: Array.isArray(parsed.logs) ? parsed.logs : [],
       moods: Array.isArray(parsed.moods) ? parsed.moods : [],
       lastUpdated: parsed.lastUpdated ?? new Date().toISOString(),
@@ -136,6 +149,30 @@ export function saveHabitsState(state: HabitsState) {
   win.localStorage.setItem(HABITS_STORAGE_KEY, JSON.stringify(state));
 }
 
+function getDefaultTrackingMode(type: HabitDefinition["type"]): HabitTrackingMode {
+  if (type === "count") return "progress";
+  if (type === "duration") return "check";
+  return "check";
+}
+
+function normalizeHabitDefinition(habit: Partial<HabitDefinition>): HabitDefinition {
+  const type = habit.type ?? "binary";
+  return {
+    id: habit.id ?? crypto.randomUUID(),
+    name: habit.name ?? "",
+    description: habit.description || undefined,
+    category: habit.category ?? "health",
+    type,
+    trackingMode: habit.trackingMode ?? getDefaultTrackingMode(type),
+    target: Math.max(1, Number(habit.target) || 1),
+    unit: type === "binary" ? undefined : habit.unit || getDefaultUnit(type),
+    emoji: habit.emoji || HABIT_CATEGORY_META[habit.category ?? "health"].emoji,
+    reminderTime: habit.reminderTime ?? null,
+    createdAt: habit.createdAt ?? new Date().toISOString(),
+    updatedAt: habit.updatedAt ?? new Date().toISOString(),
+  };
+}
+
 export function buildHabitFromValues(values: HabitFormValues, existingId?: string): HabitDefinition {
   const now = new Date().toISOString();
   return {
@@ -144,6 +181,7 @@ export function buildHabitFromValues(values: HabitFormValues, existingId?: strin
     description: values.description.trim() || undefined,
     category: values.category,
     type: values.type,
+    trackingMode: values.type === "binary" ? "check" : values.trackingMode,
     target: Math.max(1, Number.parseInt(values.target || "1", 10) || 1),
     unit: values.type === "binary" ? undefined : values.unit.trim() || getDefaultUnit(values.type),
     emoji: values.emoji.trim() || HABIT_CATEGORY_META[values.category].emoji,
@@ -168,7 +206,7 @@ export function getHabitValueForDate(habit: HabitDefinition, logs: HabitLog[], d
 }
 
 export function isHabitComplete(habit: HabitDefinition, value: number) {
-  if (habit.type === "binary") return value >= 1;
+  if (habit.type === "binary" || habit.trackingMode === "check") return value >= 1;
   return value >= habit.target;
 }
 
@@ -283,7 +321,47 @@ export function setMoodEntry(moods: HabitsState["moods"], mood: MoodValue, refer
 
 export function formatHabitValue(habit: HabitDefinition, value: number) {
   if (habit.type === "binary") return value > 0 ? "تم" : "غير مكتمل";
+  if (habit.trackingMode === "check") {
+    return value > 0 ? "تم" : "بانتظار الإنجاز";
+  }
   return `${value} / ${habit.target} ${habit.unit ?? ""}`.trim();
+}
+
+export function getHabitTargetLabel(habit: HabitDefinition) {
+  if (habit.type === "binary") return "مرة واحدة";
+  if (!habit.unit) return String(habit.target);
+  return `${habit.target} ${habit.unit}`.trim();
+}
+
+type ReminderSeenMap = Record<string, string[]>;
+
+function loadReminderSeenMap(): ReminderSeenMap {
+  const win = safeWindow();
+  if (!win) return {};
+  try {
+    const raw = win.localStorage.getItem(HABITS_REMINDER_SEEN_KEY);
+    return raw ? (JSON.parse(raw) as ReminderSeenMap) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveReminderSeenMap(next: ReminderSeenMap) {
+  const win = safeWindow();
+  if (!win) return;
+  win.localStorage.setItem(HABITS_REMINDER_SEEN_KEY, JSON.stringify(next));
+}
+
+export function hasShownReminder(habitId: string, dateKey = getTodayKey()) {
+  const seen = loadReminderSeenMap();
+  return (seen[dateKey] ?? []).includes(habitId);
+}
+
+export function markReminderShown(habitId: string, dateKey = getTodayKey()) {
+  const seen = loadReminderSeenMap();
+  const current = new Set(seen[dateKey] ?? []);
+  current.add(habitId);
+  saveReminderSeenMap({ ...seen, [dateKey]: Array.from(current) });
 }
 
 export function getReminderItems(state: HabitsState, reference = new Date()): ReminderItem[] {
