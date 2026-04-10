@@ -35,6 +35,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { useAppShell } from "@/components/layout/AppShell";
 import {
   CURRENCY_OPTIONS,
   SAVINGS_GOAL_CATEGORY_OPTIONS,
@@ -351,6 +352,7 @@ function isRecurringTransaction(tx: BudgetTransaction | null | undefined) {
 }
 
 export default function BudgetPlanner() {
+  const { hasShell } = useAppShell();
   const [data, setData] = useState<BudgetData>(() => loadBudgetData());
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonthKey());
 
@@ -1617,11 +1619,13 @@ export default function BudgetPlanner() {
               </Button>
             </div>
             <div className="hidden items-center gap-2 md:flex">
-              <Button variant="ghost" size="icon" asChild>
-                <Link href="/">
-                  <ArrowRight className="w-5 h-5 md:w-6 md:h-6" />
-                </Link>
-              </Button>
+              {!hasShell ? (
+                <Button variant="ghost" size="icon" asChild>
+                  <Link href="/">
+                    <ArrowRight className="w-5 h-5 md:w-6 md:h-6" />
+                  </Link>
+                </Button>
+              ) : null}
               <ThemeToggle />
               <Select value={selectedMonth} onValueChange={setSelectedMonth}>
                 <SelectTrigger className="budget-toolbar-select budget-toolbar-select-trigger" aria-label="اختيار الشهر">
@@ -1667,11 +1671,13 @@ export default function BudgetPlanner() {
               <p className="mt-1 text-sm text-muted-foreground">تخطيط مالي أوضح، بترتيب أدق، وبنبرة بصرية أكثر هدوءًا.</p>
             </div>
             <div className="absolute right-0 flex items-center justify-end gap-2 md:hidden">
-              <Button variant="ghost" size="icon" className="me-4 h-10 w-10 rounded-[calc(var(--radius)+0.3rem)] bg-background/75 shadow-sm backdrop-blur" asChild>
-                <Link href="/">
-                  <ArrowRight className="w-5 h-5" />
-                </Link>
-              </Button>
+              {!hasShell ? (
+                <Button variant="ghost" size="icon" className="me-4 h-10 w-10 rounded-[calc(var(--radius)+0.3rem)] bg-background/75 shadow-sm backdrop-blur" asChild>
+                  <Link href="/">
+                    <ArrowRight className="w-5 h-5" />
+                  </Link>
+                </Button>
+              ) : null}
               <div className="flex items-center gap-2 px-1 py-2">
                 <Wallet className="h-4 w-4 text-primary" />
                 <span className="text-sm font-semibold text-foreground whitespace-nowrap">الميزانيّة الشهرية</span>

@@ -13,8 +13,18 @@ import MealPlannerSetup from "./pages/MealPlannerSetup";
 import CashflowPlanner from "./pages/CashflowPlanner";
 import HabitsTracker from "./pages/HabitsTracker";
 import AuthPage from "./pages/AuthPage";
+import SettingsPage from "./pages/SettingsPage";
 import { AuthProvider, useAuth } from "./lib/auth";
 import { pullCloudToLocal, pushLocalToCloud } from "./lib/cloud-sync";
+import { AppShell } from "@/components/layout/AppShell";
+
+function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
+  return (
+    <AppShell>
+      <Component />
+    </AppShell>
+  );
+}
 
 function Router() {
   const [, setLocation] = useLocation();
@@ -73,24 +83,26 @@ function Router() {
   const AuthAwareMealSetup = auth.user ? MealPlannerSetup : AuthPage;
   const AuthAwareCashflow = auth.user ? CashflowPlanner : AuthPage;
   const AuthAwareHabits = auth.user ? HabitsTracker : AuthPage;
+  const AuthAwareSettings = auth.user ? SettingsPage : AuthPage;
 
   return (
     <Switch>
       <Route path="/auth" component={AuthPage} />
-      <Route path="/" component={AuthAwareDashboard} />
-      <Route path="/cashflow" component={AuthAwareCashflow} />
-      <Route path="/habits" component={AuthAwareHabits} />
-      <Route path="/weekly-planner" component={AuthAwareWeekly} />
-      <Route path="/weekly-planner/" component={AuthAwareWeekly} />
-      <Route path="/planner/weekly-planner" component={AuthAwareWeekly} />
-      <Route path="/planner/weekly-planner/" component={AuthAwareWeekly} />
-      <Route path="/planner/setup" component={AuthAwareWeekly} />
-      <Route path="/planner/setup/" component={AuthAwareWeekly} />
-      <Route path="/planner" component={AuthAwareWeekly} />
-      <Route path="/budget" component={AuthAwareBudget} />
-      <Route path="/meal/setup" component={AuthAwareMealSetup} />
-      <Route path="/meal/setup/" component={AuthAwareMealSetup} />
-      <Route path="/meal" component={AuthAwareMeal} />
+      <Route path="/" component={auth.user ? (() => <ProtectedRoute component={Dashboard} />) : AuthAwareDashboard} />
+      <Route path="/cashflow" component={auth.user ? (() => <ProtectedRoute component={CashflowPlanner} />) : AuthAwareCashflow} />
+      <Route path="/habits" component={auth.user ? (() => <ProtectedRoute component={HabitsTracker} />) : AuthAwareHabits} />
+      <Route path="/weekly-planner" component={auth.user ? (() => <ProtectedRoute component={WeeklyPlanner} />) : AuthAwareWeekly} />
+      <Route path="/weekly-planner/" component={auth.user ? (() => <ProtectedRoute component={WeeklyPlanner} />) : AuthAwareWeekly} />
+      <Route path="/planner/weekly-planner" component={auth.user ? (() => <ProtectedRoute component={WeeklyPlanner} />) : AuthAwareWeekly} />
+      <Route path="/planner/weekly-planner/" component={auth.user ? (() => <ProtectedRoute component={WeeklyPlanner} />) : AuthAwareWeekly} />
+      <Route path="/planner/setup" component={auth.user ? (() => <ProtectedRoute component={WeeklyPlanner} />) : AuthAwareWeekly} />
+      <Route path="/planner/setup/" component={auth.user ? (() => <ProtectedRoute component={WeeklyPlanner} />) : AuthAwareWeekly} />
+      <Route path="/planner" component={auth.user ? (() => <ProtectedRoute component={WeeklyPlanner} />) : AuthAwareWeekly} />
+      <Route path="/budget" component={auth.user ? (() => <ProtectedRoute component={BudgetPlanner} />) : AuthAwareBudget} />
+      <Route path="/meal/setup" component={auth.user ? (() => <ProtectedRoute component={MealPlannerSetup} />) : AuthAwareMealSetup} />
+      <Route path="/meal/setup/" component={auth.user ? (() => <ProtectedRoute component={MealPlannerSetup} />) : AuthAwareMealSetup} />
+      <Route path="/meal" component={auth.user ? (() => <ProtectedRoute component={MealPlanner} />) : AuthAwareMeal} />
+      <Route path="/settings" component={auth.user ? (() => <ProtectedRoute component={SettingsPage} />) : AuthAwareSettings} />
       <Route component={NotFound} />
     </Switch>
   );

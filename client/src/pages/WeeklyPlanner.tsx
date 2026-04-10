@@ -1,6 +1,6 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { usePlannerData, useSaveNote } from "@/hooks/use-planner";
 import { getWeekHeader, getWeekDays, addWeeks, subWeeks, formatISODate, formatDayDate, getArabicDayFull } from "@/lib/date-utils";
 import { DayStrip } from "@/components/planner/DayStrip";
@@ -33,8 +33,11 @@ import {
 } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { useAppShell } from "@/components/layout/AppShell";
 
 export default function WeeklyPlanner() {
+  const { hasShell } = useAppShell();
+  const [location] = useLocation();
   const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
@@ -46,6 +49,21 @@ export default function WeeklyPlanner() {
   const scrollToEvents = useCallback(() => {
     eventsRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const date = params.get("date");
+    const action = params.get("dashboardAction");
+    if (date) {
+      const parsed = new Date(`${date}T00:00:00`);
+      if (!Number.isNaN(parsed.getTime())) {
+        setSelectedDate(parsed);
+      }
+    }
+    if (action === "reset") {
+      setTemplatePickerOpen(true);
+    }
+  }, [location]);
 
   const applyTemplateInPlace = () => {
     const nextData = generateTemplateData(selectedTemplateId);
@@ -81,11 +99,13 @@ export default function WeeklyPlanner() {
             <div className="space-y-4">
               <div className="rtl-title-row items-start">
                 <div className="flex min-w-0 flex-1 items-start gap-3">
-                  <Button variant="ghost" size="icon" className="mt-0.5 shrink-0" asChild>
-                    <Link href="/" data-testid="link-back-dashboard">
-                      <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
-                    </Link>
-                  </Button>
+                  {!hasShell ? (
+                    <Button variant="ghost" size="icon" className="mt-0.5 shrink-0" asChild>
+                      <Link href="/" data-testid="link-back-dashboard">
+                        <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
+                      </Link>
+                    </Button>
+                  ) : null}
                   <div className="rtl-title-stack min-w-0 flex-1">
                     <div className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-primary/[0.1] px-3 py-1 text-xs font-semibold text-primary shadow-[var(--app-shadow)]">
                       <CalendarIcon className="h-3.5 w-3.5" />

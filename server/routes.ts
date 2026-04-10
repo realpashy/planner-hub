@@ -12,7 +12,7 @@ import {
   recordOverLimitAttempt,
   saveCloudData,
 } from "./persistence";
-import { generateHabitsCoachBrief, parseReceiptWithAI } from "./ai";
+import { generateDashboardAssistant, generateHabitsCoachBrief, parseReceiptWithAI } from "./ai";
 import {
   editMealForUser,
   generateWeekForUser,
@@ -477,6 +477,23 @@ export async function configureApiApp(app: Express) {
     } catch (error) {
       const msg = error instanceof Error ? error.message : "تعذر إنشاء ملخص المدرب الذكي";
       return res.status(500).json({ message: msg });
+    }
+  });
+
+  app.post("/api/dashboard/ai", async (req, res) => {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
+
+    if (!req.body || typeof req.body !== "object") {
+      return res.status(400).json({ message: "سياق لوحة التحكم غير صالح" });
+    }
+
+    try {
+      const result = await generateDashboardAssistant(req.body);
+      return res.json({ result });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "تعذر إنشاء ملخص لوحة التحكم";
+      return res.status(500).json({ message });
     }
   });
 

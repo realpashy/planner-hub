@@ -1,184 +1,122 @@
-import { useMemo } from "react";
-import { Link } from "wouter";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useLocation } from "wouter";
+import { useMutation } from "@tanstack/react-query";
+import { AnimatePresence, motion } from "framer-motion";
 import {
-  Activity,
-  ArrowLeft,
-  Calendar,
-  CalendarDays,
-  CheckCircle2,
-  Clock3,
-  Heart,
+  AlarmClock,
+  ArrowUpLeft,
+  Bot,
+  CalendarClock,
+  Check,
+  CircleDollarSign,
   LayoutGrid,
-  ListTodo,
-  LogOut,
-  LucideIcon,
-  Map,
+  Loader2,
+  Salad,
   Sparkles,
   Target,
-  TrendingUp,
-  Utensils,
-  Wallet,
+  TriangleAlert,
 } from "lucide-react";
-import { motion } from "framer-motion";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/lib/auth";
+import {
+  buildDashboardViewModel,
+  createDashboardBudgetTransaction,
+  createDashboardTask,
+  loadDashboardPreferences,
+  logDashboardHabit,
+  setDashboardMealFocus,
+  type DashboardModuleCard,
+  type DashboardQuickAction,
+  type DashboardTimelineItem,
+} from "@/lib/dashboard";
+import {
+  getDashboardContextHash,
+  loadCachedDashboardBrief,
+  requestDashboardAssistant,
+  saveCachedDashboardBrief,
+} from "@/lib/ai/dashboard-assistant";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { getPlannerData } from "@/lib/storage";
-import {
-  formatAmount,
-  getCurrentMonthKey,
-  getMonthlyTotals,
-  loadBudgetData,
-} from "@/lib/budget";
-import { getMealPlannerSummary, loadMealPlannerState } from "@/lib/meal-planner";
-import {
-  loadCashflowData,
-  getAvailableBalance,
-  getMonthStats,
-  getCurrentMonthKey as getCashflowMonthKey,
-  formatCashflowAmount,
-} from "@/lib/cashflow";
-import { getDashboardSummary as getHabitsDashboardSummary } from "@/modules/habits/utils/habits";
+import { loadHabitsState } from "@/modules/habits/utils/habits";
+import { getPlannerData, savePlannerData } from "@/lib/storage";
+import type { DashboardAssistantAction, DashboardAssistantResult } from "@shared/ai/dashboard-assistant";
 
-type ModuleStat = {
-  label: string;
-  value: string;
-  note: string;
-};
+type QuickActionKey = DashboardQuickAction["key"] | null;
 
-type ActiveModule = {
-  id: string;
-  href: string;
+function SectionHeader({
+  kicker,
+  title,
+  description,
+  icon: Icon,
+  action,
+}: {
+  kicker?: string;
   title: string;
   description: string;
-  helper: string;
-  icon: LucideIcon;
-  accentClass: string;
-  iconClass: string;
-  badgeClass: string;
-  highlights: string[];
-  stats: [ModuleStat, ModuleStat];
-  ctaLabel: string;
-};
-
-type UpcomingModule = {
-  id: string;
-  title: string;
-  desc: string;
-  icon: LucideIcon;
-  iconClass: string;
-};
-
-type OverviewMetric = {
-  label: string;
-  value: string;
-  note: string;
-  icon: LucideIcon;
-  iconClass: string;
-};
-
-const countFormatter = new Intl.NumberFormat("ar");
-function formatCount(value: number) {
-  return countFormatter.format(value);
-}
-
-function DashboardMetricCard({ metric }: { metric: OverviewMetric }) {
-  const Icon = metric.icon;
+  icon: React.ElementType;
+  action?: React.ReactNode;
+}) {
   return (
-    <div className="surface-shell rounded-[calc(var(--radius)+0.75rem)] p-5 text-right">
-      <div className="rtl-title-row">
-        <div className="space-y-1.5 flex-1">
-          <p className="text-xs font-semibold text-muted-foreground">{metric.label}</p>
-          <p className="text-2xl font-black text-foreground">{metric.value}</p>
-          <p className="text-xs leading-5 text-muted-foreground">{metric.note}</p>
+    <div className="rtl-title-row items-start">
+      <div className="space-y-2 flex-1">
+        {kicker ? (
+          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-primary/[0.08] px-3 py-1 text-xs font-semibold text-primary">
+            <Sparkles className="h-3.5 w-3.5" />
+            {kicker}
+          </div>
+        ) : null}
+        <div className="space-y-1">
+          <h2 className="text-xl font-black text-foreground md:text-2xl">{title}</h2>
+          <p className="text-sm leading-7 text-muted-foreground">{description}</p>
         </div>
-        <div className={cn("icon-chip h-12 w-12 shrink-0 rounded-[calc(var(--radius)+0.5rem)]", metric.iconClass)}>
-          <Icon className="h-5 w-5" />
-        </div>
+      </div>
+      {action}
+      <div className="icon-chip h-12 w-12 rounded-[calc(var(--radius)+0.45rem)]">
+        <Icon className="h-5 w-5" />
       </div>
     </div>
   );
 }
 
-function ActiveModuleCard({ module, index }: { module: ActiveModule; index: number }) {
-  const Icon = module.icon;
+function ModuleCard({ card }: { card: DashboardModuleCard }) {
+  const Icon = card.icon;
   return (
-    <Link
-      href={module.href}
-      className="group block h-full outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-      data-testid={`link-module-${module.id}`}
-    >
-      <motion.div
-        initial={{ opacity: 0, y: 18 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.08 + index * 0.06 }}
-        className="h-full"
-      >
-        <Card
-          className="surface-shell relative h-full overflow-hidden rounded-[calc(var(--radius)+0.85rem)] border-border/80 transition-all duration-300 group-hover:-translate-y-1.5 group-hover:border-primary/30 group-hover:shadow-2xl"
-          data-testid={`module-card-${module.id}`}
-        >
-          <div className={cn("pointer-events-none absolute inset-x-0 top-0 h-44 md:h-48", module.accentClass)} />
-
-          <CardHeader className="relative gap-5 pb-4 text-right">
+    <Link href={card.href} className="group block h-full outline-none">
+      <motion.div whileHover={{ y: -5 }} whileTap={{ scale: 0.995 }} className="h-full">
+        <Card className="surface-shell relative h-full overflow-hidden rounded-[calc(var(--radius)+1rem)] border-border/70">
+          <div className={cn("pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b", card.accent)} />
+          <CardHeader className="relative gap-5 text-right">
             <div className="rtl-title-row">
-              <div className="space-y-3 flex-1">
-                <Badge className={cn("rounded-full border px-3 py-1 text-[11px] font-semibold", module.badgeClass)}>
-                  جاهز الآن
-                </Badge>
-                <div className="space-y-2">
-                  <CardTitle className="text-xl md:text-2xl">{module.title}</CardTitle>
-                  <CardDescription className="max-w-md text-sm leading-6">
-                    {module.description}
-                  </CardDescription>
+              <div className="space-y-2 flex-1">
+                <div className="inline-flex w-fit rounded-full border border-border/70 bg-background/65 px-3 py-1 text-[11px] font-semibold text-muted-foreground">
+                  {card.status}
+                </div>
+                <div>
+                  <CardTitle className="text-xl">{card.title}</CardTitle>
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">{card.subtitle}</p>
                 </div>
               </div>
-              <div className={cn("icon-chip h-14 w-14 shrink-0 rounded-[calc(var(--radius)+0.5rem)]", module.iconClass)}>
-                <Icon className="h-6 w-6" />
+              <div className="icon-chip h-12 w-12 rounded-[calc(var(--radius)+0.45rem)]">
+                <Icon className="h-5 w-5" />
               </div>
-            </div>
-
-            <div className="flex flex-wrap justify-end gap-2">
-              {module.highlights.map((h) => (
-                <Badge
-                  key={h}
-                  variant="secondary"
-                  className="rounded-full px-3 py-1 text-[11px] font-medium"
-                >
-                  {h}
-                </Badge>
-              ))}
             </div>
           </CardHeader>
-
           <CardContent className="relative space-y-4">
             <div className="grid gap-3 sm:grid-cols-2">
-              {module.stats.map((stat) => (
-                <div key={stat.label} className="surface-subtle rounded-[calc(var(--radius)+0.5rem)] p-4 text-right">
-                  <p className="text-xs font-semibold text-muted-foreground">{stat.label}</p>
-                  <p className="mt-1 text-lg font-extrabold text-foreground">{stat.value}</p>
-                  <p className="mt-1 text-xs leading-5 text-muted-foreground">{stat.note}</p>
+              {card.metrics.map((metric) => (
+                <div key={metric.label} className="surface-subtle rounded-[calc(var(--radius)+0.45rem)] p-3 text-right">
+                  <p className="text-xs font-semibold text-muted-foreground">{metric.label}</p>
+                  <p className="mt-1 text-lg font-black text-foreground">{metric.value}</p>
                 </div>
               ))}
             </div>
-
-            <div className="rtl-title-row rounded-[calc(var(--radius)+0.5rem)] border border-dashed border-border/60 bg-muted/50 p-4 text-right transition-colors group-hover:border-primary/35 group-hover:bg-primary/[0.03]">
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-foreground">{module.ctaLabel}</p>
-                <p className="text-xs leading-5 text-muted-foreground">{module.helper}</p>
-              </div>
-              <div className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[calc(var(--radius)+0.375rem)] bg-primary text-primary-foreground transition-transform duration-300 group-hover:-translate-x-1">
-                <ArrowLeft className="h-5 w-5" />
-              </div>
+            <div className="flex items-center justify-between rounded-[calc(var(--radius)+0.45rem)] border border-border/70 bg-background/55 px-4 py-3">
+              <ArrowUpLeft className="h-4.5 w-4.5 text-primary transition-transform duration-200 group-hover:-translate-x-1 group-hover:-translate-y-1" />
+              <p className="text-sm font-bold text-foreground">{card.cta}</p>
             </div>
           </CardContent>
         </Card>
@@ -187,360 +125,621 @@ function ActiveModuleCard({ module, index }: { module: ActiveModule; index: numb
   );
 }
 
-function UpcomingModuleCard({ module, index }: { module: UpcomingModule; index: number }) {
-  const Icon = module.icon;
+function TimelineItemCard({
+  item,
+  onQuickToggle,
+}: {
+  item: DashboardTimelineItem;
+  onQuickToggle: (item: DashboardTimelineItem) => void;
+}) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.32 + index * 0.04 }}
-      className="h-full"
-    >
-      <Card className="surface-subtle h-full rounded-[calc(var(--radius)+0.75rem)] border-dashed border-border/60">
-        <CardContent className="flex h-full flex-col p-5 text-right">
-          <div className="rtl-title-row">
-            <div className="space-y-2 flex-1">
-              <Badge variant="secondary" className="rounded-full px-3 py-1 text-[11px] font-semibold">
-                قريبًا
-              </Badge>
-              <div>
-                <h3 className="text-base font-bold text-foreground">{module.title}</h3>
-                <p className="mt-1 text-sm leading-6 text-muted-foreground">{module.desc}</p>
-              </div>
-            </div>
-            <div className={cn("icon-chip h-11 w-11 shrink-0 rounded-[calc(var(--radius)+0.375rem)]", module.iconClass)}>
-              <Icon className="h-5 w-5" />
+    <Link href={item.href} className="block">
+      <motion.div whileHover={{ y: -3 }} className="surface-shell rounded-[calc(var(--radius)+0.75rem)] border-border/70 p-4">
+        <div className="grid items-center gap-4 md:grid-cols-[18%_1fr_auto]">
+          <div className="flex items-center justify-center">
+            <div className="inline-flex h-12 w-12 items-center justify-center rounded-[calc(var(--radius)+0.4rem)] border border-primary/25 bg-background/70 text-xl shadow-[0_0_0_1px_rgba(149,223,30,0.12),0_0_18px_rgba(149,223,30,0.12)]">
+              {item.icon}
             </div>
           </div>
-        </CardContent>
-      </Card>
-    </motion.div>
+          <div className="space-y-3 text-right">
+            <div className="space-y-1">
+              <p className="text-sm font-black leading-tight text-foreground">{item.title}</p>
+              <div className="flex flex-wrap items-center justify-start gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                <span>{item.timeLabel}</span>
+                <span>{item.subtitle}</span>
+              </div>
+            </div>
+            {item.actionable ? (
+              <div className="flex justify-start">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-9 rounded-[calc(var(--radius)+0.35rem)] border-primary/25 bg-primary/[0.08] text-primary"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    onQuickToggle(item);
+                  }}
+                >
+                  <Check className="h-4 w-4" />
+                  إنجاز سريع
+                </Button>
+              </div>
+            ) : null}
+          </div>
+          <div className="space-y-2 text-left">
+            <p className="text-xs font-semibold text-muted-foreground">{item.module === "planner" ? "المخطط" : item.module === "habits" ? "العادات" : item.module === "meal" ? "الوجبات" : item.module === "budget" ? "الميزانية" : "النقدي"}</p>
+            <div
+              className={cn(
+                "rounded-full px-2 py-1 text-[10px] font-semibold",
+                item.status === "attention"
+                  ? "bg-amber-500/[0.15] text-amber-300"
+                  : item.status === "done"
+                    ? "bg-emerald-500/[0.15] text-emerald-300"
+                    : "bg-sky-500/[0.15] text-sky-300",
+              )}
+            >
+              {item.status === "attention" ? "يتطلب انتباهًا" : item.status === "done" ? "مكتمل" : "قادم اليوم"}
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </Link>
   );
 }
 
 export default function Dashboard() {
   const auth = useAuth();
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
+  const [refreshToken, setRefreshToken] = useState(0);
+  const [openQuickAction, setOpenQuickAction] = useState<QuickActionKey>(null);
+  const [taskTitle, setTaskTitle] = useState("");
+  const [taskTime, setTaskTime] = useState("");
+  const [financeTitle, setFinanceTitle] = useState("");
+  const [financeAmount, setFinanceAmount] = useState("");
+  const [financeDate, setFinanceDate] = useState(new Date().toISOString().slice(0, 10));
+  const [habitId, setHabitId] = useState("");
+  const [mealDay, setMealDay] = useState(new Date().toISOString().slice(0, 10));
+  const [assistantResult, setAssistantResult] = useState<DashboardAssistantResult | null>(null);
+  const [dailyBrief, setDailyBrief] = useState<DashboardAssistantResult | null>(null);
+  const preferences = useMemo(() => loadDashboardPreferences(), [refreshToken]);
+  const viewModel = useMemo(() => buildDashboardViewModel(), [refreshToken]);
+  const habitsState = useMemo(() => loadHabitsState(), [refreshToken]);
+  const pendingHabits = useMemo(
+    () =>
+      habitsState.habits.filter((habit) => {
+        const todayValue = habitsState.logs.find((log) => log.habitId === habit.id && log.date === viewModel.isoDate)?.value ?? 0;
+        return todayValue < 1;
+      }),
+    [habitsState, viewModel.isoDate],
+  );
+  const dashboardContextHash = useMemo(
+    () => getDashboardContextHash(viewModel.context),
+    [viewModel.context],
+  );
 
-  const { activeModules, overviewMetrics, upcomingModules } = useMemo(() => {
-    const plannerData = getPlannerData();
-    const plannerOpenTasks = plannerData.tasks.filter((t) => !t.completed).length;
-    const plannerCompletedTasks = plannerData.tasks.filter((t) => t.completed).length;
-    const plannerEvents = plannerData.events.length;
-    const plannerHabits = plannerData.habits.length;
+  const assistantMutation = useMutation({
+    mutationFn: async (action: DashboardAssistantAction) => requestDashboardAssistant(action, viewModel.context),
+    onSuccess: (result, action) => {
+      if (action === "generateDashboardInsight") {
+        saveCachedDashboardBrief(viewModel.isoDate, dashboardContextHash, result);
+        setDailyBrief(result);
+      }
+      setAssistantResult(result);
+    },
+    onError: (error) => {
+      toast({
+        title: "تعذر تحديث المساعد الآن",
+        description: error instanceof Error ? error.message : "حاول مرة أخرى بعد قليل.",
+        duration: 3000,
+      });
+    },
+  });
 
-    const budgetData = loadBudgetData();
-    const currentMonthKey = getCurrentMonthKey();
-    const monthTotals = getMonthlyTotals(budgetData.transactions, currentMonthKey);
-    const currentMonthLabel = new Intl.DateTimeFormat("ar", {
-      month: "long",
-      year: "numeric",
-    }).format(new Date(`${currentMonthKey}-01T00:00:00`));
+  useEffect(() => {
+    const cached = loadCachedDashboardBrief(viewModel.isoDate, dashboardContextHash);
+    if (cached) {
+      setDailyBrief(cached);
+      return;
+    }
+    assistantMutation.mutate("generateDashboardInsight");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewModel.isoDate, dashboardContextHash]);
 
-    const mealState = loadMealPlannerState();
-    const mealSummary = getMealPlannerSummary(mealState);
+  const groupedTimeline = useMemo(() => ({
+    morning: viewModel.timeline.filter((item) => item.bucket === "morning"),
+    afternoon: viewModel.timeline.filter((item) => item.bucket === "afternoon"),
+    evening: viewModel.timeline.filter((item) => item.bucket === "evening"),
+  }), [viewModel.timeline]);
 
-    const cashflowData = loadCashflowData();
-    const cashflowBalance = getAvailableBalance(cashflowData);
-    const cashflowMonthKey = getCashflowMonthKey();
-    const cashflowMonthStats = getMonthStats(cashflowData.transactions, cashflowMonthKey);
-    const pendingPaymentsCount = cashflowData.upcomingPayments.filter(
-      (p) => p.status === "pending" && p.dueDate >= new Date().toISOString().split("T")[0],
-    ).length;
-    const habitsSummary = getHabitsDashboardSummary();
+  const handlePlannerToggle = (item: DashboardTimelineItem) => {
+    const planner = getPlannerData();
+    if (!item.targetId) return;
+    savePlannerData({
+      ...planner,
+      tasks: planner.tasks.map((task) => (task.id === item.targetId ? { ...task, completed: true } : task)),
+    });
+    setRefreshToken((value) => value + 1);
+    toast({
+      title: "تم تحديث المهمة",
+      description: "أغلقناها مباشرة من لوحة اليوم.",
+      duration: 2200,
+    });
+  };
 
-    const active: ActiveModule[] = [
-      {
-        id: "planner",
-        href: "/weekly-planner",
-        title: "المخطط الأسبوعي",
-        description: "لوحة يومية وأسبوعية لترتيب المهام، الأحداث، العادات، والملاحظات من شاشة واحدة.",
-        helper: "ادخلي مباشرة إلى أسبوعك الحالي وابدئي من يومك.",
-        icon: Calendar,
-        // Light: very soft tint. Dark: richer glow.
-        accentClass: "bg-[radial-gradient(circle_at_top_right,rgba(149,223,30,0.07),transparent_56%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(149,223,30,0.17),transparent_56%)]",
-        iconClass: "border-primary/20 bg-primary/[0.12] text-primary",
-        badgeClass: "border-primary/20 bg-primary/[0.1] text-primary dark:bg-primary/[0.15]",
-        highlights: ["المهام اليومية", "الأحداث والمواعيد", "العادات والملاحظات"],
-        stats: [
-          {
-            label: "مهام مفتوحة",
-            value: formatCount(plannerOpenTasks),
-            note: plannerCompletedTasks > 0
-              ? `${formatCount(plannerCompletedTasks)} مهام مكتملة`
-              : "ابدئي بإضافة أول مهمة",
-          },
-          {
-            label: "أحداث وعادات",
-            value: formatCount(plannerEvents + plannerHabits),
-            note: `${formatCount(plannerEvents)} أحداث • ${formatCount(plannerHabits)} عادات`,
-          },
-        ],
-        ctaLabel: "افتح المخطط",
-      },
-      {
-        id: "habits",
-        href: "/habits",
-        title: "متتبع العادات",
-        description: "موديول سريع لتتبّع العادات اليومية، المزاج، والاستمرارية في شاشة واحدة واضحة.",
-        helper: "افتح يومك، أنجز عاداتك بسرعة، وراجع الرؤى الأسبوعية بدون تعقيد.",
-        icon: Activity,
-        accentClass: "bg-[radial-gradient(circle_at_top_right,rgba(251,191,36,0.07),transparent_56%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(251,191,36,0.16),transparent_56%)]",
-        iconClass: "border-amber-500/20 bg-amber-500/[0.12] text-amber-700 dark:text-amber-300",
-        badgeClass: "border-amber-500/20 bg-amber-500/[0.08] text-amber-700 dark:bg-amber-500/[0.15] dark:text-amber-300",
-        highlights: ["عادات يومية", "مزاج سريع", "رؤى أسبوعية"],
-        stats: [
-          {
-            label: "إنجاز اليوم",
-            value: habitsSummary.totalHabits
-              ? `${formatCount(habitsSummary.completedToday)}/${formatCount(habitsSummary.totalHabits)}`
-              : "ابدئي الآن",
-            note: habitsSummary.totalHabits
-              ? `${formatCount(habitsSummary.progressPercent)}% من عادات اليوم`
-              : "أضيفي عادة واحدة لتبدأ السلسلة",
-          },
-          {
-            label: "أفضل سلسلة",
-            value: habitsSummary.bestStreak ? `${formatCount(habitsSummary.bestStreak)} أيام` : "0",
-            note: habitsSummary.pendingCount
-              ? `${formatCount(habitsSummary.pendingCount)} عادات ما زالت بانتظار اليوم`
-              : "كل العادات مكتملة اليوم",
-          },
-        ],
-        ctaLabel: "افتح متتبع العادات",
-      },
-      {
-        id: "budget",
-        href: "/budget",
-        title: "الميزانيّة الشهرية",
-        description: "مركز مالي أوضح لمتابعة الدخل والمصروفات والفواتير والأهداف الادخارية خلال الشهر.",
-        helper: "راجعي أرقام الشهر الحالي وانتقلي بسرعة إلى التفاصيل.",
-        icon: Wallet,
-        accentClass: "bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.07),transparent_56%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.16),transparent_56%)]",
-        iconClass: "border-emerald-500/20 bg-emerald-500/[0.12] text-emerald-600 dark:text-emerald-300",
-        badgeClass: "border-emerald-500/20 bg-emerald-500/[0.08] text-emerald-700 dark:bg-emerald-500/[0.15] dark:text-emerald-300",
-        highlights: ["دخل ومصروفات", "فواتير وديون", "أهداف ادخار"],
-        stats: [
-          {
-            label: "صافي الشهر",
-            value: formatAmount(monthTotals.net, budgetData.settings.currency),
-            note: currentMonthLabel,
-          },
-          {
-            label: "إجمالي التدفق الخارج",
-            value: formatAmount(monthTotals.totalOutflow, budgetData.settings.currency),
-            note: "يشمل المصروفات والفواتير والادخار",
-          },
-        ],
-        ctaLabel: "افتح الميزانية",
-      },
-      {
-        id: "meal",
-        href: "/meal",
-        title: "تخطيط الوجبات",
-        description: "لوحة أسبوعية أساسية لتعبئة الوجبات الرئيسية، السناك الخفيف، الماء، وملاحظات التحضير بسرعة.",
-        helper: "ادخلي إلى عرض الأسبوع أو ابدئي الإعداد خطوة بخطوة من يومك الحالي.",
-        icon: Utensils,
-        accentClass: "bg-[radial-gradient(circle_at_top_right,rgba(244,114,182,0.07),transparent_56%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(244,114,182,0.15),transparent_56%)]",
-        iconClass: "border-pink-500/20 bg-pink-500/[0.12] text-pink-600 dark:text-pink-300",
-        badgeClass: "border-pink-500/20 bg-pink-500/[0.08] text-pink-700 dark:bg-pink-500/[0.15] dark:text-pink-300",
-        highlights: ["عرض يبدأ من اليوم", "إعداد موجّه", "ماء بالأكواب واللتر"],
-        stats: [
-          {
-            label: "خانات مخططة",
-            value: `${formatCount(mealSummary.plannedMeals)}/${formatCount(mealSummary.totalMeals)}`,
-            note: `${formatCount(mealSummary.totalMeals - mealSummary.plannedMeals)} خانات متبقية هذا الأسبوع`,
-          },
-          {
-            label: "إيقاع الأسبوع",
-            value: `${formatCount(mealSummary.completedDays)}/7`,
-            note: `${formatCount(mealSummary.daysWithWaterTarget)}/7 أيام حققت هدف الماء`,
-          },
-        ],
-        ctaLabel: "افتح الوجبات",
-      },
-      {
-        id: "cashflow",
-        href: "/cashflow",
-        title: "תזרים מזומנים",
-        description: "מרכז תזרים פשוט לעסק הישראלי — יתרה, הכנסות, הוצאות, תשלומים קרובים ושותפים במסך אחד.",
-        helper: "עדכן את היתרה, הוסף הכנסה או הוצאה, ועקוב אחרי התשלומים הקרובים.",
-        icon: TrendingUp,
-        accentClass: "bg-[radial-gradient(circle_at_top_right,rgba(14,165,233,0.07),transparent_56%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(14,165,233,0.18),transparent_56%)]",
-        iconClass: "border-sky-500/20 bg-sky-500/[0.12] text-sky-600 dark:text-sky-300",
-        badgeClass: "border-sky-500/20 bg-sky-500/[0.08] text-sky-700 dark:bg-sky-500/[0.15] dark:text-sky-300",
-        highlights: ["יתרה ותזרים", "הכנסות והוצאות", "תשלומים עתידיים"],
-        stats: [
-          {
-            label: "יתרה זמינה",
-            value: formatCashflowAmount(cashflowBalance, cashflowData.settings.currency),
-            note: `נטו החודש: ${formatCashflowAmount(cashflowMonthStats.net, cashflowData.settings.currency)}`,
-          },
-          {
-            label: "תשלומים ממתינים",
-            value: formatCount(pendingPaymentsCount),
-            note: pendingPaymentsCount > 0 ? "תשלומים עתידיים פתוחים" : "אין תשלומים ממתינים",
-          },
-        ],
-        ctaLabel: "פתח תזרים",
-      },
-    ];
+  const handleTimelineQuickToggle = (item: DashboardTimelineItem) => {
+    if (item.module === "planner") {
+      handlePlannerToggle(item);
+      return;
+    }
+    if (item.module === "habits" && item.targetId) {
+      const habit = logDashboardHabit(item.targetId);
+      if (habit) {
+        setRefreshToken((value) => value + 1);
+        toast({
+          title: "تم تسجيل العادة",
+          description: `${habit.name} أُغلقت من الجدول الموحد.`,
+          duration: 2200,
+        });
+      }
+    }
+  };
 
-    const metrics: OverviewMetric[] = [
-      {
-        label: "موديولات جاهزة الآن",
-        value: formatCount(active.length),
-        note: "نقطة دخول موحّدة للموديولات الأساسية",
-        icon: LayoutGrid,
-        iconClass: "border-primary/20 bg-primary/[0.12] text-primary",
-      },
-      {
-        label: "متابعة هذا الأسبوع",
-        value: formatCount(plannerOpenTasks + (mealSummary.totalMeals - mealSummary.plannedMeals)),
-        note: "مهام مفتوحة وخانات وجبات غير مخططة",
-        icon: Clock3,
-        iconClass: "border-amber-500/20 bg-amber-500/[0.12] text-amber-600 dark:text-amber-300",
-      },
-      {
-        label: "الوضع الحالي",
-        value: formatAmount(monthTotals.net, budgetData.settings.currency),
-        note: "صافي الميزانية للشهر الحالي",
-        icon: CheckCircle2,
-        iconClass: "border-emerald-500/20 bg-emerald-500/[0.12] text-emerald-600 dark:text-emerald-300",
-      },
-    ];
+  const closeQuickAction = () => {
+    setOpenQuickAction(null);
+    setTaskTitle("");
+    setTaskTime("");
+    setFinanceTitle("");
+    setFinanceAmount("");
+    setFinanceDate(new Date().toISOString().slice(0, 10));
+    setHabitId("");
+    setMealDay(new Date().toISOString().slice(0, 10));
+  };
 
-    const upcoming: UpcomingModule[] = [
-      { id: "life", title: "منظم الحياة", desc: "مساحة أوسع لترتيب الجوانب الشخصية والروتين اليومي.", icon: Heart, iconClass: "border-rose-500/20 bg-rose-500/[0.12] text-rose-600 dark:text-rose-300" },
-      { id: "monthly", title: "التخطيط الشهري", desc: "عرض شهري شامل للأهداف، المواعيد، والتوزيع العام.", icon: CalendarDays, iconClass: "border-sky-500/20 bg-sky-500/[0.12] text-sky-600 dark:text-sky-300" },
-      { id: "goals", title: "أهداف السنة", desc: "متابعة الرؤية السنوية وتقسيمها إلى أهداف قابلة للتنفيذ.", icon: Target, iconClass: "border-violet-500/20 bg-violet-500/[0.12] text-violet-600 dark:text-violet-300" },
-      { id: "tasks", title: "تتبع المهام", desc: "لوحة مركّزة لإدارة المهام عبر الموديولات المختلفة.", icon: ListTodo, iconClass: "border-cyan-500/20 bg-cyan-500/[0.12] text-cyan-600 dark:text-cyan-300" },
-      { id: "travel", title: "مخطط السفر", desc: "تجربة منظمة للرحلات والحجوزات والمهام قبل السفر.", icon: Map, iconClass: "border-amber-500/20 bg-amber-500/[0.12] text-amber-700 dark:text-amber-300" },
-    ];
+  const handleQuickActionSubmit = () => {
+    if (openQuickAction === "task") {
+      if (!taskTitle.trim()) return;
+      createDashboardTask(taskTitle, viewModel.isoDate, taskTime || undefined);
+      toast({ title: "تمت إضافة المهمة", description: "أصبحت المهمة في المخطط الأسبوعي مباشرة.", duration: 2500 });
+      setRefreshToken((value) => value + 1);
+      closeQuickAction();
+      return;
+    }
 
-    return { activeModules: active, overviewMetrics: metrics, upcomingModules: upcoming };
-  }, []);
+    if (openQuickAction === "habit") {
+      if (!habitId) return;
+      const habit = logDashboardHabit(habitId);
+      if (habit) {
+        toast({ title: "تم تسجيل العادة", description: `${habit.name} تقدمت اليوم.`, duration: 2500 });
+        setRefreshToken((value) => value + 1);
+      }
+      closeQuickAction();
+      return;
+    }
+
+    if (openQuickAction === "expense" || openQuickAction === "income") {
+      const amount = Number(financeAmount);
+      if (!financeTitle.trim() || !Number.isFinite(amount) || amount <= 0) return;
+      createDashboardBudgetTransaction(openQuickAction, financeTitle, amount, financeDate);
+      toast({
+        title: openQuickAction === "expense" ? "تم تسجيل المصروف" : "تم تسجيل الدخل",
+        description: "الحركة ظهرت في الميزانية الشهرية.",
+        duration: 2500,
+      });
+      setRefreshToken((value) => value + 1);
+      closeQuickAction();
+      return;
+    }
+
+    if (openQuickAction === "meal") {
+      setDashboardMealFocus(mealDay);
+      closeQuickAction();
+      setLocation(`/meal?day=${mealDay}`);
+    }
+  };
 
   return (
-    <div className="app-shell" dir="rtl">
+    <div className="mx-auto max-w-[1600px] space-y-6" dir="rtl">
+      {preferences.visibleWidgets.hero ? (
+        <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+          <Card className="surface-shell relative overflow-hidden rounded-[calc(var(--radius)+1.2rem)] border-primary/15">
+            <div className="premium-header-glow premium-header-glow-primary" />
+            <CardContent className="relative p-6 md:p-8">
+              <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+                <div className="space-y-5 text-right">
+                  <div className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-primary/[0.08] px-3 py-1 text-xs font-semibold text-primary">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    {viewModel.dateLabel}
+                  </div>
+                  <div className="space-y-3">
+                    <h1 className="text-3xl font-black tracking-tight text-foreground md:text-5xl">
+                      {viewModel.greeting}
+                      {auth.user?.displayName ? `، ${auth.user.displayName}` : ""}
+                    </h1>
+                    <p className="max-w-3xl text-base leading-8 text-muted-foreground">
+                      {dailyBrief?.summary || viewModel.summaryLine}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap justify-start gap-3">
+                    <Button
+                      className="h-12 rounded-[calc(var(--radius)+0.55rem)] px-5 font-bold"
+                      onClick={() => document.getElementById("dashboard-timeline")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                    >
+                      ابدأ يومي الآن
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-12 rounded-[calc(var(--radius)+0.55rem)] px-5 font-bold"
+                      onClick={() => setOpenQuickAction("task")}
+                    >
+                      إضافة مهمة
+                    </Button>
+                  </div>
+                </div>
 
-      {/* ── Navbar ─────────────────────────────────────────────────────────── */}
-      {/* justify-between with dir="rtl": first child → visual RIGHT, second → visual LEFT */}
-      <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/90 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                  <div className="surface-subtle rounded-[calc(var(--radius)+0.75rem)] p-4 text-right">
+                    <p className="text-xs font-semibold text-muted-foreground">ملخص اليوم</p>
+                    <p className="mt-2 text-xl font-black text-foreground">
+                      {dailyBrief?.headline || "جاري تجهيز الملخص..."}
+                    </p>
+                    {assistantMutation.isPending && !dailyBrief ? (
+                      <div className="mt-3 h-16 animate-pulse rounded-[calc(var(--radius)+0.35rem)] bg-muted/80" />
+                    ) : (
+                      <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                        {dailyBrief?.bullets?.[0] || "نجمع الإشارات الأهم من يومك ووحداتك الآن."}
+                      </p>
+                    )}
+                  </div>
+                  <div className="surface-subtle rounded-[calc(var(--radius)+0.75rem)] p-4 text-right">
+                    <p className="text-xs font-semibold text-muted-foreground">أفضل خطوة تالية</p>
+                    <p className="mt-2 text-lg font-black text-foreground">
+                      {dailyBrief?.bestNextAction.label || "مراجعة أولويات اليوم"}
+                    </p>
+                    <Button
+                      variant="ghost"
+                      className="mt-3 h-10 rounded-[calc(var(--radius)+0.35rem)] px-3 font-semibold text-primary"
+                      onClick={() => setLocation(dailyBrief?.bestNextAction.href || "/weekly-planner")}
+                    >
+                      افتح الآن
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.section>
+      ) : null}
 
-          {/* Brand — first in DOM → visual RIGHT in RTL ✓ */}
-          <div className="flex items-center gap-2">
-            {/* Icon first → visual RIGHT of brand (reading-start side) */}
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-              <LayoutGrid className="h-4 w-4" />
-            </div>
-            <span className="text-xl font-black tracking-tight text-foreground">Planner Hub</span>
-          </div>
+      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+        <div className="space-y-6">
+          {preferences.visibleWidgets.focus ? (
+            <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}>
+              <Card className="surface-shell rounded-[calc(var(--radius)+1rem)] border-border/70">
+                <CardContent className="space-y-5 p-6">
+                  <SectionHeader
+                    kicker="ما الذي يحتاج انتباهك اليوم"
+                    title="تركيز اليوم"
+                    description="قراءة سريعة لما يجب أن يتحرك الآن بدون إغراقك بالتفاصيل."
+                    icon={Target}
+                  />
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div className="surface-subtle rounded-[calc(var(--radius)+0.55rem)] p-4 text-right">
+                      <p className="text-sm font-black text-foreground">أولويات اليوم</p>
+                      <div className="mt-3 space-y-2">
+                        {viewModel.topPriorities.length ? viewModel.topPriorities.map((item) => (
+                          <div key={item} className="rounded-[calc(var(--radius)+0.35rem)] border border-border/60 bg-background/60 px-3 py-2 text-sm text-foreground">{item}</div>
+                        )) : <p className="text-sm text-muted-foreground">لا توجد أولويات ثقيلة لليوم.</p>}
+                      </div>
+                    </div>
+                    <div className="surface-subtle rounded-[calc(var(--radius)+0.55rem)] p-4 text-right">
+                      <p className="text-sm font-black text-foreground">نقاط تحتاج متابعة</p>
+                      <div className="mt-3 space-y-3 text-sm">
+                        <div className="flex items-start justify-between gap-3 rounded-[calc(var(--radius)+0.35rem)] border border-border/60 bg-background/60 px-3 py-2">
+                          <span className="font-bold text-foreground">{viewModel.overdueCount}</span>
+                          <span className="text-muted-foreground">مهام متأخرة</span>
+                        </div>
+                        <div className="flex items-start justify-between gap-3 rounded-[calc(var(--radius)+0.35rem)] border border-border/60 bg-background/60 px-3 py-2">
+                          <span className="font-bold text-foreground">{viewModel.atRiskHabits.length}</span>
+                          <span className="text-muted-foreground">عادات مهددة اليوم</span>
+                        </div>
+                        {viewModel.mealPrepLabel ? <p className="rounded-[calc(var(--radius)+0.35rem)] border border-border/60 bg-background/60 px-3 py-2 text-muted-foreground">{viewModel.mealPrepLabel}</p> : null}
+                        {viewModel.financeAlert ? <p className="rounded-[calc(var(--radius)+0.35rem)] border border-amber-500/25 bg-amber-500/[0.07] px-3 py-2 text-amber-300">{viewModel.financeAlert}</p> : null}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.section>
+          ) : null}
 
-          {/* Actions — second in DOM → visual LEFT in RTL ✓ */}
-          <div className="flex items-center gap-1">
-            <ThemeToggle />
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-9 gap-1.5 rounded-xl px-3 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-              onClick={() => auth.logout()}
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="text-sm font-medium">خروج</span>
+          {preferences.visibleWidgets.timeline ? (
+            <motion.section id="dashboard-timeline" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
+              <Card className="surface-shell rounded-[calc(var(--radius)+1rem)] border-border/70">
+                <CardContent className="space-y-5 p-6">
+                  <SectionHeader
+                    title="الجدول الموحد لليوم"
+                    description="خط زمني واحد يجمع المهم من المهام والعادات والوجبات والتنبيهات المالية."
+                    icon={CalendarClock}
+                  />
+                  {(["morning", "afternoon", "evening"] as const).map((bucket) => (
+                    <div key={bucket} className="space-y-3">
+                      <div className="inline-flex w-fit rounded-full border border-border/70 bg-background/70 px-3 py-1 text-xs font-semibold text-muted-foreground">
+                        {bucket === "morning" ? "الصباح" : bucket === "afternoon" ? "بعد الظهر" : "المساء"}
+                      </div>
+                      <div className="space-y-3">
+                        {groupedTimeline[bucket].length ? groupedTimeline[bucket].map((item) => (
+                          <TimelineItemCard key={item.id} item={item} onQuickToggle={handleTimelineQuickToggle} />
+                        )) : (
+                          <div className="surface-subtle rounded-[calc(var(--radius)+0.55rem)] p-4 text-right text-sm text-muted-foreground">
+                            لا توجد عناصر ظاهرة في هذا الجزء من اليوم.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </motion.section>
+          ) : null}
+
+          {preferences.visibleWidgets.modules ? (
+            <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
+              <div className="space-y-4">
+                <SectionHeader
+                  title="نظرة على الوحدات"
+                  description="بطاقات تفاعلية تعطيك لقطة مفيدة ثم تنقلك مباشرة إلى العمق."
+                  icon={LayoutGrid}
+                />
+                <div className="grid gap-4 xl:grid-cols-2">
+                  {viewModel.moduleCards.map((card) => (
+                    <ModuleCard key={card.key} card={card} />
+                  ))}
+                </div>
+              </div>
+            </motion.section>
+          ) : null}
+        </div>
+        <div className="space-y-6">
+          {preferences.visibleWidgets.actions ? (
+            <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}>
+              <Card className="surface-shell rounded-[calc(var(--radius)+1rem)] border-border/70">
+                <CardContent className="space-y-5 p-6">
+                  <SectionHeader
+                    title="إجراءات سريعة"
+                    description="اختصارات واضحة تقلل الاحتكاك اليومي وتفتح التدفق من أول نقرة."
+                    icon={Sparkles}
+                  />
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {viewModel.quickActions.map((action) => {
+                      const Icon = action.icon;
+                      return (
+                        <motion.button
+                          key={action.key}
+                          whileHover={{ y: -3 }}
+                          whileTap={{ scale: 0.995 }}
+                          className="surface-subtle relative overflow-hidden rounded-[calc(var(--radius)+0.7rem)] border-border/70 p-4 text-right"
+                          onClick={() => {
+                            if (action.key === "ai") {
+                              document.getElementById("dashboard-ai-widget")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                              return;
+                            }
+                            setOpenQuickAction(action.key);
+                          }}
+                        >
+                          <div className={cn("pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b", action.accent)} />
+                          <div className="relative rtl-title-row">
+                            <div className="space-y-1 flex-1">
+                              <p className="text-sm font-black text-foreground">{action.label}</p>
+                              <p className="text-xs leading-6 text-muted-foreground">{action.description}</p>
+                            </div>
+                            <div className="icon-chip h-11 w-11 rounded-[calc(var(--radius)+0.4rem)]">
+                              <Icon className="h-4.5 w-4.5" />
+                            </div>
+                          </div>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                  <div className="flex flex-wrap justify-start gap-3">
+                    <Button variant="outline" className="h-11 rounded-[calc(var(--radius)+0.45rem)] px-4 font-bold" onClick={() => setLocation("/weekly-planner?dashboardAction=reset")}>
+                      إعادة ضبط الأسبوع
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.section>
+          ) : null}
+
+          {preferences.visibleWidgets.assistant ? (
+            <motion.section id="dashboard-ai-widget" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+              <Card className="surface-shell rounded-[calc(var(--radius)+1rem)] border-primary/15">
+                <CardContent className="space-y-5 p-6">
+                  <SectionHeader
+                    kicker="مساعد ذكي مختصر"
+                    title="مساعد اليوم"
+                    description="اقتراحات قصيرة ومفيدة من واقع يومك، بدون تشتيت أو دردشة طويلة."
+                    icon={Bot}
+                  />
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {([
+                      ["generateDashboardInsight", "لخّص يومي"],
+                      ["reprioritizeDay", "أعد ترتيب اليوم"],
+                      ["simplifyPlan", "بسّط خطتي"],
+                      ["spotRisks", "اكشف المخاطر"],
+                    ] as Array<[DashboardAssistantAction, string]>).map(([action, label]) => (
+                      <Button
+                        key={action}
+                        type="button"
+                        variant="outline"
+                        className="h-11 justify-between rounded-[calc(var(--radius)+0.45rem)] px-4 font-bold"
+                        onClick={() => assistantMutation.mutate(action)}
+                        disabled={assistantMutation.isPending}
+                      >
+                        {assistantMutation.isPending && assistantMutation.variables === action ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-primary" />}
+                        {label}
+                      </Button>
+                    ))}
+                  </div>
+                  <div className="surface-subtle rounded-[calc(var(--radius)+0.65rem)] border-primary/15 p-4 text-right">
+                    <p className="text-sm font-black text-foreground">{assistantResult?.headline || dailyBrief?.headline || "ماذا يحتاج يومك الآن؟"}</p>
+                    <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                      {assistantResult?.summary || dailyBrief?.summary || "يمكنك توليد قراءة سريعة لليوم، إعادة ترتيب الأولويات، أو تبسيط الخطة عند الشعور بالازدحام."}
+                    </p>
+                    <div className="mt-4 space-y-2">
+                      {(assistantResult?.bullets || dailyBrief?.bullets || []).map((bullet) => (
+                        <div key={bullet} className="flex items-start justify-between gap-3 rounded-[calc(var(--radius)+0.35rem)] border border-border/60 bg-background/55 px-3 py-2">
+                          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                          <p className="flex-1 text-sm leading-6 text-foreground">{bullet}</p>
+                        </div>
+                      ))}
+                    </div>
+                    {(assistantResult?.bestNextAction || dailyBrief?.bestNextAction) ? (
+                      <div className="mt-4 flex justify-start">
+                        <Button
+                          className="h-11 rounded-[calc(var(--radius)+0.45rem)] px-4 font-bold"
+                          onClick={() => setLocation((assistantResult?.bestNextAction || dailyBrief?.bestNextAction)!.href)}
+                        >
+                          افتح الخطوة التالية
+                        </Button>
+                      </div>
+                    ) : null}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.section>
+          ) : null}
+
+          {preferences.visibleWidgets.insights ? (
+            <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}>
+              <Card className="surface-shell rounded-[calc(var(--radius)+1rem)] border-border/70">
+                <CardContent className="space-y-5 p-6">
+                  <SectionHeader
+                    title="التقدم والرؤى"
+                    description="مؤشرات سريعة تبقيك واعيًا للإيقاع بدل الغرق في الرسوم الثقيلة."
+                    icon={Target}
+                  />
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {viewModel.progressCards.map((card) => (
+                      <div key={card.key} className="surface-subtle rounded-[calc(var(--radius)+0.55rem)] p-4 text-right">
+                        <div className="flex items-start justify-between gap-3">
+                          <p className={cn("text-lg font-black", card.tone)}>{card.value}</p>
+                          <div className="text-right">
+                            <p className="text-sm font-black text-foreground">{card.label}</p>
+                            <p className="mt-1 text-xs leading-6 text-muted-foreground">{card.hint}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.section>
+          ) : null}
+
+          {preferences.visibleWidgets.recent ? (
+            <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}>
+              <Card className="surface-shell rounded-[calc(var(--radius)+1rem)] border-border/70">
+                <CardContent className="space-y-5 p-6">
+                  <SectionHeader
+                    title="أكمل من حيث توقفت"
+                    description="وصول سريع إلى آخر أماكن العمل داخل Planner Hub."
+                    icon={AlarmClock}
+                  />
+                  <div className="space-y-3">
+                    {viewModel.recentItems.length ? viewModel.recentItems.map((item) => (
+                      <Link key={item.path + item.visitedAt} href={item.path} className="block rounded-[calc(var(--radius)+0.5rem)] border border-border/60 bg-background/60 px-4 py-3 text-right transition-colors hover:border-primary/20 hover:bg-muted/60">
+                        <div className="flex items-center justify-between gap-3">
+                          <ArrowUpLeft className="h-4.5 w-4.5 text-primary" />
+                          <div className="text-right">
+                            <p className="text-sm font-bold text-foreground">{item.label}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Intl.DateTimeFormat("ar", { hour: "numeric", minute: "numeric", day: "numeric", month: "short" }).format(new Date(item.visitedAt))}
+                            </p>
+                          </div>
+                        </div>
+                      </Link>
+                    )) : (
+                      <div className="surface-subtle rounded-[calc(var(--radius)+0.55rem)] p-4 text-right text-sm text-muted-foreground">
+                        لم يبدأ سجل الاستخدام بعد. بمجرد تنقلك داخل الوحدات سيظهر هنا آخر ما عملت عليه.
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.section>
+          ) : null}
+        </div>
+      </div>
+
+      <Dialog open={openQuickAction !== null} onOpenChange={(open) => !open && closeQuickAction()}>
+        <DialogContent dir="rtl" className="surface-shell max-w-lg rounded-[calc(var(--radius)+1rem)] border-border/80 text-right">
+          <DialogHeader className="text-right">
+            <DialogTitle className="text-right text-2xl font-black">
+              {openQuickAction === "task"
+                ? "إضافة مهمة سريعة"
+                : openQuickAction === "habit"
+                  ? "تسجيل عادة"
+                  : openQuickAction === "expense"
+                    ? "إضافة مصروف"
+                    : openQuickAction === "income"
+                      ? "إضافة دخل"
+                      : openQuickAction === "meal"
+                        ? "تخطيط وجبة"
+                        : ""}
+            </DialogTitle>
+          </DialogHeader>
+
+          <AnimatePresence mode="wait">
+            {openQuickAction === "task" ? (
+              <motion.div key="task" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+                <Input value={taskTitle} onChange={(event) => setTaskTitle(event.target.value)} placeholder="عنوان المهمة" className="h-12 text-right" />
+                <Input value={taskTime} onChange={(event) => setTaskTime(event.target.value)} placeholder="وقت اختياري مثل 11:00" className="h-12 text-right" />
+              </motion.div>
+            ) : null}
+
+            {openQuickAction === "habit" ? (
+              <motion.div key="habit" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+                <Select value={habitId} onValueChange={setHabitId}>
+                  <SelectTrigger className="h-12 text-right">
+                    <SelectValue placeholder="اختر عادة غير مكتملة" />
+                  </SelectTrigger>
+                  <SelectContent dir="rtl">
+                    {pendingHabits.map((habit) => (
+                      <SelectItem key={habit.id} value={habit.id}>{habit.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </motion.div>
+            ) : null}
+
+            {openQuickAction === "expense" || openQuickAction === "income" ? (
+              <motion.div key="finance" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+                <Input value={financeTitle} onChange={(event) => setFinanceTitle(event.target.value)} placeholder="عنوان الحركة" className="h-12 text-right" />
+                <Input value={financeAmount} onChange={(event) => setFinanceAmount(event.target.value)} placeholder="المبلغ" className="h-12 text-right" />
+                <Input value={financeDate} onChange={(event) => setFinanceDate(event.target.value)} type="date" className="h-12 text-right" />
+              </motion.div>
+            ) : null}
+
+            {openQuickAction === "meal" ? (
+              <motion.div key="meal" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+                <Input value={mealDay} onChange={(event) => setMealDay(event.target.value)} type="date" className="h-12 text-right" />
+                <p className="text-sm leading-6 text-muted-foreground">سنفتح لك اليوم المختار مباشرة داخل مخطط الوجبات لمتابعة التحرير من هناك.</p>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+
+          <div className="flex justify-start gap-3 pt-2">
+            <Button variant="outline" className="h-11 rounded-[calc(var(--radius)+0.45rem)] px-4" onClick={closeQuickAction}>
+              إلغاء
+            </Button>
+            <Button className="h-11 rounded-[calc(var(--radius)+0.45rem)] px-4" onClick={handleQuickActionSubmit}>
+              تنفيذ الآن
             </Button>
           </div>
-
-        </div>
-      </nav>
-
-      {/* ── Page content ───────────────────────────────────────────────────── */}
-      <div className="relative mx-auto max-w-6xl space-y-10 px-4 py-10 sm:px-6 lg:px-8">
-
-        {/* Hero */}
-        <motion.section
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="space-y-5 text-right"
-        >
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/[0.07] px-3.5 py-1.5 text-xs font-semibold text-primary dark:bg-primary/[0.13]">
-            <Sparkles className="h-3.5 w-3.5" />
-            <span>{formatCount(activeModules.length)} موديولات جاهزة الآن</span>
-          </div>
-
-          <div className="space-y-3">
-            <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-foreground md:text-5xl lg:text-[3.25rem]">
-              ابدئي من الموديول المناسب في{" "}
-              <span className="text-primary">Planner Hub</span>
-            </h1>
-            <p className="max-w-2xl text-base leading-8 text-muted-foreground md:text-lg">
-              تحسينات الدخول أصبحت تركّز على الوضوح والسرعة: بطاقات أغنى بالمعلومة، تسلسل بصري أقوى،
-              واختصارات مباشرة للموديولات التي تعمل فعليًا الآن.
-            </p>
-          </div>
-
-          {/* Quick-access links — justify-start = visual RIGHT in RTL ✓ */}
-          <div className="flex flex-wrap justify-start gap-2.5">
-            {activeModules.map((module) => (
-              <Button
-                key={module.id}
-                asChild
-                variant="outline"
-                size="sm"
-                className="rounded-[calc(var(--radius)+0.375rem)] border-border/70 bg-background/80 px-4 font-semibold hover:border-primary/30 hover:bg-primary/[0.05]"
-              >
-                <Link href={module.href}>{module.title}</Link>
-              </Button>
-            ))}
-          </div>
-        </motion.section>
-
-        {/* Overview metrics — 3-column strip */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.14, duration: 0.35 }}
-          className="grid grid-cols-1 gap-4 sm:grid-cols-3"
-        >
-          {overviewMetrics.map((metric) => (
-            <DashboardMetricCard key={metric.label} metric={metric} />
-          ))}
-        </motion.div>
-
-        {/* Active modules */}
-        <section className="space-y-4">
-          <div className="rtl-title-stack">
-            <h2 className="text-2xl font-extrabold text-foreground">الموديولات الجاهزة</h2>
-            <p className="text-sm leading-6 text-muted-foreground">
-              بطاقات دخول أوضح لكل موديول مع ملخّص سريع يساعدك تختاري من أين تبدئين.
-            </p>
-          </div>
-
-          <div className="grid gap-5 lg:grid-cols-3" data-testid="modules-grid">
-            {activeModules.map((module, index) => (
-              <ActiveModuleCard key={module.id} module={module} index={index} />
-            ))}
-          </div>
-        </section>
-
-        {/* Upcoming modules */}
-        <section className="space-y-4 pb-12">
-          <div className="rtl-title-stack">
-            <h2 className="text-xl font-extrabold text-foreground">لاحقًا في Planner Hub</h2>
-            <p className="text-sm leading-6 text-muted-foreground">
-              الموديولات القادمة ما زالت واضحة في المشهد العام، لكن دون أن تزاحم الأدوات الجاهزة.
-            </p>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {upcomingModules.map((module, index) => (
-              <UpcomingModuleCard key={module.id} module={module} index={index} />
-            ))}
-          </div>
-        </section>
-
-      </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

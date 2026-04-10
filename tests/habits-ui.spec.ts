@@ -60,7 +60,7 @@ test("habits form select keeps premium contrast and AI locked card stays visible
 
   await page.goto("/habits");
 
-  await expect(page.getByText("متتبع العادات", { exact: true })).toBeVisible();
+  await expect(page.getByRole("main").getByText("متتبع العادات", { exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: "إضافة عادة" }).first().click();
 

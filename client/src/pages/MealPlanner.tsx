@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle, DatabaseZap, RefreshCcw, Trash2 } from "lucide-react";
 import { ConversationalMealOnboarding } from "@/components/meal-planner/ConversationalMealOnboarding";
@@ -15,8 +15,11 @@ import { InteractiveButton } from "@/components/ui/interactive-button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useMealPlanner } from "@/hooks/use-meal-planner";
 import { type MealSwapMode, type PlannerDay, type PlannerPreferences } from "@/lib/meal-planner";
+import { consumeDashboardMealFocus } from "@/lib/dashboard";
+import { useLocation } from "wouter";
 
 export default function MealPlanner() {
+  const [location] = useLocation();
   const {
     state,
     usage,
@@ -60,6 +63,23 @@ export default function MealPlanner() {
     setExpandedMealId(null);
     setDayOpen(true);
   };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const queryDay = params.get("day");
+    const queryPanel = params.get("panel");
+    const dashboardDay = consumeDashboardMealFocus();
+    const targetDay = queryDay || dashboardDay;
+    if (queryPanel === "settings") {
+      setSettingsOpen(true);
+    }
+    if (targetDay && plannerDays.length) {
+      const match = plannerDays.find((day) => day.dateISO === targetDay);
+      if (match) {
+        openDay(match);
+      }
+    }
+  }, [location, plannerDays]);
 
   const handleSwapMeal = async (dateISO: string, mealType: string, mode: MealSwapMode) => {
     try {

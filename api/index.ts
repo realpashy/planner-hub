@@ -3,6 +3,12 @@ import express from "express";
 import { Pool } from "pg";
 import { readFile } from "fs/promises";
 import path from "path";
+import {
+  dashboardAssistantRequestSchema,
+  dashboardAssistantResultSchema,
+  type DashboardAssistantRequest,
+  type DashboardAssistantResult,
+} from "../shared/ai/dashboard-assistant";
 
 declare module "http" {
   interface IncomingMessage {
@@ -314,6 +320,159 @@ async function generateHabitsCoachBriefForApi(rawPayload: unknown): Promise<Habi
       generatedAt: new Date().toISOString(),
       source: "openai",
     };
+  } catch {
+    return fallback;
+  }
+}
+
+function buildFallbackDashboardAssistantLite({
+  action,
+  context,
+}: DashboardAssistantRequest): DashboardAssistantResult {
+  const nextHref =
+    context.planner.overdueTasks > 0 || context.planner.tasksToday > 0
+      ? "/weekly-planner"
+      : context.habits.atRiskHabits.length > 0
+        ? "/habits?tab=habits"
+        : context.meals.mealsToday === 0
+          ? "/meal"
+          : context.cashflow.pendingPayments > 0
+            ? "/cashflow?screen=upcoming"
+            : "/budget";
+
+  const headlineMap: Record<DashboardAssistantRequest["action"], string> = {
+    generateDashboardInsight:
+      context.planner.overdueTasks > 0
+        ? "اليوم يحتاج حسمًا مبكرًا"
+        : context.habits.progressPercent >= 70
+          ? "يومك متماسك ويحتاج تثبيتًا فقط"
+          : "ابدأ بخطوة واحدة واضحة لتأخذ الزخم",
+    reprioritizeDay: "هذا هو الترتيب الأذكى لبقية اليوم",
+    simplifyPlan: "يمكن تبسيط اليوم بدون خسارة الاتجاه",
+    spotRisks: "هذه أهم المخاطر التي تستحق انتباهك",
+  };
+
+  const summaryMap: Record<DashboardAssistantRequest["action"], string> = {
+    generateDashboardInsight:
+      `لديك ${context.planner.tasksToday} مهام اليوم، و${context.habits.pendingHabits} عادات غير مكتملة، و${context.cashflow.pendingPayments} تنبيهات مالية تحتاج مراقبة.`,
+    reprioritizeDay:
+      "ابدأ بالمهمة الأقرب للإغلاق، ثم أغلق عادة واحدة، وبعدها راجع أي عنصر مالي أو غذائي مفتوح.",
+    simplifyPlan:
+      "اختر إنجازًا واحدًا من المخطط، عادة واحدة فقط، ثم اترك الباقي كمرحلة ثانية بدل ضغط كل شيء معًا.",
+    spotRisks:
+      "الخطر الأكبر الآن هو تراكم العناصر المفتوحة قبل نهاية اليوم، خاصة إذا تأخرت البداية أو ارتفع ضغط الصرف.",
+  };
+
+  const bulletsMap: Record<DashboardAssistantRequest["action"], string[]> = {
+    generateDashboardInsight: [
+      context.planner.overdueTasks > 0 ? "هناك مهام متأخرة تحتاج إغلاقًا اليوم." : "ابدأ بأقرب مهمة قابلة للإغلاق.",
+      context.habits.atRiskHabits[0] ? `عادة ${context.habits.atRiskHabits[0]} تحتاج تثبيتًا مبكرًا.` : "عادة واحدة الآن تكفي لرفع الزخم.",
+      context.cashflow.warningLabel || context.budget.pressureLabel === "مرتفع" ? "الوضع المالي يحتاج مراجعة قصيرة اليوم." : "الوضع المالي الحالي يبدو مقبولًا.",
+    ],
+    reprioritizeDay: [
+      "أغلق أولًا ما يحمل أثرًا مباشرًا على اليوم.",
+      "لا تؤجل العادة الأقرب للإتمام إلى آخر اليوم.",
+      "اترك التحسينات غير العاجلة لوقت لاحق.",
+    ],
+    simplifyPlan: [
+      "احذف خطوة غير ضرورية من منتصف اليوم.",
+      "حوّل أي عادة مرهقة إلى نسخة أخف تكفي للاستمرار.",
+      "ركّز على إنجازين مهمين بدل خمسة متوسطة.",
+    ],
+    spotRisks: [
+      context.planner.overdueTasks > 0 ? "المهام المتأخرة قد تسحب انتباه اليوم كله." : "التشتت أخطر من نقص الوقت اليوم.",
+      context.habits.atRiskHabits.length > 0 ? "سلسلة عادة واحدة على الأقل معرضة للانقطاع." : "العادات مستقرة نسبيًا إذا بدأت مبكرًا.",
+      context.cashflow.pendingPayments > 0 ? "هناك دفعات معلقة قد تحتاج متابعة." : "لا توجد مخاطرة مالية ثقيلة الآن.",
+    ],
+  };
+
+  return dashboardAssistantResultSchema.parse({
+    headline: headlineMap[action],
+    summary: summaryMap[action],
+    bullets: bulletsMap[action].slice(0, 3),
+    bestNextAction: {
+      type: nextHref.startsWith("/weekly-planner")
+        ? "planner"
+        : nextHref.startsWith("/habits")
+          ? "habits"
+          : nextHref.startsWith("/meal")
+            ? "meal"
+            : nextHref.startsWith("/cashflow")
+              ? "cashflow"
+              : "budget",
+      label: nextHref.startsWith("/weekly-planner")
+        ? "راجع أولويات اليوم"
+        : nextHref.startsWith("/habits")
+          ? "أغلق عادة مهددة الآن"
+          : nextHref.startsWith("/meal")
+            ? "راجع وجبات اليوم"
+            : nextHref.startsWith("/cashflow")
+              ? "افتح الدفعات القريبة"
+              : "راجع حركة الميزانية",
+      href: nextHref,
+    },
+    generatedAt: new Date().toISOString(),
+    source: "fallback",
+  });
+}
+
+async function generateDashboardAssistantForApi(rawPayload: unknown): Promise<DashboardAssistantResult> {
+  const payload = dashboardAssistantRequestSchema.parse(rawPayload);
+  const fallback = buildFallbackDashboardAssistantLite(payload);
+  const key = process.env.OPENAI_API_KEY;
+  if (!key) {
+    return fallback;
+  }
+
+  try {
+    const model = process.env.OPENAI_DASHBOARD_MODEL || process.env.OPENAI_MEAL_MODEL || "gpt-5-mini";
+    const response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${key}`,
+      },
+      body: JSON.stringify({
+        model,
+        input: [
+          {
+            role: "system",
+            content: [
+              {
+                type: "input_text",
+                text:
+                  "You are Planner Hub dashboard intelligence. Return strict JSON only. Write Arabic only. Be concise, practical, calm, and high-signal. No markdown. No disclaimers.",
+              },
+            ],
+          },
+          {
+            role: "user",
+            content: [
+              {
+                type: "input_text",
+                text:
+                  `اعتمادًا على هذا السياق اليومي، أعد JSON فقط بالمفاتيح التالية: headline, summary, bullets, bestNextAction. ` +
+                  `headline حتى 90 حرفًا، summary حتى 220 حرفًا، bullets من 2 إلى 4 نقاط قصيرة، ` +
+                  `bestNextAction يحتوي type من planner|habits|budget|meal|cashflow و label و href.\n\n` +
+                  JSON.stringify(payload),
+              },
+            ],
+          },
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      return fallback;
+    }
+
+    const body = (await response.json()) as { output_text?: string };
+    const parsed = JSON.parse(body.output_text || "");
+    return dashboardAssistantResultSchema.parse({
+      ...parsed,
+      generatedAt: new Date().toISOString(),
+      source: "openai",
+    });
   } catch {
     return fallback;
   }
@@ -1040,6 +1199,23 @@ app.post("/api/habits/coach", async (req, res) => {
     return res.json({ result });
   } catch (error) {
     const message = error instanceof Error ? error.message : "تعذر إنشاء ملخص المدرب الذكي";
+    return res.status(500).json({ message });
+  }
+});
+
+app.post("/api/dashboard/ai", async (req, res) => {
+  const auth = readAuthFromRequest(req);
+  if (!auth?.userId) return res.status(401).json({ message: "غير مصرح" });
+
+  if (!req.body || typeof req.body !== "object") {
+    return res.status(400).json({ message: "سياق لوحة التحكم غير صالح" });
+  }
+
+  try {
+    const result = await generateDashboardAssistantForApi(req.body);
+    return res.json({ result });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "تعذر إنشاء ملخص لوحة التحكم";
     return res.status(500).json({ message });
   }
 });

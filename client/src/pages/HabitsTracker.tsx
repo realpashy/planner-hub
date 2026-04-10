@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -23,6 +23,7 @@ import { HabitsListScreen } from "@/modules/habits/screens/HabitsListScreen";
 import { InsightsScreen } from "@/modules/habits/screens/InsightsScreen";
 import type { HabitDefinition, HabitFormValues } from "@/modules/habits/types";
 import { hasShownReminder, markReminderShown } from "@/modules/habits/utils/habits";
+import { useAppShell } from "@/components/layout/AppShell";
 
 type HabitsTab = "dashboard" | "habits" | "insights" | "ai";
 
@@ -38,6 +39,8 @@ const TAB_ITEMS: Array<{
 ];
 
 export default function HabitsTracker() {
+  const { hasShell } = useAppShell();
+  const [location] = useLocation();
   const [activeTab, setActiveTab] = useState<HabitsTab>("dashboard");
   const [formOpen, setFormOpen] = useState(false);
   const [editingHabit, setEditingHabit] = useState<HabitDefinition | null>(null);
@@ -61,6 +64,18 @@ export default function HabitsTracker() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
   }, [activeTab]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const nextTab = params.get("tab") as HabitsTab | null;
+    const highlighted = params.get("habit");
+    if (nextTab && TAB_ITEMS.some((item) => item.key === nextTab)) {
+      setActiveTab(nextTab);
+    }
+    if (highlighted) {
+      setHighlightedHabitId(highlighted);
+    }
+  }, [location]);
 
   useEffect(() => {
     if (!highlightedHabitId) return;
@@ -227,11 +242,15 @@ export default function HabitsTracker() {
             </div>
             <div className="space-y-0.5">
               <div className="flex items-center justify-start gap-2 text-xs font-semibold text-muted-foreground">
-                <Link href="/" className="inline-flex items-center gap-1 text-primary transition-colors hover:text-primary/80">
-                  <Home className="h-3.5 w-3.5" />
-                  الرئيسية
-                </Link>
-                <span className="text-muted-foreground/60">/</span>
+                {!hasShell ? (
+                  <>
+                    <Link href="/" className="inline-flex items-center gap-1 text-primary transition-colors hover:text-primary/80">
+                      <Home className="h-3.5 w-3.5" />
+                      الرئيسية
+                    </Link>
+                    <span className="text-muted-foreground/60">/</span>
+                  </>
+                ) : null}
                 <span>{currentTabLabel}</span>
               </div>
               <p className="text-lg font-black tracking-tight text-foreground">متتبع العادات</p>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, BarChart3, CalendarClock, Home, ListOrdered, Settings, TrendingUp, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -26,6 +26,7 @@ import {
   saveCashflowData,
 } from "@/lib/cashflow";
 import { pullCloudToLocal, pushLocalToCloud } from "@/lib/cloud-sync";
+import { useAppShell } from "@/components/layout/AppShell";
 
 type ScreenKey = "overview" | "transactions" | "upcoming" | "partners" | "settings";
 
@@ -126,6 +127,8 @@ function UpdateBalanceSheet({ open, data, onClose, onSave }: UpdateBalanceSheetP
 }
 
 export default function CashflowPlanner() {
+  const { hasShell } = useAppShell();
+  const [location] = useLocation();
   const [data, setData] = useState<CashflowData>(() => loadCashflowData());
   const [screen, setScreen] = useState<ScreenKey>("overview");
   const [showAddIncome, setShowAddIncome] = useState(false);
@@ -156,6 +159,14 @@ export default function CashflowPlanner() {
   useEffect(() => {
     scrollContainerRef.current?.scrollTo({ top: 0, behavior: "auto" });
   }, [screen]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const nextScreen = params.get("screen") as ScreenKey | null;
+    if (nextScreen && NAV_ITEMS.some((item) => item.key === nextScreen)) {
+      setScreen(nextScreen);
+    }
+  }, [location]);
 
   const updateData = useCallback((updater: (previous: CashflowData) => CashflowData) => {
     setData((previous) => {
@@ -330,15 +341,19 @@ export default function CashflowPlanner() {
             </div>
             <div className="space-y-0.5 text-right">
               <div className="font-hebrew flex items-center justify-end gap-2 text-xs font-semibold text-muted-foreground">
-                <button
-                  type="button"
-                  onClick={() => setScreen("overview")}
-                  className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-primary transition-colors hover:bg-primary/[0.08]"
-                >
-                  <Home className="h-3.5 w-3.5" />
-                  בית
-                </button>
-                <span className="text-muted-foreground/70">/</span>
+                {!hasShell ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setScreen("overview")}
+                      className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-primary transition-colors hover:bg-primary/[0.08]"
+                    >
+                      <Home className="h-3.5 w-3.5" />
+                      בית
+                    </button>
+                    <span className="text-muted-foreground/70">/</span>
+                  </>
+                ) : null}
                 <span>{currentTabLabel}</span>
               </div>
               <span className="font-hebrew block text-base font-black tracking-tight text-foreground">{SCREEN_TITLES[screen]}</span>
@@ -347,11 +362,13 @@ export default function CashflowPlanner() {
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Link href="/">
-              <button className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted/60 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
-                <ArrowLeft className="h-4 w-4" />
-              </button>
-            </Link>
+            {!hasShell ? (
+              <Link href="/">
+                <button className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted/60 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                  <ArrowLeft className="h-4 w-4" />
+                </button>
+              </Link>
+            ) : null}
           </div>
         </div>
       </nav>
