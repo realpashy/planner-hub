@@ -3,12 +3,6 @@ import express from "express";
 import { Pool } from "pg";
 import { readFile } from "fs/promises";
 import path from "path";
-import {
-  dashboardAssistantRequestSchema,
-  dashboardAssistantResultSchema,
-  type DashboardAssistantRequest,
-  type DashboardAssistantResult,
-} from "../shared/ai/dashboard-assistant";
 
 declare module "http" {
   interface IncomingMessage {
@@ -21,6 +15,66 @@ type AuthUser = {
   email: string;
   displayName: string | null;
   role: string;
+};
+
+type DashboardAssistantActionLite =
+  | "generateDashboardInsight"
+  | "reprioritizeDay"
+  | "simplifyPlan"
+  | "spotRisks";
+
+type DashboardAssistantRequestLite = {
+  action: DashboardAssistantActionLite;
+  context: {
+    isoDate: string;
+    dateLabel: string;
+    greeting: string;
+    planner: {
+      tasksToday: number;
+      overdueTasks: number;
+      eventsToday: number;
+      topPriorities: string[];
+    };
+    habits: {
+      totalHabits: number;
+      completedToday: number;
+      pendingHabits: number;
+      progressPercent: number;
+      atRiskHabits: string[];
+      moodLabel: string | null;
+    };
+    meals: {
+      mealsToday: number;
+      weeklyMeals: number;
+      todayMealTitles: string[];
+      prepLabel: string | null;
+    };
+    budget: {
+      spentThisMonth: number;
+      monthlyLimit: number;
+      remaining: number;
+      pressureLabel: string;
+    };
+    cashflow: {
+      availableBalance: number;
+      pendingPayments: number;
+      warningLabel: string | null;
+    };
+  };
+};
+
+type DashboardAssistantResultLite = {
+  headline: string;
+  summary: string;
+  bullets: string[];
+  bestNextAction: {
+    type: "planner" | "habits" | "budget" | "meal" | "cashflow";
+    label: string;
+    href: string;
+    targetId?: string;
+  };
+  generatedAt: string;
+  source: "openai" | "fallback";
 };
 
 const DEFAULT_SUPABASE_URL = "https://bachcdysktiyjewwrpmr.supabase.co";
@@ -240,6 +294,119 @@ function buildFallbackHabitsCoachLite(payload: HabitsCoachPayloadLite): HabitsCo
   };
 }
 
+function normalizeDashboardAssistantPayload(raw: unknown): DashboardAssistantRequestLite | null {
+  if (!raw || typeof raw !== "object") return null;
+  const source = raw as Record<string, unknown>;
+  const context = source.context;
+  if (!context || typeof context !== "object") return null;
+
+  const action =
+    source.action === "generateDashboardInsight" ||
+    source.action === "reprioritizeDay" ||
+    source.action === "simplifyPlan" ||
+    source.action === "spotRisks"
+      ? source.action
+      : null;
+
+  if (!action) return null;
+
+  const value = context as Record<string, unknown>;
+  const planner = (value.planner ?? {}) as Record<string, unknown>;
+  const habits = (value.habits ?? {}) as Record<string, unknown>;
+  const meals = (value.meals ?? {}) as Record<string, unknown>;
+  const budget = (value.budget ?? {}) as Record<string, unknown>;
+  const cashflow = (value.cashflow ?? {}) as Record<string, unknown>;
+
+  return {
+    action,
+    context: {
+      isoDate: typeof value.isoDate === "string" ? value.isoDate : new Date().toISOString().slice(0, 10),
+      dateLabel: typeof value.dateLabel === "string" ? value.dateLabel : "",
+      greeting: typeof value.greeting === "string" ? value.greeting : "",
+      planner: {
+        tasksToday: Number(planner.tasksToday ?? 0) || 0,
+        overdueTasks: Number(planner.overdueTasks ?? 0) || 0,
+        eventsToday: Number(planner.eventsToday ?? 0) || 0,
+        topPriorities: Array.isArray(planner.topPriorities)
+          ? planner.topPriorities.filter((item): item is string => typeof item === "string").slice(0, 5)
+          : [],
+      },
+      habits: {
+        totalHabits: Number(habits.totalHabits ?? 0) || 0,
+        completedToday: Number(habits.completedToday ?? 0) || 0,
+        pendingHabits: Number(habits.pendingHabits ?? 0) || 0,
+        progressPercent: Number(habits.progressPercent ?? 0) || 0,
+        atRiskHabits: Array.isArray(habits.atRiskHabits)
+          ? habits.atRiskHabits.filter((item): item is string => typeof item === "string").slice(0, 5)
+          : [],
+        moodLabel: typeof habits.moodLabel === "string" ? habits.moodLabel : null,
+      },
+      meals: {
+        mealsToday: Number(meals.mealsToday ?? 0) || 0,
+        weeklyMeals: Number(meals.weeklyMeals ?? 0) || 0,
+        todayMealTitles: Array.isArray(meals.todayMealTitles)
+          ? meals.todayMealTitles.filter((item): item is string => typeof item === "string").slice(0, 6)
+          : [],
+        prepLabel: typeof meals.prepLabel === "string" ? meals.prepLabel : null,
+      },
+      budget: {
+        spentThisMonth: Number(budget.spentThisMonth ?? 0) || 0,
+        monthlyLimit: Number(budget.monthlyLimit ?? 0) || 0,
+        remaining: Number(budget.remaining ?? 0) || 0,
+        pressureLabel: typeof budget.pressureLabel === "string" ? budget.pressureLabel : "",
+      },
+      cashflow: {
+        availableBalance: Number(cashflow.availableBalance ?? 0) || 0,
+        pendingPayments: Number(cashflow.pendingPayments ?? 0) || 0,
+        warningLabel: typeof cashflow.warningLabel === "string" ? cashflow.warningLabel : null,
+      },
+    },
+  };
+}
+
+function normalizeDashboardAssistantResult(
+  raw: unknown,
+  fallback: DashboardAssistantResultLite,
+): DashboardAssistantResultLite {
+  if (!raw || typeof raw !== "object") return fallback;
+  const source = raw as Record<string, unknown>;
+  const bestNextAction =
+    source.bestNextAction && typeof source.bestNextAction === "object"
+      ? (source.bestNextAction as Record<string, unknown>)
+      : null;
+
+  const nextType =
+    bestNextAction?.type === "planner" ||
+    bestNextAction?.type === "habits" ||
+    bestNextAction?.type === "budget" ||
+    bestNextAction?.type === "meal" ||
+    bestNextAction?.type === "cashflow"
+      ? bestNextAction.type
+      : fallback.bestNextAction.type;
+
+  const bullets = Array.isArray(source.bullets)
+    ? source.bullets.filter((item): item is string => typeof item === "string").slice(0, 4)
+    : [];
+
+  if (typeof source.headline !== "string" || typeof source.summary !== "string" || bullets.length < 2) {
+    return fallback;
+  }
+
+  return {
+    headline: source.headline,
+    summary: source.summary,
+    bullets,
+    bestNextAction: {
+      type: nextType,
+      label: typeof bestNextAction?.label === "string" ? bestNextAction.label : fallback.bestNextAction.label,
+      href: typeof bestNextAction?.href === "string" ? bestNextAction.href : fallback.bestNextAction.href,
+      targetId: typeof bestNextAction?.targetId === "string" ? bestNextAction.targetId : undefined,
+    },
+    generatedAt: new Date().toISOString(),
+    source: "openai",
+  };
+}
+
 async function generateHabitsCoachBriefForApi(rawPayload: unknown): Promise<HabitsCoachResultLite> {
   const payload = normalizeHabitsCoachPayload(rawPayload);
   if (!payload) {
@@ -328,7 +495,7 @@ async function generateHabitsCoachBriefForApi(rawPayload: unknown): Promise<Habi
 function buildFallbackDashboardAssistantLite({
   action,
   context,
-}: DashboardAssistantRequest): DashboardAssistantResult {
+}: DashboardAssistantRequestLite): DashboardAssistantResultLite {
   const nextHref =
     context.planner.overdueTasks > 0 || context.planner.tasksToday > 0
       ? "/weekly-planner"
@@ -340,7 +507,7 @@ function buildFallbackDashboardAssistantLite({
             ? "/cashflow?screen=upcoming"
             : "/budget";
 
-  const headlineMap: Record<DashboardAssistantRequest["action"], string> = {
+  const headlineMap: Record<DashboardAssistantRequestLite["action"], string> = {
     generateDashboardInsight:
       context.planner.overdueTasks > 0
         ? "اليوم يحتاج حسمًا مبكرًا"
@@ -352,7 +519,7 @@ function buildFallbackDashboardAssistantLite({
     spotRisks: "هذه أهم المخاطر التي تستحق انتباهك",
   };
 
-  const summaryMap: Record<DashboardAssistantRequest["action"], string> = {
+  const summaryMap: Record<DashboardAssistantRequestLite["action"], string> = {
     generateDashboardInsight:
       `لديك ${context.planner.tasksToday} مهام اليوم، و${context.habits.pendingHabits} عادات غير مكتملة، و${context.cashflow.pendingPayments} تنبيهات مالية تحتاج مراقبة.`,
     reprioritizeDay:
@@ -363,7 +530,7 @@ function buildFallbackDashboardAssistantLite({
       "الخطر الأكبر الآن هو تراكم العناصر المفتوحة قبل نهاية اليوم، خاصة إذا تأخرت البداية أو ارتفع ضغط الصرف.",
   };
 
-  const bulletsMap: Record<DashboardAssistantRequest["action"], string[]> = {
+  const bulletsMap: Record<DashboardAssistantRequestLite["action"], string[]> = {
     generateDashboardInsight: [
       context.planner.overdueTasks > 0 ? "هناك مهام متأخرة تحتاج إغلاقًا اليوم." : "ابدأ بأقرب مهمة قابلة للإغلاق.",
       context.habits.atRiskHabits[0] ? `عادة ${context.habits.atRiskHabits[0]} تحتاج تثبيتًا مبكرًا.` : "عادة واحدة الآن تكفي لرفع الزخم.",
@@ -386,7 +553,7 @@ function buildFallbackDashboardAssistantLite({
     ],
   };
 
-  return dashboardAssistantResultSchema.parse({
+  return {
     headline: headlineMap[action],
     summary: summaryMap[action],
     bullets: bulletsMap[action].slice(0, 3),
@@ -413,11 +580,14 @@ function buildFallbackDashboardAssistantLite({
     },
     generatedAt: new Date().toISOString(),
     source: "fallback",
-  });
+  };
 }
 
-async function generateDashboardAssistantForApi(rawPayload: unknown): Promise<DashboardAssistantResult> {
-  const payload = dashboardAssistantRequestSchema.parse(rawPayload);
+async function generateDashboardAssistantForApi(rawPayload: unknown): Promise<DashboardAssistantResultLite> {
+  const payload = normalizeDashboardAssistantPayload(rawPayload);
+  if (!payload) {
+    throw new Error("سياق لوحة التحكم غير صالح");
+  }
   const fallback = buildFallbackDashboardAssistantLite(payload);
   const key = process.env.OPENAI_API_KEY;
   if (!key) {
@@ -468,11 +638,7 @@ async function generateDashboardAssistantForApi(rawPayload: unknown): Promise<Da
 
     const body = (await response.json()) as { output_text?: string };
     const parsed = JSON.parse(body.output_text || "");
-    return dashboardAssistantResultSchema.parse({
-      ...parsed,
-      generatedAt: new Date().toISOString(),
-      source: "openai",
-    });
+    return normalizeDashboardAssistantResult(parsed, fallback);
   } catch {
     return fallback;
   }
