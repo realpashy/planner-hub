@@ -196,37 +196,41 @@ test.describe("shared dashboard shell", () => {
     });
   });
 
-  test("renders the new shared sidebar shell and interactive dashboard", async ({ page }) => {
+  test("renders the Lumina Noir desktop shell and premium dashboard", async ({ page }) => {
     await page.goto("/");
 
-    const sidebar = page.getByTestId("app-sidebar");
+    const sidebar = page.getByTestId("desktop-shell-sidebar");
     await expect(sidebar).toBeVisible();
     await expect(sidebar.getByRole("link", { name: "الرئيسية" })).toBeVisible();
     await expect(sidebar.getByRole("link", { name: "المخطط الأسبوعي" })).toBeVisible();
     await expect(sidebar.getByRole("link", { name: "الميزانية الشهرية" })).toBeVisible();
     await expect(sidebar.getByRole("link", { name: "الإعدادات" })).toBeVisible();
 
-    await expect(page.getByText("ملخص اليوم", { exact: true })).toBeVisible();
-    await expect(page.getByText("تركيز اليوم", { exact: true })).toBeVisible();
-    await expect(page.getByText("الجدول الموحد لليوم", { exact: true })).toBeVisible();
-    await expect(page.getByText("إجراءات سريعة", { exact: true })).toBeVisible();
+    await expect(page.getByTestId("global-topbar-search")).toBeVisible();
+    await expect(page.getByRole("heading", { name: /مرحبًا/ })).toBeVisible();
+    await expect(page.getByText("نبض اليوم", { exact: true })).toBeVisible();
+    await expect(page.getByText("التدفق الزمني لليوم", { exact: true })).toBeVisible();
+    await expect(page.getByText("الوحدات الأساسية", { exact: true })).toBeVisible();
+    await expect(page.getByText("مساعد الذكاء", { exact: true })).toBeVisible();
+
+    await expect(page.getByTestId("mobile-bottom-nav")).toBeHidden();
 
     await page.getByRole("button", { name: "طي الشريط الجانبي" }).click();
-    await expect(page.getByTestId("app-sidebar")).toHaveAttribute("data-collapsed", "true");
+    await expect(page.getByTestId("desktop-shell-sidebar")).toHaveAttribute("data-collapsed", "true");
 
     await page.getByRole("button", { name: "توسيع الشريط الجانبي" }).click();
-    await expect(page.getByTestId("app-sidebar")).toHaveAttribute("data-collapsed", "false");
+    await expect(page.getByTestId("desktop-shell-sidebar")).toHaveAttribute("data-collapsed", "false");
   });
 
-  test("opens the mobile sidebar drawer and routes into settings", async ({ page }) => {
+  test("renders the mobile bottom navigation and routes into settings", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
 
-    await page.getByRole("button", { name: "فتح التنقل" }).click();
-    await expect(page.getByTestId("app-sidebar-drawer")).toBeVisible();
+    await expect(page.getByTestId("mobile-bottom-nav")).toBeVisible();
+    await expect(page.getByTestId("desktop-shell-sidebar")).toBeHidden();
 
-    await page.getByRole("link", { name: "الإعدادات" }).click();
+    await page.getByTestId("mobile-bottom-nav").getByRole("link", { name: "الإعدادات" }).click();
     await expect(page).toHaveURL(/\/settings$/);
-    await expect(page.getByText("إعدادات Planner Hub", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "إعدادات Planner Hub" })).toBeVisible();
   });
 });

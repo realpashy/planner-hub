@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&family=Tajawal:wght@300;400;500;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Heebo:wght@300;400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -64,7 +64,8 @@
   --meal-popup-overlay: radial-gradient(circle at top right, rgba(149,223,30,0.05), transparent 24%);
   --meal-popup-shadow: 0 24px 56px rgba(20, 24, 15, 0.12);
 
-  --font-sans: 'Tajawal', sans-serif;
+  --font-sans: 'IBM Plex Sans Arabic', sans-serif;
+  --font-latin: 'Plus Jakarta Sans', 'IBM Plex Sans Arabic', sans-serif;
   --font-hebrew: 'Heebo', sans-serif;
   --font-serif: Georgia, serif;
   --font-mono: Menlo, monospace;
@@ -96,51 +97,54 @@
   --elevate-1: rgba(255,255,255, .03);
   --elevate-2: rgba(255,255,255, .07);
 
-  --background: 0 0% 9%;
-  --foreground: 0 0% 90%;
-  --border: 0 0% 25%;
-  --card: 0 0% 15%;
-  --card-foreground: 0 0% 90%;
-  --card-border: 0 0% 25%;
-  --sidebar: 0 0% 9%;
-  --sidebar-foreground: 0 0% 90%;
-  --sidebar-border: 0 0% 25%;
-  --sidebar-primary: 84 76% 50%;
+  --background: 0 0% 5.5%;
+  --foreground: 0 0% 92%;
+  --border: 0 0% 18%;
+  --card: 0 0% 10%;
+  --card-foreground: 0 0% 92%;
+  --card-border: 0 0% 18%;
+  --sidebar: 0 0% 4%;
+  --sidebar-foreground: 0 0% 92%;
+  --sidebar-border: 0 0% 14%;
+  --sidebar-primary: 80 98% 65%;
   --sidebar-primary-foreground: 0 0% 0%;
-  --sidebar-accent: 84 76% 50%;
+  --sidebar-accent: 80 98% 65%;
   --sidebar-accent-foreground: 0 0% 0%;
-  --sidebar-ring: 84 76% 50%;
-  --popover: 0 0% 15%;
-  --popover-foreground: 0 0% 90%;
-  --popover-border: 0 0% 25%;
-  --primary: 84 76% 50%;
+  --sidebar-ring: 80 98% 65%;
+  --popover: 0 0% 8%;
+  --popover-foreground: 0 0% 92%;
+  --popover-border: 0 0% 18%;
+  --primary: 80 98% 65%;
   --primary-foreground: 0 0% 0%;
-  --secondary: 0 0% 15%;
+  --secondary: 0 0% 12%;
   --secondary-foreground: 0 0% 90%;
-  --muted: 0 0% 15%;
-  --muted-foreground: 0 0% 64%;
-  --accent: 84 76% 50%;
+  --muted: 0 0% 12%;
+  --muted-foreground: 0 0% 70%;
+  --accent: 80 98% 65%;
   --accent-foreground: 0 0% 0%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
-  --input: 0 0% 25%;
-  --ring: 83 72% 55%;
-  --chart-1: 84 71% 37%;
-  --chart-2: 83 87% 56%;
-  --chart-3: 84 68% 36%;
-  --chart-4: 84 94% 33%;
-  --chart-5: 83 86% 74%;
+  --input: 0 0% 18%;
+  --ring: 80 98% 65%;
+  --chart-1: 80 98% 65%;
+  --chart-2: 260 100% 76%;
+  --chart-3: 18 100% 74%;
+  --chart-4: 190 92% 68%;
+  --chart-5: 0 0% 74%;
 
   --success: 142 71% 50%;
   --success-foreground: 0 0% 100%;
   --warning: 38 92% 55%;
   --warning-foreground: 0 0% 100%;
-  --app-shadow: 2px 2px 1px 1px #0000000d;
-  --surface-canvas: linear-gradient(180deg, rgba(23,23,23,0.98), rgba(20,20,20,1));
-  --surface-card: linear-gradient(180deg, rgba(40,40,40,0.98), rgba(32,32,32,0.98));
-  --surface-muted: linear-gradient(180deg, rgba(33,33,33,0.98), rgba(27,27,27,0.98));
-  --surface-accent: linear-gradient(180deg, rgba(149,223,30,0.18), rgba(149,223,30,0.08));
-  --surface-glow: radial-gradient(circle at top right, rgba(157,223,54,0.14), transparent 38%);
+  --app-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5), 0 0 15px rgba(194, 254, 76, 0.05);
+  --surface-canvas:
+    radial-gradient(circle at top right, rgba(194, 254, 76, 0.08), transparent 22%),
+    radial-gradient(circle at top left, rgba(166, 140, 255, 0.05), transparent 24%),
+    linear-gradient(180deg, rgba(14,14,14,1), rgba(10,10,10,1));
+  --surface-card: linear-gradient(180deg, rgba(26,25,25,0.9), rgba(22,22,22,0.94));
+  --surface-muted: linear-gradient(180deg, rgba(20,20,20,0.9), rgba(18,18,18,0.94));
+  --surface-accent: linear-gradient(135deg, rgba(195,255,77,0.22), rgba(143,199,8,0.12));
+  --surface-glow: radial-gradient(circle at top right, rgba(194,254,76,0.1), transparent 44%);
   --meal-card-overlay: radial-gradient(circle at top right, rgba(149,223,30,0.1), transparent 26%);
   --meal-card-selected-overlay: radial-gradient(circle at top right, rgba(149,223,30,0.14), transparent 28%);
   --meal-soft-overlay: radial-gradient(circle at top right, rgba(149,223,30,0.06), transparent 24%);
@@ -160,6 +164,7 @@
     font-family: var(--font-sans);
     background-image: var(--surface-canvas);
     min-height: 100vh;
+    letter-spacing: -0.01em;
   }
 
   [data-lang="he"] body,
@@ -216,13 +221,13 @@
   }
 
   .surface-shell {
-    @apply border border-border/80 bg-card text-card-foreground;
+    @apply border border-white/[0.04] bg-card/90 text-card-foreground;
     background-image: var(--surface-card), var(--surface-glow);
     box-shadow: var(--app-shadow);
   }
 
   .surface-subtle {
-    @apply border border-border/70 bg-muted text-foreground;
+    @apply border border-white/[0.035] bg-muted/85 text-foreground;
     background-image: var(--surface-muted);
     box-shadow: var(--app-shadow);
   }
@@ -253,13 +258,13 @@
   }
 
   .accent-shell {
-    @apply border border-primary/25 bg-primary/10 text-foreground;
+    @apply border border-primary/18 bg-primary/10 text-foreground;
     background-image: var(--surface-accent);
     box-shadow: var(--app-shadow);
   }
 
   .icon-chip {
-    @apply inline-flex h-9 w-9 items-center justify-center rounded-[5px] border border-primary/25 bg-primary text-primary-foreground dark:border-border/80 dark:bg-background/80 dark:text-primary;
+    @apply inline-flex h-10 w-10 items-center justify-center rounded-[calc(var(--radius)+0.35rem)] border border-white/[0.06] bg-white/[0.045] text-primary;
     box-shadow: var(--app-shadow);
   }
 
@@ -293,6 +298,49 @@
   .premium-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgba(140, 140, 140, 0.88);
     background-clip: padding-box;
+  }
+
+  .hero-mesh {
+    background-image:
+      radial-gradient(circle at 70% 20%, rgba(194,254,76,0.22), transparent 28%),
+      radial-gradient(circle at 30% 80%, rgba(166,140,255,0.14), transparent 26%),
+      linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+  }
+
+  .ai-surface {
+    background-image:
+      radial-gradient(circle at top right, rgba(194,254,76,0.15), transparent 32%),
+      radial-gradient(circle at bottom left, rgba(166,140,255,0.11), transparent 28%),
+      linear-gradient(180deg, rgba(22,22,22,0.92), rgba(18,18,18,0.94));
+  }
+
+  .neon-glow {
+    box-shadow: 0 0 0 1px rgba(195,255,77,0.1), 0 0 28px rgba(195,255,77,0.22), 0 18px 36px rgba(0,0,0,0.34);
+  }
+
+  .shell-search {
+    @apply h-12 rounded-[calc(var(--radius)+0.55rem)] border border-white/[0.05] bg-white/[0.04] text-right text-sm text-foreground placeholder:text-muted-foreground/80 backdrop-blur-xl;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+  }
+
+  .shell-nav-link {
+    @apply relative flex items-center gap-3 rounded-[calc(var(--radius)+0.55rem)] px-3 py-3 text-right text-sm font-semibold text-muted-foreground transition-all duration-200;
+  }
+
+  .shell-nav-link:hover {
+    background: rgba(255,255,255,0.04);
+    color: hsl(var(--foreground));
+  }
+
+  .shell-nav-link-active {
+    background: linear-gradient(135deg, rgba(195,255,77,0.18), rgba(195,255,77,0.08));
+    color: hsl(var(--foreground));
+    box-shadow: 0 0 0 1px rgba(195,255,77,0.08), 0 12px 24px rgba(0,0,0,0.28);
+  }
+
+  .shell-glass {
+    @apply border border-white/[0.04] bg-black/35 backdrop-blur-2xl;
+    box-shadow: 0 14px 36px rgba(0,0,0,0.28);
   }
 
   .rtl-title-stack {
@@ -729,6 +777,7 @@
   unicode-bidi: bidi-override;
   display: inline-block;
   font-variant-numeric: tabular-nums;
+  font-family: var(--font-latin);
 }
 
 /* ── Habits module utilities ─────────────────────────────────────────────── */
@@ -738,6 +787,7 @@
   unicode-bidi: bidi-override;
   display: inline-block;
   font-variant-numeric: tabular-nums;
+  font-family: var(--font-latin);
 }
 
 /* Heatmap cell sizing helper */

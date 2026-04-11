@@ -68,6 +68,20 @@ export interface DashboardQuickAction {
   accent: string;
 }
 
+export interface DashboardHeroStat {
+  key: string;
+  label: string;
+  value: string;
+  delta?: string;
+  tone: string;
+}
+
+export interface DashboardTrendPoint {
+  label: string;
+  value: number;
+  secondary?: number;
+}
+
 export interface DashboardRecentItem {
   path: string;
   label: string;
@@ -80,6 +94,7 @@ export interface DashboardViewModel {
   greeting: string;
   dateLabel: string;
   summaryLine: string;
+  heroStats: DashboardHeroStat[];
   topPriorities: string[];
   overdueCount: number;
   atRiskHabits: string[];
@@ -89,6 +104,9 @@ export interface DashboardViewModel {
   moduleCards: DashboardModuleCard[];
   quickActions: DashboardQuickAction[];
   recentItems: DashboardRecentItem[];
+  budgetSeries: DashboardTrendPoint[];
+  cashflowSeries: DashboardTrendPoint[];
+  habitsSeries: DashboardTrendPoint[];
   progressCards: Array<{ key: string; label: string; value: string; tone: string; hint: string }>;
 }
 
@@ -175,6 +193,13 @@ function formatCurrency(value: number) {
     maximumFractionDigits: 0,
   }).format(Math.abs(value));
   return `₪ ${formatted}`;
+}
+
+function formatCompactNumber(value: number) {
+  return new Intl.NumberFormat("en", {
+    notation: "compact",
+    maximumFractionDigits: value >= 10000 ? 1 : 0,
+  }).format(value);
 }
 
 function formatArabicDate(date: Date) {
@@ -415,6 +440,68 @@ function buildModuleCards(): DashboardModuleCard[] {
   ];
 }
 
+function buildBudgetSeries(transactions: BudgetTransaction[], monthKey: string, monthlyLimit: number): DashboardTrendPoint[] {
+  const outflows = transactions
+    .filter((transaction) => transaction.type === "expense" && transaction.date.startsWith(monthKey))
+    .reduce<Record<number, number>>((acc, transaction) => {
+      const day = new Date(transaction.date).getDate();
+      const bucket = day <= 7 ? 1 : day <= 14 ? 2 : day <= 21 ? 3 : 4;
+      acc[bucket] = (acc[bucket] ?? 0) + transaction.amount;
+      return acc;
+    }, {});
+
+  return [
+    { label: "الأسبوع 1", value: outflows[1] ?? 0, secondary: monthlyLimit / 4 },
+    { label: "الأسبوع 2", value: outflows[2] ?? 0, secondary: monthlyLimit / 4 },
+    { label: "الأسبوع 3", value: outflows[3] ?? 0, secondary: monthlyLimit / 4 },
+    { label: "الأسبوع 4", value: outflows[4] ?? 0, secondary: monthlyLimit / 4 },
+  ];
+}
+
+function buildCashflowSeries(cashflow: ReturnType<typeof loadCashflowData>, todayIso: string): DashboardTrendPoint[] {
+  const days = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(todayIso);
+    date.setDate(date.getDate() - (6 - index));
+    return date.toISOString().slice(0, 10);
+  });
+
+  let rollingBalance = 0;
+  return days.map((day) => {
+    const dailyNet = cashflow.transactions
+      .filter((transaction) => transaction.date === day)
+      .reduce((sum, transaction) => sum + (transaction.type === "income" ? transaction.amount : -transaction.amount), 0);
+    rollingBalance += dailyNet;
+    return {
+      label: new Intl.DateTimeFormat("ar", { weekday: "short" }).format(new Date(day)),
+      value: rollingBalance,
+    };
+  });
+}
+
+function buildHabitsSeries(habits: ReturnType<typeof loadHabitsState>, todayIso: string): DashboardTrendPoint[] {
+  const days = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(todayIso);
+    date.setDate(date.getDate() - (6 - index));
+    return date.toISOString().slice(0, 10);
+  });
+
+  return days.map((day) => {
+    const total = habits.habits.length || 1;
+    const completed = habits.habits.reduce((count, habit) => {
+      const value = getHabitValueForDate(habit, habits.logs, day);
+      const done = habit.type === "binary" || habit.trackingMode === "check"
+        ? value >= 1
+        : value >= habit.target;
+      return count + (done ? 1 : 0);
+    }, 0);
+
+    return {
+      label: new Intl.DateTimeFormat("ar", { weekday: "short" }).format(new Date(day)),
+      value: Math.round((completed / total) * 100),
+    };
+  });
+}
+
 function getOverdueTasks(planner: PlannerData, todayIso: string) {
   return planner.tasks.filter((task) => !task.completed && ((task.deadline && task.deadline < todayIso) || task.date < todayIso));
 }
@@ -581,6 +668,36 @@ export function buildDashboardViewModel(): DashboardViewModel {
       habitsSummary.progressPercent >= 70
         ? "اليوم يبدو متوازنًا ويمكنك إغلاقه بثبات."
         : "اختر خطوة صغيرة الآن لتمنح اليوم زخمًا واضحًا.",
+    heroStats: [
+      {
+        key: "budget",
+        label: "رصيد الميزانية",
+        value: formatCompactNumber(Math.round(remainingBudget)),
+        delta: "المتبقي الآن",
+        tone: "text-primary",
+      },
+      {
+        key: "habits",
+        label: "إكمال العادات",
+        value: `${habitsSummary.progressPercent}%`,
+        delta: `${habitsSummary.bestStreak}+`,
+        tone: "text-[#a68cff]",
+      },
+      {
+        key: "overdue",
+        label: "مهام متأخرة",
+        value: String(overdueTasks.length),
+        delta: overdueTasks.length > 0 ? "تحتاج قرارًا" : "الوضع هادئ",
+        tone: "text-[#ff9c7e]",
+      },
+      {
+        key: "priorities",
+        label: "أولويات اليوم",
+        value: String(topPriorities.length || context.planner.tasksToday),
+        delta: "جاهزة للانطلاق",
+        tone: "text-primary",
+      },
+    ],
     topPriorities,
     overdueCount: overdueTasks.length,
     atRiskHabits,
@@ -633,6 +750,9 @@ export function buildDashboardViewModel(): DashboardViewModel {
       },
     ],
     recentItems: loadDashboardRecentItems().filter((item) => item.path !== "/").slice(0, 4),
+    budgetSeries: buildBudgetSeries(budget.transactions, monthKey, budget.settings.monthlyLimit),
+    cashflowSeries: buildCashflowSeries(cashflow, todayIso),
+    habitsSeries: buildHabitsSeries(habits, todayIso),
     progressCards: [
       {
         key: "today",

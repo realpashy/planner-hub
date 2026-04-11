@@ -2,9 +2,46 @@
 
 This file is the visual source of truth for Planner Hub. New UI must match this implemented system, not default shadcn styling.
 
+## Current direction: Lumina Noir
+
+Planner Hub now uses a **Lumina Noir** visual language for the shared app shell, dashboard, floating surfaces, and any newly built premium screens.
+
+The intended feeling is:
+
+- deep black canvas, not gray admin panels
+- atmospheric depth through glow and tonal layers, not border boxes
+- premium Arabic-first hierarchy
+- sharp lime used as energy and focus, not as a generic fill color
+- glassy overlays and utility chrome that feel modern and light
+
+When a screen is choosing between the older border-led v0 treatment and the newer shell/dashboard language, the **Lumina Noir shell language wins** for:
+
+- app shell
+- home dashboard
+- top bars
+- sidebars and bottom navigation
+- modals, drawers, tooltips, dropdowns
+- shared card families that appear in cross-module surfaces
+
 ## Core tokens
 
 ### Dark-first palette
+
+Primary shell/dashboard tokens:
+
+- background: `#0e0e0e`
+- card / module surface: `#171717` to `#1a1919`
+- bright interaction surface: `#232323` to `#2c2c2c`
+- foreground: `#f3f3f3`
+- muted foreground: `#adaaaa`
+- primary / sharp lime: `#c2fe4c`
+- primary container: `#8fc708`
+- secondary accent / violet: `#a68cff`
+- tertiary alert / coral: `#ff9c7e`
+- ghost border fallback: `rgba(119, 117, 115, 0.15)`
+- ambient shadow: `0 20px 40px -10px rgba(0, 0, 0, 0.5), 0 0 15px rgba(194, 254, 76, 0.05)`
+
+Legacy module-specific tokens can continue to exist internally where a module has not been restyled yet, but new shared UI should start from the Lumina Noir palette first.
 
 - primary: `#95df1e`
 - primary foreground: `#000000`
@@ -101,6 +138,7 @@ Avoid one-off spacing unless a real layout constraint requires it.
 - cards and section shells: around `radius + 0.5rem` to `radius + 1rem`
 - inner surfaces: around `radius + 0.25rem` to `radius + 0.5rem`
 - pills, chips, meta badges: `rounded-full`
+- main shell containers and large editorial dashboard cards may stretch up to `rounded-[1.5rem]` when that helps the premium hierarchy
 
 ## Shadow
 
@@ -110,7 +148,18 @@ Base system shadow:
 
 Use it as the standard soft elevation layer. Larger shadows are allowed only for major hover states, modals, and drawers.
 
+For Lumina Noir hero modules, the preferred elevation is an **ambient glow**, not a dark smudge:
+
+- `0 20px 40px -10px rgba(0, 0, 0, 0.5), 0 0 15px rgba(194, 254, 76, 0.05)`
+
+If contrast is needed, prefer a ghost border over a visible border wall.
+
 ## Typography hierarchy
+
+Typography pairing:
+
+- Arabic UI: `IBM Plex Sans Arabic`
+- Latin and numeric emphasis: `Plus Jakarta Sans`
 
 - page title: bold / black, high contrast, largest type in the section
 - section title: bold, compact, clearly separated from body copy
@@ -120,6 +169,12 @@ Use it as the standard soft elevation layer. Larger shadows are allowed only for
 - numeric highlight: bold or black, stronger than its label
 
 Arabic content defaults to right alignment unless the content itself is numeric or intentionally LTR.
+
+For mixed Arabic + numeric surfaces:
+
+- keep the wrapper Arabic-first and right-aligned
+- isolate numbers with the Latin/numeric family only where needed
+- do not let Latin font defaults leak into full Arabic title stacks
 
 ## Surface strategy
 
@@ -131,6 +186,8 @@ Use a layered dark surface system:
 - section shell: elevated dark surface
 - subtle shell: quieter inner surface
 - accent shell: limited to high-signal callouts
+- shell glass: semi-transparent dark surface with backdrop blur for top bars, dropdowns, dialogs, and search
+- AI surface: a distinct premium surface with lime or violet atmospheric tint so AI never looks like a normal module card
 
 Major zones should have restrained differentiation:
 
@@ -144,6 +201,19 @@ Major zones should have restrained differentiation:
 
 Do not make every surface the same charcoal block.
 
+### The no-line rule
+
+Heavy visible borders are not allowed on premium shell/dashboard surfaces.
+
+Separate modules and cards using:
+
+1. tonal background shifts
+2. ambient glow
+3. blur and transparency
+4. negative space
+
+Use a ghost border only when accessibility contrast truly needs reinforcement.
+
 ## Buttons
 
 - primary buttons use lime background with black text
@@ -156,10 +226,16 @@ Do not make every surface the same charcoal block.
   - active
   - disabled
 
+For Lumina Noir hero actions:
+
+- the primary CTA may use a subtle neon outer glow
+- the secondary CTA should feel glassy and premium, not like a flat outline button
+
 ## Cards and stat families
 
 - cards should feel compact, elevated, and readable
 - avoid oversized empty space
+- primary dashboard cards should read as tonal modules, not bordered tiles
 - summary stat cards in the same row must feel like one family:
   - same height
   - same padding
@@ -170,6 +246,14 @@ Do not make every surface the same charcoal block.
 - premium card headers that use a tinted or glowing top accent must size that tint to the real rendered header area, not to a short fixed height
 - if a glow stops above the subtitle or badge stack, the header layer is wrong even if the card padding looks correct
 - when the same header-tint pattern exists across modules, move it into a shared utility or shared card recipe instead of repeating one-off `h-*` overlays
+
+### Lumina Noir shell card rules
+
+- avoid internal divider lines inside premium cards
+- use spacing or nested tonal blocks instead
+- card headers should often include a small accent icon chip on the top-right in RTL
+- AI cards may use a distinct grain, mesh, or atmospheric gradient layer to feel separate from standard module cards
+- charts belong inside calm surfaces with strong negative space, not boxed mini-panels inside a bordered container
 
 ### RTL summary-card composition rule
 
@@ -226,6 +310,25 @@ For Hebrew/Arabic summary widgets, treat the card content as a single anchored c
   - compact progress or list transitions
 
 Avoid decorative loops and fake progress behavior.
+
+For the app shell and dashboard:
+
+- sidebar collapse/expand should feel smooth and architectural, not springy or playful
+- hover elevation should be short and restrained
+- glowing elements should not pulse endlessly
+- mobile bottom navigation should feel responsive and premium without bouncing
+
+## Shell layout rules
+
+Planner Hub now uses a shared shell.
+
+- desktop navigation lives in a permanent **right sidebar**
+- mobile navigation uses a **fixed bottom navigation**
+- top utility chrome uses a glassy top bar, not module tabs
+- module pages live inside the shell content region
+- settings belongs to the same shell system
+
+Do not reintroduce ad hoc top navigation bars for module switching on authenticated screens.
 
 ## Mandatory reuse rule
 

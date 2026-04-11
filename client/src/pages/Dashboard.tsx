@@ -8,14 +8,25 @@ import {
   Bot,
   CalendarClock,
   Check,
-  CircleDollarSign,
   LayoutGrid,
   Loader2,
-  Salad,
   Sparkles,
   Target,
   TriangleAlert,
+  Wallet,
 } from "lucide-react";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  PolarAngleAxis,
+  RadialBar,
+  RadialBarChart,
+  ResponsiveContainer,
+  Tooltip,
+} from "recharts";
 import { useAuth } from "@/lib/auth";
 import {
   buildDashboardViewModel,
@@ -27,6 +38,7 @@ import {
   type DashboardModuleCard,
   type DashboardQuickAction,
   type DashboardTimelineItem,
+  type DashboardTrendPoint,
 } from "@/lib/dashboard";
 import {
   getDashboardContextHash,
@@ -35,7 +47,7 @@ import {
   saveCachedDashboardBrief,
 } from "@/lib/ai/dashboard-assistant";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -46,6 +58,13 @@ import { getPlannerData, savePlannerData } from "@/lib/storage";
 import type { DashboardAssistantAction, DashboardAssistantResult } from "@shared/ai/dashboard-assistant";
 
 type QuickActionKey = DashboardQuickAction["key"] | null;
+
+const SECTION_REVEAL = {
+  initial: { opacity: 0, y: 18 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, amount: 0.2 },
+  transition: { duration: 0.45, ease: "easeOut" as const },
+};
 
 function SectionHeader({
   kicker,
@@ -61,71 +80,75 @@ function SectionHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="rtl-title-row items-start">
-      <div className="space-y-2 flex-1">
-        {kicker ? (
-          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-primary/[0.08] px-3 py-1 text-xs font-semibold text-primary">
-            <Sparkles className="h-3.5 w-3.5" />
-            {kicker}
+    <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start gap-3 text-right">
+        <div className="icon-chip h-11 w-11 rounded-[calc(var(--radius)+0.45rem)]">
+          <Icon className="h-4.5 w-4.5" />
+        </div>
+        <div className="space-y-2 text-right">
+          {kicker ? (
+            <div className="inline-flex items-center gap-2 rounded-full bg-primary/12 px-3 py-1 text-xs font-semibold text-primary">
+              <Sparkles className="h-3.5 w-3.5" />
+              {kicker}
+            </div>
+          ) : null}
+          <div>
+            <h2 className="text-xl font-black text-foreground md:text-2xl">{title}</h2>
+            <p className="mt-1 text-sm leading-7 text-muted-foreground">{description}</p>
           </div>
-        ) : null}
-        <div className="space-y-1">
-          <h2 className="text-xl font-black text-foreground md:text-2xl">{title}</h2>
-          <p className="text-sm leading-7 text-muted-foreground">{description}</p>
         </div>
       </div>
       {action}
-      <div className="icon-chip h-12 w-12 rounded-[calc(var(--radius)+0.45rem)]">
-        <Icon className="h-5 w-5" />
-      </div>
     </div>
   );
 }
 
-function ModuleCard({ card }: { card: DashboardModuleCard }) {
-  const Icon = card.icon;
+function HeroStatCard({
+  label,
+  value,
+  delta,
+  tone,
+}: {
+  label: string;
+  value: string;
+  delta?: string;
+  tone: string;
+}) {
   return (
-    <Link href={card.href} className="group block h-full outline-none">
-      <motion.div whileHover={{ y: -5 }} whileTap={{ scale: 0.995 }} className="h-full">
-        <Card className="surface-shell relative h-full overflow-hidden rounded-[calc(var(--radius)+1rem)] border-border/70">
-          <div className={cn("pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b", card.accent)} />
-          <CardHeader className="relative gap-5 text-right">
-            <div className="rtl-title-row">
-              <div className="space-y-2 flex-1">
-                <div className="inline-flex w-fit rounded-full border border-border/70 bg-background/65 px-3 py-1 text-[11px] font-semibold text-muted-foreground">
-                  {card.status}
-                </div>
-                <div>
-                  <CardTitle className="text-xl">{card.title}</CardTitle>
-                  <p className="mt-1 text-sm leading-6 text-muted-foreground">{card.subtitle}</p>
-                </div>
-              </div>
-              <div className="icon-chip h-12 w-12 rounded-[calc(var(--radius)+0.45rem)]">
-                <Icon className="h-5 w-5" />
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="relative space-y-4">
-            <div className="grid gap-3 sm:grid-cols-2">
-              {card.metrics.map((metric) => (
-                <div key={metric.label} className="surface-subtle rounded-[calc(var(--radius)+0.45rem)] p-3 text-right">
-                  <p className="text-xs font-semibold text-muted-foreground">{metric.label}</p>
-                  <p className="mt-1 text-lg font-black text-foreground">{metric.value}</p>
-                </div>
-              ))}
-            </div>
-            <div className="flex items-center justify-between rounded-[calc(var(--radius)+0.45rem)] border border-border/70 bg-background/55 px-4 py-3">
-              <ArrowUpLeft className="h-4.5 w-4.5 text-primary transition-transform duration-200 group-hover:-translate-x-1 group-hover:-translate-y-1" />
-              <p className="text-sm font-bold text-foreground">{card.cta}</p>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-    </Link>
+    <motion.div whileHover={{ y: -4 }} className="surface-subtle rounded-[calc(var(--radius)+0.8rem)] p-5">
+      <div className="space-y-4 text-right">
+        {delta ? <p className={cn("text-sm font-semibold", tone)}>{delta}</p> : null}
+        <div>
+          <p className="habits-number text-[2.2rem] font-black leading-none text-foreground">{value}</p>
+          <p className="mt-2 text-sm text-muted-foreground">{label}</p>
+        </div>
+      </div>
+    </motion.div>
   );
 }
 
-function TimelineItemCard({
+function DashboardChartTooltip({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: Array<{ payload?: DashboardTrendPoint }>;
+}) {
+  if (!active || !payload?.length || !payload[0]?.payload) return null;
+  const point = payload[0].payload;
+
+  return (
+    <div className="rounded-[calc(var(--radius)+0.5rem)] bg-[#121212]/95 px-3 py-2 text-right shadow-[0_18px_40px_rgba(0,0,0,0.42)] backdrop-blur-xl">
+      <p className="text-xs font-semibold text-muted-foreground">{point.label}</p>
+      <p className="mt-1 text-sm font-black text-foreground">{point.value}</p>
+      {typeof point.secondary === "number" ? (
+        <p className="mt-1 text-[11px] text-muted-foreground">المرجع {Math.round(point.secondary)}</p>
+      ) : null}
+    </div>
+  );
+}
+
+function TimelineCard({
   item,
   onQuickToggle,
 }: {
@@ -134,16 +157,30 @@ function TimelineItemCard({
 }) {
   return (
     <Link href={item.href} className="block">
-      <motion.div whileHover={{ y: -3 }} className="surface-shell rounded-[calc(var(--radius)+0.75rem)] border-border/70 p-4">
-        <div className="grid items-center gap-4 md:grid-cols-[18%_1fr_auto]">
+      <motion.div whileHover={{ y: -3, x: -1 }} whileTap={{ scale: 0.995 }} className="group surface-subtle relative overflow-hidden rounded-[calc(var(--radius)+0.8rem)] px-4 py-4">
+        <div className="absolute left-0 top-4 h-[70%] w-[3px] rounded-full bg-white/6">
+          <div
+            className={cn(
+              "absolute inset-y-0 left-0 w-full rounded-full",
+              item.status === "attention"
+                ? "bg-[#ff9c7e]"
+                : item.status === "done"
+                  ? "bg-primary"
+                  : "bg-[#a68cff]",
+            )}
+          />
+        </div>
+
+        <div className="grid items-center gap-4 md:grid-cols-[18%_1fr_18%]">
           <div className="flex items-center justify-center">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-[calc(var(--radius)+0.4rem)] border border-primary/25 bg-background/70 text-xl shadow-[0_0_0_1px_rgba(149,223,30,0.12),0_0_18px_rgba(149,223,30,0.12)]">
+            <div className="inline-flex h-12 w-12 items-center justify-center rounded-[calc(var(--radius)+0.55rem)] bg-white/[0.05] text-xl shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
               {item.icon}
             </div>
           </div>
+
           <div className="space-y-3 text-right">
             <div className="space-y-1">
-              <p className="text-sm font-black leading-tight text-foreground">{item.title}</p>
+              <p className="text-base font-black text-foreground">{item.title}</p>
               <div className="flex flex-wrap items-center justify-start gap-x-3 gap-y-1 text-xs text-muted-foreground">
                 <span>{item.timeLabel}</span>
                 <span>{item.subtitle}</span>
@@ -153,9 +190,9 @@ function TimelineItemCard({
               <div className="flex justify-start">
                 <Button
                   type="button"
-                  size="sm"
                   variant="outline"
-                  className="h-9 rounded-[calc(var(--radius)+0.35rem)] border-primary/25 bg-primary/[0.08] text-primary"
+                  size="sm"
+                  className="h-9 rounded-[calc(var(--radius)+0.4rem)] bg-white/[0.05]"
                   onClick={(event) => {
                     event.preventDefault();
                     onQuickToggle(item);
@@ -167,22 +204,163 @@ function TimelineItemCard({
               </div>
             ) : null}
           </div>
+
           <div className="space-y-2 text-left">
-            <p className="text-xs font-semibold text-muted-foreground">{item.module === "planner" ? "المخطط" : item.module === "habits" ? "العادات" : item.module === "meal" ? "الوجبات" : item.module === "budget" ? "الميزانية" : "النقدي"}</p>
+            <p className="text-xs font-semibold text-muted-foreground">
+              {item.module === "planner"
+                ? "المخطط"
+                : item.module === "habits"
+                  ? "العادات"
+                  : item.module === "meal"
+                    ? "الوجبات"
+                    : item.module === "budget"
+                      ? "الميزانية"
+                      : "النقدي"}
+            </p>
             <div
               className={cn(
-                "rounded-full px-2 py-1 text-[10px] font-semibold",
+                "inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold",
                 item.status === "attention"
-                  ? "bg-amber-500/[0.15] text-amber-300"
+                  ? "bg-[#ff9c7e]/15 text-[#ffb69f]"
                   : item.status === "done"
-                    ? "bg-emerald-500/[0.15] text-emerald-300"
-                    : "bg-sky-500/[0.15] text-sky-300",
+                    ? "bg-primary/15 text-primary"
+                    : "bg-[#a68cff]/14 text-[#c6b8ff]",
               )}
             >
-              {item.status === "attention" ? "يتطلب انتباهًا" : item.status === "done" ? "مكتمل" : "قادم اليوم"}
+              {item.status === "attention" ? "يتطلب انتباهًا" : item.status === "done" ? "مكتمل" : "قادم"}
             </div>
           </div>
         </div>
+      </motion.div>
+    </Link>
+  );
+}
+
+function ModuleChart({ card, budgetSeries, cashflowSeries, habitsSeries }: {
+  card: DashboardModuleCard;
+  budgetSeries: DashboardTrendPoint[];
+  cashflowSeries: DashboardTrendPoint[];
+  habitsSeries: DashboardTrendPoint[];
+}) {
+  if (card.key === "budget") {
+    return (
+      <div className="h-28">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={budgetSeries}>
+            <defs>
+              <linearGradient id="budget-glow" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stopColor="#c2fe4c" stopOpacity={0.35} />
+                <stop offset="100%" stopColor="#c2fe4c" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.04)" />
+            <Tooltip content={<DashboardChartTooltip />} />
+            <Area type="monotone" dataKey="value" stroke="#c2fe4c" strokeWidth={3} fill="url(#budget-glow)" />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    );
+  }
+
+  if (card.key === "cashflow") {
+    return (
+      <div className="h-24">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={cashflowSeries}>
+            <Tooltip content={<DashboardChartTooltip />} />
+            <Line type="monotone" dataKey="value" stroke="#a68cff" strokeWidth={3} dot={false} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    );
+  }
+
+  if (card.key === "habits") {
+    return (
+      <div className="flex h-28 items-center justify-between gap-4">
+        <div className="h-24 w-24 shrink-0">
+          <ResponsiveContainer width="100%" height="100%">
+            <RadialBarChart
+              data={[{ value: Number(card.metrics[0]?.value.replace("%", "")) || 0 }]}
+              startAngle={210}
+              endAngle={-30}
+              innerRadius="72%"
+              outerRadius="100%"
+              barSize={10}
+            >
+              <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
+              <RadialBar dataKey="value" cornerRadius={999} fill="#c2fe4c" background={{ fill: "rgba(255,255,255,0.06)" }} />
+            </RadialBarChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="grid flex-1 grid-cols-3 gap-2">
+          {habitsSeries.slice(-3).map((point) => (
+            <div key={point.label} className="rounded-[calc(var(--radius)+0.45rem)] bg-white/[0.04] px-2 py-3 text-center">
+              <p className="text-xs text-muted-foreground">{point.label}</p>
+              <p className="mt-2 habits-number text-sm font-black text-foreground">{point.value}%</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      {card.metrics.map((metric) => (
+        <div key={metric.label} className="rounded-[calc(var(--radius)+0.5rem)] bg-white/[0.04] p-3 text-right">
+          <p className="text-xs font-semibold text-muted-foreground">{metric.label}</p>
+          <p className="mt-2 text-lg font-black text-foreground">{metric.value}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ModuleCard({
+  card,
+  budgetSeries,
+  cashflowSeries,
+  habitsSeries,
+}: {
+  card: DashboardModuleCard;
+  budgetSeries: DashboardTrendPoint[];
+  cashflowSeries: DashboardTrendPoint[];
+  habitsSeries: DashboardTrendPoint[];
+}) {
+  const Icon = card.icon;
+
+  return (
+    <Link href={card.href} className="group block h-full outline-none">
+      <motion.div whileHover={{ y: -5 }} whileTap={{ scale: 0.996 }} className="h-full">
+        <Card className="surface-shell relative h-full overflow-hidden">
+          <div className={cn("pointer-events-none absolute inset-x-0 top-0 h-36 bg-gradient-to-b", card.accent)} />
+          <CardContent className="relative space-y-5 p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3 text-right">
+                <div className="icon-chip h-12 w-12 rounded-[calc(var(--radius)+0.55rem)]">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div className="space-y-2 text-right">
+                  <div className="inline-flex rounded-full bg-white/[0.05] px-3 py-1 text-[11px] font-semibold text-muted-foreground">
+                    {card.status}
+                  </div>
+                  <div>
+                    <p className="text-xl font-black text-foreground">{card.title}</p>
+                    <p className="mt-1 text-sm leading-6 text-muted-foreground">{card.subtitle}</p>
+                  </div>
+                </div>
+              </div>
+              <ArrowUpLeft className="h-4.5 w-4.5 text-primary transition-transform duration-200 group-hover:-translate-x-1 group-hover:-translate-y-1" />
+            </div>
+
+            <ModuleChart card={card} budgetSeries={budgetSeries} cashflowSeries={cashflowSeries} habitsSeries={habitsSeries} />
+
+            <div className="rounded-[calc(var(--radius)+0.55rem)] bg-white/[0.04] px-4 py-3 text-right">
+              <p className="text-sm font-semibold text-foreground">{card.cta}</p>
+            </div>
+          </CardContent>
+        </Card>
       </motion.div>
     </Link>
   );
@@ -214,10 +392,7 @@ export default function Dashboard() {
       }),
     [habitsState, viewModel.isoDate],
   );
-  const dashboardContextHash = useMemo(
-    () => getDashboardContextHash(viewModel.context),
-    [viewModel.context],
-  );
+  const dashboardContextHash = useMemo(() => getDashboardContextHash(viewModel.context), [viewModel.context]);
 
   const assistantMutation = useMutation({
     mutationFn: async (action: DashboardAssistantAction) => requestDashboardAssistant(action, viewModel.context),
@@ -247,11 +422,14 @@ export default function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewModel.isoDate, dashboardContextHash]);
 
-  const groupedTimeline = useMemo(() => ({
-    morning: viewModel.timeline.filter((item) => item.bucket === "morning"),
-    afternoon: viewModel.timeline.filter((item) => item.bucket === "afternoon"),
-    evening: viewModel.timeline.filter((item) => item.bucket === "evening"),
-  }), [viewModel.timeline]);
+  const groupedTimeline = useMemo(
+    () => ({
+      morning: viewModel.timeline.filter((item) => item.bucket === "morning"),
+      afternoon: viewModel.timeline.filter((item) => item.bucket === "afternoon"),
+      evening: viewModel.timeline.filter((item) => item.bucket === "evening"),
+    }),
+    [viewModel.timeline],
+  );
 
   const handlePlannerToggle = (item: DashboardTimelineItem) => {
     const planner = getPlannerData();
@@ -340,113 +518,132 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="mx-auto max-w-[1600px] space-y-6" dir="rtl">
+    <div className="mx-auto max-w-[1600px] space-y-7" dir="rtl">
       {preferences.visibleWidgets.hero ? (
-        <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-          <Card className="surface-shell relative overflow-hidden rounded-[calc(var(--radius)+1.2rem)] border-primary/15">
-            <div className="premium-header-glow premium-header-glow-primary" />
-            <CardContent className="relative p-6 md:p-8">
-              <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-                <div className="space-y-5 text-right">
-                  <div className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-primary/[0.08] px-3 py-1 text-xs font-semibold text-primary">
-                    <Sparkles className="h-3.5 w-3.5" />
-                    {viewModel.dateLabel}
+        <motion.section {...SECTION_REVEAL}>
+          <div className="grid gap-5 xl:grid-cols-[0.78fr_1.22fr]">
+            <Card className="ai-surface overflow-hidden">
+              <CardContent className="space-y-5 p-6">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="icon-chip h-12 w-12 rounded-[calc(var(--radius)+0.55rem)]">
+                    <Sparkles className="h-5 w-5" />
                   </div>
-                  <div className="space-y-3">
-                    <h1 className="text-3xl font-black tracking-tight text-foreground md:text-5xl">
-                      {viewModel.greeting}
-                      {auth.user?.displayName ? `، ${auth.user.displayName}` : ""}
-                    </h1>
-                    <p className="max-w-3xl text-base leading-8 text-muted-foreground">
-                      {dailyBrief?.summary || viewModel.summaryLine}
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap justify-start gap-3">
-                    <Button
-                      className="h-12 rounded-[calc(var(--radius)+0.55rem)] px-5 font-bold"
-                      onClick={() => document.getElementById("dashboard-timeline")?.scrollIntoView({ behavior: "smooth", block: "start" })}
-                    >
-                      ابدأ يومي الآن
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="h-12 rounded-[calc(var(--radius)+0.55rem)] px-5 font-bold"
-                      onClick={() => setOpenQuickAction("task")}
-                    >
-                      إضافة مهمة
-                    </Button>
+                  <div className="space-y-2 text-right">
+                    <p className="text-sm font-semibold text-[#c6b8ff]">مساعد الذكاء الاصطناعي</p>
+                    <h2 className="text-3xl font-black text-foreground">أفضل خطوة الآن</h2>
                   </div>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                  <div className="surface-subtle rounded-[calc(var(--radius)+0.75rem)] p-4 text-right">
-                    <p className="text-xs font-semibold text-muted-foreground">ملخص اليوم</p>
-                    <p className="mt-2 text-xl font-black text-foreground">
-                      {dailyBrief?.headline || "جاري تجهيز الملخص..."}
-                    </p>
-                    {assistantMutation.isPending && !dailyBrief ? (
-                      <div className="mt-3 h-16 animate-pulse rounded-[calc(var(--radius)+0.35rem)] bg-muted/80" />
-                    ) : (
-                      <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                        {dailyBrief?.bullets?.[0] || "نجمع الإشارات الأهم من يومك ووحداتك الآن."}
-                      </p>
-                    )}
+                <div className="rounded-[calc(var(--radius)+0.8rem)] bg-[#a68cff]/18 px-5 py-6 text-right shadow-[inset_0_0_0_1px_rgba(166,140,255,0.2)]">
+                  <p className="text-base leading-8 text-foreground">
+                    {dailyBrief?.summary || "نراجع يومك الآن ونبني أفضل اقتراح سريع قبل ضغط المساء."}
+                  </p>
+                </div>
+
+                <Button
+                  variant="outline"
+                  className="h-12 w-full rounded-[calc(var(--radius)+0.55rem)] text-base font-bold"
+                  onClick={() => setLocation(dailyBrief?.bestNextAction.href || "/weekly-planner")}
+                >
+                  تطبيق الاقتراح
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="hero-mesh overflow-hidden">
+              <CardContent className="space-y-6 p-6 md:p-8">
+                <div className="flex flex-wrap items-center justify-start gap-2">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-[#a68cff]/14 px-3 py-1 text-xs font-semibold text-[#c6b8ff]">
+                    أسبوع منظم
                   </div>
-                  <div className="surface-subtle rounded-[calc(var(--radius)+0.75rem)] p-4 text-right">
-                    <p className="text-xs font-semibold text-muted-foreground">أفضل خطوة تالية</p>
-                    <p className="mt-2 text-lg font-black text-foreground">
-                      {dailyBrief?.bestNextAction.label || "مراجعة أولويات اليوم"}
-                    </p>
-                    <Button
-                      variant="ghost"
-                      className="mt-3 h-10 rounded-[calc(var(--radius)+0.35rem)] px-3 font-semibold text-primary"
-                      onClick={() => setLocation(dailyBrief?.bestNextAction.href || "/weekly-planner")}
-                    >
-                      افتح الآن
-                    </Button>
+                  <div className="inline-flex items-center gap-2 rounded-full bg-primary/14 px-3 py-1 text-xs font-semibold text-primary">
+                    نشط الآن
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+
+                <div className="space-y-3 text-right">
+                  <p className="text-sm font-semibold text-muted-foreground">{viewModel.dateLabel}</p>
+                  <h1 className="text-4xl font-black leading-tight text-foreground md:text-[3.65rem]">
+                    مرحبًا{auth.user?.displayName ? `، ${auth.user.displayName}` : ""}
+                  </h1>
+                  <p className="max-w-3xl text-lg leading-8 text-muted-foreground">
+                    {dailyBrief?.headline || `${viewModel.greeting}. ${viewModel.summaryLine}`}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap justify-start gap-3">
+                  <Button
+                    className="neon-glow h-12 rounded-[calc(var(--radius)+0.65rem)] px-6 text-base font-black"
+                    onClick={() => document.getElementById("dashboard-timeline")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                  >
+                    ابدأ يومي
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-12 rounded-[calc(var(--radius)+0.65rem)] px-6 text-base font-bold"
+                    onClick={() => setOpenQuickAction("task")}
+                  >
+                    أضف مهمة الآن
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </motion.section>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+      {preferences.visibleWidgets.hero ? (
+        <motion.section {...SECTION_REVEAL}>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {viewModel.heroStats.map((stat) => (
+              <HeroStatCard key={stat.key} label={stat.label} value={stat.value} delta={stat.delta} tone={stat.tone} />
+            ))}
+          </div>
+        </motion.section>
+      ) : null}
+
+      <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
         <div className="space-y-6">
           {preferences.visibleWidgets.focus ? (
-            <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}>
-              <Card className="surface-shell rounded-[calc(var(--radius)+1rem)] border-border/70">
+            <motion.section {...SECTION_REVEAL}>
+              <Card className="surface-shell">
                 <CardContent className="space-y-5 p-6">
                   <SectionHeader
-                    kicker="ما الذي يحتاج انتباهك اليوم"
-                    title="تركيز اليوم"
-                    description="قراءة سريعة لما يجب أن يتحرك الآن بدون إغراقك بالتفاصيل."
+                    kicker="قراءة قصيرة لليوم"
+                    title="نبض اليوم"
+                    description="ما الذي يحتاج انتباهك الآن دون أن تغرق في كل التفاصيل دفعة واحدة."
                     icon={Target}
                   />
-                  <div className="grid gap-3 md:grid-cols-2">
-                    <div className="surface-subtle rounded-[calc(var(--radius)+0.55rem)] p-4 text-right">
-                      <p className="text-sm font-black text-foreground">أولويات اليوم</p>
-                      <div className="mt-3 space-y-2">
+
+                  <div className="grid gap-3 lg:grid-cols-[1.1fr_0.9fr]">
+                    <div className="surface-subtle rounded-[calc(var(--radius)+0.8rem)] p-5 text-right">
+                      <p className="text-base font-black text-foreground">أهم ثلاث نقاط الآن</p>
+                      <div className="mt-4 space-y-3">
                         {viewModel.topPriorities.length ? viewModel.topPriorities.map((item) => (
-                          <div key={item} className="rounded-[calc(var(--radius)+0.35rem)] border border-border/60 bg-background/60 px-3 py-2 text-sm text-foreground">{item}</div>
-                        )) : <p className="text-sm text-muted-foreground">لا توجد أولويات ثقيلة لليوم.</p>}
+                          <div key={item} className="rounded-[calc(var(--radius)+0.55rem)] bg-white/[0.05] px-4 py-3 text-sm font-semibold text-foreground">
+                            {item}
+                          </div>
+                        )) : (
+                          <p className="text-sm text-muted-foreground">لا توجد أولويات ثقيلة لليوم.</p>
+                        )}
                       </div>
                     </div>
-                    <div className="surface-subtle rounded-[calc(var(--radius)+0.55rem)] p-4 text-right">
-                      <p className="text-sm font-black text-foreground">نقاط تحتاج متابعة</p>
-                      <div className="mt-3 space-y-3 text-sm">
-                        <div className="flex items-start justify-between gap-3 rounded-[calc(var(--radius)+0.35rem)] border border-border/60 bg-background/60 px-3 py-2">
-                          <span className="font-bold text-foreground">{viewModel.overdueCount}</span>
-                          <span className="text-muted-foreground">مهام متأخرة</span>
-                        </div>
-                        <div className="flex items-start justify-between gap-3 rounded-[calc(var(--radius)+0.35rem)] border border-border/60 bg-background/60 px-3 py-2">
-                          <span className="font-bold text-foreground">{viewModel.atRiskHabits.length}</span>
-                          <span className="text-muted-foreground">عادات مهددة اليوم</span>
-                        </div>
-                        {viewModel.mealPrepLabel ? <p className="rounded-[calc(var(--radius)+0.35rem)] border border-border/60 bg-background/60 px-3 py-2 text-muted-foreground">{viewModel.mealPrepLabel}</p> : null}
-                        {viewModel.financeAlert ? <p className="rounded-[calc(var(--radius)+0.35rem)] border border-amber-500/25 bg-amber-500/[0.07] px-3 py-2 text-amber-300">{viewModel.financeAlert}</p> : null}
+
+                    <div className="grid gap-3">
+                      <div className="surface-subtle rounded-[calc(var(--radius)+0.8rem)] p-4 text-right">
+                        <p className="text-sm font-semibold text-muted-foreground">المهام المتأخرة</p>
+                        <p className="mt-2 habits-number text-3xl font-black text-[#ff9c7e]">{viewModel.overdueCount}</p>
                       </div>
+                      <div className="surface-subtle rounded-[calc(var(--radius)+0.8rem)] p-4 text-right">
+                        <p className="text-sm font-semibold text-muted-foreground">العادات المهددة</p>
+                        <p className="mt-2 text-base font-black text-foreground">{viewModel.atRiskHabits[0] || "لا يوجد خطر مرتفع"}</p>
+                      </div>
+                      {(viewModel.mealPrepLabel || viewModel.financeAlert) ? (
+                        <div className="surface-subtle rounded-[calc(var(--radius)+0.8rem)] p-4 text-right">
+                          <p className="text-sm font-semibold text-muted-foreground">إشارة سريعة</p>
+                          <p className="mt-2 text-sm leading-7 text-foreground">{viewModel.financeAlert || viewModel.mealPrepLabel}</p>
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                 </CardContent>
@@ -455,62 +652,58 @@ export default function Dashboard() {
           ) : null}
 
           {preferences.visibleWidgets.timeline ? (
-            <motion.section id="dashboard-timeline" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
-              <Card className="surface-shell rounded-[calc(var(--radius)+1rem)] border-border/70">
+            <motion.section id="dashboard-timeline" {...SECTION_REVEAL}>
+              <Card className="surface-shell">
                 <CardContent className="space-y-5 p-6">
                   <SectionHeader
-                    title="الجدول الموحد لليوم"
-                    description="خط زمني واحد يجمع المهم من المهام والعادات والوجبات والتنبيهات المالية."
+                    title="التدفق الزمني لليوم"
+                    description="خط واحد يجمع المهم من المخطط والعادات والوجبات والتنبيهات المالية."
                     icon={CalendarClock}
+                    action={<div className="hidden rounded-full bg-white/[0.05] px-3 py-1 text-xs font-semibold text-muted-foreground md:inline-flex">اليوم</div>}
                   />
-                  {(["morning", "afternoon", "evening"] as const).map((bucket) => (
-                    <div key={bucket} className="space-y-3">
-                      <div className="inline-flex w-fit rounded-full border border-border/70 bg-background/70 px-3 py-1 text-xs font-semibold text-muted-foreground">
-                        {bucket === "morning" ? "الصباح" : bucket === "afternoon" ? "بعد الظهر" : "المساء"}
-                      </div>
-                      <div className="space-y-3">
-                        {groupedTimeline[bucket].length ? groupedTimeline[bucket].map((item) => (
-                          <TimelineItemCard key={item.id} item={item} onQuickToggle={handleTimelineQuickToggle} />
-                        )) : (
-                          <div className="surface-subtle rounded-[calc(var(--radius)+0.55rem)] p-4 text-right text-sm text-muted-foreground">
-                            لا توجد عناصر ظاهرة في هذا الجزء من اليوم.
+
+                  <div className="grid gap-4 lg:grid-cols-3">
+                    {([
+                      ["morning", "الفترة الصباحية", "☀️"],
+                      ["afternoon", "فترة الظهيرة", "🟣"],
+                      ["evening", "الفترة المسائية", "🌙"],
+                    ] as const).map(([bucket, label, emoji]) => (
+                      <div key={bucket} className="space-y-3">
+                        <div className="flex items-center justify-start gap-2 text-right">
+                          <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.05] text-lg">
+                            {emoji}
                           </div>
-                        )}
+                          <p className="text-lg font-black text-foreground">{label}</p>
+                        </div>
+                        <div className="space-y-3">
+                          {groupedTimeline[bucket].length ? groupedTimeline[bucket].map((item) => (
+                            <TimelineCard key={item.id} item={item} onQuickToggle={handleTimelineQuickToggle} />
+                          )) : (
+                            <div className="surface-subtle rounded-[calc(var(--radius)+0.7rem)] p-4 text-right text-sm text-muted-foreground">
+                              لا توجد عناصر ظاهرة هنا.
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
             </motion.section>
           ) : null}
-
-          {preferences.visibleWidgets.modules ? (
-            <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
-              <div className="space-y-4">
-                <SectionHeader
-                  title="نظرة على الوحدات"
-                  description="بطاقات تفاعلية تعطيك لقطة مفيدة ثم تنقلك مباشرة إلى العمق."
-                  icon={LayoutGrid}
-                />
-                <div className="grid gap-4 xl:grid-cols-2">
-                  {viewModel.moduleCards.map((card) => (
-                    <ModuleCard key={card.key} card={card} />
-                  ))}
-                </div>
-              </div>
-            </motion.section>
-          ) : null}
         </div>
+
         <div className="space-y-6">
           {preferences.visibleWidgets.actions ? (
-            <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}>
-              <Card className="surface-shell rounded-[calc(var(--radius)+1rem)] border-border/70">
+            <motion.section {...SECTION_REVEAL}>
+              <Card className="surface-shell">
                 <CardContent className="space-y-5 p-6">
                   <SectionHeader
                     title="إجراءات سريعة"
-                    description="اختصارات واضحة تقلل الاحتكاك اليومي وتفتح التدفق من أول نقرة."
+                    description="كل ما تحتاجه للبدء أو الإنقاذ السريع بدون فتح مسارات طويلة."
                     icon={Sparkles}
                   />
+
                   <div className="grid gap-3 sm:grid-cols-2">
                     {viewModel.quickActions.map((action) => {
                       const Icon = action.icon;
@@ -519,7 +712,7 @@ export default function Dashboard() {
                           key={action.key}
                           whileHover={{ y: -3 }}
                           whileTap={{ scale: 0.995 }}
-                          className="surface-subtle relative overflow-hidden rounded-[calc(var(--radius)+0.7rem)] border-border/70 p-4 text-right"
+                          className="surface-subtle relative overflow-hidden rounded-[calc(var(--radius)+0.8rem)] p-4 text-right"
                           onClick={() => {
                             if (action.key === "ai") {
                               document.getElementById("dashboard-ai-widget")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -528,24 +721,19 @@ export default function Dashboard() {
                             setOpenQuickAction(action.key);
                           }}
                         >
-                          <div className={cn("pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b", action.accent)} />
-                          <div className="relative rtl-title-row">
-                            <div className="space-y-1 flex-1">
+                          <div className={cn("pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b", action.accent)} />
+                          <div className="relative flex items-start justify-between gap-4">
+                            <div className="icon-chip h-11 w-11 rounded-[calc(var(--radius)+0.45rem)]">
+                              <Icon className="h-4.5 w-4.5" />
+                            </div>
+                            <div className="space-y-1 text-right">
                               <p className="text-sm font-black text-foreground">{action.label}</p>
                               <p className="text-xs leading-6 text-muted-foreground">{action.description}</p>
-                            </div>
-                            <div className="icon-chip h-11 w-11 rounded-[calc(var(--radius)+0.4rem)]">
-                              <Icon className="h-4.5 w-4.5" />
                             </div>
                           </div>
                         </motion.button>
                       );
                     })}
-                  </div>
-                  <div className="flex flex-wrap justify-start gap-3">
-                    <Button variant="outline" className="h-11 rounded-[calc(var(--radius)+0.45rem)] px-4 font-bold" onClick={() => setLocation("/weekly-planner?dashboardAction=reset")}>
-                      إعادة ضبط الأسبوع
-                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -553,15 +741,16 @@ export default function Dashboard() {
           ) : null}
 
           {preferences.visibleWidgets.assistant ? (
-            <motion.section id="dashboard-ai-widget" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-              <Card className="surface-shell rounded-[calc(var(--radius)+1rem)] border-primary/15">
+            <motion.section id="dashboard-ai-widget" {...SECTION_REVEAL}>
+              <Card className="ai-surface overflow-hidden">
                 <CardContent className="space-y-5 p-6">
                   <SectionHeader
-                    kicker="مساعد ذكي مختصر"
-                    title="مساعد اليوم"
-                    description="اقتراحات قصيرة ومفيدة من واقع يومك، بدون تشتيت أو دردشة طويلة."
+                    kicker="ذكاء مختصر"
+                    title="مساعد الذكاء"
+                    description="نتائج قصيرة، عملية، وقابلة للتنفيذ مباشرة من لوحة اليوم."
                     icon={Bot}
                   />
+
                   <div className="grid gap-3 sm:grid-cols-2">
                     {([
                       ["generateDashboardInsight", "لخّص يومي"],
@@ -573,32 +762,41 @@ export default function Dashboard() {
                         key={action}
                         type="button"
                         variant="outline"
-                        className="h-11 justify-between rounded-[calc(var(--radius)+0.45rem)] px-4 font-bold"
+                        className="h-11 justify-between rounded-[calc(var(--radius)+0.5rem)]"
                         onClick={() => assistantMutation.mutate(action)}
                         disabled={assistantMutation.isPending}
                       >
-                        {assistantMutation.isPending && assistantMutation.variables === action ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-primary" />}
+                        {assistantMutation.isPending && assistantMutation.variables === action ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Sparkles className="h-4 w-4 text-primary" />
+                        )}
                         {label}
                       </Button>
                     ))}
                   </div>
-                  <div className="surface-subtle rounded-[calc(var(--radius)+0.65rem)] border-primary/15 p-4 text-right">
-                    <p className="text-sm font-black text-foreground">{assistantResult?.headline || dailyBrief?.headline || "ماذا يحتاج يومك الآن؟"}</p>
-                    <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                      {assistantResult?.summary || dailyBrief?.summary || "يمكنك توليد قراءة سريعة لليوم، إعادة ترتيب الأولويات، أو تبسيط الخطة عند الشعور بالازدحام."}
+
+                  <div className="rounded-[calc(var(--radius)+0.8rem)] bg-white/[0.045] p-5 text-right shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]">
+                    <p className="text-lg font-black text-foreground">
+                      {assistantResult?.headline || dailyBrief?.headline || "ماذا يحتاج يومك الآن؟"}
                     </p>
+                    <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                      {assistantResult?.summary || dailyBrief?.summary || "يمكنك توليد قراءة سريعة لليوم أو إعادة ترتيب الأولويات بدون فتح محادثة طويلة."}
+                    </p>
+
                     <div className="mt-4 space-y-2">
                       {(assistantResult?.bullets || dailyBrief?.bullets || []).map((bullet) => (
-                        <div key={bullet} className="flex items-start justify-between gap-3 rounded-[calc(var(--radius)+0.35rem)] border border-border/60 bg-background/55 px-3 py-2">
+                        <div key={bullet} className="flex items-start justify-between gap-3 rounded-[calc(var(--radius)+0.5rem)] bg-black/18 px-3 py-3">
                           <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                          <p className="flex-1 text-sm leading-6 text-foreground">{bullet}</p>
+                          <p className="text-sm leading-6 text-foreground">{bullet}</p>
                         </div>
                       ))}
                     </div>
+
                     {(assistantResult?.bestNextAction || dailyBrief?.bestNextAction) ? (
                       <div className="mt-4 flex justify-start">
                         <Button
-                          className="h-11 rounded-[calc(var(--radius)+0.45rem)] px-4 font-bold"
+                          className="h-11 rounded-[calc(var(--radius)+0.55rem)] px-5 font-bold"
                           onClick={() => setLocation((assistantResult?.bestNextAction || dailyBrief?.bestNextAction)!.href)}
                         >
                           افتح الخطوة التالية
@@ -610,37 +808,96 @@ export default function Dashboard() {
               </Card>
             </motion.section>
           ) : null}
+        </div>
+      </div>
 
-          {preferences.visibleWidgets.insights ? (
-            <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}>
-              <Card className="surface-shell rounded-[calc(var(--radius)+1rem)] border-border/70">
-                <CardContent className="space-y-5 p-6">
-                  <SectionHeader
-                    title="التقدم والرؤى"
-                    description="مؤشرات سريعة تبقيك واعيًا للإيقاع بدل الغرق في الرسوم الثقيلة."
-                    icon={Target}
-                  />
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {viewModel.progressCards.map((card) => (
-                      <div key={card.key} className="surface-subtle rounded-[calc(var(--radius)+0.55rem)] p-4 text-right">
-                        <div className="flex items-start justify-between gap-3">
-                          <p className={cn("text-lg font-black", card.tone)}>{card.value}</p>
-                          <div className="text-right">
-                            <p className="text-sm font-black text-foreground">{card.label}</p>
-                            <p className="mt-1 text-xs leading-6 text-muted-foreground">{card.hint}</p>
-                          </div>
-                        </div>
+      {preferences.visibleWidgets.modules ? (
+        <motion.section {...SECTION_REVEAL}>
+          <div className="space-y-5">
+            <SectionHeader
+              title="الوحدات الأساسية"
+              description="كل وحدة تعرض لك حالتها الحية الآن بدل أن تكون مجرد بوابة تنقل."
+              icon={LayoutGrid}
+            />
+
+            <div className="grid gap-4 xl:grid-cols-2">
+              {viewModel.moduleCards.map((card) => (
+                <ModuleCard
+                  key={card.key}
+                  card={card}
+                  budgetSeries={viewModel.budgetSeries}
+                  cashflowSeries={viewModel.cashflowSeries}
+                  habitsSeries={viewModel.habitsSeries}
+                />
+              ))}
+            </div>
+          </div>
+        </motion.section>
+      ) : null}
+
+      <div className="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
+        {preferences.visibleWidgets.insights ? (
+          <motion.section {...SECTION_REVEAL}>
+            <Card className="surface-shell h-full">
+              <CardContent className="space-y-5 p-6">
+                <SectionHeader
+                  title="التقدم والرؤى"
+                  description="قراءة بصرية سريعة لمسار العادات والميزانية والتدفق النقدي."
+                  icon={Target}
+                />
+
+                <div className="grid gap-4">
+                  <div className="surface-subtle rounded-[calc(var(--radius)+0.8rem)] p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="h-28 w-28 shrink-0">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <RadialBarChart data={[{ value: viewModel.context.habits.progressPercent }]} startAngle={210} endAngle={-30} innerRadius="72%" outerRadius="100%" barSize={12}>
+                            <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
+                            <RadialBar dataKey="value" cornerRadius={999} fill="#c2fe4c" background={{ fill: "rgba(255,255,255,0.06)" }} />
+                          </RadialBarChart>
+                        </ResponsiveContainer>
                       </div>
-                    ))}
+                      <div className="space-y-2 text-right">
+                        <p className="text-xl font-black text-foreground">اتساق العادات</p>
+                        <p className="habits-number text-4xl font-black text-primary">{viewModel.context.habits.progressPercent}%</p>
+                        <p className="text-sm leading-7 text-muted-foreground">المستوى اليومي الحالي مع قراءة سريعة لأيام الأسبوع الأخير.</p>
+                      </div>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
-            </motion.section>
-          ) : null}
 
+                  <div className="surface-subtle rounded-[calc(var(--radius)+0.8rem)] p-4 text-right">
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <p className="text-lg font-black text-foreground">الميزانية الشهرية</p>
+                      <p className="habits-number text-3xl font-black text-foreground">
+                        {Math.min(100, Math.round((viewModel.context.budget.spentThisMonth / Math.max(viewModel.context.budget.monthlyLimit || 1, 1)) * 100))}%
+                      </p>
+                    </div>
+                    <div className="h-36">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={viewModel.budgetSeries}>
+                          <defs>
+                            <linearGradient id="insights-budget" x1="0" x2="0" y1="0" y2="1">
+                              <stop offset="0%" stopColor="#c2fe4c" stopOpacity={0.35} />
+                              <stop offset="100%" stopColor="#c2fe4c" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.04)" />
+                          <Tooltip content={<DashboardChartTooltip />} />
+                          <Area type="monotone" dataKey="value" stroke="#c2fe4c" strokeWidth={3} fill="url(#insights-budget)" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.section>
+        ) : null}
+
+        <div className="space-y-6">
           {preferences.visibleWidgets.recent ? (
-            <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}>
-              <Card className="surface-shell rounded-[calc(var(--radius)+1rem)] border-border/70">
+            <motion.section {...SECTION_REVEAL}>
+              <Card className="surface-shell">
                 <CardContent className="space-y-5 p-6">
                   <SectionHeader
                     title="أكمل من حيث توقفت"
@@ -649,7 +906,11 @@ export default function Dashboard() {
                   />
                   <div className="space-y-3">
                     {viewModel.recentItems.length ? viewModel.recentItems.map((item) => (
-                      <Link key={item.path + item.visitedAt} href={item.path} className="block rounded-[calc(var(--radius)+0.5rem)] border border-border/60 bg-background/60 px-4 py-3 text-right transition-colors hover:border-primary/20 hover:bg-muted/60">
+                      <Link
+                        key={item.path + item.visitedAt}
+                        href={item.path}
+                        className="block rounded-[calc(var(--radius)+0.65rem)] bg-white/[0.045] px-4 py-3 text-right transition-colors hover:bg-white/[0.07]"
+                      >
                         <div className="flex items-center justify-between gap-3">
                           <ArrowUpLeft className="h-4.5 w-4.5 text-primary" />
                           <div className="text-right">
@@ -661,8 +922,8 @@ export default function Dashboard() {
                         </div>
                       </Link>
                     )) : (
-                      <div className="surface-subtle rounded-[calc(var(--radius)+0.55rem)] p-4 text-right text-sm text-muted-foreground">
-                        لم يبدأ سجل الاستخدام بعد. بمجرد تنقلك داخل الوحدات سيظهر هنا آخر ما عملت عليه.
+                      <div className="surface-subtle rounded-[calc(var(--radius)+0.65rem)] p-4 text-right text-sm text-muted-foreground">
+                        لا يوجد سجل حديث بعد. سيظهر هنا آخر ما فتحته داخل الوحدات.
                       </div>
                     )}
                   </div>
@@ -670,11 +931,37 @@ export default function Dashboard() {
               </Card>
             </motion.section>
           ) : null}
+
+          <motion.section {...SECTION_REVEAL}>
+            <Card className="surface-shell">
+              <CardContent className="space-y-5 p-6">
+                <SectionHeader
+                  title="تدفق النقد"
+                  description="إشارة بصرية سريعة للميل العام خلال الأيام الأخيرة."
+                  icon={Wallet}
+                />
+                <div className="surface-subtle rounded-[calc(var(--radius)+0.8rem)] p-4 text-right">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <p className="text-lg font-black text-foreground">الرصيد المتاح</p>
+                    <p className="cashflow-number text-3xl font-black text-primary">{viewModel.moduleCards.find((card) => card.key === "cashflow")?.metrics[0]?.value}</p>
+                  </div>
+                  <div className="h-32">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={viewModel.cashflowSeries}>
+                        <Tooltip content={<DashboardChartTooltip />} />
+                        <Line type="monotone" dataKey="value" stroke="#a68cff" strokeWidth={3} dot={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.section>
         </div>
       </div>
 
       <Dialog open={openQuickAction !== null} onOpenChange={(open) => !open && closeQuickAction()}>
-        <DialogContent dir="rtl" className="surface-shell max-w-lg rounded-[calc(var(--radius)+1rem)] border-border/80 text-right">
+        <DialogContent dir="rtl" className="max-w-lg text-right">
           <DialogHeader className="text-right">
             <DialogTitle className="text-right text-2xl font-black">
               {openQuickAction === "task"

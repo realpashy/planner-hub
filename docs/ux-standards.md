@@ -2,6 +2,17 @@
 
 This file is the UX reference for current and future Planner Hub modules.
 
+## Current shell model
+
+Planner Hub uses a shared authenticated shell.
+
+- desktop: permanent right sidebar
+- mobile: fixed bottom navigation
+- top utility row: glassy top bar for search, profile, alerts, and page context
+- dashboard: the daily operating system, not a launcher grid
+
+Do not add temporary top-of-page module tabs to authenticated pages unless there is a very specific local workflow reason.
+
 ## RTL is manual, not automatic
 
 Setting `dir="rtl"` is not enough. Each visible row must still be tuned intentionally.
@@ -14,6 +25,7 @@ Setting `dir="rtl"` is not enough. Each visible row must still be tuned intentio
 - Arabic section titles align right
 - subtitles, helper text, and supporting copy under Arabic titles also align right
 - long descriptive copy must stay visually anchored to the right edge, not drift because of flex layout
+- hero sections should read like editorial content blocks, with the right-aligned title stack clearly separated from utility controls and CTAs
 
 ### Opposite-side meta pattern
 
@@ -35,6 +47,7 @@ For rows with a title block and secondary content:
 - when a section label or filter title includes an icon, the icon belongs on the right before the text and both must stay right-aligned as one content cluster
 - searchable dropdown triggers and fixed-option dropdown triggers follow the same RTL rule: value text anchors right, supporting iconography stays secondary, and native browser dropdown chrome should not leak into visible product UI
 - chevrons, expand icons, and disclosure icons must be manually verified row by row
+- shell navigation icons should stay visually stable between expanded and collapsed sidebar states; collapsing the shell must not scramble RTL icon/label rhythm
 
 ### RTL flexbox start/end rule
 
@@ -90,6 +103,7 @@ Shared primitives can silently override local fixes.
 - header actions are intentionally placed, not mirrored by accident
 - dialog and drawer footers should keep the primary action visually coherent in RTL
 - settings and admin sheets use a lighter utility hierarchy than main content surfaces
+- floating surfaces should feel like glass layers, not flat detached sheets with hard borders
 
 ## Input hierarchy
 
@@ -108,6 +122,8 @@ Use the least-friction control first:
 - selected and active states should feel intentional, not browser-default
 - advanced or destructive actions belong in settings or deeper layers
 - contextual actions stay close to the content they affect
+- quick actions on the dashboard must do real work or open a real flow; do not ship decorative CTA tiles
+- AI widgets must stay concise and actionable; they should feel assistive, not demanding
 
 ## Progressive disclosure
 
@@ -124,6 +140,15 @@ Use the least-friction control first:
 - if a module uses AI-generated shopping organization, the prompt output language should follow the active app language instead of being hardcoded to Arabic
 - remove low-value metrics before adding more
 
+For the home dashboard specifically:
+
+- the user should immediately understand:
+  - what matters today
+  - what is at risk
+  - what the next action should be
+- treat the dashboard like a decision surface, not a report
+- avoid equal-weight card grids when one zone should clearly lead the page
+
 ## Component conventions
 
 ### Headers
@@ -131,6 +156,7 @@ Use the least-friction control first:
 - top bars should separate primary identity from utility controls
 - utility controls must stay visually secondary
 - avoid grouping every control around the title block
+- shell top bars should use search and utilities sparingly; do not turn them into navigation rows
 
 ### Cards
 
@@ -139,11 +165,15 @@ Use the least-friction control first:
 - repeated card families must share the same internal rhythm
 - if a card contains a leading icon chip, date pill, or quantity block, it must appear on the right side first in the DOM for Arabic rows
 - do not create meal-planner headers from `floating badge + separate text sibling` when the badge belongs to the title context; use one right-anchored content cluster instead
+- premium dashboard cards should separate sections using spacing and tonal nesting, not divider lines
+- do not default to four identical analytics tiles if the content needs hierarchy; asymmetry is allowed when it improves understanding
 
 ### Timeline and anchored detail layouts
 
 - timeline rails and dots must be built from stable component-level wrappers, not absolute positions tied to Radix IDs or one screen instance
 - a timeline dot should be centered on the rail mathematically by the shared wrapper, not visually nudged beside it
+- for dashboard timelines, use clear day-part grouping such as morning / afternoon / evening and avoid fake precision when an item is untimed
+- if a timeline item supports a safe quick action, keep that interaction small and obvious inside the card; do not overload the timeline with management controls
 
 ### Modals
 
@@ -161,6 +191,21 @@ Use the least-friction control first:
   - diagnostics
 - diagnostics stay secondary
 - avoid redundant explainer cards
+
+## Dashboard AI behavior
+
+- the dashboard AI should produce short, practical outputs
+- one auto-generated daily briefing is preferred over repeated unsolicited AI calls
+- on-demand AI actions should be button-led, scoped, and visibly loading
+- AI results should map back to a real next action or destination whenever possible
+- do not ship a full chatbot when a concise assistant card solves the need better
+
+## Mobile shell behavior
+
+- mobile navigation uses a fixed bottom bar with strong active state clarity
+- the bar may scroll horizontally if needed, but tap targets must remain comfortable
+- mobile shell controls should never crowd out the main task content
+- dashboard sections should stack vertically with the same hierarchy as desktop, not collapse into an undifferentiated feed
 
 ## Mandatory reuse rule
 

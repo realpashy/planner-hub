@@ -60,7 +60,7 @@ export default function SettingsPage() {
                 <Sparkles className="h-3.5 w-3.5" />
                 تخصيص وتجهيز الصفحة الرئيسية
               </div>
-              <CardTitle className="text-3xl">إعدادات Planner Hub</CardTitle>
+              <h1 className="text-3xl font-black text-foreground">إعدادات Planner Hub</h1>
               <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
                 تحكم بما يظهر على الرئيسية، وما الذي يبقى ثابتًا في واجهة العمل اليومية، مع مساحة جاهزة لاحقًا لتفضيلات الذكاء واللغة.
               </p>

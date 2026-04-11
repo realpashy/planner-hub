@@ -1,31 +1,25 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ElementType, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import {
+  Bell,
   Bot,
   CalendarDays,
   ChevronLeft,
   ChevronRight,
+  Crown,
   LayoutGrid,
   PiggyBank,
+  Search,
   Settings2,
   Sparkles,
+  UserCircle2,
   UtensilsCrossed,
   Wallet,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 import { trackDashboardRoute } from "@/lib/dashboard";
@@ -33,21 +27,22 @@ import { trackDashboardRoute } from "@/lib/dashboard";
 type ShellNavItem = {
   href: string;
   label: string;
-  icon: React.ElementType;
+  icon: ElementType;
+  aliases?: string[];
   match: (path: string) => boolean;
 };
 
 const NAV_ITEMS: ShellNavItem[] = [
-  { href: "/", label: "الرئيسية", icon: LayoutGrid, match: (path) => path === "/" },
-  { href: "/weekly-planner", label: "المخطط الأسبوعي", icon: CalendarDays, match: (path) => path.startsWith("/weekly-planner") || path.startsWith("/planner") },
-  { href: "/budget", label: "الميزانية الشهرية", icon: PiggyBank, match: (path) => path.startsWith("/budget") },
-  { href: "/habits", label: "متتبع العادات", icon: Bot, match: (path) => path.startsWith("/habits") },
-  { href: "/meal", label: "مخطط الوجبات", icon: UtensilsCrossed, match: (path) => path.startsWith("/meal") },
-  { href: "/cashflow", label: "التدفق النقدي", icon: Wallet, match: (path) => path.startsWith("/cashflow") },
-  { href: "/settings", label: "الإعدادات", icon: Settings2, match: (path) => path.startsWith("/settings") },
+  { href: "/", label: "الرئيسية", icon: LayoutGrid, aliases: ["الرئيسية", "الصفحة الرئيسية", "الرئيسيه"], match: (path) => path === "/" },
+  { href: "/weekly-planner", label: "المخطط الأسبوعي", icon: CalendarDays, aliases: ["المخطط", "الأسبوع", "المهام", "planner"], match: (path) => path.startsWith("/weekly-planner") || path.startsWith("/planner") },
+  { href: "/budget", label: "الميزانية الشهرية", icon: PiggyBank, aliases: ["الميزانية", "budget"], match: (path) => path.startsWith("/budget") },
+  { href: "/habits", label: "متتبع العادات", icon: Bot, aliases: ["العادات", "habits"], match: (path) => path.startsWith("/habits") },
+  { href: "/meal", label: "مخطط الوجبات", icon: UtensilsCrossed, aliases: ["الوجبات", "meal"], match: (path) => path.startsWith("/meal") },
+  { href: "/cashflow", label: "التدفق النقدي", icon: Wallet, aliases: ["النقدي", "التدفق", "cashflow"], match: (path) => path.startsWith("/cashflow") },
+  { href: "/settings", label: "الإعدادات", icon: Settings2, aliases: ["الإعدادات", "settings"], match: (path) => path.startsWith("/settings") },
 ];
 
-const SIDEBAR_STORAGE_KEY = "planner_hub_sidebar_collapsed_v1";
+const SIDEBAR_STORAGE_KEY = "planner_hub_sidebar_collapsed_v2";
 
 type AppShellContextValue = {
   hasShell: boolean;
@@ -70,218 +65,297 @@ function saveCollapsed(value: boolean) {
 }
 
 function getPageTitle(path: string) {
-  return NAV_ITEMS.find((item) => item.match(path))?.label ?? "Planner Hub";
+  return NAV_ITEMS.find((item) => item.match(path))?.label ?? "الرئيسية";
+}
+
+function getPageSubtitle(path: string) {
+  if (path === "/") return "واجهة تشغيل يومية تربط كل الوحدات.";
+  if (path.startsWith("/weekly-planner") || path.startsWith("/planner")) return "إدارة الأسبوع، الأولويات، والزمن القادم.";
+  if (path.startsWith("/budget")) return "نظرة مالية شهرية واضحة وسريعة.";
+  if (path.startsWith("/habits")) return "عادات اليوم وسلاسل الاستمرارية.";
+  if (path.startsWith("/meal")) return "تخطيط الوجبات والتحضير للأسبوع.";
+  if (path.startsWith("/cashflow")) return "السيولة، الدفعات، وحركة النقد.";
+  if (path.startsWith("/settings")) return "تخصيص الواجهة والتفضيلات العامة.";
+  return "Planner Hub";
+}
+
+function resolveSearchTarget(query: string) {
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) return "/";
+
+  const match = NAV_ITEMS.find((item) =>
+    item.label.toLowerCase().includes(normalized) ||
+    item.aliases?.some((alias) => alias.toLowerCase().includes(normalized)),
+  );
+
+  return match?.href ?? "/";
 }
 
 function SidebarLink({
   item,
   active,
   collapsed,
-  onClick,
 }: {
   item: ShellNavItem;
   active: boolean;
   collapsed: boolean;
-  onClick?: () => void;
 }) {
   const Icon = item.icon;
-  const content = (
+  const link = (
     <Link
       href={item.href}
-      onClick={onClick}
       className={cn(
-        "group flex w-full items-center gap-3 rounded-[calc(var(--radius)+0.5rem)] border px-3 py-3 text-right transition-all duration-200",
-        active
-          ? "border-primary/30 bg-primary/[0.12] text-foreground shadow-[0_0_0_1px_rgba(149,223,30,0.12),0_18px_40px_rgba(149,223,30,0.06)]"
-          : "border-transparent bg-transparent text-muted-foreground hover:border-border/70 hover:bg-muted/70 hover:text-foreground",
-        collapsed ? "justify-center px-2" : "justify-start",
+        "shell-nav-link",
+        active && "shell-nav-link-active",
+        collapsed ? "justify-center px-2.5" : "justify-start",
       )}
     >
       <span
         className={cn(
-          "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[calc(var(--radius)+0.35rem)] border transition-all duration-200",
-          active
-            ? "border-primary/30 bg-primary text-primary-foreground"
-            : "border-border/70 bg-background/70 text-primary",
+          "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[calc(var(--radius)+0.45rem)] border border-white/[0.05] bg-white/[0.045] text-primary transition-all duration-200",
+          active && "bg-primary text-black shadow-[0_0_0_1px_rgba(195,255,77,0.08),0_0_24px_rgba(195,255,77,0.18)]",
         )}
       >
         <Icon className="h-4.5 w-4.5" />
       </span>
       {!collapsed ? (
         <div className="min-w-0 flex-1 text-right">
-          <p className="truncate text-sm font-bold">{item.label}</p>
+          <p className="truncate text-sm font-semibold">{item.label}</p>
         </div>
       ) : null}
     </Link>
   );
 
-  if (!collapsed) return content;
+  if (!collapsed) return link;
 
   return (
     <Tooltip>
-      <TooltipTrigger asChild>{content}</TooltipTrigger>
+      <TooltipTrigger asChild>{link}</TooltipTrigger>
       <TooltipContent side="left">{item.label}</TooltipContent>
     </Tooltip>
   );
 }
 
-function SidebarBody({
+function DesktopSidebar({
   path,
   collapsed,
-  onNavigate,
+  onToggle,
 }: {
   path: string;
   collapsed: boolean;
-  onNavigate?: () => void;
+  onToggle: () => void;
 }) {
   const auth = useAuth();
 
   return (
-    <div className="flex h-full flex-col">
-      <div className={cn("space-y-5 border-b border-border/70 pb-5", collapsed && "items-center")}>
-        <div className={cn("flex items-center gap-3", collapsed ? "justify-center" : "justify-start")}>
-          <div className="icon-chip h-11 w-11 rounded-[calc(var(--radius)+0.45rem)] border-primary/30 bg-primary/[0.12] text-primary">
-            <Sparkles className="h-5 w-5" />
-          </div>
+    <motion.aside
+      data-testid="desktop-shell-sidebar"
+      data-collapsed={collapsed ? "true" : "false"}
+      animate={{ width: collapsed ? 110 : 322 }}
+      transition={{ type: "spring", stiffness: 230, damping: 28 }}
+      className="shell-glass sticky top-0 hidden h-screen shrink-0 border-l border-white/[0.04] px-4 py-5 lg:flex"
+    >
+      <div className="flex h-full w-full flex-col">
+        <div className={cn("mb-6 flex items-center", collapsed ? "justify-center" : "justify-between")}>
           {!collapsed ? (
-            <div className="min-w-0 flex-1 text-right">
-              <p className="text-sm font-black text-foreground">Planner Hub</p>
-              <p className="text-xs leading-5 text-muted-foreground">لوحة قيادة يومية تربط كل وحداتك.</p>
+            <div className="text-right">
+              <p className="text-[2rem] font-black leading-none text-primary">PlannerHub</p>
+              <p className="mt-1 text-xs tracking-[0.12em] text-muted-foreground">PREMIUM PRODUCTIVITY</p>
             </div>
-          ) : null}
+          ) : (
+            <div className="inline-flex h-12 w-12 items-center justify-center rounded-[calc(var(--radius)+0.55rem)] bg-primary text-black shadow-[0_0_24px_rgba(195,255,77,0.25)]">
+              <LayoutGrid className="h-5 w-5" />
+            </div>
+          )}
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label={collapsed ? "توسيع الشريط الجانبي" : "طي الشريط الجانبي"}
+            className="h-11 w-11 rounded-[calc(var(--radius)+0.45rem)] border border-white/[0.05] bg-white/[0.045]"
+            onClick={onToggle}
+          >
+            {collapsed ? <ChevronLeft className="h-4.5 w-4.5" /> : <ChevronRight className="h-4.5 w-4.5" />}
+          </Button>
+        </div>
+
+        <nav className="flex-1 space-y-2">
+          {NAV_ITEMS.map((item) => (
+            <SidebarLink key={item.href} item={item} active={item.match(path)} collapsed={collapsed} />
+          ))}
+        </nav>
+
+        <div className="space-y-3 pt-4">
+          {!collapsed ? (
+            <div className="rounded-[calc(var(--radius)+0.9rem)] bg-[linear-gradient(135deg,rgba(195,255,77,0.12),rgba(166,140,255,0.08))] p-4 text-right shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
+              <div className="flex items-start justify-between gap-3">
+                <div className="text-right">
+                  <p className="text-sm font-black text-foreground">Lumina Pro</p>
+                  <p className="mt-1 text-xs leading-6 text-muted-foreground">ذكاء أعمق وتخصيص أعلى على نفس السطح.</p>
+                </div>
+                <div className="inline-flex h-10 w-10 items-center justify-center rounded-[calc(var(--radius)+0.45rem)] bg-primary text-black shadow-[0_0_18px_rgba(195,255,77,0.2)]">
+                  <Crown className="h-4.5 w-4.5" />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="mx-auto inline-flex h-11 w-11 items-center justify-center rounded-[calc(var(--radius)+0.45rem)] bg-primary/15 text-primary">
+                  <Crown className="h-4.5 w-4.5" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="left">Lumina Pro</TooltipContent>
+            </Tooltip>
+          )}
+
+          <div className={cn("flex items-center gap-3", collapsed ? "justify-center" : "justify-start")}>
+            <ThemeToggle />
+            {!collapsed ? (
+              <div className="min-w-0 flex-1 rounded-[calc(var(--radius)+0.65rem)] bg-white/[0.045] px-3 py-2.5 text-right">
+                <p className="truncate text-sm font-semibold text-foreground">{auth.user?.displayName || "حسابك"}</p>
+                <p className="truncate text-xs text-muted-foreground">{auth.user?.email}</p>
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
-
-      <nav className="flex-1 space-y-2 py-5">
-        {NAV_ITEMS.map((item) => (
-          <SidebarLink
-            key={item.href}
-            item={item}
-            active={item.match(path)}
-            collapsed={collapsed}
-            onClick={onNavigate}
-          />
-        ))}
-      </nav>
-
-      <div className="space-y-3 border-t border-border/70 pt-4">
-        {!collapsed ? (
-          <div className="rounded-[calc(var(--radius)+0.55rem)] border border-primary/20 bg-primary/[0.08] p-3 text-right">
-            <div className="flex items-center justify-between gap-3">
-              <div className="text-right">
-                <p className="text-sm font-black text-foreground">Plus قريبًا</p>
-                <p className="text-xs leading-5 text-muted-foreground">ذكاء أعمق وتخصيص أعلى.</p>
-              </div>
-              <div className="inline-flex h-10 w-10 items-center justify-center rounded-[calc(var(--radius)+0.35rem)] border border-primary/30 bg-background/70 text-primary">
-                <Sparkles className="h-4.5 w-4.5" />
-              </div>
-            </div>
-          </div>
-        ) : (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="mx-auto inline-flex h-11 w-11 items-center justify-center rounded-[calc(var(--radius)+0.35rem)] border border-primary/25 bg-primary/[0.08] text-primary">
-                <Sparkles className="h-4.5 w-4.5" />
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="left">Plus قريبًا</TooltipContent>
-          </Tooltip>
-        )}
-
-        <div className={cn("flex items-center gap-2", collapsed ? "justify-center" : "justify-start")}>
-          <ThemeToggle />
-          {!collapsed ? (
-            <div className="min-w-0 flex-1 rounded-[calc(var(--radius)+0.45rem)] border border-border/70 bg-background/60 px-3 py-2 text-right">
-              <p className="truncate text-sm font-bold text-foreground">{auth.user?.displayName || "حسابك"}</p>
-              <p className="truncate text-xs text-muted-foreground">{auth.user?.email}</p>
-            </div>
-          ) : null}
-        </div>
-      </div>
-    </div>
+    </motion.aside>
   );
 }
 
-export function AppShell({ children }: { children: React.ReactNode }) {
-  const [location] = useLocation();
-  const [mobileOpen, setMobileOpen] = useState(false);
+function GlobalTopBar({
+  path,
+  onSearch,
+}: {
+  path: string;
+  onSearch: (query: string) => void;
+}) {
+  const auth = useAuth();
+  const [query, setQuery] = useState("");
+
+  return (
+    <header className="shell-glass sticky top-0 z-40 mx-auto mb-6 rounded-[calc(var(--radius)+1rem)] px-4 py-3 md:px-5">
+      <div className="flex items-center gap-3">
+        <div className="hidden min-w-0 flex-1 items-center gap-3 lg:flex">
+          <button
+            type="button"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[calc(var(--radius)+0.45rem)] border border-white/[0.05] bg-white/[0.045] text-muted-foreground transition-colors hover:bg-white/[0.08] hover:text-foreground"
+            aria-label="الإشعارات"
+          >
+            <Bell className="h-4.5 w-4.5" />
+          </button>
+          <button
+            type="button"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[calc(var(--radius)+0.45rem)] border border-white/[0.05] bg-white/[0.045] text-muted-foreground transition-colors hover:bg-white/[0.08] hover:text-foreground"
+            aria-label="الحساب"
+          >
+            <UserCircle2 className="h-4.5 w-4.5" />
+          </button>
+          <div className="inline-flex items-center gap-2 rounded-full bg-primary/15 px-4 py-2 text-sm font-semibold text-primary shadow-[0_0_18px_rgba(195,255,77,0.12)]">
+            <Sparkles className="h-4 w-4" />
+            AI Assistant
+          </div>
+        </div>
+
+        <div className="min-w-0 flex-1 text-right lg:hidden">
+          <p className="truncate text-base font-black text-foreground">{getPageTitle(path)}</p>
+          <p className="truncate text-xs text-muted-foreground">Planner Hub</p>
+        </div>
+
+        <form
+          className="relative w-full max-w-[34rem]"
+          onSubmit={(event) => {
+            event.preventDefault();
+            onSearch(query);
+          }}
+        >
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-muted-foreground" />
+          <input
+            data-testid="global-topbar-search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            className="shell-search w-full px-4 py-3 pl-12"
+            placeholder="ابحث عن مهام، ميزانية، أو عادات..."
+          />
+        </form>
+
+        <div className="hidden min-w-0 flex-1 text-right lg:block">
+          <p className="truncate text-lg font-black text-foreground">{getPageTitle(path)}</p>
+          <p className="truncate text-xs text-muted-foreground">{getPageSubtitle(path)}</p>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function MobileBottomNav({ path }: { path: string }) {
+  return (
+    <nav
+      data-testid="mobile-bottom-nav"
+      className="shell-glass fixed inset-x-3 bottom-3 z-50 overflow-hidden rounded-[calc(var(--radius)+1rem)] px-2 py-2 lg:hidden"
+    >
+      <div className="premium-scrollbar flex items-stretch gap-2 overflow-x-auto pb-1">
+        {NAV_ITEMS.map((item) => {
+          const Icon = item.icon;
+          const active = item.match(path);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "min-w-[6.15rem] shrink-0 rounded-[calc(var(--radius)+0.75rem)] px-3 py-2.5 text-center transition-all duration-200",
+                active
+                  ? "bg-primary text-black shadow-[0_0_20px_rgba(195,255,77,0.24)]"
+                  : "bg-white/[0.045] text-muted-foreground",
+              )}
+            >
+              <div className="flex flex-col items-center gap-1.5">
+                <Icon className="h-4.5 w-4.5" />
+                <span className="text-[11px] font-semibold leading-none">{item.label}</span>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+
+export function AppShell({ children }: { children: ReactNode }) {
+  const [location, setLocation] = useLocation();
   const [collapsed, setCollapsed] = useState(loadCollapsed);
+  const path = location.split("?")[0];
 
   useEffect(() => {
     saveCollapsed(collapsed);
   }, [collapsed]);
 
   useEffect(() => {
-    trackDashboardRoute(location.split("?")[0], getPageTitle(location.split("?")[0]));
-  }, [location]);
+    trackDashboardRoute(path, getPageTitle(path));
+  }, [path]);
 
-  const title = useMemo(() => getPageTitle(location.split("?")[0]), [location]);
+  const contentPadding = useMemo(
+    () => "px-4 pb-28 pt-2 md:px-6 md:pb-8 lg:px-8 lg:pb-8",
+    [],
+  );
 
   return (
     <AppShellContext.Provider value={{ hasShell: true }}>
       <div className="app-shell min-h-screen">
         <div className="flex min-h-screen">
-          <motion.aside
-            data-testid="app-sidebar"
-            data-collapsed={collapsed ? "true" : "false"}
-            animate={{ width: collapsed ? 104 : 292 }}
-            transition={{ type: "spring", stiffness: 260, damping: 28 }}
-            className="sticky top-0 hidden h-screen shrink-0 border-l border-border/70 bg-[linear-gradient(180deg,rgba(24,24,24,0.96),rgba(19,19,19,0.98))] px-4 py-5 lg:block"
-          >
-            <div className="flex h-full flex-col">
-              <div className={cn("mb-4 flex", collapsed ? "justify-center" : "justify-start")}>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  aria-label={collapsed ? "توسيع الشريط الجانبي" : "طي الشريط الجانبي"}
-                  className="h-11 rounded-[calc(var(--radius)+0.35rem)] border border-border/70 bg-background/60 px-3"
-                  onClick={() => setCollapsed((value) => !value)}
-                >
-                  {collapsed ? <ChevronLeft className="h-4.5 w-4.5" /> : <ChevronRight className="h-4.5 w-4.5" />}
-                </Button>
-              </div>
-
-              <SidebarBody path={location.split("?")[0]} collapsed={collapsed} />
-            </div>
-          </motion.aside>
+          <DesktopSidebar path={path} collapsed={collapsed} onToggle={() => setCollapsed((value) => !value)} />
 
           <div className="min-w-0 flex-1">
-            <div className="sticky top-0 z-40 border-b border-border/60 bg-background/88 backdrop-blur-xl lg:hidden">
-              <div className="flex items-center justify-between gap-3 px-4 py-3">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  aria-label="فتح التنقل"
-                  onClick={() => setMobileOpen(true)}
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </Button>
-                <div className="min-w-0 flex-1 text-right">
-                  <p className="truncate text-sm font-black text-foreground">{title}</p>
-                  <p className="truncate text-xs text-muted-foreground">Planner Hub</p>
-                </div>
-                <ThemeToggle />
-              </div>
+            <div className={cn("mx-auto max-w-[1700px]", contentPadding)}>
+              <GlobalTopBar path={path} onSearch={(query) => setLocation(resolveSearchTarget(query))} />
+              <main className="min-w-0">{children}</main>
             </div>
-
-            <main className="min-w-0 px-4 py-4 md:px-6 md:py-6">{children}</main>
           </div>
         </div>
 
-        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-          <SheetContent
-            side="right"
-            dir="rtl"
-            data-testid="app-sidebar-drawer"
-            className="w-[88vw] max-w-[24rem] border-l border-border/80 bg-[linear-gradient(180deg,rgba(24,24,24,0.98),rgba(19,19,19,0.99))] p-5"
-          >
-            <SheetHeader className="pb-4 text-right">
-              <SheetTitle>Planner Hub</SheetTitle>
-            </SheetHeader>
-            <SidebarBody path={location.split("?")[0]} collapsed={false} onNavigate={() => setMobileOpen(false)} />
-          </SheetContent>
-        </Sheet>
+        <MobileBottomNav path={path} />
       </div>
     </AppShellContext.Provider>
   );
