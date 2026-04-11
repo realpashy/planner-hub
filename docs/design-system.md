@@ -84,29 +84,39 @@ Legacy module-specific tokens can continue to exist internally where a module ha
 
 ### Light palette
 
-- primary: `#95df1e`
+- primary: `#c2fe4c`
 - primary foreground: `#000000`
-- secondary: `#f3f4f6`
-- secondary foreground: `#4e583f`
-- accent: `#eaffcf`
+- secondary: warm stone around `#e7e1d8`
+- secondary foreground: `#433d35`
+- accent: soft lime wash, not flat neon fill
 - accent foreground: `#000000`
-- background: `#ffffff`
-- foreground: `#333333`
-- card: `#ffffff`
-- card foreground: `#333333`
-- popover: `#ffffff`
-- popover foreground: `#333333`
-- muted: `#f9fafb`
-- muted foreground: `#6b7280`
-- border: `#e5e7eb`
-- input: `#e5e7eb`
-- ring: `#95df1e`
-- sidebar: `#f9fafb`
-- sidebar foreground: `#333333`
-- sidebar border: `#95df1e`
-- sidebar ring: `#ffffff`
+- background: warm canvas around `#f1ede8`
+- foreground: `#2c2924`
+- card: ivory surface around `#f8f4ed`
+- card foreground: `#2c2924`
+- popover: soft ivory around `#f3eee6`
+- popover foreground: `#2c2924`
+- muted: toned stone around `#e7e1d8`
+- muted foreground: `#6f675d`
+- border: warm ghost border around `#cfc4b8`
+- input: warm ghost border around `#d6ccc0`
+- ring: `#c2fe4c`
+- sidebar: warm glass / taupe shell, not flat white
+- sidebar foreground: `#2c2924`
+- sidebar border: subtle warm outline, not neon
+- sidebar ring: `#c2fe4c`
 
 ### Meal module light-theme surfaces
+
+For light theme generally, do not fall back to pure white dashboards.
+
+The light mode should feel like a softer Lumina Noir variant:
+
+- warm stone page canvas
+- ivory cards
+- taupe or smoky glass shell surfaces
+- restrained lime/violet atmospheric glow
+- dark readable text with reduced glare
 
 For the meal module in light theme, prefer a bright editorial hierarchy:
 

@@ -68,7 +68,8 @@ test("habits form select keeps premium contrast and AI locked card stays visible
   await expect(typeTrigger).toBeVisible();
   await typeTrigger.click();
 
-  const durationOption = page.getByText("مدة", { exact: true });
+  const durationOption = page.locator('[role="option"]').filter({ hasText: "مدة" }).first();
+  const durationTitle = durationOption.getByText("مدة", { exact: true });
   const durationHint = page.getByText("وقت أو جلسة يومية", { exact: true });
 
   await expect(durationOption).toBeVisible();
@@ -82,6 +83,9 @@ test("habits form select keeps premium contrast and AI locked card stays visible
 
   const optionColor = await durationOption.evaluate((node) => window.getComputedStyle(node).color);
   expect(optionColor).toBe("rgb(0, 0, 0)");
+
+  const titleColor = await durationTitle.evaluate((node) => window.getComputedStyle(node).color);
+  expect(titleColor).toBe("rgb(0, 0, 0)");
 
   const hoveredHintColor = await durationHint.evaluate((node) => window.getComputedStyle(node).color);
   expect(hoveredHintColor).toBe("rgb(255, 255, 255)");

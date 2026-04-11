@@ -233,4 +233,24 @@ test.describe("shared dashboard shell", () => {
     await expect(page).toHaveURL(/\/settings$/);
     await expect(page.getByRole("heading", { name: "إعدادات Planner Hub" })).toBeVisible();
   });
+
+  test("keeps the light theme on the warm Lumina Noir palette instead of raw white", async ({ page }) => {
+    await page.goto("/");
+
+    await page.getByTestId("button-theme-toggle").evaluate((element: HTMLButtonElement) => element.click());
+
+    const themeVars = await page.evaluate(() => {
+      const styles = getComputedStyle(document.documentElement);
+      return {
+        background: styles.getPropertyValue("--background").trim(),
+        card: styles.getPropertyValue("--card").trim(),
+        border: styles.getPropertyValue("--border").trim(),
+      };
+    });
+
+    await expect(page.locator("html")).not.toHaveClass(/dark/);
+    expect(themeVars.background).toBe("34 22% 92%");
+    expect(themeVars.card).toBe("38 27% 95%");
+    expect(themeVars.border).toBe("28 12% 78%");
+  });
 });

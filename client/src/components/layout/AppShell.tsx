@@ -112,7 +112,7 @@ function SidebarLink({
     >
       <span
         className={cn(
-          "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[calc(var(--radius)+0.45rem)] border border-white/[0.05] bg-white/[0.045] text-primary transition-all duration-200",
+          "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[calc(var(--radius)+0.45rem)] border border-border/40 bg-black/[0.04] text-primary transition-all duration-200 dark:border-white/[0.05] dark:bg-white/[0.045]",
           active && "bg-primary text-black shadow-[0_0_0_1px_rgba(195,255,77,0.08),0_0_24px_rgba(195,255,77,0.18)]",
         )}
       >
@@ -153,14 +153,14 @@ function DesktopSidebar({
       data-collapsed={collapsed ? "true" : "false"}
       animate={{ width: collapsed ? 110 : 322 }}
       transition={{ type: "spring", stiffness: 230, damping: 28 }}
-      className="shell-glass sticky top-0 hidden h-screen shrink-0 border-l border-white/[0.04] px-4 py-5 lg:flex"
+      className="shell-glass sticky top-0 hidden h-screen shrink-0 border-l border-black/[0.05] px-4 py-5 lg:flex dark:border-white/[0.04]"
     >
       <div className="flex h-full w-full flex-col">
         <div className={cn("mb-6 flex items-center", collapsed ? "justify-center" : "justify-between")}>
           {!collapsed ? (
             <div className="text-right">
               <p className="text-[2rem] font-black leading-none text-primary">PlannerHub</p>
-              <p className="mt-1 text-xs tracking-[0.12em] text-muted-foreground">PREMIUM PRODUCTIVITY</p>
+              <p className="mt-1 text-xs tracking-[0.12em] text-muted-foreground/90">PREMIUM PRODUCTIVITY</p>
             </div>
           ) : (
             <div className="inline-flex h-12 w-12 items-center justify-center rounded-[calc(var(--radius)+0.55rem)] bg-primary text-black shadow-[0_0_24px_rgba(195,255,77,0.25)]">
@@ -173,7 +173,7 @@ function DesktopSidebar({
             variant="ghost"
             size="icon"
             aria-label={collapsed ? "توسيع الشريط الجانبي" : "طي الشريط الجانبي"}
-            className="h-11 w-11 rounded-[calc(var(--radius)+0.45rem)] border border-white/[0.05] bg-white/[0.045]"
+            className="h-11 w-11 rounded-[calc(var(--radius)+0.45rem)] border border-border/40 bg-black/[0.04] dark:border-white/[0.05] dark:bg-white/[0.045]"
             onClick={onToggle}
           >
             {collapsed ? <ChevronLeft className="h-4.5 w-4.5" /> : <ChevronRight className="h-4.5 w-4.5" />}
@@ -202,7 +202,7 @@ function DesktopSidebar({
           ) : (
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="mx-auto inline-flex h-11 w-11 items-center justify-center rounded-[calc(var(--radius)+0.45rem)] bg-primary/15 text-primary">
+                <div className="mx-auto inline-flex h-11 w-11 items-center justify-center rounded-[calc(var(--radius)+0.45rem)] bg-primary/15 text-primary shadow-[0_0_18px_rgba(195,255,77,0.12)]">
                   <Crown className="h-4.5 w-4.5" />
                 </div>
               </TooltipTrigger>
@@ -213,7 +213,7 @@ function DesktopSidebar({
           <div className={cn("flex items-center gap-3", collapsed ? "justify-center" : "justify-start")}>
             <ThemeToggle />
             {!collapsed ? (
-              <div className="min-w-0 flex-1 rounded-[calc(var(--radius)+0.65rem)] bg-white/[0.045] px-3 py-2.5 text-right">
+              <div className="min-w-0 flex-1 rounded-[calc(var(--radius)+0.65rem)] bg-black/[0.04] px-3 py-2.5 text-right dark:bg-white/[0.045]">
                 <p className="truncate text-sm font-semibold text-foreground">{auth.user?.displayName || "حسابك"}</p>
                 <p className="truncate text-xs text-muted-foreground">{auth.user?.email}</p>
               </div>
@@ -241,19 +241,19 @@ function GlobalTopBar({
         <div className="hidden min-w-0 flex-1 items-center gap-3 lg:flex">
           <button
             type="button"
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[calc(var(--radius)+0.45rem)] border border-white/[0.05] bg-white/[0.045] text-muted-foreground transition-colors hover:bg-white/[0.08] hover:text-foreground"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[calc(var(--radius)+0.45rem)] border border-border/40 bg-black/[0.04] text-muted-foreground transition-colors hover:bg-black/[0.07] hover:text-foreground dark:border-white/[0.05] dark:bg-white/[0.045] dark:hover:bg-white/[0.08]"
             aria-label="الإشعارات"
           >
             <Bell className="h-4.5 w-4.5" />
           </button>
           <button
             type="button"
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[calc(var(--radius)+0.45rem)] border border-white/[0.05] bg-white/[0.045] text-muted-foreground transition-colors hover:bg-white/[0.08] hover:text-foreground"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[calc(var(--radius)+0.45rem)] border border-border/40 bg-black/[0.04] text-muted-foreground transition-colors hover:bg-black/[0.07] hover:text-foreground dark:border-white/[0.05] dark:bg-white/[0.045] dark:hover:bg-white/[0.08]"
             aria-label="الحساب"
           >
             <UserCircle2 className="h-4.5 w-4.5" />
           </button>
-          <div className="inline-flex items-center gap-2 rounded-full bg-primary/15 px-4 py-2 text-sm font-semibold text-primary shadow-[0_0_18px_rgba(195,255,77,0.12)]">
+          <div className="inline-flex items-center gap-2 rounded-full bg-primary/18 px-4 py-2 text-sm font-semibold text-primary shadow-[0_0_18px_rgba(195,255,77,0.12)]">
             <Sparkles className="h-4 w-4" />
             AI Assistant
           </div>

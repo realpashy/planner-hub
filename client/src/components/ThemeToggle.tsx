@@ -53,7 +53,7 @@ export function ThemeToggle({ className }: { className?: string }) {
     <button
       onClick={() => setIsDark(!isDark)}
       className={cn(
-        "inline-flex h-11 w-11 items-center justify-center rounded-[calc(var(--radius)+0.45rem)] border border-white/[0.06] bg-white/[0.045] text-muted-foreground shadow-[var(--app-shadow)] backdrop-blur-xl transition-all duration-200 hover:bg-white/[0.08] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/75 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        "inline-flex h-11 w-11 items-center justify-center rounded-[calc(var(--radius)+0.45rem)] border border-border/40 bg-black/[0.04] text-muted-foreground shadow-[var(--app-shadow)] backdrop-blur-xl transition-all duration-200 hover:bg-black/[0.07] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/75 focus-visible:ring-offset-2 focus-visible:ring-offset-background dark:border-white/[0.06] dark:bg-white/[0.045] dark:hover:bg-white/[0.08]",
         className,
       )}
       data-testid="button-theme-toggle"
