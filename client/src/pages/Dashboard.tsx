@@ -158,7 +158,7 @@ function TimelineCard({
   return (
     <Link href={item.href} className="block">
       <motion.div whileHover={{ y: -3, x: -1 }} whileTap={{ scale: 0.995 }} className="group surface-subtle relative overflow-hidden rounded-[calc(var(--radius)+0.8rem)] px-4 py-4">
-        <div className="absolute left-0 top-4 h-[70%] w-[3px] rounded-full bg-white/6">
+        <div className="absolute left-0 top-4 h-[70%] w-[3px] rounded-full bg-black/[0.08] dark:bg-white/6">
           <div
             className={cn(
               "absolute inset-y-0 left-0 w-full rounded-full",
@@ -173,7 +173,7 @@ function TimelineCard({
 
         <div className="grid items-center gap-4 md:grid-cols-[18%_1fr_18%]">
           <div className="flex items-center justify-center">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-[calc(var(--radius)+0.55rem)] bg-white/[0.05] text-xl shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
+            <div className="inline-flex h-12 w-12 items-center justify-center rounded-[calc(var(--radius)+0.55rem)] bg-black/[0.045] text-xl shadow-[0_0_0_1px_rgba(0,0,0,0.03)] dark:bg-white/[0.05] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
               {item.icon}
             </div>
           </div>
@@ -192,7 +192,7 @@ function TimelineCard({
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-9 rounded-[calc(var(--radius)+0.4rem)] bg-white/[0.05]"
+                  className="h-9 rounded-[calc(var(--radius)+0.4rem)] bg-black/[0.045] dark:bg-white/[0.05]"
                   onClick={(event) => {
                     event.preventDefault();
                     onQuickToggle(item);
@@ -295,7 +295,7 @@ function ModuleChart({ card, budgetSeries, cashflowSeries, habitsSeries }: {
         </div>
         <div className="grid flex-1 grid-cols-3 gap-2">
           {habitsSeries.slice(-3).map((point) => (
-            <div key={point.label} className="rounded-[calc(var(--radius)+0.45rem)] bg-white/[0.04] px-2 py-3 text-center">
+            <div key={point.label} className="rounded-[calc(var(--radius)+0.45rem)] bg-black/[0.045] px-2 py-3 text-center dark:bg-white/[0.04]">
               <p className="text-xs text-muted-foreground">{point.label}</p>
               <p className="mt-2 habits-number text-sm font-black text-foreground">{point.value}%</p>
             </div>
@@ -308,7 +308,7 @@ function ModuleChart({ card, budgetSeries, cashflowSeries, habitsSeries }: {
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       {card.metrics.map((metric) => (
-        <div key={metric.label} className="rounded-[calc(var(--radius)+0.5rem)] bg-white/[0.04] p-3 text-right">
+        <div key={metric.label} className="rounded-[calc(var(--radius)+0.5rem)] bg-black/[0.045] p-3 text-right dark:bg-white/[0.04]">
           <p className="text-xs font-semibold text-muted-foreground">{metric.label}</p>
           <p className="mt-2 text-lg font-black text-foreground">{metric.value}</p>
         </div>
@@ -342,7 +342,7 @@ function ModuleCard({
                   <Icon className="h-5 w-5" />
                 </div>
                 <div className="space-y-2 text-right">
-                  <div className="inline-flex rounded-full bg-white/[0.05] px-3 py-1 text-[11px] font-semibold text-muted-foreground">
+                  <div className="soft-badge">
                     {card.status}
                   </div>
                   <div>
@@ -356,7 +356,7 @@ function ModuleCard({
 
             <ModuleChart card={card} budgetSeries={budgetSeries} cashflowSeries={cashflowSeries} habitsSeries={habitsSeries} />
 
-            <div className="rounded-[calc(var(--radius)+0.55rem)] bg-white/[0.04] px-4 py-3 text-right">
+            <div className="soft-panel px-4 py-3 text-right">
               <p className="text-sm font-semibold text-foreground">{card.cta}</p>
             </div>
           </CardContent>
@@ -620,7 +620,7 @@ export default function Dashboard() {
                       <p className="text-base font-black text-foreground">أهم ثلاث نقاط الآن</p>
                       <div className="mt-4 space-y-3">
                         {viewModel.topPriorities.length ? viewModel.topPriorities.map((item) => (
-                          <div key={item} className="rounded-[calc(var(--radius)+0.55rem)] bg-white/[0.05] px-4 py-3 text-sm font-semibold text-foreground">
+                          <div key={item} className="soft-panel px-4 py-3 text-sm font-semibold text-foreground">
                             {item}
                           </div>
                         )) : (
@@ -659,7 +659,7 @@ export default function Dashboard() {
                     title="التدفق الزمني لليوم"
                     description="خط واحد يجمع المهم من المخطط والعادات والوجبات والتنبيهات المالية."
                     icon={CalendarClock}
-                    action={<div className="hidden rounded-full bg-white/[0.05] px-3 py-1 text-xs font-semibold text-muted-foreground md:inline-flex">اليوم</div>}
+                    action={<div className="soft-badge hidden md:inline-flex">اليوم</div>}
                   />
 
                   <div className="grid gap-4 lg:grid-cols-3">
@@ -670,7 +670,7 @@ export default function Dashboard() {
                     ] as const).map(([bucket, label, emoji]) => (
                       <div key={bucket} className="space-y-3">
                         <div className="flex items-center justify-start gap-2 text-right">
-                          <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.05] text-lg">
+                          <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/[0.045] text-lg dark:bg-white/[0.05]">
                             {emoji}
                           </div>
                           <p className="text-lg font-black text-foreground">{label}</p>
@@ -776,7 +776,7 @@ export default function Dashboard() {
                     ))}
                   </div>
 
-                  <div className="rounded-[calc(var(--radius)+0.8rem)] bg-white/[0.045] p-5 text-right shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]">
+                  <div className="rounded-[calc(var(--radius)+0.8rem)] bg-black/[0.045] p-5 text-right shadow-[inset_0_0_0_1px_rgba(0,0,0,0.05)] dark:bg-white/[0.045] dark:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]">
                     <p className="text-lg font-black text-foreground">
                       {assistantResult?.headline || dailyBrief?.headline || "ماذا يحتاج يومك الآن؟"}
                     </p>
@@ -786,7 +786,7 @@ export default function Dashboard() {
 
                     <div className="mt-4 space-y-2">
                       {(assistantResult?.bullets || dailyBrief?.bullets || []).map((bullet) => (
-                        <div key={bullet} className="flex items-start justify-between gap-3 rounded-[calc(var(--radius)+0.5rem)] bg-black/18 px-3 py-3">
+                        <div key={bullet} className="flex items-start justify-between gap-3 rounded-[calc(var(--radius)+0.5rem)] bg-black/[0.06] px-3 py-3 dark:bg-black/18">
                           <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                           <p className="text-sm leading-6 text-foreground">{bullet}</p>
                         </div>
@@ -909,7 +909,7 @@ export default function Dashboard() {
                       <Link
                         key={item.path + item.visitedAt}
                         href={item.path}
-                        className="block rounded-[calc(var(--radius)+0.65rem)] bg-white/[0.045] px-4 py-3 text-right transition-colors hover:bg-white/[0.07]"
+                        className="block rounded-[calc(var(--radius)+0.65rem)] bg-black/[0.045] px-4 py-3 text-right transition-colors hover:bg-black/[0.07] dark:bg-white/[0.045] dark:hover:bg-white/[0.07]"
                       >
                         <div className="flex items-center justify-between gap-3">
                           <ArrowUpLeft className="h-4.5 w-4.5 text-primary" />

@@ -153,7 +153,7 @@ function DesktopSidebar({
       data-collapsed={collapsed ? "true" : "false"}
       animate={{ width: collapsed ? 110 : 322 }}
       transition={{ type: "spring", stiffness: 230, damping: 28 }}
-      className="shell-glass sticky top-0 hidden h-screen shrink-0 border-l border-black/[0.05] px-4 py-5 lg:flex dark:border-white/[0.04]"
+      className="sidebar-shell sticky top-0 hidden h-screen shrink-0 border-l border-black/[0.05] px-4 py-5 lg:flex dark:border-white/[0.04]"
     >
       <div className="flex h-full w-full flex-col">
         <div className={cn("mb-6 flex items-center", collapsed ? "justify-center" : "justify-between")}>
@@ -236,7 +236,7 @@ function GlobalTopBar({
   const [query, setQuery] = useState("");
 
   return (
-    <header className="shell-glass sticky top-0 z-40 mx-auto mb-6 rounded-[calc(var(--radius)+1rem)] px-4 py-3 md:px-5">
+    <header className="topbar-shell sticky top-0 z-40 mx-auto mb-6 rounded-[calc(var(--radius)+1rem)] px-4 py-3 md:px-5">
       <div className="flex items-center gap-3">
         <div className="hidden min-w-0 flex-1 items-center gap-3 lg:flex">
           <button
@@ -294,7 +294,7 @@ function MobileBottomNav({ path }: { path: string }) {
   return (
     <nav
       data-testid="mobile-bottom-nav"
-      className="shell-glass fixed inset-x-3 bottom-3 z-50 overflow-hidden rounded-[calc(var(--radius)+1rem)] px-2 py-2 lg:hidden"
+      className="mobile-nav-shell fixed inset-x-3 bottom-3 z-50 overflow-hidden rounded-[calc(var(--radius)+1rem)] px-2 py-2 lg:hidden"
     >
       <div className="premium-scrollbar flex items-stretch gap-2 overflow-x-auto pb-1">
         {NAV_ITEMS.map((item) => {
@@ -308,7 +308,7 @@ function MobileBottomNav({ path }: { path: string }) {
                 "min-w-[6.15rem] shrink-0 rounded-[calc(var(--radius)+0.75rem)] px-3 py-2.5 text-center transition-all duration-200",
                 active
                   ? "bg-primary text-black shadow-[0_0_20px_rgba(195,255,77,0.24)]"
-                  : "bg-white/[0.045] text-muted-foreground",
+                  : "bg-black/[0.05] text-muted-foreground dark:bg-white/[0.045]",
               )}
             >
               <div className="flex flex-col items-center gap-1.5">

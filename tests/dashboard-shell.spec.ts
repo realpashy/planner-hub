@@ -249,8 +249,8 @@ test.describe("shared dashboard shell", () => {
     });
 
     await expect(page.locator("html")).not.toHaveClass(/dark/);
-    expect(themeVars.background).toBe("34 22% 92%");
-    expect(themeVars.card).toBe("38 27% 95%");
-    expect(themeVars.border).toBe("28 12% 78%");
+    expect(themeVars.background).toBe("36 24% 90%");
+    expect(themeVars.card).toBe("38 22% 93%");
+    expect(themeVars.border).toBe("28 14% 76%");
   });
 });

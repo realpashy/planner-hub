@@ -11,34 +11,34 @@
   --elevate-1: rgba(0, 0, 0, 0.025);
   --elevate-2: rgba(0, 0, 0, 0.06);
 
-  --background: 34 22% 92%;
-  --foreground: 28 12% 16%;
-  --border: 28 12% 78%;
-  --card: 38 27% 95%;
-  --card-foreground: 28 12% 16%;
-  --card-border: 28 12% 82%;
-  --sidebar: 35 18% 89%;
-  --sidebar-foreground: 28 12% 16%;
+  --background: 36 24% 90%;
+  --foreground: 28 14% 15%;
+  --border: 28 14% 76%;
+  --card: 38 22% 93%;
+  --card-foreground: 28 14% 15%;
+  --card-border: 28 14% 80%;
+  --sidebar: 33 18% 78%;
+  --sidebar-foreground: 28 14% 15%;
   --sidebar-border: 84 76% 50%;
   --sidebar-primary: 84 76% 50%;
   --sidebar-primary-foreground: 0 0% 0%;
   --sidebar-accent: 84 76% 50%;
   --sidebar-accent-foreground: 0 0% 0%;
   --sidebar-ring: 0 0% 100%;
-  --popover: 36 24% 94%;
-  --popover-foreground: 28 12% 16%;
-  --popover-border: 28 12% 80%;
+  --popover: 34 20% 91%;
+  --popover-foreground: 28 14% 15%;
+  --popover-border: 28 14% 76%;
   --primary: 84 76% 50%;
   --primary-foreground: 0 0% 0%;
-  --secondary: 34 18% 89%;
-  --secondary-foreground: 28 10% 26%;
-  --muted: 35 20% 90%;
-  --muted-foreground: 28 8% 40%;
+  --secondary: 32 18% 84%;
+  --secondary-foreground: 28 11% 24%;
+  --muted: 34 18% 86%;
+  --muted-foreground: 28 9% 36%;
   --accent: 84 76% 50%;
   --accent-foreground: 0 0% 0%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
-  --input: 28 12% 82%;
+  --input: 28 14% 78%;
   --ring: 84 76% 50%;
   --chart-1: 83 100% 55%;
   --chart-2: 84 75% 48%;
@@ -50,15 +50,15 @@
   --success-foreground: 0 0% 100%;
   --warning: 38 92% 50%;
   --warning-foreground: 0 0% 100%;
-  --app-shadow: 0 20px 44px -22px rgba(28, 24, 18, 0.28), 0 0 18px rgba(195, 255, 77, 0.05);
+  --app-shadow: 0 24px 48px -22px rgba(38, 31, 24, 0.22), 0 0 18px rgba(195, 255, 77, 0.04);
   --surface-canvas:
-    radial-gradient(circle at top right, rgba(195,255,77,0.16), transparent 26%),
-    radial-gradient(circle at bottom left, rgba(166,140,255,0.10), transparent 24%),
-    linear-gradient(180deg, rgba(241,237,232,0.99), rgba(231,225,216,0.99));
-  --surface-card: linear-gradient(180deg, rgba(248,244,237,0.96), rgba(239,233,224,0.98));
-  --surface-muted: linear-gradient(180deg, rgba(240,234,225,0.92), rgba(231,224,214,0.95));
-  --surface-accent: linear-gradient(135deg, rgba(195,255,77,0.18), rgba(143,199,8,0.10));
-  --surface-glow: radial-gradient(circle at top right, rgba(195,255,77,0.12), transparent 48%);
+    radial-gradient(circle at top right, rgba(195,255,77,0.08), transparent 18%),
+    radial-gradient(circle at top left, rgba(166,140,255,0.06), transparent 20%),
+    linear-gradient(180deg, rgba(239,234,227,0.99), rgba(226,219,210,0.99));
+  --surface-card: linear-gradient(180deg, rgba(244,239,232,0.98), rgba(236,228,217,0.98));
+  --surface-muted: linear-gradient(180deg, rgba(236,229,219,0.95), rgba(226,217,206,0.96));
+  --surface-accent: linear-gradient(135deg, rgba(195,255,77,0.14), rgba(143,199,8,0.07));
+  --surface-glow: radial-gradient(circle at top right, rgba(195,255,77,0.08), transparent 42%);
   --meal-card-overlay: radial-gradient(circle at top right, rgba(149,223,30,0.045), transparent 28%);
   --meal-card-selected-overlay: radial-gradient(circle at top right, rgba(149,223,30,0.09), transparent 30%);
   --meal-soft-overlay: radial-gradient(circle at top right, rgba(149,223,30,0.03), transparent 26%);
@@ -305,17 +305,17 @@
 
   .hero-mesh {
     background-image:
-      radial-gradient(circle at 70% 20%, rgba(194,254,76,0.28), transparent 28%),
-      radial-gradient(circle at 28% 82%, rgba(166,140,255,0.14), transparent 25%),
-      linear-gradient(135deg, rgba(248,244,237,0.98), rgba(236,229,219,0.97));
+      radial-gradient(circle at 72% 18%, rgba(194,254,76,0.20), transparent 22%),
+      radial-gradient(circle at 24% 82%, rgba(166,140,255,0.09), transparent 20%),
+      linear-gradient(135deg, rgba(246,241,234,0.98), rgba(232,224,214,0.98));
     box-shadow: var(--app-shadow);
   }
 
   .ai-surface {
     background-image:
-      radial-gradient(circle at top right, rgba(194,254,76,0.20), transparent 34%),
-      radial-gradient(circle at bottom left, rgba(166,140,255,0.14), transparent 30%),
-      linear-gradient(180deg, rgba(243,238,229,0.98), rgba(231,223,213,0.98));
+      radial-gradient(circle at top right, rgba(194,254,76,0.14), transparent 26%),
+      radial-gradient(circle at bottom left, rgba(166,140,255,0.10), transparent 24%),
+      linear-gradient(180deg, rgba(237,230,220,0.98), rgba(224,216,206,0.98));
     box-shadow: var(--app-shadow);
   }
 
@@ -348,6 +348,32 @@
     border-color: rgba(71, 64, 53, 0.10);
     background: linear-gradient(180deg, rgba(232,225,215,0.80), rgba(220,212,201,0.78));
     box-shadow: 0 24px 56px -28px rgba(28, 24, 18, 0.42), 0 0 18px rgba(195,255,77,0.07);
+  }
+
+  .topbar-shell {
+    @apply shell-glass;
+    background: linear-gradient(180deg, rgba(213,204,191,0.88), rgba(201,191,178,0.86));
+    box-shadow: 0 22px 48px -28px rgba(28, 24, 18, 0.34), 0 0 16px rgba(195,255,77,0.05);
+  }
+
+  .sidebar-shell {
+    @apply shell-glass;
+    background: linear-gradient(180deg, rgba(201,190,176,0.94), rgba(186,175,162,0.96));
+    box-shadow: 0 22px 52px -28px rgba(28, 24, 18, 0.36), 0 0 16px rgba(195,255,77,0.04);
+  }
+
+  .mobile-nav-shell {
+    @apply shell-glass;
+    background: linear-gradient(180deg, rgba(206,196,184,0.92), rgba(191,181,168,0.94));
+  }
+
+  .soft-panel {
+    @apply rounded-[calc(var(--radius)+0.55rem)] border border-border/35 bg-black/[0.045] dark:bg-white/[0.05];
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+  }
+
+  .soft-badge {
+    @apply inline-flex rounded-full border border-border/35 bg-black/[0.045] px-3 py-1 text-[11px] font-semibold text-muted-foreground dark:border-white/[0.05] dark:bg-white/[0.05];
   }
 
   .rtl-title-stack {
@@ -776,6 +802,14 @@
 }
 
 .dark .shell-glass {
+  border-color: rgba(255,255,255,0.04);
+  background: rgba(0, 0, 0, 0.35);
+  box-shadow: 0 14px 36px rgba(0,0,0,0.28);
+}
+
+.dark .topbar-shell,
+.dark .sidebar-shell,
+.dark .mobile-nav-shell {
   border-color: rgba(255,255,255,0.04);
   background: rgba(0, 0, 0, 0.35);
   box-shadow: 0 14px 36px rgba(0,0,0,0.28);
