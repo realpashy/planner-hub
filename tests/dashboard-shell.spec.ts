@@ -208,8 +208,8 @@ test.describe("shared dashboard shell", () => {
 
     await expect(page.getByTestId("global-topbar-search")).toBeVisible();
     await expect(page.getByRole("heading", { name: /مرحبًا/ })).toBeVisible();
-    await expect(page.getByText("نبض اليوم", { exact: true })).toBeVisible();
-    await expect(page.getByText("التدفق الزمني لليوم", { exact: true })).toBeVisible();
+    await expect(page.getByText("ما يحتاج انتباهك الآن", { exact: true })).toBeVisible();
+    await expect(page.getByText("النبض التشغيلي", { exact: true })).toBeVisible();
     await expect(page.getByText("الوحدات الأساسية", { exact: true })).toBeVisible();
     await expect(page.getByText("مساعد الذكاء", { exact: true })).toBeVisible();
 
@@ -237,7 +237,7 @@ test.describe("shared dashboard shell", () => {
   test("keeps the light theme on the warm Lumina Noir palette instead of raw white", async ({ page }) => {
     await page.goto("/");
 
-    await page.getByTestId("button-theme-toggle").evaluate((element: HTMLButtonElement) => element.click());
+    await page.getByTestId("button-theme-toggle").first().evaluate((element: HTMLButtonElement) => element.click());
 
     const themeVars = await page.evaluate(() => {
       const styles = getComputedStyle(document.documentElement);
@@ -249,8 +249,8 @@ test.describe("shared dashboard shell", () => {
     });
 
     await expect(page.locator("html")).not.toHaveClass(/dark/);
-    expect(themeVars.background).toBe("36 24% 90%");
-    expect(themeVars.card).toBe("38 22% 93%");
-    expect(themeVars.border).toBe("28 14% 76%");
+    expect(themeVars.background).toBe("34 26% 93%");
+    expect(themeVars.card).toBe("38 36% 96%");
+    expect(themeVars.border).toBe("28 18% 79%");
   });
 });

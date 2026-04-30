@@ -160,9 +160,6 @@ export default function SettingsPage() {
                 <Link href="/cashflow?screen=settings">إعدادات التدفق النقدي</Link>
               </Button>
               <Button asChild variant="outline" className="h-12 justify-between rounded-[calc(var(--radius)+0.45rem)]">
-                <Link href="/meal?panel=settings">إعدادات مخطط الوجبات</Link>
-              </Button>
-              <Button asChild variant="outline" className="h-12 justify-between rounded-[calc(var(--radius)+0.45rem)]">
                 <Link href="/budget">إعدادات الميزانية</Link>
               </Button>
             </CardContent>

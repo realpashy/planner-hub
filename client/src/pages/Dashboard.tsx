@@ -488,7 +488,7 @@ export default function Dashboard() {
                     <div className="space-y-3">
                       <p className="text-sm font-semibold text-[#c6b8ff]">لوحة تشغيلك اليومية</p>
                       <h1 className="text-3xl font-black leading-tight text-foreground md:text-5xl">
-                        {displayName}، هذا هو يومك في أبسط وأوضح صورة.
+                        مرحبًا {displayName}، هذا هو يومك في أبسط وأوضح صورة.
                       </h1>
                       <p className="max-w-3xl text-sm leading-8 text-muted-foreground md:text-base">
                         سطح منزلي واحد يختصر ما يجب حسمه الآن، يوصلك إلى وحداتك الأساسية بسرعة، ويعرض فقط الإشارات البيانية التي تساعدك على القرار.
