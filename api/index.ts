@@ -101,6 +101,23 @@ type MealPlannerRuntime = {
 
 let mealPlannerRuntimePromise: Promise<MealPlannerRuntime> | null = null;
 
+function normalizeSupabaseHost(raw?: string | null) {
+  if (!raw) return "";
+
+  const cleaned = raw
+    .trim()
+    .replace(/^['"]|['"]$/g, "")
+    .replace(/\\+/g, "/");
+
+  const directDbHost = cleaned.match(/db\.[a-z0-9-]+\.supabase\.co\b/i)?.[0];
+  if (directDbHost) return directDbHost.toLowerCase();
+
+  const genericHost = cleaned.match(/[a-z0-9.-]+\.supabase\.(?:co|com)\b/i)?.[0];
+  if (genericHost) return genericHost.toLowerCase();
+
+  return "";
+}
+
 function getDebugPayload() {
   return {
     ok: startupError === null,
@@ -699,17 +716,52 @@ function getSupabaseProjectHost() {
   const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || DEFAULT_SUPABASE_URL;
   try {
     const url = new URL(supabaseUrl);
+    const normalizedHost = normalizeSupabaseHost(url.hostname);
+    if (normalizedHost.startsWith("db.")) return normalizedHost;
     const projectRef = url.hostname.split(".")[0];
     return `db.${projectRef}.supabase.co`;
   } catch {
-    return "";
+    return normalizeSupabaseHost(supabaseUrl);
+  }
+}
+
+function normalizeConnectionString(raw?: string | null) {
+  if (!raw) return "";
+
+  const trimmed = raw.trim();
+  try {
+    const url = new URL(trimmed);
+    const normalizedHost = normalizeSupabaseHost(url.hostname) || normalizeSupabaseHost(trimmed);
+    if (normalizedHost) {
+      url.hostname = normalizedHost;
+    }
+    return url.toString();
+  } catch {
+    const host = normalizeSupabaseHost(trimmed);
+    if (!host) return "";
+
+    const userMatch = trimmed.match(/postgres(?:ql)?:\/\/([^:/\s?#]+)(?::([^@\s?#]*))?@/i);
+    const databaseMatch = trimmed.match(/\/([^/?#\s]+)(?:\?|$)/);
+    const portMatch = trimmed.match(/:(\d{2,5})(?:\/|\?|$)/);
+    const sslModeMatch = trimmed.match(/sslmode=([^&#\s]+)/i);
+
+    const user = userMatch?.[1] || process.env.PGUSER || process.env.SUPABASE_DB_USER || "postgres";
+    const password = userMatch?.[2] || process.env.PGPASSWORD || process.env.SUPABASE_DB_PASSWORD;
+    const database = databaseMatch?.[1] || process.env.PGDATABASE || "postgres";
+    const port = portMatch?.[1] || process.env.PGPORT || "5432";
+    const sslMode = sslModeMatch?.[1] || "require";
+
+    if (!password) return "";
+
+    return `postgresql://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${database}?sslmode=${encodeURIComponent(sslMode)}`;
   }
 }
 
 function toConnectionString() {
-  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
+  const normalizedDatabaseUrl = normalizeConnectionString(process.env.DATABASE_URL);
+  if (normalizedDatabaseUrl) return normalizedDatabaseUrl;
 
-  const host = process.env.PGHOST || getSupabaseProjectHost();
+  const host = normalizeSupabaseHost(process.env.PGHOST) || getSupabaseProjectHost();
   const port = process.env.PGPORT || "5432";
   const database = process.env.PGDATABASE || "postgres";
   const user = process.env.PGUSER || process.env.SUPABASE_DB_USER || "postgres";
