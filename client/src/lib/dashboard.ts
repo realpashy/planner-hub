@@ -1,7 +1,7 @@
-import { type LucideIcon, AlarmClock, Banknote, CalendarClock, CheckCircle2, CircleDollarSign, LayoutGrid, Salad, Target } from "lucide-react";
+import { type LucideIcon, AlarmClock, Banknote, CalendarClock, CheckCircle2, CircleDollarSign, LayoutGrid, Target } from "lucide-react";
 import { getMonthlyTotals, loadBudgetData, saveBudgetData, type BudgetTransaction } from "@/lib/budget";
 import { getAvailableBalance, getMonthStats, loadCashflowData } from "@/lib/cashflow";
-import { getMealPlannerSummary, loadMealPlannerState, MEAL_TYPE_LABELS, type PlannerDay } from "@/lib/meal-planner";
+import { getMealPlannerSummary, loadMealPlannerState } from "@/lib/meal-planner";
 import { getPlannerData, savePlannerData, type PlannerData } from "@/lib/storage";
 import {
   getDashboardSummary as getHabitsSummary,
@@ -35,7 +35,7 @@ export interface DashboardPreferences {
 }
 
 export interface DashboardModuleCard {
-  key: "planner" | "budget" | "habits" | "meal" | "cashflow";
+  key: "planner" | "budget" | "habits" | "cashflow";
   title: string;
   subtitle: string;
   href: string;
@@ -223,13 +223,6 @@ function getTimelineBucket(hour: number): DashboardTimelineItem["bucket"] {
   return "evening";
 }
 
-function timeLabelFromMealType(mealType: keyof typeof MEAL_TYPE_LABELS) {
-  if (mealType === "breakfast") return "08:00";
-  if (mealType === "lunch") return "13:30";
-  if (mealType === "snack") return "16:30";
-  return "19:30";
-}
-
 function parseTimeLabel(value: string) {
   const [hourString, minuteString] = value.split(":");
   const hour = Number(hourString) || 0;
@@ -313,27 +306,6 @@ function buildHabitsTimelineItems(todayIso: string): DashboardTimelineItem[] {
     });
 }
 
-function buildMealsTimelineItems(day: PlannerDay | null): DashboardTimelineItem[] {
-  if (!day) return [];
-  return day.meals.map((meal) => {
-    const timeLabel = timeLabelFromMealType(meal.mealType);
-    const time = parseTimeLabel(timeLabel);
-    return {
-      id: `meal-${meal.id}`,
-      title: meal.title,
-      subtitle: MEAL_TYPE_LABELS[meal.mealType],
-      bucket: getTimelineBucket(time.hour),
-      timeLabel,
-      href: `/meal?day=${day.dateISO}`,
-      module: "meal" as const,
-      status: "upcoming",
-      icon: meal.icon || "🍽️",
-      actionable: false,
-      targetId: meal.id,
-    };
-  });
-}
-
 function buildCashflowTimelineItems(todayIso: string): DashboardTimelineItem[] {
   const cashflow = loadCashflowData();
   return cashflow.upcomingPayments
@@ -360,7 +332,6 @@ function buildModuleCards(): DashboardModuleCard[] {
   const budget = loadBudgetData();
   const habits = loadHabitsState();
   const mealState = loadMealPlannerState();
-  const mealSummary = getMealPlannerSummary(mealState);
   const cashflow = loadCashflowData();
   const budgetTotals = getMonthlyTotals(budget.transactions, new Date().toISOString().slice(0, 7));
   const cashflowStats = getMonthStats(cashflow.transactions, new Date().toISOString().slice(0, 7));
@@ -408,20 +379,6 @@ function buildModuleCards(): DashboardModuleCard[] {
         { label: "أفضل سلسلة", value: `${habitsSummary.bestStreak}` },
       ],
       cta: "أكمل عادة الآن",
-    },
-    {
-      key: "meal",
-      title: "مخطط الوجبات",
-      subtitle: "وجبات اليوم والتحضير للأسبوع",
-      href: "/meal",
-      accent: "from-emerald-500/18 via-emerald-500/5 to-transparent",
-      icon: Salad,
-      status: mealSummary.plannedMeals > 0 ? "الخطة جاهزة" : "يحتاج تخطيطًا",
-      metrics: [
-        { label: "وجبات الأسبوع", value: String(mealSummary.plannedMeals) },
-        { label: "أيام الماء", value: String(mealSummary.daysWithWaterTarget) },
-      ],
-      cta: "راجع اليوم الغذائي",
     },
     {
       key: "cashflow",
@@ -612,7 +569,6 @@ export function buildDashboardViewModel(): DashboardViewModel {
   const timeline = [
     ...buildPlannerTimelineItems(planner, todayIso),
     ...buildHabitsTimelineItems(todayIso),
-    ...buildMealsTimelineItems(mealDay),
     ...buildCashflowTimelineItems(todayIso),
   ].sort((a, b) => parseTimeLabel(a.timeLabel === "اليوم" ? "12:00" : a.timeLabel).total - parseTimeLabel(b.timeLabel === "اليوم" ? "12:00" : b.timeLabel).total);
 
@@ -735,13 +691,6 @@ export function buildDashboardViewModel(): DashboardViewModel {
         accent: "from-emerald-500/18 to-transparent",
       },
       {
-        key: "meal",
-        label: "تخطيط وجبة",
-        description: "افتح اليوم الغذائي",
-        icon: Salad,
-        accent: "from-amber-500/18 to-transparent",
-      },
-      {
         key: "ai",
         label: "اسأل الذكاء",
         description: "تلخيص أو ترتيب سريع",
@@ -769,11 +718,11 @@ export function buildDashboardViewModel(): DashboardViewModel {
         hint: `المتبقي ${formatCurrency(remainingBudget)}`,
       },
       {
-        key: "meals",
-        label: "وجبات الأسبوع",
-        value: String(mealSummary.plannedMeals),
-        tone: "border-emerald-500/20 text-emerald-300",
-        hint: mealPrepLabel ?? "لا توجد خطة غذائية بعد",
+        key: "planner",
+        label: "مهام اليوم",
+        value: String(context.planner.tasksToday),
+        tone: "border-sky-500/20 text-sky-300",
+        hint: overdueTasks.length > 0 ? `${overdueTasks.length} مهام متأخرة تحتاج حسمًا` : "مسار المهام اليومي مستقر",
       },
       {
         key: "cashflow",
